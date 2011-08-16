@@ -1,0 +1,33 @@
+#
+# Path to inbound boundles
+#
+Inbound = /home/toch/ftntest/inb/
+
+#
+# Path to temp directory
+#
+Tmp = /home/toch/tmp/
+
+#
+# Path to echo base
+#
+EchoPath = /home/toch/tmp/echos/
+
+#
+# Debug level
+#
+debuglevel=1
+
+#
+# Links description
+# Link=<Link address>,<Out AKA>,<password>
+#
+Link=2:5030/2239.0,2:5030/2239.55,password
+Link=2:5030/1957.0,2:5030/1111.0,wordpass
+
+#
+# SysOp name
+#
+SysOp=Dmitriy Tochansky
+
+deletetossed=1

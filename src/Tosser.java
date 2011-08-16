@@ -1,0 +1,178 @@
+import Config.Config;
+import EchoBase.EchoMgr;
+import fts.ftsPackMsg;
+import fts.ftsPkt;
+import misc.Logger;
+import misc.PktTemp;
+import misc.Zipper;
+import types.Link;
+import types.Message;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.regex.Pattern;
+
+class Tosser {
+
+    static String echop = Config.getEchopath();
+
+    private static final EchoMgr areamgr = new EchoMgr(echop);
+
+    private static final Pattern bunlderegex = Pattern.compile("........[.][STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
+
+    private static boolean isBunldeName(String str) {
+        return bunlderegex.matcher(str).find();
+    }
+
+    public static void RunFast(String dirname) {
+        if (dirname == null) {
+            Logger.Error("Tosser.Run: Error opening directory as inbound '" + dirname + '\'');
+            return;
+        }
+        final File dir = new File(dirname);
+        final File[] files = dir.listFiles();
+        if (files == null) {
+            Logger.Error("Directory " + dirname + " not found!");
+            return;
+        }
+        //TODO: We should make some checks!
+        if (files.length != 0) {
+            LinkedList<PktTemp> pktlist = null;
+            for (File file : files) {
+                if (file.isFile() && isBunldeName(file.getName())) {
+                    try {
+                        pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    continue;
+                }
+                if (pktlist != null) {
+                    for (int i1 = 0; i1 < pktlist.size(); i1++) {
+                        PktTemp aPktlist = pktlist.pop();
+                        if (!tosspkt(aPktlist.pkt)) {
+                            Logger.Error("Save to Tmp");
+                            SaveBad(aPktlist);
+                        }
+                    }
+                }
+                if (Config.getDeletetossed() != 0) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    private static void SaveBad(PktTemp pkt) {
+        File bad = new File(Config.getTmpdir() + pkt.name.replace(".pkt", ".bad"));
+
+        if (bad.exists()) return;
+
+        try {
+            bad.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        RandomAccessFile out = null;
+
+        try {
+            out = new RandomAccessFile(bad, "rw");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        pkt.pkt.position(0);
+        try {
+            if (out != null) {
+                out.seek(0);
+                out.write(pkt.pkt.array());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+/*    private static void tosspkt(String filename) {
+        Logger.Log("Tossing file " + filename);
+        final FileInputStream ins;
+        final File inf = new File(filename);
+
+        try {
+            ins = new FileInputStream(inf);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+        final byte[] arr = new byte[(int) inf.length()];
+        try {
+            final int readed = ins.read(arr);
+            if (readed < inf.length()) {
+                System.out.println("Some problem while readin " + inf.getName());
+                return;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        final ftsPkt p = new ftsPkt(arr);
+        final ftsPackMsg[] msgs = p.getMsgs();
+        for (int i = 0; i < msgs.length; i++) {
+            ftsPackMsg msg1 = msgs[i];
+            final Message msg = new Message(msg1);
+            if (msg.isEchomail()) {
+                ProcessEchoMail(msg);
+            } else {
+                Logger.Log("Netmail???");
+            }
+        }
+        try {
+            ins.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        inf.delete();
+    }*/
+
+    private static boolean tosspkt(ByteBuffer buf) {
+        final ftsPkt q = new ftsPkt(buf);
+        Link origlink = Config.getLink(q.getOrigaddr());
+        if (origlink == null) {
+            Logger.Error("Unknown Link! Drop it.");
+            return false;
+        }
+        if (!q.getPass().equals(origlink.getPass())) {
+            Logger.Error("Bad PASSWORD! Drop it.");
+            return false;
+        }
+
+        final ftsPackMsg[] msgs = q.getMsgs();
+        for (ftsPackMsg msg1 : msgs) {
+            final Message msg = new Message(msg1);
+            if (msg.isEchomail()) {
+                processEchoMail(msg);
+            } else {
+                Logger.Log("Netmail???");
+            }
+        }
+        return true;
+    }
+
+    private static void processEchoMail(Message msg) {
+        if (!areamgr.isValid()) {
+            Logger.Log("Problem with areas. Please check!");
+            return;
+        }
+        areamgr.addMessage(msg);
+
+//        msg.DumpHead();
+        //return;
+    }
+}
