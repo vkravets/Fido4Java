@@ -1,7 +1,7 @@
 package org.fidonet;
 
-import org.fidonet.Config.Config;
-import org.fidonet.binkp.*;
+import org.fidonet.config.Config;
+import org.fidonet.protocol.binkp.*;
 import org.fidonet.misc.Logger;
 import org.fidonet.types.FTNAddr;
 
@@ -34,7 +34,7 @@ public class jftn {
                 Help();
             } else if (args[0].equalsIgnoreCase("poll")) {
                 FTNAddr boss = new FTNAddr("2:5030/1111.0");
-                binkp bink = new binkp();
+                BinkP bink = new BinkP();
                 SessionResult res = bink.Poll(Config.getLink(boss));
                 SessFile[] files = res.getFiles();
                 for (int i = 0; i < res.getStatus(); i++) {

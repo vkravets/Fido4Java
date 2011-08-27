@@ -1,6 +1,6 @@
 package org.fidonet.types;
 
-import org.fidonet.Config.Config;
+import org.fidonet.config.Config;
 import org.fidonet.fts.ftsPackMsg;
 import org.fidonet.misc.Logger;
 

@@ -1,4 +1,4 @@
-package org.fidonet.EchoBase;
+package org.fidonet.echobase;
 
 import org.fidonet.types.FTNAddr;
 

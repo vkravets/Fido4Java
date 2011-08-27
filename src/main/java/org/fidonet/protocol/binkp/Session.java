@@ -1,6 +1,6 @@
-package org.fidonet.binkp;
+package org.fidonet.protocol.binkp;
 
-import org.fidonet.Config.Config;
+import org.fidonet.config.Config;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 

@@ -1,4 +1,4 @@
-package org.fidonet.binkp;
+package org.fidonet.protocol.binkp;
 
 /**
  * Created by IntelliJ IDEA.

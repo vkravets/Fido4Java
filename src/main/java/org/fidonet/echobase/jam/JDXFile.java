@@ -1,4 +1,4 @@
-package org.fidonet.EchoBase.JAMEchoBase;
+package org.fidonet.echobase.jam;
 
 import org.fidonet.misc.MyCRC;
 

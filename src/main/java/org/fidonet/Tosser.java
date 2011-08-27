@@ -1,7 +1,7 @@
 package org.fidonet;
 
-import org.fidonet.Config.Config;
-import org.fidonet.EchoBase.EchoMgr;
+import org.fidonet.config.Config;
+import org.fidonet.echobase.EchoMgr;
 import org.fidonet.fts.ftsPackMsg;
 import org.fidonet.fts.ftsPkt;
 import org.fidonet.misc.Logger;

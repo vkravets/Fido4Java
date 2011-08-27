@@ -1,4 +1,4 @@
-package org.fidonet.Config;
+package org.fidonet.config;
 
 import org.fidonet.misc.Logger;
 import org.fidonet.types.FTNAddr;

@@ -1,4 +1,4 @@
-package org.fidonet.binkp;
+package org.fidonet.protocol.binkp;
 
 import org.fidonet.types.Link;
 
@@ -11,9 +11,9 @@ import java.net.Socket;
  * Date: 16.02.11
  * Time: 12:52
  */
-public class binkp {
+public class BinkP {
 
-    public binkp() {
+    public BinkP() {
 
     }
 

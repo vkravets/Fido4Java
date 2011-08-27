@@ -1,11 +1,11 @@
-package org.fidonet.EchoBase.JAMEchoBase;
+package org.fidonet.echobase.jam;
 
-import org.fidonet.EchoBase.EchoBase;
-import org.fidonet.EchoBase.EchoCfg;
-import org.fidonet.EchoBase.EchoList;
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.FixedHeaderInfoStruct;
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.MessageHeader;
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.SubField;
+import org.fidonet.echobase.EchoBase;
+import org.fidonet.echobase.EchoCfg;
+import org.fidonet.echobase.EchoList;
+import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
+import org.fidonet.echobase.jam.struct.MessageHeader;
+import org.fidonet.echobase.jam.struct.SubField;
 import org.fidonet.misc.Logger;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.types.Message;

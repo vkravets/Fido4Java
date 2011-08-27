@@ -1,6 +1,6 @@
-package org.fidonet.EchoBase;
+package org.fidonet.echobase;
 
-import org.fidonet.Config.Config;
+import org.fidonet.config.Config;
 import org.fidonet.misc.Logger;
 import org.fidonet.types.FTNAddr;
 

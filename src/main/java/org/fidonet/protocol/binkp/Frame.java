@@ -1,4 +1,4 @@
-package org.fidonet.binkp;
+package org.fidonet.protocol.binkp;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

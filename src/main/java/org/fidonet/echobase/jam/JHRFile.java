@@ -1,8 +1,8 @@
-package org.fidonet.EchoBase.JAMEchoBase;
+package org.fidonet.echobase.jam;
 
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.FixedHeaderInfoStruct;
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.MessageHeader;
-import org.fidonet.EchoBase.JAMEchoBase.JAMStruct.SubField;
+import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
+import org.fidonet.echobase.jam.struct.MessageHeader;
+import org.fidonet.echobase.jam.struct.SubField;
 
 import java.io.File;
 import java.io.FileNotFoundException;
