@@ -1,15 +1,18 @@
 package org.fidonet;
 
 import org.fidonet.config.Config;
-import org.fidonet.protocol.binkp.*;
 import org.fidonet.misc.Logger;
+import org.fidonet.protocol.binkp.BinkP;
+import org.fidonet.protocol.binkp.SessFile;
+import org.fidonet.protocol.binkp.SessionResult;
 import org.fidonet.types.FTNAddr;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class JFtn {
 
-    static void Help() {
+    private static void Help() {
         System.out.println("java ftn usage:");
         System.out.println("jftn <action>:");
         System.out.println("    help - show this help");
