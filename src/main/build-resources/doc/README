@@ -1,10 +1,10 @@
-org.fidonet.jftn readme v0.1
+JFtn readme v0.1
 
 ABOUT
 
-org.fidonet.jftn is a ftn-tosser written in Java.
-To use org.fidonet.jftn you need installed JVM with at least 1.5.
-Projects web is http://sourceforge.net/projects/org.fidonet.jftn/. Feel free to report bugs and request for features.
+JFtn is a ftn-tosser written in Java.
+To use JFtn you need installed JVM with at least 1.5.
+Projects web is http://sourceforge.net/projects/JFtn/. Feel free to report bugs and request for features.
 Its very simple for now and can be used only for read-only system. It cant toss netmail, have bugs,
 and still under develompent.
 
@@ -14,8 +14,8 @@ Support several echo-links.
 Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
 
 INSTALL
-To install simply copy the file org.fidonet.jftn.jar to the desired location. Edit org.fidonet.jftn.conf-dist to your liking and
-save it in the same directory called org.fidonet.jftn.conf.
+To install simply copy the file JFtn.jar to the desired location. Edit JFtn.conf-dist to your liking and
+save it in the same directory called JFtn.conf.
 
 USAGE
 
@@ -26,6 +26,6 @@ toss - start tossing mail in inbound directory
 
 DEVELOPERS
 For now there are only one developer, but you can join for develompent anytime.
-You can always get a fresh version at svn: svn://mirror.agooga.ru/org.fidonet.jftn/
+You can always get a fresh version at svn: svn://mirror.agooga.ru/JFtn/
 
 Feel free to contact me at tochansky<at>gmail.com and 2:5030/1111

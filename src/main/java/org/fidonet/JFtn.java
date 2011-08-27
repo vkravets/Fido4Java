@@ -7,7 +7,7 @@ import org.fidonet.types.FTNAddr;
 
 import java.io.*;
 
-public class jftn {
+public class JFtn {
 
     static void Help() {
         System.out.println("java ftn usage:");
@@ -16,7 +16,7 @@ public class jftn {
         System.out.println("    toss - toss incoming echomail");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         final long starttime = System.currentTimeMillis();
         Config.ReadConfig("jftn.conf");
@@ -41,22 +41,16 @@ public class jftn {
                     RandomAccessFile of = null;
                     try {
                         of = new RandomAccessFile(Config.getInbound() + "/" + files[i].filename, "rw");
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    if (files[i].body != null) {
-                        try {
-                            if (of != null) {
-                                of.write(files[i].body);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        if (files[i].body != null) {
+                                    of.write(files[i].body);
                         }
-                    }
-                    try {
                         of.close();
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } finally {
+                        if (of != null) {
+                            of.close();
+                        }
                     }
                 }
 
