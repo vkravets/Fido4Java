@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 class Tosser {
 
-    static String echop = Config.getEchopath();
+    private static final String echop = Config.getEchopath();
 
     private static final EchoMgr areamgr = new EchoMgr(echop);
 
