@@ -51,7 +51,8 @@ class JDXFile {
             return 0;
         }
         try {
-            mcrc = (Integer.reverseBytes(jdx.readInt()));
+//            mcrc = (Integer.reverseBytes(jdx.readInt()));
+            jdx.readInt();
             mshift = (Integer.reverseBytes(jdx.readInt()));
         } catch (IOException e) {
 //            e.printStackTrace();

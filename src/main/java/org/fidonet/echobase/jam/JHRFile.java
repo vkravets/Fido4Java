@@ -11,6 +11,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
+import org.fidonet.misc.Logger;
 
 class JHRFile {
 
@@ -37,7 +38,11 @@ class JHRFile {
         try {
 
             ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize);
-            jhr.read(tmpbuf.array());
+            int readed = jhr.read(tmpbuf.array());
+            if(readed != MessageHeader.MessageHeaderSize)
+            {
+                Logger.Error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
+            }
             tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
             tmpbuf.position(0);
 
@@ -69,11 +74,11 @@ class JHRFile {
                 result.SubFieldList = new LinkedList<SubField>();
                 while (tmpbuf.position() < tmpbuf.capacity()) {
                     SubField sf = new SubField();
-                    sf.LoID = tmpbuf.getShort();
-                    sf.HiID = tmpbuf.getShort();
+                    sf.loID = tmpbuf.getShort();
+                    sf.hiID = tmpbuf.getShort();
                     sf.datalen = tmpbuf.getInt();
-                    sf.Buffer = new byte[sf.datalen];
-                    tmpbuf.get(sf.Buffer);
+                    sf.buffer = new byte[sf.datalen];
+                    tmpbuf.get(sf.buffer);
                     result.SubFieldList.add(sf);
                 }
             }
@@ -110,10 +115,10 @@ class JHRFile {
         if (msghdr.SubfieldLen != 0) {
             for (int i = 0; i < msghdr.SubFieldList.size(); i++) {
                 SubField sub = msghdr.SubFieldList.get(i);
-                tmpbuf.putShort(sub.LoID);
-                tmpbuf.putShort(sub.HiID);
-                tmpbuf.putInt(sub.Buffer.length);
-                tmpbuf.put(sub.Buffer);
+                tmpbuf.putShort(sub.loID);
+                tmpbuf.putShort(sub.hiID);
+                tmpbuf.putInt(sub.buffer.length);
+                tmpbuf.put(sub.buffer);
             }
         }
         int result = -1;
@@ -130,12 +135,17 @@ class JHRFile {
     public FixedHeaderInfoStruct getFixedHeader() {
         byte[] fh = new byte[1024];
         ByteBuffer res = ByteBuffer.allocate(1024);
+        int readed = 0;
         res.order(ByteOrder.LITTLE_ENDIAN);
         try {
             jhr.seek(0);
-            jhr.read(fh);
+            readed = jhr.read(fh);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        if(readed != 1024)
+        {
+            Logger.Error("Ooops! getFixedHeader() reads not 1024!");
         }
         res.put(fh);
         FixedHeaderInfoStruct result = new FixedHeaderInfoStruct();

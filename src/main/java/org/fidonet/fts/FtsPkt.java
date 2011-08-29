@@ -5,7 +5,7 @@ import org.fidonet.types.FTNAddr;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class ftsPkt {
+public class FtsPkt {
     private int origNode;
     private int destNode;
     private int year;
@@ -33,15 +33,15 @@ public class ftsPkt {
     private int origPoint;
     private int destPoint;
     private byte[] achData; //4!!!
-    private ftsPackMsg[] ftsMsgs;
+    private FtsPackMsg[] ftsMsgs;
 
     private FTNAddr origaddr;
 
-    public ftsPkt() {
+    public FtsPkt() {
 
     }
 
-    public ftsPkt(ByteBuffer x) {
+    public FtsPkt(ByteBuffer x) {
 //        final ByteBuffer x = ByteBuffer.allocate(arr.length);
 //        x.put(arr);
 //        x.rewind();
@@ -81,18 +81,18 @@ public class ftsPkt {
         origaddr = new FTNAddr(origZone, origNet, origNode, origPoint);
     }
 
-    private static ftsPackMsg[] getMsgPack(ByteBuffer b) {
+    private static FtsPackMsg[] getMsgPack(ByteBuffer b) {
         //final Vector<ftsPackMsg> tmp = new Vector<ftsPackMsg>(5);
-        LinkedList<ftsPackMsg> tmp = new LinkedList<ftsPackMsg>();
+        LinkedList<FtsPackMsg> tmp = new LinkedList<FtsPackMsg>();
 
         while (b.position() < b.limit() - 3)    // PKT ends whit 00 00
         {
-            final ftsPackMsg m = new ftsPackMsg(b);
+            final FtsPackMsg m = new FtsPackMsg(b);
             if (m.isValid()) {
                 tmp.add(m);
             }
         }
-        ftsPackMsg[] result = new ftsPackMsg[tmp.size()];
+        FtsPackMsg[] result = new FtsPackMsg[tmp.size()];
 
         result = tmp.toArray(result);
         return result;
@@ -100,7 +100,7 @@ public class ftsPkt {
 
 
     public byte[] getAchData() {
-        return achData;
+        return achData.clone();
     }
 
     public int getAuxNet() {
@@ -163,11 +163,11 @@ public class ftsPkt {
         return month;
     }
 
-    public ftsPackMsg[] getMsgs() {
-        return ftsMsgs;
+    public FtsPackMsg[] getMsgs() {
+        return ftsMsgs.clone();
     }
 
-    void setMsgs(ftsPackMsg[] _ftsMsgs) {
+    void setMsgs(FtsPackMsg[] _ftsMsgs) {
         ftsMsgs = _ftsMsgs;
     }
 

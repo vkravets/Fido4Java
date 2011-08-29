@@ -23,6 +23,6 @@ public class SessionResult {
     }
 
     public SessFile[] getFiles() {
-        return files;
+        return files.clone();
     }
 }
