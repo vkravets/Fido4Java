@@ -1,5 +1,7 @@
 package org.fidonet.jftn.share;
 
+import org.fidonet.jftn.event.EventHandler;
+
 /**
  * Created by IntelliJ IDEA.
  * User: sly
@@ -7,5 +9,5 @@ package org.fidonet.jftn.share;
  * Time: 11:20 AM
  * To change this template use File | Settings | File Templates.
  */
-public interface Hook {
+public interface Hook extends EventHandler {
 }

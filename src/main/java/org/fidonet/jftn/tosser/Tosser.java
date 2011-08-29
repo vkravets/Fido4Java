@@ -1,9 +1,10 @@
-package org.fidonet.tosser;
+package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.fts.ftsPackMsg;
 import org.fidonet.fts.ftsPkt;
+import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.misc.Logger;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
@@ -18,19 +19,19 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
-public class Tosser {
+public class Tosser extends HasEventBus {
 
     private static final String echop = Config.getEchopath();
 
     private static final EchoMgr areamgr = new EchoMgr(echop);
 
-    private static final Pattern bunlderegex = Pattern.compile("........[.][STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
+    private static final Pattern bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
 
-    private static boolean isBunldeName(String str) {
+    private boolean isBunldeName(String str) {
         return bunlderegex.matcher(str).find();
     }
 
-    public static void RunFast(String dirname) {
+    public void runFast(String dirname) {
         if (dirname == null) {
             Logger.Error("Tosser.Run: Error opening directory as inbound '" + dirname + '\'');
             return;
@@ -59,7 +60,7 @@ public class Tosser {
                         PktTemp aPktlist = pktlist.pop();
                         if (!tosspkt(aPktlist.pkt)) {
                             Logger.Error("Save to Tmp");
-                            SaveBad(aPktlist);
+                            saveBad(aPktlist);
                         }
                     }
                 }
@@ -70,7 +71,7 @@ public class Tosser {
         }
     }
 
-    private static void SaveBad(PktTemp pkt) {
+    private void saveBad(PktTemp pkt) {
         File bad = new File(Config.getTmpdir() + pkt.name.replace(".pkt", ".bad"));
 
         if (bad.exists()) return;
@@ -143,7 +144,7 @@ public class Tosser {
         inf.delete();
     }*/
 
-    private static boolean tosspkt(ByteBuffer buf) {
+    private boolean tosspkt(ByteBuffer buf) {
         final ftsPkt q = new ftsPkt(buf);
         Link origlink = Config.getLink(q.getOrigaddr());
         if (origlink == null) {
@@ -154,20 +155,23 @@ public class Tosser {
             Logger.Error("Bad PASSWORD! Drop it.");
             return false;
         }
-
         final ftsPackMsg[] msgs = q.getMsgs();
         for (ftsPackMsg msg1 : msgs) {
             final Message msg = new Message(msg1);
             if (msg.isEchomail()) {
                 processEchoMail(msg);
+                // Call onTossEchoMsg hook
+                getEventBus().notify(new TossEchoMailEvent(msg));
             } else {
+                // Call onTossNetMail hook
+                getEventBus().notify(new TossNetmailEvent(msg));
                 Logger.Log("Netmail???");
             }
         }
         return true;
     }
 
-    private static void processEchoMail(Message msg) {
+    private void processEchoMail(Message msg) {
         if (!areamgr.isValid()) {
             Logger.Log("Problem with areas. Please check!");
             return;
@@ -177,4 +181,5 @@ public class Tosser {
 //        msg.DumpHead();
         //return;
     }
+
 }

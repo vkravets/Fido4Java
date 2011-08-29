@@ -5,7 +5,7 @@ import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
 import org.fidonet.protocol.binkp.SessionResult;
-import org.fidonet.tosser.Tosser;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
@@ -33,7 +33,8 @@ public class JFtn {
             Help();
         } else {
             if (args[0].equalsIgnoreCase("toss")) {
-                Tosser.RunFast(Config.getInbound());
+                Tosser tosser = new Tosser();
+                tosser.runFast(Config.getInbound());
             } else if (args[0].equalsIgnoreCase("help")) {
                 Help();
             } else if (args[0].equalsIgnoreCase("poll")) {
