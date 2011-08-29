@@ -1,4 +1,4 @@
-package org.fidonet;
+package org.fidonet.tosser;
 
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
-class Tosser {
+public class Tosser {
 
     private static final String echop = Config.getEchopath();
 

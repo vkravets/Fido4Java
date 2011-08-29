@@ -1,10 +1,11 @@
-package org.fidonet;
+package org.fidonet.jftn;
 
 import org.fidonet.config.Config;
 import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
 import org.fidonet.protocol.binkp.SessionResult;
+import org.fidonet.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;

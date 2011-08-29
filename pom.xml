@@ -27,12 +27,20 @@
                 <archive>
                     <manifest>
                         <addClasspath>true</addClasspath>
-                        <mainClass>org.fidonet.JFtn</mainClass>
+                        <mainClass>org.fidonet.jftn.JFtn</mainClass>
                     </manifest>
                 </archive>
             </configuration>
         </plugin>
     </plugins>
 </build>
+
+<dependencies>
+    <dependency>
+        <groupId>org.python</groupId>
+        <artifactId>jython-standalone</artifactId>
+        <version>2.5.2</version>
+    </dependency>
+</dependencies>
 
 </project>
