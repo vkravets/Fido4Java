@@ -2,14 +2,14 @@ package org.fidonet.echobase.jam.struct;
 
 public class SubField {
 
-    public short LoID;
-    public short HiID;
+    public short loID;
+    public short hiID;
     public int datalen;
-    public byte[] Buffer;
+    public byte[] buffer;
 
     public SubField() {
-        LoID = 0;
-        HiID = 0;
+        loID = 0;
+        hiID = 0;
         datalen = 0;
     }
 

@@ -2,8 +2,8 @@ package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
-import org.fidonet.fts.ftsPackMsg;
-import org.fidonet.fts.ftsPkt;
+import org.fidonet.fts.FtsPackMsg;
+import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.misc.Logger;
 import org.fidonet.misc.PktTemp;
@@ -33,7 +33,7 @@ public class Tosser extends HasEventBus {
 
     public void runFast(String dirname) {
         if (dirname == null) {
-            Logger.Error("Tosser.Run: Error opening directory as inbound '" + dirname + '\'');
+            Logger.Error("Tosser.Run: Error opening directory as inbound. Dirname is null.");
             return;
         }
         final File dir = new File(dirname);
@@ -144,8 +144,8 @@ public class Tosser extends HasEventBus {
         inf.delete();
     }*/
 
-    private boolean tosspkt(ByteBuffer buf) {
-        final ftsPkt q = new ftsPkt(buf);
+    private static boolean tosspkt(ByteBuffer buf) {
+        final FtsPkt q = new FtsPkt(buf);
         Link origlink = Config.getLink(q.getOrigaddr());
         if (origlink == null) {
             Logger.Error("Unknown Link! Drop it.");
@@ -155,8 +155,9 @@ public class Tosser extends HasEventBus {
             Logger.Error("Bad PASSWORD! Drop it.");
             return false;
         }
-        final ftsPackMsg[] msgs = q.getMsgs();
-        for (ftsPackMsg msg1 : msgs) {
+
+        final FtsPackMsg[] msgs = q.getMsgs();
+        for (FtsPackMsg msg1 : msgs) {
             final Message msg = new Message(msg1);
             if (msg.isEchomail()) {
                 processEchoMail(msg);

@@ -145,15 +145,15 @@ public class JAMEchoBase implements EchoBase {
         newmsg.PasswordCRC = 0xFFFFFFFF;
 
         SubField FromName = new SubField();
-        FromName.LoID = 2;
-        FromName.Buffer = msg.getFrom().getBytes();
-        FromName.datalen = FromName.Buffer.length;
+        FromName.loID = 2;
+        FromName.buffer = msg.getFrom().getBytes();
+        FromName.datalen = FromName.buffer.length;
         newmsg.SubFieldList.add(FromName);
 
         SubField ToName = new SubField();
-        ToName.LoID = 3;
-        ToName.Buffer = msg.getTo().getBytes();
-        ToName.datalen = ToName.Buffer.length;
+        ToName.loID = 3;
+        ToName.buffer = msg.getTo().getBytes();
+        ToName.datalen = ToName.buffer.length;
         newmsg.SubFieldList.add(ToName);
 
 /*        SubField FromAdd = new SubField();
@@ -163,17 +163,17 @@ public class JAMEchoBase implements EchoBase {
         newmsg.SubFieldList.add(FromAdd);*/
 
         SubField Subject = new SubField();
-        Subject.LoID = 6;
-        Subject.Buffer = msg.getByteSubj();
-        Subject.datalen = Subject.Buffer.length;
+        Subject.loID = 6;
+        Subject.buffer = msg.getByteSubj();
+        Subject.datalen = Subject.buffer.length;
         newmsg.SubFieldList.add(Subject);
 
 
         if (msg.getTAddr() != null) {
             SubField ToAdd = new SubField();
-            ToAdd.LoID = 1;
-            ToAdd.Buffer = msg.getTAddr().toString().getBytes();
-            ToAdd.datalen = ToAdd.Buffer.length;
+            ToAdd.loID = 1;
+            ToAdd.buffer = msg.getTAddr().toString().getBytes();
+            ToAdd.datalen = ToAdd.buffer.length;
             newmsg.SubFieldList.add(ToAdd);
         }
 
@@ -183,42 +183,42 @@ public class JAMEchoBase implements EchoBase {
         for (String kludge : kludges) {
             if (kludge.startsWith("MSGID:")) {
                 SubField msgid = new SubField();
-                msgid.LoID = 4;
-                msgid.Buffer = collon.split(kludge)[1].getBytes();
-                msgid.datalen = msgid.Buffer.length;
+                msgid.loID = 4;
+                msgid.buffer = collon.split(kludge)[1].getBytes();
+                msgid.datalen = msgid.buffer.length;
                 newmsg.SubFieldList.add(msgid);
             } else if (kludge.startsWith("REPLY:")) {
                 SubField reply = new SubField();
-                reply.LoID = 5;
-                reply.Buffer = collon.split(kludge)[1].getBytes();
-                reply.datalen = reply.Buffer.length;
+                reply.loID = 5;
+                reply.buffer = collon.split(kludge)[1].getBytes();
+                reply.datalen = reply.buffer.length;
                 newmsg.SubFieldList.add(reply);
             } else if (kludge.startsWith("PATH:")) {
                 SubField path = new SubField();
-                path.LoID = 2002;
-                path.Buffer = collon.split(kludge)[1].getBytes();
-                path.datalen = path.Buffer.length;
+                path.loID = 2002;
+                path.buffer = collon.split(kludge)[1].getBytes();
+                path.datalen = path.buffer.length;
                 newmsg.SubFieldList.add(path);
                 newmsg.SubfieldLen = newmsg.getSubLen();
             } else if (kludge.startsWith("TZUTC:")) {
                 SubField tz = new SubField();
-                tz.LoID = 2004;
-                tz.Buffer = collon.split(kludge)[1].getBytes();
-                tz.datalen = tz.Buffer.length;
+                tz.loID = 2004;
+                tz.buffer = collon.split(kludge)[1].getBytes();
+                tz.datalen = tz.buffer.length;
                 newmsg.SubFieldList.add(tz);
                 newmsg.SubfieldLen = newmsg.getSubLen();
             } else if (kludge.startsWith("SEEN-BY:")) {
                 SubField seen = new SubField();
-                seen.LoID = 2001;
-                seen.Buffer = collon.split(kludge)[1].getBytes();
-                seen.datalen = seen.Buffer.length;
+                seen.loID = 2001;
+                seen.buffer = collon.split(kludge)[1].getBytes();
+                seen.datalen = seen.buffer.length;
                 newmsg.SubFieldList.add(seen);
                 newmsg.SubfieldLen = newmsg.getSubLen();
             } else {
                 SubField tid = new SubField();
-                tid.LoID = 2000;
-                tid.Buffer = kludge.getBytes();
-                tid.datalen = tid.Buffer.length;
+                tid.loID = 2000;
+                tid.buffer = kludge.getBytes();
+                tid.datalen = tid.buffer.length;
                 newmsg.SubFieldList.add(tid);
             }
 

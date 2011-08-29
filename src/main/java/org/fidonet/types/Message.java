@@ -1,7 +1,7 @@
 package org.fidonet.types;
 
 import org.fidonet.config.Config;
-import org.fidonet.fts.ftsPackMsg;
+import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.misc.Logger;
 
 import java.util.LinkedList;
@@ -26,7 +26,7 @@ public class Message {
     private final Attribute attrs;
     private final FTNAddr UpLink;
 
-    public Message(ftsPackMsg src) {
+    public Message(FtsPackMsg src) {
         From = src.getFrom();
         To = src.getTo();
         byteSubj = src.getSubj();
@@ -82,7 +82,7 @@ public class Message {
         }*/
 
 
-        System.arraycopy(src.body, bodystart, Body, bodystart - bodystart, bodyend - bodystart);
+        System.arraycopy(src.body, bodystart, Body, /*bodystart - bodystart*/ 0, bodyend - bodystart);
 
 
         if (echomail) {
@@ -145,7 +145,7 @@ public class Message {
     }
 
     public String[] getSplittedleeter() {
-        return splittedleeter;
+        return splittedleeter.clone();
     }
 
     public String getText() {
@@ -153,7 +153,7 @@ public class Message {
     }
 
     public String[] getKludges() {
-        return Kludges;
+        return Kludges.clone();
     }
 
     public String getMsgDate() {
@@ -173,7 +173,7 @@ public class Message {
     }
 
     public byte[] getByteSubj() {
-        return byteSubj;
+        return byteSubj.clone();
     }
 
     public FTNAddr getTAddr() {
@@ -181,7 +181,7 @@ public class Message {
     }
 
     public byte[] getBody() {
-        return Body;
+        return Body.clone();
     }
 
     public FTNAddr getUpLink() {

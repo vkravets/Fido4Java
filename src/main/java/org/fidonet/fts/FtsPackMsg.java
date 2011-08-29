@@ -5,7 +5,7 @@ import org.fidonet.misc.Logger;
 import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
-public class ftsPackMsg {
+public class FtsPackMsg {
     private int type;
     private int origNode;
     private int destNode;
@@ -21,14 +21,14 @@ public class ftsPackMsg {
     private String[] splittedtext;
     public byte[] body;
 
-    private static boolean Valid = true;
+    private boolean Valid = true;
 
 
-    public ftsPackMsg() {
+    public FtsPackMsg() {
 
     }
 
-    public ftsPackMsg(ByteBuffer buf) {
+    public FtsPackMsg(ByteBuffer buf) {
         type = buf.getShort();
         if (type != 2) {
             Logger.Log("Seems like not a packet!");
@@ -132,7 +132,7 @@ public class ftsPackMsg {
     }
 
     public byte[] getSubj() {
-        return Subj;
+        return Subj.clone();
     }
 
     public String getText() {
@@ -148,10 +148,10 @@ public class ftsPackMsg {
     }
 
     public String[] getSplittedtext() {
-        return splittedtext;
+        return splittedtext.clone();
     }
 
     public byte[] getDateTime() {
-        return DateTime;
+        return DateTime.clone();
     }
 }
