@@ -3,10 +3,8 @@ package org.fidonet.jftn.share;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.HasEventBus;
-import org.fidonet.jftn.tosser.TossNetmailEvent;
 
 import javax.script.Invocable;
-import java.io.InputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,11 +20,4 @@ public class HookInterpreter extends HasEventBus {
         getEventBus().register(hookClass, commandObject);
     }
 
-    public static void main(String argv[]) throws Exception {
-        ScriptManager scriptManager = ScriptManager.getInstance();
-        InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testHook.py");
-        scriptManager.runScript(inputStream);
-        getEventBus().notify(new TossNetmailEvent(null));
-
-    }
 }

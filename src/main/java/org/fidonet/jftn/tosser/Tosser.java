@@ -144,7 +144,7 @@ public class Tosser extends HasEventBus {
         inf.delete();
     }*/
 
-    private static boolean tosspkt(ByteBuffer buf) {
+    private boolean tosspkt(ByteBuffer buf) {
         final FtsPkt q = new FtsPkt(buf);
         Link origlink = Config.getLink(q.getOrigaddr());
         if (origlink == null) {

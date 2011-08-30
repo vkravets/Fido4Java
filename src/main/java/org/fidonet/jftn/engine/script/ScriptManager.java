@@ -1,8 +1,5 @@
 package org.fidonet.jftn.engine.script;
 
-import org.fidonet.jftn.share.Command;
-import org.fidonet.jftn.share.CommandCollection;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.File;
@@ -50,14 +47,6 @@ public class ScriptManager {
         InputStreamReader reader = new InputStreamReader(stream);
         ScriptEngine jythonEngine = getJythonScriptEngine();
         jythonEngine.eval(reader);
-    }
-
-    public static void main (String[] argv) throws Exception {
-        ScriptManager scriptManager = getInstance();
-        InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("test.py");
-        scriptManager.runScript(inputStream);
-        Command command = CommandCollection.getInstance().findCommandByName("test");
-        command.execute(argv);
     }
 
 }
