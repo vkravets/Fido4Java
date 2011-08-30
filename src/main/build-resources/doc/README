@@ -3,8 +3,8 @@ JFtn readme v0.1
 ABOUT
 
 JFtn is a ftn-tosser written in Java.
-To use JFtn you need installed JVM with at least 1.5.
-Projects web is http://sourceforge.net/projects/JFtn/. Feel free to report bugs and request for features.
+To use JFtn you need installed JVM with at least 1.6.
+Projects web is http://sourceforge.net/projects/jftn/. Feel free to report bugs and request for features.
 Its very simple for now and can be used only for read-only system. It cant toss netmail, have bugs,
 and still under develompent.
 
@@ -14,8 +14,8 @@ Support several echo-links.
 Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
 
 INSTALL
-To install simply copy the file JFtn.jar to the desired location. Edit JFtn.conf-dist to your liking and
-save it in the same directory called JFtn.conf.
+To install simply copy the file jftn.jar to the desired location. Edit jftn.conf-dist to your liking and
+save it in the same directory called jftn.conf.
 
 USAGE
 
@@ -26,6 +26,8 @@ toss - start tossing mail in inbound directory
 
 DEVELOPERS
 For now there are only one developer, but you can join for develompent anytime.
-You can always get a fresh version at svn: svn://mirror.agooga.ru/JFtn/
+You can always get a fresh version at GitHub: https://github.com/dtoch/jftn.git or git://github.com/dtoch/jftn.git
 
-Feel free to contact me at tochansky<at>gmail.com and 2:5030/1111
+Feel free to contact to us:
+Dmitriy Tochansky - tochansky<at>gmail.com or 2:5030/1111
+Vladimir Kravets - vova.kravets<at>gmail.com or 2:467/70.113
