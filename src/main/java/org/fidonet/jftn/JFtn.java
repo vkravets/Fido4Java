@@ -14,8 +14,6 @@ import java.io.RandomAccessFile;
 
 public class JFtn {
 
-    public static ScriptManager scriptManager;
-
     private static void Help() {
         System.out.println("java ftn usage:");
         System.out.println("jftn <action>:");
@@ -32,7 +30,7 @@ public class JFtn {
         }
 
         // Loading Script engine
-        scriptManager = ScriptManager.getInstance();
+        ScriptManager scriptManager = ScriptManager.getInstance();
         // TODO: Loading all commands and try to execute it if someone was specified
 
         if (args.length == 0) {
