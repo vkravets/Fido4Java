@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,9 +20,11 @@ public class ScriptManager {
 
     private static ScriptManager instance;
     private ScriptEngineManager scriptEngineManager;
+    private Map<String, Object> scriptVariables;
 
     public ScriptManager() {
         scriptEngineManager = new ScriptEngineManager();
+        scriptVariables = new HashMap<String, Object>();
     }
 
     public static ScriptManager getInstance() {
@@ -46,7 +50,31 @@ public class ScriptManager {
     public void runScript(InputStream stream) throws Exception {
         InputStreamReader reader = new InputStreamReader(stream);
         ScriptEngine jythonEngine = getJythonScriptEngine();
+        if (!scriptVariables.isEmpty()) {
+            for (String name : scriptVariables.keySet()) {
+                jythonEngine.put(name, scriptVariables.get(name));
+            }
+        }
         jythonEngine.eval(reader);
     }
 
+    public void addScriptVar(String name, Object value) {
+        if (name != null && value != null) {
+            scriptVariables.put(name, value);
+        } else {
+            // TODO: Log warn
+        }
+    }
+
+    public void removeScriptVar(String name, Object value) {
+        if (name != null && value != null) {
+            if (scriptVariables.get(name) != null) {
+                scriptVariables.remove(name);
+            } else {
+                // TODO: Log warn
+            }
+        } else {
+            // TODO: Log warn
+        }
+    }
 }

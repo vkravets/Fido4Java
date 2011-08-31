@@ -1,6 +1,7 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.Config;
+import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
@@ -12,6 +13,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class JFtn {
+
+    public static ScriptManager scriptManager;
 
     private static void Help() {
         System.out.println("java ftn usage:");
@@ -28,10 +31,15 @@ public class JFtn {
             return;
         }
 
+        // Loading Script engine
+        scriptManager = ScriptManager.getInstance();
+        // TODO: Loading all commands and try to execute it if someone was specified
+
         if (args.length == 0) {
             System.out.println("Error: No action in commandline.");
             Help();
         } else {
+
             if (args[0].equalsIgnoreCase("toss")) {
                 Tosser tosser = new Tosser();
                 tosser.runFast(Config.getInbound());
