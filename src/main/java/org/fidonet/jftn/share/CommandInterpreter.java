@@ -2,8 +2,6 @@ package org.fidonet.jftn.share;
 
 import org.fidonet.jftn.engine.script.JFtnShare;
 
-import javax.script.Invocable;
-
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
@@ -14,7 +12,7 @@ import javax.script.Invocable;
 public class CommandInterpreter {
 
     public static void registerCommand(JFtnShare jftn, String name, Object command) throws Exception {
-        if ((jftn == null) || !(jftn instanceof JFtnShare)) {
+        if (jftn == null) {
             throw new VerifyError("Parameter jftn is not correctly specified");
         }
         if ((name == null) || (name.trim().length() == 0)) {
@@ -23,7 +21,7 @@ public class CommandInterpreter {
         if (command == null) {
             throw new VerifyError("Parameter command is empty");
         }
-        Command commandObject = ((Invocable)jftn.getScriptManager().getJythonScriptEngine()).getInterface(command, Command.class);
+        Command commandObject = jftn.getScriptManager().getInterface(command, Command.class);
         CommandCollection.getInstance().addCommand(name, commandObject);
     }
 }

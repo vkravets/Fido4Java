@@ -1,5 +1,6 @@
 package org.fidonet.jftn.engine.script;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.File;
@@ -18,20 +19,25 @@ import java.util.Map;
  */
 public class ScriptManager {
 
-    private ScriptEngineManager scriptEngineManager;
+    private ScriptEngine jythonEngine;
     private Map<String, Object> scriptVariables;
 
     public ScriptManager() {
-        scriptEngineManager = new ScriptEngineManager();
         scriptVariables = new HashMap<String, Object>();
+
+        ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+        jythonEngine = scriptEngineManager.getEngineByExtension("py");
+        if (jythonEngine == null) {
+            throw new VerifyError("Jython script engine is not found");
+        }
     }
 
-    public ScriptEngine getJythonScriptEngine() throws Exception {
-        ScriptEngine scriptEngine = scriptEngineManager.getEngineByExtension("py");
-        if (scriptEngine == null) {
-            throw new Exception("Jython script engine is not found");
-        }
-        return scriptEngine;
+    private ScriptEngine getJythonScriptEngine() throws Exception {
+        return jythonEngine;
+    }
+
+    public <T> T getInterface(Object object, Class<T> type) {
+        return ((Invocable)jythonEngine).getInterface(object, type);
     }
 
     public void runScript(File script) throws Exception {

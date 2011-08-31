@@ -4,8 +4,6 @@ import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.HasEventBus;
 
-import javax.script.Invocable;
-
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
@@ -25,7 +23,7 @@ public class HookInterpreter extends HasEventBus {
         if (hook == null) {
             throw new VerifyError("Parameter command is empty");
         }
-        Hook commandObject = ((Invocable)jftn.getScriptManager().getJythonScriptEngine()).getInterface(hook, Hook.class);
+        Hook commandObject = jftn.getScriptManager().getInterface(hook, Hook.class);
         getEventBus().register(hookClass, commandObject);
     }
 
