@@ -1,6 +1,7 @@
 package org.fidonet.tests.engine.script;
 
 import junit.framework.TestCase;
+import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
@@ -20,12 +21,13 @@ public class TestScriptVars extends CommandInterpreter {
 
     @Test
     public void testCommandRegister() throws Exception {
-        ScriptManager scriptManager = ScriptManager.getInstance();
+        ScriptManager scriptManager = new ScriptManager();
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
         InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testScriptVars.py");
         TestScriptObject test = new TestScriptObject();
         try {
 
-            scriptManager.addScriptVar("jftn", test);
+            scriptManager.addScriptVar("testScriptVar", test);
             scriptManager.runScript(inputStream);
         } catch (Exception e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.

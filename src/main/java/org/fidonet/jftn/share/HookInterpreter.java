@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.HasEventBus;
 
@@ -15,8 +15,17 @@ import javax.script.Invocable;
  */
 public class HookInterpreter extends HasEventBus {
 
-    public static void registerHook(Class<? extends Event> hookClass, Object hook) throws Exception {
-        Hook commandObject = ((Invocable)ScriptManager.getInstance().getJythonScriptEngine()).getInterface(hook, Hook.class);
+    public static void registerHook(JFtnShare jftn, Class<? extends Event> hookClass, Object hook) throws Exception {
+        if ((jftn == null)) {
+            throw new VerifyError("Parameter jftn is not correctly specified");
+        }
+        if ((hookClass == null)) {
+            throw new VerifyError("Parameter name is empty");
+        }
+        if (hook == null) {
+            throw new VerifyError("Parameter command is empty");
+        }
+        Hook commandObject = ((Invocable)jftn.getScriptManager().getJythonScriptEngine()).getInterface(hook, Hook.class);
         getEventBus().register(hookClass, commandObject);
     }
 

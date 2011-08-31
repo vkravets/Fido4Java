@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.JFtnShare;
 
 import javax.script.Invocable;
 
@@ -13,8 +13,17 @@ import javax.script.Invocable;
  */
 public class CommandInterpreter {
 
-    public static void registerCommand(String name, Object command) throws Exception {
-        Command commandObject = ((Invocable)ScriptManager.getInstance().getJythonScriptEngine()).getInterface(command, Command.class);
+    public static void registerCommand(JFtnShare jftn, String name, Object command) throws Exception {
+        if ((jftn == null) || !(jftn instanceof JFtnShare)) {
+            throw new VerifyError("Parameter jftn is not correctly specified");
+        }
+        if ((name == null) || (name.trim().length() == 0)) {
+            throw new VerifyError("Parameter name is empty");
+        }
+        if (command == null) {
+            throw new VerifyError("Parameter command is empty");
+        }
+        Command commandObject = ((Invocable)jftn.getScriptManager().getJythonScriptEngine()).getInterface(command, Command.class);
         CommandCollection.getInstance().addCommand(name, commandObject);
     }
 }

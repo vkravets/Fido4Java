@@ -18,7 +18,6 @@ import java.util.Map;
  */
 public class ScriptManager {
 
-    private static ScriptManager instance;
     private ScriptEngineManager scriptEngineManager;
     private Map<String, Object> scriptVariables;
 
@@ -27,17 +26,10 @@ public class ScriptManager {
         scriptVariables = new HashMap<String, Object>();
     }
 
-    public static ScriptManager getInstance() {
-        if (instance == null) {
-            instance = new ScriptManager();
-        }
-        return instance;
-    }
-
     public ScriptEngine getJythonScriptEngine() throws Exception {
         ScriptEngine scriptEngine = scriptEngineManager.getEngineByExtension("py");
         if (scriptEngine == null) {
-            throw new Exception("Jython script engine is not foudn");
+            throw new Exception("Jython script engine is not found");
         }
         return scriptEngine;
     }

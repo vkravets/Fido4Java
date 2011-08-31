@@ -1,6 +1,7 @@
 package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
+import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.EventHandler;
@@ -24,7 +25,8 @@ public class TestHook extends HookInterpreter {
 
     @Before
     public void setupEnv() {
-        ScriptManager scriptManager = ScriptManager.getInstance();
+        ScriptManager scriptManager = new ScriptManager();
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
         InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testHook.py");
         try {
             scriptManager.runScript(inputStream);

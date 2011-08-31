@@ -36,7 +36,12 @@ public class EventBus {
     }
 
     public List<EventHandler> getAllListeners(Class<?> event) {
-        return new ArrayList<EventHandler>(eventListenerMap.get(event));
+        List<EventHandler> listener = eventListenerMap.get(event);
+        if (listener != null) {
+            return new ArrayList<EventHandler>(listener);
+        } else {
+            return new ArrayList<EventHandler>();
+        }
     }
 
     public void clear() {

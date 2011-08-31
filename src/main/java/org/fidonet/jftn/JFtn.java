@@ -1,6 +1,7 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.Config;
+import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
@@ -30,8 +31,9 @@ public class JFtn {
         }
 
         // Loading Script engine
-        ScriptManager scriptManager = ScriptManager.getInstance();
+        ScriptManager scriptManager = new ScriptManager();
         // TODO: Loading all commands and try to execute it if someone was specified
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
 
         if (args.length == 0) {
             System.out.println("Error: No action in commandline.");

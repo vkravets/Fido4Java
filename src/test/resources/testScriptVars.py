@@ -4,9 +4,9 @@ from java.lang import System
 class TestCommand:
 
     def execute(self, param):
-        global jftn;
-        jftn.setVar("testVar")
+        global testScriptVar;
+        testScriptVar.setVar("testVar")
 
 
-CommandInterpreter.registerCommand("test", TestCommand())
+CommandInterpreter.registerCommand(jftn, "test", TestCommand())
 

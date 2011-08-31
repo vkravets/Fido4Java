@@ -1,6 +1,7 @@
 package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
+import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
@@ -22,7 +23,8 @@ public class TestCommand extends CommandInterpreter {
 
     @Test
     public void testCommandRegister() throws Exception {
-        ScriptManager scriptManager = ScriptManager.getInstance();
+        ScriptManager scriptManager = new ScriptManager();
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
         InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testCommand.py");
         try {
             scriptManager.runScript(inputStream);
