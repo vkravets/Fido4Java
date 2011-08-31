@@ -1,4 +1,4 @@
-package org.fidonet.tests;
+package org.fidonet.tests.tools;
 
 import java.io.IOException;
 import java.io.OutputStream;

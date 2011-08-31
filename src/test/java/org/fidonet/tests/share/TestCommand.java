@@ -1,13 +1,15 @@
-package org.fidonet.tests;
+package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
+import org.fidonet.tests.tools.ConsoleOutputStream;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.io.PrintStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,16 +18,13 @@ import java.io.InputStream;
  * Time: 5:46 PM
  * To change this template use File | Settings | File Templates.
  */
-public class TestScriptVars extends CommandInterpreter {
+public class TestCommand extends CommandInterpreter {
 
     @Test
     public void testCommandRegister() throws Exception {
         ScriptManager scriptManager = ScriptManager.getInstance();
-        InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testScriptVars.py");
-        TestScriptObject test = new TestScriptObject();
+        InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testCommand.py");
         try {
-
-            scriptManager.addScriptVar("jftn", test);
             scriptManager.runScript(inputStream);
         } catch (Exception e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
@@ -33,8 +32,14 @@ public class TestScriptVars extends CommandInterpreter {
         Command command = CommandCollection.getInstance().findCommandByName("test");
         TestCase.assertNotNull(command);
 
-        command.execute(null);
-        TestCase.assertEquals("testVar", test.getVar());
+        PrintStream console = System.out;
+        ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();
+        System.setOut(new PrintStream(consoleMonitor, true));
+        command.execute(new String[] {"test", "test2"});
+        System.out.flush();
+        System.setOut(console);
+        TestCase.assertEquals("Test [test, test2]", consoleMonitor.getBuffer());
+
     }
 
 }

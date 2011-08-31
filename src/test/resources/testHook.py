@@ -1,5 +1,5 @@
 from org.fidonet.jftn.share import HookInterpreter
-from org.fidonet.tests import TestEvent
+from org.fidonet.tests.share import TestEvent
 from java.lang import System
 
 class TestHook:

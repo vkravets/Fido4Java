@@ -1,10 +1,11 @@
-package org.fidonet.tests;
+package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.EventHandler;
 import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.tests.tools.ConsoleOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

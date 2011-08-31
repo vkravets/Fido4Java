@@ -1,4 +1,4 @@
-package org.fidonet.tests;
+package org.fidonet.tests.share;
 
 import org.fidonet.jftn.event.Event;
 

@@ -1,4 +1,4 @@
-package org.fidonet.tests;
+package org.fidonet.tests.engine.script;
 
 /**
  * Created by IntelliJ IDEA.
