@@ -1,4 +1,3 @@
-from org.fidonet.jftn.share import CommandInterpreter
 from java.lang import System
 
 class TossCommand:
