@@ -3,6 +3,9 @@ package org.fidonet.jftn;
 import org.fidonet.config.Config;
 import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.share.CommandCollection;
+import org.fidonet.jftn.share.CommandInterpreter;
+import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
@@ -32,8 +35,11 @@ public class JFtn {
 
         // Loading Script engine
         ScriptManager scriptManager = new ScriptManager();
+
+        HookInterpreter hooks = new HookInterpreter();
+        CommandInterpreter commands = new CommandInterpreter(new CommandCollection());
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hooks, commands));
         // TODO: Loading all commands and try to execute it if someone was specified
-        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
 
         if (args.length == 0) {
             System.out.println("Error: No action in commandline.");

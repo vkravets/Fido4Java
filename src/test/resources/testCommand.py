@@ -10,5 +10,5 @@ class TossCommand:
         printStr = "%s]" % printStr[0:len(printStr)-2]
         System.out.print("Test %s" % printStr)
 
-CommandInterpreter.registerCommand(jftn, "test", TossCommand())
+jftn.registerCommand("test", TossCommand())
 

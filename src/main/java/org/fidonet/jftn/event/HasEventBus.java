@@ -11,7 +11,7 @@ public class HasEventBus {
 
     private static EventBus eventBusinstance;
 
-    protected static EventBus getEventBus() {
+    protected EventBus getEventBus() {
         if (eventBusinstance == null) {
             eventBusinstance = new EventBus();
         }

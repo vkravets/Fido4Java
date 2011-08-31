@@ -8,5 +8,5 @@ class TestHook:
         str = "TestHook %s" % param.getParam()
         System.out.print(str)
 
-HookInterpreter.registerHook(jftn, TestEvent, TestHook())
+jftn.registerHook(TestEvent, TestHook())
 

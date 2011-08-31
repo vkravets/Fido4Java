@@ -5,6 +5,9 @@ import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.EventHandler;
+import org.fidonet.jftn.event.HasEventBus;
+import org.fidonet.jftn.share.CommandCollection;
+import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.tests.tools.ConsoleOutputStream;
 import org.junit.After;
@@ -21,12 +24,19 @@ import java.io.PrintStream;
  * Time: 4:42 PM
  * To change this template use File | Settings | File Templates.
  */
-public class TestHook extends HookInterpreter {
+public class TestHook extends HasEventBus {
 
     @Before
     public void setupEnv() {
+        // Init ScriptManager
         ScriptManager scriptManager = new ScriptManager();
-        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager));
+        // Init hook and command classes
+        HookInterpreter hookInterpreter = new HookInterpreter();
+        CommandCollection commands = new CommandCollection();
+        CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
+        // Add to script scope "jftn" variable which have all above data
+        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
+
         InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testHook.py");
         try {
             scriptManager.runScript(inputStream);

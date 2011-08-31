@@ -8,5 +8,5 @@ class TestCommand:
         testScriptVar.setVar("testVar")
 
 
-CommandInterpreter.registerCommand(jftn, "test", TestCommand())
+jftn.registerCommand("test", TestCommand())
 

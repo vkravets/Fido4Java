@@ -12,18 +12,10 @@ import java.util.Map;
  */
 public class CommandCollection {
 
-    private static CommandCollection instance;
     private Map<String, Command> commands;
 
     public CommandCollection() {
         commands = new HashMap<String, Command>();
-    }
-
-    public static CommandCollection getInstance() {
-        if (instance == null) {
-            instance = new CommandCollection();
-        }
-        return instance;
     }
 
     public void addCommand(String name, Command command) {

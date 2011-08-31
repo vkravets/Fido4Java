@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.engine.script.JFtnShare;
+import org.fidonet.jftn.engine.script.ScriptManager;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,9 +11,15 @@ import org.fidonet.jftn.engine.script.JFtnShare;
  */
 public class CommandInterpreter {
 
-    public static void registerCommand(JFtnShare jftn, String name, Object command) throws Exception {
-        if (jftn == null) {
-            throw new VerifyError("Parameter jftn is not correctly specified");
+    private CommandCollection commands;
+
+    public CommandInterpreter(CommandCollection commands) {
+        this.commands = commands;
+    }
+
+    public void registerCommand(ScriptManager scriptManager, String name, Object command) throws Exception {
+        if ((scriptManager == null)) {
+            throw new VerifyError("Parameter scriptManager is empty");
         }
         if ((name == null) || (name.trim().length() == 0)) {
             throw new VerifyError("Parameter name is empty");
@@ -21,7 +27,7 @@ public class CommandInterpreter {
         if (command == null) {
             throw new VerifyError("Parameter command is empty");
         }
-        Command commandObject = jftn.getScriptManager().getInterface(command, Command.class);
-        CommandCollection.getInstance().addCommand(name, commandObject);
+        Command commandObject = scriptManager.getInterface(command, Command.class);
+        commands.addCommand(name, commandObject);
     }
 }
