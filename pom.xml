@@ -15,6 +15,7 @@
         <module>fido-config</module>
         <module>fido-tools</module>
         <module>jambase</module>
+        <module>binkp</module>
         <module>jtoss</module>
     </modules>
 
