@@ -1,11 +1,11 @@
 package org.fidonet.jftn.tosser;
 
+import org.apache.log4j.Logger;
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.event.HasEventBus;
-import org.fidonet.misc.Logger;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.Link;
@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
 
+    private static Logger logger = Logger.getLogger(Tosser.class);
+
     private static final String echop = Config.getEchopath();
 
     private static final EchoMgr areamgr = new EchoMgr(echop);
@@ -33,13 +35,13 @@ public class Tosser extends HasEventBus {
 
     public void runFast(String dirname) {
         if (dirname == null) {
-            Logger.Error("Tosser.Run: Error opening directory as inbound. Dirname is null.");
+            logger.error("Tosser.Run: Error opening directory as inbound. Dirname is null.");
             return;
         }
         final File dir = new File(dirname);
         final File[] files = dir.listFiles();
         if (files == null) {
-            Logger.Error("Directory " + dirname + " not found!");
+            logger.error("Directory " + dirname + " not found!");
             return;
         }
         //TODO: We should make some checks!
@@ -59,7 +61,7 @@ public class Tosser extends HasEventBus {
                     for (int i1 = 0; i1 < pktlist.size(); i1++) {
                         PktTemp aPktlist = pktlist.pop();
                         if (!tosspkt(aPktlist.pkt)) {
-                            Logger.Error("Save to Tmp");
+                            logger.info("Save to Tmp");
                             saveBad(aPktlist);
                         }
                     }
@@ -148,11 +150,11 @@ public class Tosser extends HasEventBus {
         final FtsPkt q = new FtsPkt(buf);
         Link origlink = Config.getLink(q.getOrigaddr());
         if (origlink == null) {
-            Logger.Error("Unknown Link! Drop it.");
+            logger.error("Unknown Link! Drop it.");
             return false;
         }
         if (!q.getPass().equals(origlink.getPass())) {
-            Logger.Error("Bad PASSWORD! Drop it.");
+            logger.error("Bad PASSWORD! Drop it.");
             return false;
         }
 
@@ -166,7 +168,7 @@ public class Tosser extends HasEventBus {
             } else {
                 // Call onTossNetMail hook
                 getEventBus().notify(new TossNetmailEvent(msg));
-                Logger.Log("Netmail???");
+                logger.debug("Netmail was found");
             }
         }
         return true;
@@ -174,7 +176,7 @@ public class Tosser extends HasEventBus {
 
     private void processEchoMail(Message msg) {
         if (!areamgr.isValid()) {
-            Logger.Log("Problem with areas. Please check!");
+            logger.error("Problem with areas. Please check!");
             return;
         }
         areamgr.addMessage(msg);

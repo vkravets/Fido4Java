@@ -1,5 +1,6 @@
 package org.fidonet.echobase.jam;
 
+import org.apache.log4j.Logger;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
@@ -11,9 +12,10 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
-import org.fidonet.misc.Logger;
 
 class JHRFile {
+
+    private static Logger logger = Logger.getLogger(JHRFile.class);
 
     private RandomAccessFile jhr;
 
@@ -41,7 +43,7 @@ class JHRFile {
             int readed = jhr.read(tmpbuf.array());
             if(readed != MessageHeader.MessageHeaderSize)
             {
-                Logger.Error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
+                logger.error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
             }
             tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
             tmpbuf.position(0);
@@ -145,7 +147,7 @@ class JHRFile {
         }
         if(readed != 1024)
         {
-            Logger.Error("Ooops! getFixedHeader() reads not 1024!");
+            logger.error("Ooops! getFixedHeader() reads not 1024!");
         }
         res.put(fh);
         FixedHeaderInfoStruct result = new FixedHeaderInfoStruct();

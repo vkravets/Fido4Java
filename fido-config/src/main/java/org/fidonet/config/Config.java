@@ -1,6 +1,7 @@
 package org.fidonet.config;
 
-import org.fidonet.misc.Logger;
+
+import org.apache.log4j.Logger;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -8,6 +9,8 @@ import java.io.*;
 import java.util.HashMap;
 
 public class Config {
+
+    private static Logger logger = Logger.getLogger(Config.class);
 
     private static String inbound = "";
     private static String tmpdir = "";
@@ -29,7 +32,7 @@ public class Config {
         try {
             fr = new FileReader(cfgfile);
         } catch (FileNotFoundException e) {
-            Logger.Log("Config not found! Exiting...");
+            logger.debug("Config not found! Exiting...");
             e.getMessage();
             return;
         }
@@ -47,7 +50,7 @@ public class Config {
                     continue;
                 }
                 if (!str.contains("=")) {
-                    Logger.Log("Error in config string " + strnum);
+                    logger.debug("Error in config string " + strnum);
                     break;
                 }
                 valid = setParam(str.substring(0, str.indexOf('=')), str.substring(str.indexOf('=') + 1, str.length()));
@@ -62,19 +65,19 @@ public class Config {
             e.printStackTrace();
         }
         if (inbound.equals("")) {
-            Logger.Error("Inbound is not set.");
+            logger.error("Inbound is not set.");
             valid = false;
         }
         if (tmpdir.equals("")) {
-            Logger.Error("Temp is not set.");
+            logger.error("Temp is not set.");
             valid = false;
         }
         if (echopath.equals("")) {
-            Logger.Error("Echopath is not set!");
+            logger.error("Echopath is not set!");
             valid = false;
         }
         if (Links.isEmpty()) {
-            Logger.Error("Cant find any links!");
+            logger.error("Cant find any links!");
             valid = false;
         }
     }
@@ -88,7 +91,7 @@ public class Config {
         } else if ("tmp".equals(name)) {
             tmpdir = value.trim();
             if (!isDirExists(tmpdir)) {
-                Logger.Log("Bad temp directory: " + tmpdir);
+                logger.error("Bad temp directory: " + tmpdir);
                 paramisvalid = false;
             }
 
@@ -100,7 +103,7 @@ public class Config {
         } else if ("echopath".equals(name)) {
             echopath = value;
             if (!isDirExists(echopath)) {
-                Logger.Log("Bad echo directory: " + echopath);
+                logger.error("Bad echo directory: " + echopath);
                 paramisvalid = false;
             }
         } else if ("deletetossed".equals(name)) {

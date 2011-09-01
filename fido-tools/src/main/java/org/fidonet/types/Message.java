@@ -1,13 +1,16 @@
 package org.fidonet.types;
 
+import org.apache.log4j.Logger;
 import org.fidonet.config.Config;
 import org.fidonet.fts.FtsPackMsg;
-import org.fidonet.misc.Logger;
 
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 public class Message {
+
+    private static Logger logger = Logger.getLogger(Message.class);
+
     private final String From;
     private final String To;
     private final String Subject;
@@ -131,7 +134,7 @@ public class Message {
 
     public void DumpHead() {
         if (Config.getDebuglevel() > 0) {
-            Logger.Log("From: " + From + ' ' + FAddr + " To: " + To + ' ' + TAddr + " area: " + Area);
+            logger.debug("From: " + From + ' ' + FAddr + " To: " + To + ' ' + TAddr + " area: " + Area);
         }
 
     }

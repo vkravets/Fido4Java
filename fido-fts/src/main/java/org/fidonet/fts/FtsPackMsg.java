@@ -1,11 +1,14 @@
 package org.fidonet.fts;
 
-import org.fidonet.misc.Logger;
+import org.apache.log4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 public class FtsPackMsg {
+
+    private static Logger logger = Logger.getLogger(FtsPackMsg.class);
+
     private int type;
     private int origNode;
     private int destNode;
@@ -31,7 +34,7 @@ public class FtsPackMsg {
     public FtsPackMsg(ByteBuffer buf) {
         type = buf.getShort();
         if (type != 2) {
-            Logger.Log("Seems like not a packet!");
+            logger.debug("Seems like not a packet!");
             Valid = false;
             return;
         }

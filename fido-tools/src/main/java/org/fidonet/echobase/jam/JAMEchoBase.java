@@ -1,12 +1,12 @@
 package org.fidonet.echobase.jam;
 
+import org.apache.log4j.Logger;
 import org.fidonet.echobase.EchoBase;
 import org.fidonet.echobase.EchoCfg;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
-import org.fidonet.misc.Logger;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.types.Message;
 
@@ -21,6 +21,8 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class JAMEchoBase implements EchoBase {
+
+    private static Logger logger = Logger.getLogger(JAMEchoBase.class);
 
     private String headerfilename;
     private String textfilename;
@@ -64,7 +66,7 @@ public class JAMEchoBase implements EchoBase {
             indexfile.createNewFile();
             lastrfile.createNewFile();
         } catch (IOException e) {
-            Logger.Log("Unable to create files for area " + name);
+            logger.error("Unable to create files for area " + name);
             return;
         }
 

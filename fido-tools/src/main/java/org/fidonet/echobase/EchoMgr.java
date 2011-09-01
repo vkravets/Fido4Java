@@ -1,5 +1,6 @@
 package org.fidonet.echobase;
 
+import org.fidonet.config.Config;
 import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.types.Message;
 
@@ -12,7 +13,7 @@ public class EchoMgr {
     public EchoMgr(String path) {
         valid = false;
         echosbase = new JAMEchoBase(path);
-        EchoList.Load(org.fidonet.config.Config.getArealistfile());
+        EchoList.Load(Config.getArealistfile());
         valid = true;
     }
 
@@ -22,7 +23,7 @@ public class EchoMgr {
 
     public void addMessage(Message msg) {
         if (!EchoList.isInList(msg.getArea().toLowerCase())) {
-            EchoList.addArea(msg.getArea().toLowerCase(), org.fidonet.config.Config.getEchopath(), msg.getUpLink());
+            EchoList.addArea(msg.getArea().toLowerCase(), Config.getEchopath(), msg.getUpLink());
             echosbase.createArea(msg.getArea().toLowerCase());
         }
         echosbase.openArea(msg.getArea().toLowerCase());

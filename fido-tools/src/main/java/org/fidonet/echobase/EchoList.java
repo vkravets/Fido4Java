@@ -1,13 +1,15 @@
 package org.fidonet.echobase;
 
+import org.apache.log4j.Logger;
 import org.fidonet.config.Config;
-import org.fidonet.misc.Logger;
 import org.fidonet.types.FTNAddr;
 
 import java.io.*;
 import java.util.HashMap;
 
 public class EchoList {
+
+    private static Logger logger = Logger.getLogger(EchoList.class);
 
     private static HashMap<String, EchoCfg> list;
 
@@ -19,7 +21,7 @@ public class EchoList {
         try {
             fr = new FileReader(filename);
         } catch (FileNotFoundException e) {
-            Logger.Log("Echolist not found!");
+            logger.error("Echolist not found!");
             return;
         }
 

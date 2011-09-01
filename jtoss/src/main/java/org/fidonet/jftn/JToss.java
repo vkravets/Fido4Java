@@ -1,12 +1,12 @@
 package org.fidonet.jftn;
 
+import org.apache.log4j.Logger;
 import org.fidonet.config.Config;
 import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
-import org.fidonet.misc.Logger;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
 import org.fidonet.protocol.binkp.SessionResult;
@@ -16,7 +16,9 @@ import org.fidonet.types.FTNAddr;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class JFtn {
+public class JToss {
+
+    private static Logger logger = Logger.getLogger(JToss.class);
 
     private static void Help() {
         System.out.println("java ftn usage:");
@@ -80,6 +82,6 @@ public class JFtn {
             }
         }
 
-        Logger.Log("Work time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec");
+        logger.info("Work time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec");
     }
 }

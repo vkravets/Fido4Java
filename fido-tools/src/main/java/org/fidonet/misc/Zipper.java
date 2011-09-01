@@ -1,5 +1,7 @@
 package org.fidonet.misc;
 
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -11,15 +13,17 @@ import java.util.zip.ZipFile;
 
 public class Zipper {
 
+    public static Logger logger = Logger.getLogger(Zipper.class);
+
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
-        Logger.Log("Unpack and toss: " + bound);
+        logger.info("Unpack and toss: " + bound);
         ZipFile zip = null;
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
         try {
             zip = new ZipFile(bound);
         } catch (IOException e) {
-            Logger.Log("Zip error " + bound + ':' + e.getMessage());
+            logger.error("Zip error " + bound + ':' + e.getMessage());
         }
 
         if (zip == null) {
@@ -37,7 +41,7 @@ public class Zipper {
                 continue;
             }
 
-            Logger.Log("        " + entry.getName());
+            logger.debug("        " + entry.getName());
 
             ByteBuffer resbuf = ByteBuffer.allocate((int) entry.getSize());
             resbuf.order(ByteOrder.LITTLE_ENDIAN);
@@ -55,6 +59,7 @@ public class Zipper {
             res.push(pkt);
         }
         zip.close();
+        logger.info("Unpacking was finished");
         return res;
     }
 
