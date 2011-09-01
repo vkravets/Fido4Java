@@ -11,10 +11,11 @@
     <name>jftn</name>
 
     <modules>
+        <module>fido-fts</module>
         <module>fido-config</module>
         <module>fido-tools</module>
+        <module>jambase</module>
         <module>jtoss</module>
-        <module>fido-fts</module>
     </modules>
 
     <build>

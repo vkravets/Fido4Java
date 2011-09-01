@@ -5,6 +5,7 @@ import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
+import org.fidonet.jam.JAMEchoBase;
 import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
@@ -25,7 +26,7 @@ public class Tosser extends HasEventBus {
 
     private static final String echop = Config.getEchopath();
 
-    private static final EchoMgr areamgr = new EchoMgr(echop);
+    private static final EchoMgr areamgr = new EchoMgr(new JAMEchoBase());
 
     private static final Pattern bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
 

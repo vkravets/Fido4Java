@@ -1,4 +1,4 @@
-package org.fidonet.echobase.jam.struct;
+package org.fidonet.jam.struct;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

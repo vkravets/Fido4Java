@@ -1,4 +1,4 @@
-package org.fidonet.echobase.jam;
+package org.fidonet.jam;
 
 import java.io.File;
 import java.io.FileNotFoundException;

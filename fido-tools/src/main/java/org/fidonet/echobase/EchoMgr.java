@@ -1,7 +1,6 @@
 package org.fidonet.echobase;
 
 import org.fidonet.config.Config;
-import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.types.Message;
 
 public class EchoMgr {
@@ -10,9 +9,9 @@ public class EchoMgr {
 
     private boolean valid;
 
-    public EchoMgr(String path) {
+    public EchoMgr(EchoBase base) {
         valid = false;
-        echosbase = new JAMEchoBase(path);
+        echosbase = base;
         EchoList.Load(Config.getArealistfile());
         valid = true;
     }

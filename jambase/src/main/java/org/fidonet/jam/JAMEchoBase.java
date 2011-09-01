@@ -1,12 +1,12 @@
-package org.fidonet.echobase.jam;
+package org.fidonet.jam;
 
 import org.apache.log4j.Logger;
 import org.fidonet.echobase.EchoBase;
 import org.fidonet.echobase.EchoCfg;
 import org.fidonet.echobase.EchoList;
-import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
-import org.fidonet.echobase.jam.struct.MessageHeader;
-import org.fidonet.echobase.jam.struct.SubField;
+import org.fidonet.jam.struct.FixedHeaderInfoStruct;
+import org.fidonet.jam.struct.MessageHeader;
+import org.fidonet.jam.struct.SubField;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.types.Message;
 
@@ -39,7 +39,7 @@ public class JAMEchoBase implements EchoBase {
     private JDXFile index;
     private JLRFile lastread;
 
-    public JAMEchoBase(String root) {
+    public JAMEchoBase() {
     }
 
     void setFileNames(String name) {
