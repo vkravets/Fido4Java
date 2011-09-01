@@ -7,10 +7,10 @@ import org.fidonet.jftn.engine.script.ScriptManager;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.protocol.binkp.BinkP;
 import org.fidonet.protocol.binkp.SessFile;
 import org.fidonet.protocol.binkp.SessionResult;
-import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
@@ -29,6 +29,7 @@ public class JToss {
 
     public static void main(String[] args) throws IOException {
 
+        logger.debug("Starting JToss...");
         final long starttime = System.currentTimeMillis();
         Config.ReadConfig("jftn.conf");
         if (!Config.isValid()) {
@@ -82,6 +83,6 @@ public class JToss {
             }
         }
 
-        logger.info("Work time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec");
+        logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
     }
 }

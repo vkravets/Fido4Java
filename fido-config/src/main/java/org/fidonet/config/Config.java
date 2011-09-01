@@ -30,6 +30,7 @@ public class Config {
 
         FileReader fr;
         try {
+            logger.debug("Reading " + cfgfile);
             fr = new FileReader(cfgfile);
         } catch (FileNotFoundException e) {
             logger.debug("Config not found! Exiting...");
@@ -80,6 +81,22 @@ public class Config {
             logger.error("Cant find any links!");
             valid = false;
         }
+        if (logger.isDebugEnabled()) {
+            logger.debug("inbound: " + inbound);
+            logger.debug("tmp: " + tmpdir);
+            logger.debug("debuglevel: " + debuglevel);
+            logger.debug("links: ");
+            for (Link link : Links.values()) {
+                logger.debug("    " + link);
+            }
+            logger.debug("echopath: " + echopath);
+            logger.debug("deletetossed: " + deletetossed);
+
+            logger.debug("address: " + Address);
+            logger.debug("arealist: " + arealistfile);
+            logger.debug("sysop: " + SysOp);
+            logger.debug("Reading config file is finish.");
+        }
     }
 
     private static boolean setParam(String name, String value) {
@@ -91,8 +108,7 @@ public class Config {
         } else if ("tmp".equals(name)) {
             tmpdir = value.trim();
             if (!isDirExists(tmpdir)) {
-                logger.error("Bad temp directory: " + tmpdir);
-                paramisvalid = false;
+                logger.warn("Temp directory is not found will be creating during work. Temp=" + tmpdir);
             }
 
         } else if ("debuglevel".equals(name)) {
@@ -103,8 +119,7 @@ public class Config {
         } else if ("echopath".equals(name)) {
             echopath = value;
             if (!isDirExists(echopath)) {
-                logger.error("Bad echo directory: " + echopath);
-                paramisvalid = false;
+                logger.warn("Echopath directory is not found will be creating during work. Echopath=" + echopath);
             }
         } else if ("deletetossed".equals(name)) {
             deletetossed = Integer.valueOf(value);

@@ -44,4 +44,9 @@ public class Link {
 //        return pass;
 //    }
 // --Commented out by Inspection STOP (13.11.10 21:53)
+
+    @Override
+    public String toString() {
+        return myaddr + " -> " + getAddr().toString();
+    }
 }
