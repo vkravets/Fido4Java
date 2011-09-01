@@ -1,5 +1,6 @@
 package org.fidonet.protocol.binkp;
 
+import org.fidonet.config.Config;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class BinkP {
 
     }
 
-    public SessionResult Poll(Link link) {
+    public SessionResult Poll(Link link, Config config) {
         Socket clientsock = null;
         try {
             clientsock = new Socket("bbs.agooga.ru", 24554);
@@ -25,7 +26,7 @@ public class BinkP {
             e.printStackTrace();
         }
 
-        Session session = new Session(clientsock, link);
+        Session session = new Session(clientsock, link, config);
 
         session.run();
 

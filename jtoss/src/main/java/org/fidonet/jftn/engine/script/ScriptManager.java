@@ -1,5 +1,7 @@
 package org.fidonet.jftn.engine.script;
 
+import org.apache.log4j.Logger;
+
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -19,16 +21,32 @@ import java.util.Map;
  */
 public class ScriptManager {
 
+    private static Logger logger = Logger.getLogger(ScriptManager.class);
+
     private ScriptEngine jythonEngine;
     private Map<String, Object> scriptVariables;
+    private String scriptFolder;
 
     public ScriptManager() {
+        this("./scripts/");
+    }
+
+    public ScriptManager(String scriptFolder) {
         scriptVariables = new HashMap<String, Object>();
+        this.scriptFolder = scriptFolder;
 
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         jythonEngine = scriptEngineManager.getEngineByExtension("py");
         if (jythonEngine == null) {
             throw new VerifyError("Jython script engine is not found");
+        }
+        File scriptsFolder = new File(scriptFolder);
+        try {
+            String fullScriptPath = scriptsFolder.getCanonicalPath();
+            logger.debug("Adding to PYTHON_PATH \""+fullScriptPath+"\" folder");
+            jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", scriptsFolder.getCanonicalPath()));
+        } catch (Exception e){
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -73,6 +91,24 @@ public class ScriptManager {
             }
         } else {
             // TODO: Log warn
+        }
+    }
+
+    public void reloadScripts() {
+        File scriptFolderFile = new File(scriptFolder);
+        File[] fileList = scriptFolderFile.listFiles();
+        if (fileList != null) {
+            for (File file : fileList) {
+                String fileName = file.getName();
+                if (fileName.indexOf(".py") == fileName.length()-3) {
+                    try {
+                        logger.debug("Loading " + file.getName());
+                        runScript(file);
+                    } catch (Exception e) {
+                        logger.trace(e.getMessage(), e);
+                    }
+                }
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package org.fidonet.jftn.engine.script;
 
+import org.fidonet.config.Config;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.share.*;
 
@@ -15,6 +16,7 @@ public class JFtnShare  {
     private ScriptManager scriptManager;
     private CommandInterpreter commands;
     private HookInterpreter hooks;
+    private Config config;
 
     public JFtnShare(ScriptManager scriptManager, HookInterpreter hooks, CommandInterpreter commands) {
         this.scriptManager = scriptManager;
@@ -33,6 +35,14 @@ public class JFtnShare  {
 
     public void registerHook(Class<? extends Event> hookClass, Object hook) throws Exception {
         hooks.registerHook(scriptManager, hookClass, hook);
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public void setConfig(Config config) {
+        this.config = config;
     }
 
 }

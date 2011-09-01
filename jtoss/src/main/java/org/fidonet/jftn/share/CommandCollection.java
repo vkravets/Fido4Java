@@ -1,5 +1,8 @@
 package org.fidonet.jftn.share;
 
+import org.apache.log4j.Logger;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +15,8 @@ import java.util.Map;
  */
 public class CommandCollection {
 
+    private static Logger logger = Logger.getLogger(CommandCollection.class);
+
     private Map<String, Command> commands;
 
     public CommandCollection() {
@@ -20,13 +25,21 @@ public class CommandCollection {
 
     public void addCommand(String name, Command command) {
         if (command != null && name != null && name.length() > 0) {
-            commands.put(name, command);
+            Command cmd = commands.get(name);
+            if (cmd == null) {
+                commands.put(name, command);
+            } else {
+                logger.warn("\""+name+"\" command already registered!");
+            }
         }
-        // TODO: throw exception
     }
 
     public Command findCommandByName(String name){
         return commands.get(name);
+    }
+
+    public Collection<Command> getCommands() {
+        return commands.values();
     }
 
 }

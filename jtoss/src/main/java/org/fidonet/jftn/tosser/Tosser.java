@@ -1,6 +1,7 @@
 package org.fidonet.jftn.tosser;
 
 import org.apache.log4j.Logger;
+import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
@@ -24,11 +25,17 @@ public class Tosser extends HasEventBus {
 
     private static Logger logger = Logger.getLogger(Tosser.class);
 
-    private static final String echop = Config.getEchopath();
+    private EchoMgr areamgr;
+    private Pattern bunlderegex;
+    private Config config;
 
-    private static final EchoMgr areamgr = new EchoMgr(new JAMEchoBase());
+    public Tosser(Config config) {
+        EchoList echoList = new EchoList();
+        echoList.Load(config.getArealistfile());
+        this.areamgr = new EchoMgr(new JAMEchoBase(echoList), echoList, config.getEchopath());
+        this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
+    }
 
-    private static final Pattern bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
 
     private boolean isBunldeName(String str) {
         return bunlderegex.matcher(str).find();
@@ -67,7 +74,7 @@ public class Tosser extends HasEventBus {
                         }
                     }
                 }
-                if (Config.getDeletetossed() != 0) {
+                if (config.getDeletetossed() != 0) {
                     file.delete();
                 }
             }
@@ -75,7 +82,7 @@ public class Tosser extends HasEventBus {
     }
 
     private void saveBad(PktTemp pkt) {
-        File bad = new File(Config.getTmpdir() + pkt.name.replace(".pkt", ".bad"));
+        File bad = new File(config.getTmpdir() + pkt.name.replace(".pkt", ".bad"));
 
         if (bad.exists()) return;
 
@@ -149,7 +156,7 @@ public class Tosser extends HasEventBus {
 
     private boolean tosspkt(ByteBuffer buf) {
         final FtsPkt q = new FtsPkt(buf);
-        Link origlink = Config.getLink(q.getOrigaddr());
+        Link origlink = config.getLink(q.getOrigaddr());
         if (origlink == null) {
             logger.error("Unknown Link! Drop it.");
             return false;
@@ -180,7 +187,7 @@ public class Tosser extends HasEventBus {
             logger.error("Problem with areas. Please check!");
             return;
         }
-        areamgr.addMessage(msg);
+        areamgr.addMessage(msg,config.getLink(msg.getUpLink()).getMyaddr());
 
 //        msg.DumpHead();
         //return;

@@ -39,11 +39,14 @@ public class JAMEchoBase implements EchoBase {
     private JDXFile index;
     private JLRFile lastread;
 
-    public JAMEchoBase() {
+    private EchoList echoList;
+
+    public JAMEchoBase(EchoList echoList) {
+        this.echoList = echoList;
     }
 
     void setFileNames(String name) {
-        EchoCfg echo = EchoList.getEcho(name);
+        EchoCfg echo = echoList.getEcho(name);
         headerfilename = echo.Path + ".jhr";
         textfilename = echo.Path + ".jdt";
         indexfilename = echo.Path + ".jdx";

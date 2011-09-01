@@ -1,28 +1,30 @@
 package org.fidonet.echobase;
 
-import org.fidonet.config.Config;
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
 public class EchoMgr {
 
     private final EchoBase echosbase;
+    private EchoList echoList;
+    private String areaListFile;
+    private String echoPath;
 
     private boolean valid;
 
-    public EchoMgr(EchoBase base) {
-        valid = false;
-        echosbase = base;
-        EchoList.Load(Config.getArealistfile());
-        valid = true;
+    public EchoMgr(EchoBase base, EchoList echoList, String echoPath) {
+        this.echosbase = base;
+        this.echoPath = echoPath;
+        this.echoList = echoList;
     }
 
     public boolean isValid() {
         return valid;
     }
 
-    public void addMessage(Message msg) {
-        if (!EchoList.isInList(msg.getArea().toLowerCase())) {
-            EchoList.addArea(msg.getArea().toLowerCase(), Config.getEchopath(), msg.getUpLink());
+    public void addMessage(Message msg, FTNAddr myAddr) {
+        if (!echoList.isInList(msg.getArea().toLowerCase())) {
+            echoList.addArea(msg.getArea().toLowerCase(), echoPath, msg.getUpLink(), myAddr);
             echosbase.createArea(msg.getArea().toLowerCase());
         }
         echosbase.openArea(msg.getArea().toLowerCase());

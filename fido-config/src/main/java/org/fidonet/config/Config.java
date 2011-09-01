@@ -7,24 +7,25 @@ import org.fidonet.types.Link;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Scanner;
 
 public class Config {
 
-    private static Logger logger = Logger.getLogger(Config.class);
+    private Logger logger = Logger.getLogger(Config.class);
 
-    private static String inbound = "";
-    private static String tmpdir = "";
-    private static String echopath = "";
-    private static boolean valid = false;
-    private static int debuglevel = 0;
-    private static int deletetossed = 0;
-    private static HashMap<String, Link> Links;
-    private static FTNAddr Address;
-    private static String arealistfile;
-    private static String SysOp;
+    private String inbound = "";
+    private String tmpdir = "";
+    private String echopath = "";
+    private boolean valid = false;
+    private int debuglevel = 0;
+    private int deletetossed = 0;
+    private HashMap<String, Link> Links;
+    private FTNAddr Address;
+    private String arealistfile;
+    private String SysOp;
 
 
-    public static void ReadConfig(String cfgfile) {
+    public void ReadConfig(String cfgfile) {
         valid = true;
         Links = new HashMap<String, Link>();
 
@@ -54,9 +55,15 @@ public class Config {
                     logger.debug("Error in config string " + strnum);
                     break;
                 }
-                valid = setParam(str.substring(0, str.indexOf('=')), str.substring(str.indexOf('=') + 1, str.length()));
-                if (!valid) {
-                    break;
+                Scanner scanner = new Scanner(str);
+                scanner.useDelimiter("=");
+                if (scanner.hasNext()){
+                    String name = scanner.next();
+                    String value = scanner.next();
+                    valid = setParam(name, value);
+                    if (!valid) {
+                        break;
+                    }
                 }
             }
 
@@ -99,7 +106,7 @@ public class Config {
         }
     }
 
-    private static boolean setParam(String name, String value) {
+    private boolean setParam(String name, String value) {
         boolean paramisvalid = true;
         name = name.trim().toLowerCase();
         value = value.trim();
@@ -134,50 +141,50 @@ public class Config {
         return paramisvalid;
     }
 
-    private static boolean isDirExists(String path) {
+    private boolean isDirExists(String path) {
         File testdir = new File(path);
         return testdir.exists();
 
     }
 
-    public static String getInbound() {
+    public String getInbound() {
         return inbound;
     }
 
-    public static String getTmpdir() {
+    public String getTmpdir() {
         return tmpdir;
     }
 
-    public static boolean isValid() {
+    public boolean isValid() {
         return valid;
     }
 
-    public static int getDebuglevel() {
+    public int getDebuglevel() {
         return debuglevel;
     }
 
-    public static Link getLink(FTNAddr addr) {
+    public Link getLink(FTNAddr addr) {
         return Links.get(addr.toString());
     }
 
-    public static String getEchopath() {
+    public String getEchopath() {
         return echopath;
     }
 
-    public static int getDeletetossed() {
+    public int getDeletetossed() {
         return deletetossed;
     }
 
-    public static FTNAddr getAddress() {
+    public FTNAddr getAddress() {
         return Address;
     }
 
-    public static String getArealistfile() {
+    public String getArealistfile() {
         if (arealistfile == null) arealistfile = "arealist";
         return arealistfile;
     }
 
-    public static String getSysOp() {
+    public String getSysOp() {
         return SysOp;
     }
 }

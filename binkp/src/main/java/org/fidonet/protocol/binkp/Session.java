@@ -36,9 +36,12 @@ class Session implements Runnable {
 
     private final SessionResult result = new SessionResult();
 
-    Session(Socket cleintsocket, Link link) {
-        sock = cleintsocket;
-        curlink = link;
+    private Config config;
+
+    public Session(Socket cleintsocket, Link link, Config config) {
+        this.sock = cleintsocket;
+        this.curlink = link;
+        this.config = config;
     }
 
     byte[] DoCommand(byte ctype, String str) {
@@ -57,7 +60,7 @@ class Session implements Runnable {
         f.setType(Frame.TYPE_COMMAND);
         f.setData(bbsname);
         outstream.write(f.toByteArray());
-        byte[] sysopname = DoCommand((byte) 0, "ZYZ " + Config.getSysOp());
+        byte[] sysopname = DoCommand((byte) 0, "ZYZ " + config.getSysOp());
         f.setData(sysopname);
         outstream.write(f.toByteArray());
         String location = "LOC internet";

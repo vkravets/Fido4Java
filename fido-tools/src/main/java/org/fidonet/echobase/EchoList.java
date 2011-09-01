@@ -1,7 +1,6 @@
 package org.fidonet.echobase;
 
 import org.apache.log4j.Logger;
-import org.fidonet.config.Config;
 import org.fidonet.types.FTNAddr;
 
 import java.io.*;
@@ -11,10 +10,10 @@ public class EchoList {
 
     private static Logger logger = Logger.getLogger(EchoList.class);
 
-    private static HashMap<String, EchoCfg> list;
+    private HashMap<String, EchoCfg> list;
+    private String areaListFile;
 
-    public static void Load(String filename) {
-
+    public void Load(String filename) {
         list = new HashMap<String, EchoCfg>();
 
         FileReader fr;
@@ -24,6 +23,7 @@ public class EchoList {
             logger.error("Echolist not found!");
             return;
         }
+        areaListFile = filename;
 
         try {
             String str;
@@ -66,29 +66,29 @@ public class EchoList {
 
     }
 
-    public static boolean isInList(String name) {
+    public boolean isInList(String name) {
         return list.containsKey(name);
     }
 
-    public static EchoCfg getEcho(String name) {
+    public EchoCfg getEcho(String name) {
         return list.get(name);
     }
 
-    public static void addArea(String name, String Path, FTNAddr Uplink) {
+    public void addArea(String name, String Path, FTNAddr link, FTNAddr myAddr) {
         EchoCfg cfg = new EchoCfg();
         cfg.Name = name;
         cfg.Path = Path + name;
         cfg.Type = "JAM";
-        cfg.AKA = Config.getLink(Uplink).getMyaddr(); //Config.getAddress();
-        cfg.Link = Uplink;
+        cfg.AKA = myAddr; //Config.getAddress();
+        cfg.Link = link;
         list.put(name, cfg);
         saveToList(cfg);
     }
 
-    private static void saveToList(EchoCfg echo) {
+    private void saveToList(EchoCfg echo) {
         FileWriter fw = null;
         try {
-            fw = new FileWriter(Config.getArealistfile(), true);
+            fw = new FileWriter(areaListFile, true);
         } catch (IOException e) {
             e.printStackTrace();
         }
