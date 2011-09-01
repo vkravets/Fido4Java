@@ -8,6 +8,7 @@
     <artifactId>jtoss</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
+    <name>jtoss</name>
 
     <parent>
         <groupId>org.fidonet</groupId>
