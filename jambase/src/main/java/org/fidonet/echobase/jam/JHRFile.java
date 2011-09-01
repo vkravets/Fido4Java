@@ -1,9 +1,9 @@
-package org.fidonet.jam;
+package org.fidonet.echobase.jam;
 
 import org.apache.log4j.Logger;
-import org.fidonet.jam.struct.FixedHeaderInfoStruct;
-import org.fidonet.jam.struct.MessageHeader;
-import org.fidonet.jam.struct.SubField;
+import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
+import org.fidonet.echobase.jam.struct.MessageHeader;
+import org.fidonet.echobase.jam.struct.SubField;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -1,11 +1,11 @@
 package org.fidonet.jftn.tosser;
 
 import org.apache.log4j.Logger;
+import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
-import org.fidonet.jam.JAMEchoBase;
 import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;

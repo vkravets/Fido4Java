@@ -1,4 +1,4 @@
-package org.fidonet.jam.struct;
+package org.fidonet.echobase.jam.struct;
 
 public class SubField {
 
