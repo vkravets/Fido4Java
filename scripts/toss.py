@@ -6,5 +6,5 @@ class TossCommand:
         tosser = Tosser()
         tosser.runFast(jftn.getConfig().getInbound())
 
-jftn.registerCommand("toss", TossCommand())
+jftn.registerCommand("tosspack", TossCommand())
 
