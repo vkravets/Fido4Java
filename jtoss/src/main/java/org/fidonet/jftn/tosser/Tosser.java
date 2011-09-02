@@ -1,15 +1,16 @@
 package org.fidonet.jftn.tosser;
 
 import org.apache.log4j.Logger;
+import org.fidonet.config.IConfig;
 import org.fidonet.echobase.EchoList;
-import org.fidonet.echobase.jam.JAMEchoBase;
-import org.fidonet.config.Config;
 import org.fidonet.echobase.EchoMgr;
+import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
@@ -18,7 +19,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
@@ -27,13 +31,55 @@ public class Tosser extends HasEventBus {
 
     private EchoMgr areamgr;
     private Pattern bunlderegex;
-    private Config config;
+    private IConfig config;
+    private Map<String, Link> links;
 
-    public Tosser(Config config) {
+    public Tosser(IConfig config) {
         EchoList echoList = new EchoList();
-        echoList.Load(config.getArealistfile());
-        this.areamgr = new EchoMgr(new JAMEchoBase(echoList), echoList, config.getEchopath());
+        echoList.Load(getArealistFile());
+        links = getLinks(config.getValuesAsList("Links"));
+        this.areamgr = new EchoMgr(new JAMEchoBase(echoList), echoList, getEchoPath());
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
+    }
+
+    private Map<String, Link> getLinks(List<String> links) {
+        Map<String, Link> result = new HashMap<String, Link>();
+        for (String linkStr : links) {
+            Link link = new Link(linkStr);
+            result.put(link.getAddr().toString(), link);
+        }
+        return result;
+    }
+
+    private Link getLink(FTNAddr addr) {
+        return links.get(addr.toString());
+    }
+
+    private String getArealistFile() {
+        return config.getValue("AreaListFile", "areas");
+    }
+
+    private String getEchoPath() {
+        return config.getValue("EchoPath");
+    }
+
+    private Integer isDeleteTossedFiles() {
+        return Integer.valueOf(config.getValue("Deletetossed", "1"));
+    }
+
+    private String getTmpDir() {
+        String sysTemp = System.getenv("TEMP");
+        String tmpDir = config.getValue("Tmp");
+        if ((tmpDir == null) && (sysTemp != null)) {
+            tmpDir = sysTemp + System.getProperty("file.separator") + "jtoss";
+            File systemTemp = new File(tmpDir);
+            if (!systemTemp.exists()) {
+                systemTemp.mkdirs();
+            }
+        } else {
+            tmpDir = "temp";
+        }
+        return tmpDir;
     }
 
 
@@ -74,7 +120,7 @@ public class Tosser extends HasEventBus {
                         }
                     }
                 }
-                if (config.getDeletetossed() != 0) {
+                if (isDeleteTossedFiles() != 0) {
                     file.delete();
                 }
             }
@@ -82,7 +128,7 @@ public class Tosser extends HasEventBus {
     }
 
     private void saveBad(PktTemp pkt) {
-        File bad = new File(config.getTmpdir() + pkt.name.replace(".pkt", ".bad"));
+        File bad = new File(getTmpDir() + pkt.name.replace(".pkt", ".bad"));
 
         if (bad.exists()) return;
 
@@ -156,7 +202,7 @@ public class Tosser extends HasEventBus {
 
     private boolean tosspkt(ByteBuffer buf) {
         final FtsPkt q = new FtsPkt(buf);
-        Link origlink = config.getLink(q.getOrigaddr());
+        Link origlink = getLink(q.getOrigaddr());
         if (origlink == null) {
             logger.error("Unknown Link! Drop it.");
             return false;
@@ -187,7 +233,7 @@ public class Tosser extends HasEventBus {
             logger.error("Problem with areas. Please check!");
             return;
         }
-        areamgr.addMessage(msg,config.getLink(msg.getUpLink()).getMyaddr());
+        areamgr.addMessage(msg, getLink(msg.getUpLink()).getMyaddr());
 
 //        msg.DumpHead();
         //return;

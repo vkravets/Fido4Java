@@ -1,12 +1,13 @@
 package org.fidonet.jftn.engine.script;
 
-import org.fidonet.config.Config;
+import org.fidonet.config.IConfig;
 import org.fidonet.jftn.event.Event;
-import org.fidonet.jftn.share.*;
+import org.fidonet.jftn.share.CommandInterpreter;
+import org.fidonet.jftn.share.HookInterpreter;
 
 /**
  * Created by IntelliJ IDEA.
- * User: sly
+ * User: Vladimir Kravets
  * Date: 8/31/11
  * Time: 10:29 AM
  * To change this template use File | Settings | File Templates.
@@ -16,7 +17,7 @@ public class JFtnShare  {
     private ScriptManager scriptManager;
     private CommandInterpreter commands;
     private HookInterpreter hooks;
-    private Config config;
+    private IConfig config;
 
     public JFtnShare(ScriptManager scriptManager, HookInterpreter hooks, CommandInterpreter commands) {
         this.scriptManager = scriptManager;
@@ -37,11 +38,11 @@ public class JFtnShare  {
         hooks.registerHook(scriptManager, hookClass, hook);
     }
 
-    public Config getConfig() {
+    public IConfig getConfig() {
         return config;
     }
 
-    public void setConfig(Config config) {
+    public void setConfig(IConfig config) {
         this.config = config;
     }
 
