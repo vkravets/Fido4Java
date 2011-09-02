@@ -10,6 +10,20 @@
     <packaging>pom</packaging>
     <name>jftn</name>
 
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <name>JFtn release repository</name>
+            <url>dav:http://jftn.ru:8080/nexus/content/repositories/jftn</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <name>JFtn snapshots repository</name>
+            <url>dav:http://jftn.ru:8080/nexus/content/repositories/jftn-snapshots</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
+
     <modules>
         <module>fido-fts</module>
         <module>fido-config</module>
