@@ -1,5 +1,6 @@
 package org.fidonet.config;
 
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -12,6 +13,8 @@ import java.util.List;
 public interface IConfig {
 
     public void load(String fileName) throws ParseConfigException;
+
+    public void load(InputStream stream) throws ParseConfigException;
 
     public String getValue(String key);
 

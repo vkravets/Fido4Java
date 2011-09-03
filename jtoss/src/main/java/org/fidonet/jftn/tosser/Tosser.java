@@ -35,9 +35,12 @@ public class Tosser extends HasEventBus {
     private Map<String, Link> links;
 
     public Tosser(IConfig config) {
-        EchoList echoList = new EchoList();
-        echoList.Load(getArealistFile());
-        links = getLinks(config.getValuesAsList("Links"));
+        this.config = config;
+
+        EchoList echoList = new EchoList(getArealistFile());
+
+        echoList.load();
+        this.links = getLinks(config.getValuesAsList("Link"));
         this.areamgr = new EchoMgr(new JAMEchoBase(echoList), echoList, getEchoPath());
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
@@ -56,11 +59,26 @@ public class Tosser extends HasEventBus {
     }
 
     private String getArealistFile() {
-        return config.getValue("AreaListFile", "areas");
+        String areaList = config.getValue("AreaListFile", "areas");
+        try {
+            File areasFile = new File(areaList);
+            if (!areasFile.exists()) {
+                areasFile.createNewFile();
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return areaList;
     }
 
     private String getEchoPath() {
-        return config.getValue("EchoPath");
+        String echoPath = config.getValue("EchoPath");
+        File echoPathDir = new File(echoPath);
+        if (!echoPathDir.exists()) {
+            logger.warn("Echo path is not exists. Will be created...");
+            echoPathDir.mkdirs();
+        }
+        return echoPath;
     }
 
     private Integer isDeleteTossedFiles() {
@@ -70,16 +88,29 @@ public class Tosser extends HasEventBus {
     private String getTmpDir() {
         String sysTemp = System.getenv("TEMP");
         String tmpDir = config.getValue("Tmp");
-        if ((tmpDir == null) && (sysTemp != null)) {
-            tmpDir = sysTemp + System.getProperty("file.separator") + "jtoss";
-            File systemTemp = new File(tmpDir);
-            if (!systemTemp.exists()) {
-                systemTemp.mkdirs();
+        if (tmpDir == null) {
+            if (sysTemp != null) {
+                tmpDir = sysTemp + System.getProperty("file.separator") + "jtoss";
+                File systemTemp = new File(tmpDir);
+                if (!systemTemp.exists()) {
+                    systemTemp.mkdirs();
+                }
             }
-        } else {
+        }
+        if (tmpDir == null) {
             tmpDir = "temp";
         }
-        return tmpDir;
+        File tmp = new File(tmpDir);
+        if (!tmp.exists()) {
+            logger.warn("Temp folder was not exists. Will be created...");
+            tmp.mkdirs();
+        }
+        try {
+            return tmp.getCanonicalPath() + System.getProperty("file.separator");
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            return tmpDir + System.getProperty("file.separator");
+        }
     }
 
 
@@ -207,7 +238,7 @@ public class Tosser extends HasEventBus {
             logger.error("Unknown Link! Drop it.");
             return false;
         }
-        if (!q.getPass().equals(origlink.getPass())) {
+        if (!q.getPass().equals("") && !q.getPass().equals(origlink.getPass())) {
             logger.error("Bad PASSWORD! Drop it.");
             return false;
         }
@@ -229,14 +260,12 @@ public class Tosser extends HasEventBus {
     }
 
     private void processEchoMail(Message msg) {
-        if (!areamgr.isValid()) {
-            logger.error("Problem with areas. Please check!");
-            return;
-        }
         areamgr.addMessage(msg, getLink(msg.getUpLink()).getMyaddr());
-
 //        msg.DumpHead();
         //return;
     }
 
+    public EchoMgr getAreamgr() {
+        return areamgr;
+    }
 }

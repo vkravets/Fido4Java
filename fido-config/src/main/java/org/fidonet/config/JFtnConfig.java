@@ -2,10 +2,7 @@ package org.fidonet.config;
 
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -26,19 +23,12 @@ public class JFtnConfig implements IConfig {
     }
 
     @Override
-    public void load(String fileName) throws ParseConfigException {
-        FileReader fr;
-        try {
-            logger.debug("Reading " + fileName);
-            fr = new FileReader(fileName);
-        } catch (FileNotFoundException e) {
-            throw new ParseConfigException(e);
-        }
-
+    public void load(InputStream stream) throws ParseConfigException {
+        InputStreamReader reader = new InputStreamReader(stream);
         try {
             int strnum = 0;
             String str;
-            final BufferedReader file = new BufferedReader(fr);
+            BufferedReader file = new BufferedReader(reader);
             while ((str = file.readLine()) != null) {
                 strnum++;
                 if (str.contains("#")) {
@@ -61,9 +51,19 @@ public class JFtnConfig implements IConfig {
                 }
             }
 
-            fr.close();
+            stream.close();
             file.close();
         } catch (IOException e) {
+            throw new ParseConfigException(e);
+        }
+
+    }
+
+    @Override
+    public void load(String fileName) throws ParseConfigException {
+        try {
+            load(new FileInputStream(fileName));
+        } catch (FileNotFoundException e) {
             throw new ParseConfigException(e);
         }
     }

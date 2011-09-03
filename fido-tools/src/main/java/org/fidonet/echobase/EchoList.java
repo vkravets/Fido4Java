@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 import org.fidonet.types.FTNAddr;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class EchoList {
 
@@ -13,17 +15,25 @@ public class EchoList {
     private HashMap<String, EchoCfg> list;
     private String areaListFile;
 
-    public void Load(String filename) {
+    public EchoList(String areaListFile) {
+        this.areaListFile = areaListFile;
+    }
+
+    public void load(String filename) {
+        this.areaListFile = filename;
+        this.load();
+    }
+
+    public void load() {
         list = new HashMap<String, EchoCfg>();
 
         FileReader fr;
         try {
-            fr = new FileReader(filename);
+            fr = new FileReader(areaListFile);
         } catch (FileNotFoundException e) {
             logger.error("Echolist not found!");
             return;
         }
-        areaListFile = filename;
 
         try {
             String str;
@@ -74,10 +84,14 @@ public class EchoList {
         return list.get(name);
     }
 
+    public List<String> getEchoList () {
+        return new ArrayList<String>(list.keySet());
+    }
+
     public void addArea(String name, String Path, FTNAddr link, FTNAddr myAddr) {
         EchoCfg cfg = new EchoCfg();
         cfg.Name = name;
-        cfg.Path = Path + name;
+        cfg.Path = Path + System.getProperty("file.separator") + name;
         cfg.Type = "JAM";
         cfg.AKA = myAddr; //Config.getAddress();
         cfg.Link = link;
@@ -89,18 +103,21 @@ public class EchoList {
         FileWriter fw = null;
         try {
             fw = new FileWriter(areaListFile, true);
+            PrintWriter out = new PrintWriter(fw);
+            out.println(echo.ListString());
+            out.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (fw != null) {
+                try {
+                    fw.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
         }
 
-        PrintWriter out = new PrintWriter(fw);
-        out.println(echo.ListString());
-        out.close();
 
-        try {
-            if (fw != null) fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

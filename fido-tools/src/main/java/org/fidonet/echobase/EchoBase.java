@@ -4,16 +4,16 @@ import org.fidonet.types.Message;
 
 public interface EchoBase {
 
-    void createArea(String name);
+    public void createArea(String name);
 
-    void openArea(String name);
+    public void openArea(String name);
 
-    void closeArea();
+    public void closeArea();
 
-    void addMessage(Message msg);
+    public void addMessage(Message msg);
 
-    void delMessage(int id);
+    public void delMessage(int id);
 
-    void getMessage(int id);
+    public void getMessage(int id);
 
 }

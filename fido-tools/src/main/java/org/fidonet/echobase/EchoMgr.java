@@ -3,23 +3,18 @@ package org.fidonet.echobase;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
+import java.util.List;
+
 public class EchoMgr {
 
     private final EchoBase echosbase;
     private EchoList echoList;
-    private String areaListFile;
     private String echoPath;
-
-    private boolean valid;
 
     public EchoMgr(EchoBase base, EchoList echoList, String echoPath) {
         this.echosbase = base;
         this.echoPath = echoPath;
         this.echoList = echoList;
-    }
-
-    public boolean isValid() {
-        return valid;
     }
 
     public void addMessage(Message msg, FTNAddr myAddr) {
@@ -41,6 +36,14 @@ public class EchoMgr {
 
     private void createArea(String name) {
         echosbase.createArea(name);
+    }
+
+    public List<String> getEchos() {
+        return echoList.getEchoList();
+    }
+
+    public boolean isEchoExists(String name) {
+        return echoList.isInList(name);
     }
 
 }
