@@ -52,7 +52,7 @@
                     <configuration>
                         <systemPropertyVariables>
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
-                            <surefire.memory>=-Xmx64m</surefire.memory>
+                            <surefire.memory>-Xmx256m</surefire.memory>
                         </systemPropertyVariables>
                     </configuration>
                     <dependencies>
