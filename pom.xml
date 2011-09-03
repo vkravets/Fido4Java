@@ -53,6 +53,7 @@
                         <systemPropertyVariables>
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
                         </systemPropertyVariables>
+                        <forkMode>none</forkMode>
                     </configuration>
                     <dependencies>
                         <dependency>
