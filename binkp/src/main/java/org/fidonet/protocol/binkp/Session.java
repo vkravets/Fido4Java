@@ -4,9 +4,7 @@ import org.fidonet.config.Config;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -190,7 +188,8 @@ class Session implements Runnable {
                 if (currentfile.length == currentfile.pos) {
                     state = 0;
                     SendAck(currentfile.filename + " " + currentfile.pos + " " + currentfile.time);
-                    resfiles.add(currentfile);
+                    //resfiles.add(currentfile);
+                    saveFile(currentfile);
                     currentfile = null;
                 }
             } else System.out.println("Skip block. Wrong state!");
@@ -242,4 +241,26 @@ class Session implements Runnable {
         }
         return result;
     }
+
+
+    private void saveFile(SessFile f)
+    {
+        String inbound = config.getInbound();
+        FileOutputStream save = null;
+        try {
+            save = new FileOutputStream(inbound+"/"+f.filename);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if(save != null)
+        {
+            try {
+                save.write(f.body);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
+

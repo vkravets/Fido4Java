@@ -14,6 +14,7 @@ public class Config {
     private Logger logger = Logger.getLogger(Config.class);
 
     private String inbound = "";
+    private String outbound = "";
     private String tmpdir = "";
     private String echopath = "";
     private boolean valid = false;
@@ -117,7 +118,11 @@ public class Config {
             if (!isDirExists(tmpdir)) {
                 logger.warn("Temp directory is not found will be creating during work. Temp=" + tmpdir);
             }
-
+        } else if ("outbound".equals(name)) {
+            outbound = value.trim();
+            if (!isDirExists(outbound)) {
+                logger.warn("Outbound directory is not found will be creating during work. Outbound=" + outbound);
+            }
         } else if ("debuglevel".equals(name)) {
             debuglevel = Integer.valueOf(value);
         } else if ("link".equals(name)) {
@@ -149,6 +154,10 @@ public class Config {
 
     public String getInbound() {
         return inbound;
+    }
+
+    public String getOutbound() {
+        return outbound;
     }
 
     public String getTmpdir() {

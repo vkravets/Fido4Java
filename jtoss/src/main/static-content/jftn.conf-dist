@@ -22,8 +22,7 @@ debuglevel=1
 # Links description
 # Link=<Link address>,<Out AKA>,<password>
 #
-Link=2:5030/2239.0,2:5030/2239.55,password
-Link=2:5030/1957.0,2:5030/1111.0,wordpass
+Link=2:5030/1111.0,2:5030/1111.1111,12345678
 
 #
 # SysOp name
@@ -31,3 +30,5 @@ Link=2:5030/1957.0,2:5030/1111.0,wordpass
 SysOp=Dmitriy Tochansky
 
 deletetossed=1
+
+Outbound = /home/toch/ftn/var/spool/outbound

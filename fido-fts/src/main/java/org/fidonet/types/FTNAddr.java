@@ -75,6 +75,13 @@ public class FTNAddr {
         return zone + ":" + net + '/' + node + '.' + pnt;
     }
 
+    public String toHex()
+    {
+        String hexnet = String.format("%04x",net);
+        String hexnode = String.format("%04x",node);
+        return hexnet + hexnode;
+    }
+
 // --Commented out by Inspection START (13.11.10 21:53):
 //    public int getNet() {
 //        return net;
