@@ -1,2 +1,2 @@
 #!/bin/sh
-java -Xmx64m -jar jtoss.jar
+java -Xmx64m -jar jtoss.jar $@
