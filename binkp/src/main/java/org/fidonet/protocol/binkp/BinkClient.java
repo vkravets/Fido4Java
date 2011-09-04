@@ -1,17 +1,15 @@
 package org.fidonet.protocol.binkp;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.util.List;
 import org.apache.log4j.Logger;
-import org.fidonet.config.Config;
-import org.fidonet.config.JFtnConfig;
-import org.fidonet.protocol.binkp.SessionResult;
-import org.fidonet.protocol.binkp.Session;
+import org.fidonet.config.IConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -23,32 +21,50 @@ public class BinkClient implements Runnable {
     
     private Logger logger = Logger.getLogger(BinkClient.class);
 
-    boolean active = false;
-    Config config = null;
-    OutBound outb;
-    
-    public BinkClient(String conf)
+    private boolean active = false;
+    private IConfig config;
+    private OutBound outb;
+    private Map<String, Link> links;
+
+    public BinkClient(IConfig config)
     {
-        config = new Config();
-        config.ReadConfig(conf);
-        outb = new OutBound(config.getOutbound());
-        System.out.println("JBink start.");
+        this.outb = new OutBound(getOutbound());
+        this.config = config;
+        logger.debug("JBink start.");
+    }
+
+    private String getOutbound() {
+        return config.getValue("outbound");
+    }
+
+    private Map<String, Link> getLinks(List<String> links) {
+        Map<String, Link> result = new HashMap<String, Link>();
+        for (String linkStr : links) {
+            Link link = new Link(linkStr);
+            result.put(link.getAddr().toString(), link);
+        }
+        return result;
+    }
+
+    private Link getLink(FTNAddr addr) {
+        return links.get(addr.toString());
     }
 
     @Override
     public void run() {
         active = true;
+        links = getLinks(config.getValuesAsList("link"));
         while(active)
         {
             FTNAddr f = outb.getPoll();
             if(f != null)
             {
-                Link l = config.getLink(f);
+                Link l = getLink(f);
                 poll(l);
             }
             else
             {
-                System.out.println("Nothing to poll.");
+                logger.warn("Nothing to poll.");
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {

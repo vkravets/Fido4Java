@@ -14,7 +14,7 @@ public class SessFile {
     int pos;
     final int time;
 
-    SessFile(String n, int size, int unixtime) {
+    public SessFile(String n, int size, int unixtime) {
         filename = n;
         body = new byte[size];
         length = size;

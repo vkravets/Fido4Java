@@ -1,6 +1,7 @@
 package org.fidonet.protocol.binkp;
 
-import org.fidonet.config.Config;
+import org.apache.log4j.Logger;
+import org.fidonet.config.IConfig;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
@@ -14,24 +15,22 @@ import java.net.Socket;
  */
 public class BinkP {
 
+    private static Logger logger = Logger.getLogger(BinkP.class);
+
     public BinkP() {
 
     }
 
-    public SessionResult Poll(Link link, Config config) {
-        Socket clientsock = null;
+    public SessionResult pull(Link link, IConfig config) {
         try {
-            clientsock = new Socket("bbs.agooga.ru", 24554);
+            Socket clientsock = new Socket("bbs.agooga.ru", 24554);
+            Session session = new Session(clientsock, link, config);
+            session.run();
+            return session.getResult();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
-
-        Session session = new Session(clientsock, link, config);
-
-        session.run();
-
-        return session.getResult();
-
+        return null;
     }
 
 }

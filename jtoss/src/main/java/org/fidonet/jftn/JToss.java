@@ -83,7 +83,7 @@ public class JToss {
                     } else if (args[0].equalsIgnoreCase("poll")) {
 //                        FTNAddr boss = new FTNAddr("2:5030/1111.0");
 //                        BinkP bink = new BinkP();
-//                        SessionResult res = bink.Poll(config.getLink(boss), config);
+//                        SessionResult res = bink.pull(config.getLink(boss), config);
 //                        SessFile[] files = res.getFiles();
 //                        for (int i = 0; i < res.getStatus(); i++) {
 //                            RandomAccessFile of = null;

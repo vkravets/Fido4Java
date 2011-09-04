@@ -1,11 +1,10 @@
 package org.fidonet.protocol.binkp;
 
+import org.fidonet.types.FTNAddr;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-
-import org.fidonet.types.FTNAddr;
-import org.fidonet.types.Link;
 
 /**
  *
@@ -13,11 +12,10 @@ import org.fidonet.types.Link;
  */
 public class OutBound {
     
-    String path;
+    private String path;
     
     private class OutbFilter implements FileFilter
     {
-
         @Override
         public boolean accept(File pathname) {
             if(pathname.isFile() && pathname.getName().endsWith("lo"))
@@ -56,7 +54,7 @@ public class OutBound {
     public void setBusy(FTNAddr addr)
     {
         String bsyname = addr.toHex();
-        File bsy = new File(path+"/"+bsyname+".bsy");
+        File bsy = new File(path+System.getProperty("file.separator")+bsyname+".bsy");
         try {
             bsy.createNewFile();
         } catch (IOException e) {

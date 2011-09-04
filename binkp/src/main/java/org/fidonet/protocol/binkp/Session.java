@@ -1,6 +1,7 @@
 package org.fidonet.protocol.binkp;
 
-import org.fidonet.config.Config;
+import org.apache.log4j.Logger;
+import org.fidonet.config.IConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -18,6 +19,8 @@ import java.util.Vector;
  */
 class Session implements Runnable {
 
+    private Logger logger = Logger.getLogger(Session.class);
+
     private Socket sock = null;
     private InputStream instream = null;
     private OutputStream outstream = null;
@@ -34,15 +37,15 @@ class Session implements Runnable {
 
     private final SessionResult result = new SessionResult();
 
-    private Config config;
+    private IConfig config;
 
-    public Session(Socket cleintsocket, Link link, Config config) {
+    public Session(Socket cleintsocket, Link link, IConfig config) {
         this.sock = cleintsocket;
         this.curlink = link;
         this.config = config;
     }
 
-    byte[] DoCommand(byte ctype, String str) {
+    public byte[] doCommand(byte ctype, String str) {
         ByteBuffer bb = ByteBuffer.allocate(2 + str.length());
         bb.order(ByteOrder.LITTLE_ENDIAN);
         bb.put(ctype);
@@ -51,25 +54,28 @@ class Session implements Runnable {
     }
 
 
-    private void SendIdent() throws IOException {
+    private void sendIdentification() throws IOException {
         Frame f = new Frame();
+        // TODO: get name from config
         String BBSName = "SYS jftn bbs";
-        byte[] bbsname = DoCommand((byte) 0, BBSName);
+        byte[] bbsname = doCommand((byte) 0, BBSName);
         f.setType(Frame.TYPE_COMMAND);
         f.setData(bbsname);
         outstream.write(f.toByteArray());
-        byte[] sysopname = DoCommand((byte) 0, "ZYZ " + config.getSysOp());
+        byte[] sysopname = doCommand((byte) 0, "ZYZ " + config.getValue("sysop"));
         f.setData(sysopname);
         outstream.write(f.toByteArray());
+        // TODO: get location from config
         String location = "LOC internet";
-        byte[] locat = DoCommand((byte) 0, location);
+        byte[] locat = doCommand((byte) 0, location);
         f.setData(locat);
         outstream.write(f.toByteArray());
+        // TODO: get version from?
         String VER = "VER jftn/0.0.0/Linux binkp/0.8";
-        byte[] ver = DoCommand((byte) 0, VER);
+        byte[] ver = doCommand((byte) 0, VER);
         f.setData(ver);
         outstream.write(f.toByteArray());
-        byte[] addr = DoCommand((byte) 1, curlink.getMyaddr().toString());
+        byte[] addr = doCommand((byte) 1, curlink.getMyaddr().toString());
         f.setData(addr);
         outstream.write(f.toByteArray());
     }
@@ -77,20 +83,10 @@ class Session implements Runnable {
     public void run() {
         try {
             instream = sock.getInputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
             outstream = sock.getOutputStream();
+            sendIdentification();
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            SendIdent();
-        } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         active = true;
@@ -117,11 +113,11 @@ class Session implements Runnable {
         }
     }
 
-    void end() {
+    private void end() {
         active = false;
     }
 
-    void parsebuf(byte[] buff) {
+    private void parsebuf(byte[] buff) {
         ByteBuffer b = ByteBuffer.allocate(buff.length);
         b.put(buff);
         b.position(0);
@@ -142,15 +138,15 @@ class Session implements Runnable {
             byte[] n = new byte[len];
             b.get(n);
             f.setData(n);
-            StateMachine(f.parse());
+            stateMachine(f.parse());
         }
-        SendEOB();
+        sendEOB();
     }
 
-    void SendPassword() {
+    private void sendPassword() {
         Frame f = new Frame();
         f.setType(Frame.TYPE_COMMAND);
-        byte[] pa = DoCommand(Frame.M_PWD, curlink.getPass());
+        byte[] pa = doCommand(Frame.M_PWD, curlink.getPass());
         f.setData(pa);
         try {
             outstream.write(f.toByteArray());
@@ -159,7 +155,7 @@ class Session implements Runnable {
         }
     }
 
-    void StateMachine(Block block) {
+    private void stateMachine(Block block) {
         int FILE_RECV = 1;
         if (block.type == 0) {
             System.out.println("> " + new String(block.value));
@@ -168,7 +164,7 @@ class Session implements Runnable {
             FTNAddr remote = new FTNAddr(addr);
             System.out.println("Remote addr: " + remote.toString());
             if (curlink.getAddr().isEquals(remote))
-                SendPassword();
+                sendPassword();
         } else if (block.type == Frame.M_PWD) {
             String pass = new String(block.value);
             System.out.println("Remote password: " + pass);
@@ -187,20 +183,20 @@ class Session implements Runnable {
                 currentfile.append(block.value);
                 if (currentfile.length == currentfile.pos) {
                     state = 0;
-                    SendAck(currentfile.filename + " " + currentfile.pos + " " + currentfile.time);
+                    sendAck(currentfile.filename + " " + currentfile.pos + " " + currentfile.time);
                     //resfiles.add(currentfile);
                     saveFile(currentfile);
                     currentfile = null;
                 }
-            } else System.out.println("Skip block. Wrong state!");
+            } else logger.warn("Skip block. Wrong state!");
         }
 
     }
 
-    void SendAck(String t) {
+    private void sendAck(String t) {
         Frame f = new Frame();
         f.setType(Frame.TYPE_COMMAND);
-        byte[] pa = DoCommand(Frame.M_GOT, t);
+        byte[] pa = doCommand(Frame.M_GOT, t);
         f.setData(pa);
         try {
             outstream.write(f.toByteArray());
@@ -209,7 +205,7 @@ class Session implements Runnable {
         }
     }
 
-    void SendOk() {
+    private void sendOk() {
         byte[] okcmd = new byte[3];
         okcmd[0] = (byte) 128;
         okcmd[1] = 1;
@@ -221,7 +217,7 @@ class Session implements Runnable {
         }
     }
 
-    void SendEOB() {
+    private void sendEOB() {
         byte[] okcmd = new byte[3];
         okcmd[0] = (byte) 128;
         okcmd[1] = 1;
@@ -245,7 +241,7 @@ class Session implements Runnable {
 
     private void saveFile(SessFile f)
     {
-        String inbound = config.getInbound();
+        String inbound = config.getValue("inbound");
         FileOutputStream save = null;
         try {
             save = new FileOutputStream(inbound+"/"+f.filename);
