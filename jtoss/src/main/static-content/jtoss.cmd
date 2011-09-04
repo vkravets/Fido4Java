@@ -1,2 +1,2 @@
 @echo off
-java -jar jtoss.jar
+java -Xmx64m -jar jtoss.jar
