@@ -53,7 +53,6 @@
                         <systemPropertyVariables>
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
                         </systemPropertyVariables>
-                        <argLine>-Xmx512m</argLine>
                     </configuration>
                     <dependencies>
                         <dependency>
