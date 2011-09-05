@@ -17,7 +17,7 @@ import java.util.Vector;
  * Date: 16.02.11
  * Time: 15:36
  */
-class Session implements Runnable {
+class Session /*implements Runnable*/ {
 
     private Logger logger = Logger.getLogger(Session.class);
 
@@ -33,9 +33,7 @@ class Session implements Runnable {
 
     private SessFile currentfile = null;
 
-    private final Vector<SessFile> resfiles = new Vector<SessFile>();
-
-    private final SessionResult result = new SessionResult();
+    private int LastError = -1;
 
     private IConfig config;
 
@@ -56,8 +54,7 @@ class Session implements Runnable {
 
     private void sendIdentification() throws IOException {
         Frame f = new Frame();
-        // TODO: get name from config
-        String BBSName = "SYS jftn bbs";
+        String BBSName = "SYS "+config.getValue("bbsname");
         byte[] bbsname = doCommand((byte) 0, BBSName);
         f.setType(Frame.TYPE_COMMAND);
         f.setData(bbsname);
@@ -80,7 +77,7 @@ class Session implements Runnable {
         outstream.write(f.toByteArray());
     }
 
-    public void run() {
+    public int run() {
         try {
             instream = sock.getInputStream();
             outstream = sock.getOutputStream();
@@ -111,9 +108,11 @@ class Session implements Runnable {
                 parsebuf(inbuf);
             }
         }
+        return LastError;
     }
 
-    private void end() {
+    void end(int x) {
+        LastError = x;
         active = false;
     }
 
@@ -151,7 +150,7 @@ class Session implements Runnable {
         try {
             outstream.write(f.toByteArray());
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);            
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -169,8 +168,7 @@ class Session implements Runnable {
             String pass = new String(block.value);
             logger.debug("Remote password: " + pass);
         } else if (block.type == Frame.M_EOB) {
-            end();
-            result.setStatus(resfiles.size());
+            end(0);
         } else if (block.type == Frame.M_FILE) {
             logger.debug("recv file!");
             String s = new String(block.value);
@@ -230,14 +228,13 @@ class Session implements Runnable {
     }
 
 
-    public SessionResult getResult() {
-        if (resfiles != null) {
-            result.files = new SessFile[resfiles.size()];
-            result.files = resfiles.toArray(result.files);
-        }
-        return result;
-    }
-
+//    public SessionResult getResult() {
+//        if (resfiles != null) {
+//            result.files = new SessFile[resfiles.size()];
+//            result.files = resfiles.toArray(result.files);
+//        }
+//        return result;
+//    }
 
     private void saveFile(SessFile f)
     {

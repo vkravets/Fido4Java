@@ -1,7 +1,11 @@
 package org.fidonet.protocol.binkp;
 
+import java.io.IOException;
+import java.net.*;
+
 import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.protocol.binkp.BSO.OutBound;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -77,22 +81,40 @@ public class BinkClient implements Runnable {
     }
     
     public void pull(Link link) {
-        outb.setBusy(link.getAddr());
-        Socket clientsock = null;
+
+        if(!outb.setBusy(link.getAddr()))
+        {
+            System.out.println("Error while setting busy " + link.getAddr().toString());
+            return;
+        }
+
+        Socket clientsock = new Socket();
         try {
-            clientsock = new Socket("bbs.agooga.ru", 24554);
+            clientsock.setSoTimeout(10000);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            clientsock.connect(new InetSocketAddress("bbs.agooga.ru", 24554));
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            e.printStackTrace();
+            try {
+                clientsock.close();
+                outb.setUnBusy(link.getAddr());
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
 
-        Thread sess = new Thread(new Session(clientsock, link, config));
-        sess.start();
-        try {
-            sess.join(); //TEMPORY
-        } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
+        if(!clientsock.isConnected()) return;
+        Session s = new Session(clientsock, link, config);
+        int x = s.run();
+        System.out.println("Session end with code " + x);
+        if(!outb.setUnBusy(link.getAddr()))
+        {
+            System.out.println("Error while set unbusy " + link.getAddr().toString());
         }
-
     }
 
     public boolean isActive() {
