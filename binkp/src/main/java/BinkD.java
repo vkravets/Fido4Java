@@ -1,10 +1,7 @@
-import org.fidonet.config.IConfig;
+import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.protocol.binkp.BinkClient;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -12,8 +9,10 @@ import java.util.logging.Logger;
  */
 public class BinkD {
 
+    private static Logger logger = Logger.getLogger(BinkD.class);
+
     public static void main(String[] args) throws ParseConfigException {
-        IConfig jftnConfig = new JFtnConfig();
+        JFtnConfig jftnConfig = new JFtnConfig();
         jftnConfig.load("jftn.conf");
         BinkClient cli = new BinkClient(jftnConfig);
         Thread clientthread = new Thread(cli);
@@ -21,7 +20,7 @@ public class BinkD {
         try {
             clientthread.join();
         } catch (InterruptedException ex) {
-            Logger.getLogger(BinkD.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error(ex.getMessage(), ex);
         }
 
     }

@@ -103,10 +103,10 @@ class Session implements Runnable {
                 try {
                     readed = instream.read(inbuf);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
                 if (readed != avail) {
-                    System.out.println("Something bad happened!");
+                    logger.debug("Something bad happened!");
                 }
                 parsebuf(inbuf);
             }
@@ -151,35 +151,35 @@ class Session implements Runnable {
         try {
             outstream.write(f.toByteArray());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);            
         }
     }
 
     private void stateMachine(Block block) {
         int FILE_RECV = 1;
         if (block.type == 0) {
-            System.out.println("> " + new String(block.value));
+            logger.debug("> " + new String(block.value));
         } else if (block.type == Frame.M_ADR) {
             String addr = new String(block.value);
             FTNAddr remote = new FTNAddr(addr);
-            System.out.println("Remote addr: " + remote.toString());
+            logger.debug("Remote addr: " + remote.toString());
             if (curlink.getAddr().isEquals(remote))
                 sendPassword();
         } else if (block.type == Frame.M_PWD) {
             String pass = new String(block.value);
-            System.out.println("Remote password: " + pass);
+            logger.debug("Remote password: " + pass);
         } else if (block.type == Frame.M_EOB) {
             end();
             result.setStatus(resfiles.size());
         } else if (block.type == Frame.M_FILE) {
-            System.out.println("recv file!");
+            logger.debug("recv file!");
             String s = new String(block.value);
             String[] z = s.split(" ");
             currentfile = new SessFile(z[0], Integer.valueOf(z[1]), Integer.valueOf(z[2]));
             state = FILE_RECV;
         } else if (block.type == 666) {
             if (state == FILE_RECV) {
-                System.out.println("data block");
+                logger.debug("data block");
                 currentfile.append(block.value);
                 if (currentfile.length == currentfile.pos) {
                     state = 0;

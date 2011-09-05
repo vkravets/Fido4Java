@@ -1,6 +1,9 @@
 package org.fidonet.config;
 
 import org.apache.log4j.Logger;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
+import org.fidonet.validators.ConfigValidator;
 
 import java.io.*;
 import java.util.*;
@@ -12,97 +15,114 @@ import java.util.*;
  * Time: 2:13 AM
  * To change this template use File | Settings | File Templates.
  */
-public class JFtnConfig implements IConfig {
+public class JFtnConfig extends BaseConfig {
 
-    private Logger logger = Logger.getLogger(Config.class);
+    private Logger logger = Logger.getLogger(JFtnConfig.class);
 
-    private Map<String, List<String>> props;
+    private Map<String, Link> links;
 
     public JFtnConfig() {
-        props = new HashMap<String, List<String>>();
+        links = new HashMap<String, Link>();
+    }
+
+    private class JFtnConfigValidator implements ConfigValidator<JFtnConfig> {
+
+        @Override
+        public boolean isValidate(JFtnConfig config) {
+            return config.getValue("Inbound") != null &&
+                config.getValue("Tmp") != null &&
+                config.getValue("EchoPath") != null &&
+                config.getValue("Link") != null &&
+                config.getValue("SysOp") != null &&
+                config.getValue("Outbound") != null;
+        }
+    }
+    @Override
+    public boolean isValidate() {
+        JFtnConfigValidator validator = new JFtnConfigValidator();
+        return validator.isValidate(this);
     }
 
     @Override
     public void load(InputStream stream) throws ParseConfigException {
-        InputStreamReader reader = new InputStreamReader(stream);
-        try {
-            int strnum = 0;
-            String str;
-            BufferedReader file = new BufferedReader(reader);
-            while ((str = file.readLine()) != null) {
-                strnum++;
-                if (str.contains("#")) {
-                    str = str.substring(0, str.indexOf('#'));
-                    str = str.trim();
-                }
-                if (str.length() == 0) {
-                    continue;
-                }
-                if (!str.contains("=")) {
-                    logger.debug("Error in config string " + strnum);
-                    break;
-                }
-                Scanner scanner = new Scanner(str);
-                scanner.useDelimiter("=");
-                if (scanner.hasNext()){
-                    String name = scanner.next();
-                    String value = scanner.next();
-                    setValue(name.trim().toLowerCase(), value.trim().toLowerCase());
-                }
-            }
-
-            stream.close();
-            file.close();
-        } catch (IOException e) {
-            throw new ParseConfigException(e);
-        }
-
-    }
-
-    @Override
-    public void load(String fileName) throws ParseConfigException {
-        try {
-            load(new FileInputStream(fileName));
-        } catch (FileNotFoundException e) {
-            throw new ParseConfigException(e);
-        }
-    }
-
-    private void setValue(String name, String value) {
-        // TODO: validate name and value
-        if (validateData(name, value)) {
-            List<String> values = props.get(name);
-            if (values == null) {
-                values = new ArrayList<String>(1);
-                props.put(name, values);
-            }
-            values.add(value);
-        }
-    }
-
-    private Boolean validateData(String name, String value) {
-        return true;
-    }
-
-    @Override
-    public String getValue(String key) {
-        return this.getValue(key, null);
-    }
-
-    @Override
-    public String getValue(String key, String defaultValue) {
-        List<String> values = getValuesAsList(key);
-        return (values == null) ? defaultValue : values.get(0);
-    }
-
-    @Override
-    public List<String> getValuesAsList(String key) {
-        List<String> values = props.get(key.trim().toLowerCase());
-        if ((values == null) || (values.size() == 0)) {
-            return null;
+        super.load(stream);
+        if (isValidate()) {
+            links = getLinks(getValuesAsList("link"));
         } else {
-            return new ArrayList<String>(values);
+            throw new ParseConfigException("Config is not valid!");
         }
+    }
+
+    private Map<String, Link> getLinks(List<String> links) {
+        Map<String, Link> result = new HashMap<String, Link>();
+        for (String linkStr : links) {
+            Link link = new Link(linkStr);
+            result.put(link.getAddr().toString(), link);
+        }
+        return result;
+    }
+
+    public Link getLink(FTNAddr addr) {
+        return links.get(addr.toString());
+    }
+
+    public String getArealistFile() {
+        String areaList = getValue("AreaListFile", "areas");
+        try {
+            File areasFile = new File(areaList);
+            if (!areasFile.exists()) {
+                areasFile.createNewFile();
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return areaList;
+    }
+
+    public String getEchoPath() {
+        String echoPath = getValue("EchoPath");
+        File echoPathDir = new File(echoPath);
+        if (!echoPathDir.exists()) {
+            logger.warn("Echo path is not exists. Will be created...");
+            echoPathDir.mkdirs();
+        }
+        return echoPath;
+    }
+
+    public Integer isDeleteTossedFiles() {
+        return Integer.valueOf(getValue("Deletetossed", "1"));
+    }
+
+    public String getTmpDir() {
+        String sysTemp = System.getenv("TEMP");
+        String tmpDir = getValue("Tmp");
+        if (tmpDir == null) {
+            if (sysTemp != null) {
+                tmpDir = sysTemp + System.getProperty("file.separator") + "jtoss";
+                File systemTemp = new File(tmpDir);
+                if (!systemTemp.exists()) {
+                    systemTemp.mkdirs();
+                }
+            }
+        }
+        if (tmpDir == null) {
+            tmpDir = "temp";
+        }
+        File tmp = new File(tmpDir);
+        if (!tmp.exists()) {
+            logger.warn("Temp folder was not exists. Will be created...");
+            tmp.mkdirs();
+        }
+        try {
+            return tmp.getCanonicalPath() + System.getProperty("file.separator");
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            return tmpDir + System.getProperty("file.separator");
+        }
+    }
+
+    public String getOutbound() {
+        return getValue("outbound");
     }
 
 }

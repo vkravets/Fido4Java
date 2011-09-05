@@ -22,4 +22,6 @@ public interface IConfig {
 
     public List<String> getValuesAsList(String key);
 
+    public boolean isValidate();
+
 }

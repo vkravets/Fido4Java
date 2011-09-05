@@ -1,7 +1,7 @@
 package org.fidonet.protocol.binkp;
 
 import org.apache.log4j.Logger;
-import org.fidonet.config.IConfig;
+import org.fidonet.config.JFtnConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -21,20 +21,16 @@ public class BinkClient implements Runnable {
     
     private Logger logger = Logger.getLogger(BinkClient.class);
 
-    private boolean active = false;
-    private IConfig config;
+    private boolean active;
+    private JFtnConfig config;
     private OutBound outb;
     private Map<String, Link> links;
 
-    public BinkClient(IConfig config)
+    public BinkClient(JFtnConfig config)
     {
-        this.outb = new OutBound(getOutbound());
+        this.outb = new OutBound(config.getOutbound());
         this.config = config;
-        logger.debug("JBink start.");
-    }
-
-    private String getOutbound() {
-        return config.getValue("outbound");
+        setActive(true);
     }
 
     private Map<String, Link> getLinks(List<String> links) {
@@ -52,40 +48,41 @@ public class BinkClient implements Runnable {
 
     @Override
     public void run() {
-        active = true;
+        logger.info("JBink started.");
         links = getLinks(config.getValuesAsList("link"));
-        while(active)
+        while(isActive())
         {
             FTNAddr f = outb.getPoll();
             if(f != null)
             {
                 Link l = getLink(f);
-                poll(l);
+                pull(l);
             }
             else
             {
-                logger.warn("Nothing to poll.");
+                logger.warn("Nothing to pull.");
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
+        logger.info("JBink stops.");
     }
         
     public void stop()
     {
-        active = false;
+        setActive(false);
     }
     
-    public void poll(Link link) {
+    public void pull(Link link) {
         outb.setBusy(link.getAddr());
         Socket clientsock = null;
         try {
             clientsock = new Socket("bbs.agooga.ru", 24554);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         Thread sess = new Thread(new Session(clientsock, link, config));
@@ -93,9 +90,16 @@ public class BinkClient implements Runnable {
         try {
             sess.join(); //TEMPORY
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }
