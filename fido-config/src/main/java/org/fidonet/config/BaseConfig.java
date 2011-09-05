@@ -47,7 +47,7 @@ public abstract class BaseConfig implements IConfig {
                 if (scanner.hasNext()){
                     String name = scanner.next();
                     String value = scanner.next();
-                    setValue(name.trim().toLowerCase(), value.trim().toLowerCase());
+                    setValue(name.trim().toLowerCase(), value.trim());
                 }
             }
 

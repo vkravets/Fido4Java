@@ -60,7 +60,7 @@ public class BinkClient implements Runnable {
             if(f != null)
             {
                 Link l = getLink(f);
-                pull(l);
+                if(l!=null) poll(l);
             }
             else
             {
@@ -80,7 +80,7 @@ public class BinkClient implements Runnable {
         setActive(false);
     }
     
-    public void pull(Link link) {
+    public void poll(Link link) {
 
         if(!outb.setBusy(link.getAddr()))
         {
@@ -101,7 +101,6 @@ public class BinkClient implements Runnable {
             e.printStackTrace();
             try {
                 clientsock.close();
-                outb.setUnBusy(link.getAddr());
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
@@ -115,6 +114,7 @@ public class BinkClient implements Runnable {
         {
             System.out.println("Error while set unbusy " + link.getAddr().toString());
         }
+        outb.cleanLo(link.getAddr());
     }
 
     public boolean isActive() {

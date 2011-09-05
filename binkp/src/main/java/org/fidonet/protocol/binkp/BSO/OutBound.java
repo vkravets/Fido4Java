@@ -95,4 +95,11 @@ public class OutBound {
     {
         File[] filelist = descr.listFiles(new LinkFilesFilter(link));
     }
+
+    public void cleanLo(FTNAddr link)
+    {
+        String lopath =path+File.separator+link.toHex()+"."+"dlo";
+        File lo = new File(lopath);
+        lo.delete();
+    }
 }
