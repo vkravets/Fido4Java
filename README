@@ -1,4 +1,6 @@
+
 JFtn readme v0.1
+----------------
 
 ABOUT
 
@@ -9,11 +11,13 @@ Its very simple for now and can be used only for read-only system. It cant toss 
 and still under develompent.
 
 FEATURES
+
 Can store echomail in jam-base.
 Support several echo-links.
 Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
 
 INSTALL
+
 To install simply copy the file jftn.jar to the desired location. Edit jftn.conf-dist to your liking and
 save it in the same directory called jftn.conf.
 
@@ -21,11 +25,12 @@ USAGE
 
 Starting from the command line. The first parameter must be action. Action can be:
 
-help - print help for possible command-line options
-toss - start tossing mail in inbound directory
-pull - start pulling the node via binkp.
+    help - print help for possible command-line options
+    tosss - start tossing mail in inbound directory
+    pull - start pulling the node via binkp.
 
 DEVELOPERS
+
 For now there are a few developers (see below list), but you can join for develompent anytime.
 You can always get a fresh version at GitHub: https://github.com/dtoch/jftn.git or git://github.com/dtoch/jftn.git
 
