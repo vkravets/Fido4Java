@@ -1,8 +1,5 @@
 package org.fidonet.protocol.binkp;
 
-import java.io.IOException;
-import java.net.*;
-
 import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.protocol.binkp.BSO.OutBound;
@@ -10,7 +7,9 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,7 @@ public class BinkClient implements Runnable {
     {
         this.outb = new OutBound(config.getOutbound());
         this.config = config;
+//        this.outb.createPool(new FTNAddr("2:5030/1111"),"direct");
         setActive(true);
     }
 

@@ -9,7 +9,6 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Vector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -62,13 +61,11 @@ class Session /*implements Runnable*/ {
         byte[] sysopname = doCommand((byte) 0, "ZYZ " + config.getValue("sysop"));
         f.setData(sysopname);
         outstream.write(f.toByteArray());
-        // TODO: get location from config
-        String location = "LOC internet";
+        String location = "LOC "+config.getValue("bbsloc");
         byte[] locat = doCommand((byte) 0, location);
         f.setData(locat);
         outstream.write(f.toByteArray());
-        // TODO: get version from?
-        String VER = "VER jftn/0.0.0/Linux binkp/0.8";
+        String VER = "VER jftn/0.0.0/Linux jbinkp/0.8";
         byte[] ver = doCommand((byte) 0, VER);
         f.setData(ver);
         outstream.write(f.toByteArray());
@@ -182,7 +179,6 @@ class Session /*implements Runnable*/ {
                 if (currentfile.length == currentfile.pos) {
                     state = 0;
                     sendAck(currentfile.filename + " " + currentfile.pos + " " + currentfile.time);
-                    //resfiles.add(currentfile);
                     saveFile(currentfile);
                     currentfile = null;
                 }

@@ -1,33 +1,32 @@
 package org.fidonet.protocol.binkp.BSO;
 
-import java.io.BufferedReader;
-import java.io.File;
+import org.fidonet.types.FTNAddr;
 
 public class LoFile {
 
-    private class LoFileLine
-    {
-        String filename;
-        String modif;
-    }
-
     String filename;
     String flavor;
-    LoFileLine[] lines;
+    FTNAddr linkaddr;
 
-    public LoFile(String name)
+    public LoFile(FTNAddr addr, String fl)
     {
-        filename = name;
-        flavor = name.substring(name.length() - 4, name.length());
-        if(flavor.equals(".dlo")) flavor = "direct";
-        if(flavor.equals(".hlo")) flavor = "hold";
-        if(flavor.equals(".clo")) flavor = "crash";
-        if(flavor.equals(".ilo")) flavor = "immediate";
-        if(flavor.equals(".flo")) flavor = "normal";
-        /*
-         * TODO: Load files here
-         *
-         */
+        linkaddr = addr;
+        filename = linkaddr.toHex();
+        this.flavor = fl;
     }
 
+    public String getFullName()
+    {
+        return filename + "." + flavor2ext();
+    }
+
+    private String flavor2ext()
+    {
+        if(flavor.equals("direct")) return flavor = "dlo";
+        if(flavor.equals("hold")) return flavor = "hlo";
+        if(flavor.equals("crash")) return flavor = "clo";
+        if(flavor.equals("immediate")) return flavor = "ilo";
+        if(flavor.equals("normal")) return flavor = "flol";
+        return null;
+    }
 }

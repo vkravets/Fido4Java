@@ -1,12 +1,10 @@
 package org.fidonet.protocol.binkp.BSO;
 
+import org.fidonet.types.FTNAddr;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-
-import org.apache.log4j.Logger;
-import org.fidonet.types.FTNAddr;
-import org.fidonet.types.Link;
 
 /**
  *
@@ -47,6 +45,19 @@ public class OutBound {
     {
         path = p;
         descr = new File(path);
+    }
+
+    public boolean createPool(FTNAddr addr, String flavor)
+    {
+        LoFile poll = new LoFile(addr,flavor);
+        File lo = new File(path+"/"+poll.getFullName());
+        boolean createres = false;
+        try {
+            createres = lo.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return createres;
     }
     
     public FTNAddr getPoll()
@@ -89,11 +100,6 @@ public class OutBound {
         String bsyname = addr.toHex();
         File bsy = new File(path+"/"+bsyname+".bsy");
         return bsy.delete();
-    }
-
-    public void filesForLink(FTNAddr link)
-    {
-        File[] filelist = descr.listFiles(new LinkFilesFilter(link));
     }
 
     public void cleanLo(FTNAddr link)
