@@ -52,6 +52,7 @@ public class BinkClient implements Runnable {
 
     @Override
     public void run() {
+        int rescantimeout = Integer.valueOf(config.getValue("polltimeout","10")) * 1000;
         logger.info("JBink started.");
         links = getLinks(config.getValuesAsList("link"));
         while(isActive())
@@ -66,7 +67,7 @@ public class BinkClient implements Runnable {
             {
                 logger.warn("Nothing to pull.");
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(rescantimeout);
                 } catch (InterruptedException e) {
                     logger.error(e.getMessage(), e);
                 }
