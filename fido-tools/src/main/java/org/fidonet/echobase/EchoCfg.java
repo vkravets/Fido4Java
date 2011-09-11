@@ -10,7 +10,7 @@ public class EchoCfg {
     public FTNAddr AKA;
     public FTNAddr Link;
 
-    public String ListString() {
+    public String getEchoString() {
         String result = "EchoArea " + Name + " " + Path + " -b " + Type + " -a " + AKA.toString() + " ";
         if (Group != null) result += ("-g " + Group);
         result += Link.toString();

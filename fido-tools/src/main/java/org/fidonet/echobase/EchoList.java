@@ -46,22 +46,22 @@ public class EchoList {
                     continue;
                 }
                 if (str.toLowerCase().startsWith("echoarea")) {
-                    String[] Area = str.split(" ");
+                    String[] area = str.split(" ");
                     EchoCfg echo = new EchoCfg();
-                    echo.Name = Area[1];
-                    echo.Path = Area[2];
-                    for (int i = 3; i < Area.length - 1; i++) {
-                        if (Area[i].equals("-b")) {
-                            echo.Type = Area[i + 1];
+                    echo.Name = area[1];
+                    echo.Path = area[2];
+                    for (int i = 3; i < area.length - 1; i++) {
+                        if (area[i].equals("-b")) {
+                            echo.Type = area[i + 1];
                             i++;
-                        } else if (Area[i].equals("-g")) {
-                            echo.Group = Area[i + 1];
+                        } else if (area[i].equals("-g")) {
+                            echo.Group = area[i + 1];
                             i++;
-                        } else if (Area[i].equals("-a")) {
-                            echo.AKA = new FTNAddr(Area[i + 1]);
+                        } else if (area[i].equals("-a")) {
+                            echo.AKA = new FTNAddr(area[i + 1]);
                             i++;
-                        } else if (!Area[i].startsWith("-")) {
-                            echo.Link = new FTNAddr(Area[i]);
+                        } else if (!area[i].startsWith("-")) {
+                            echo.Link = new FTNAddr(area[i]);
                         }
                     }
                     list.put(echo.Name, echo);
@@ -104,7 +104,7 @@ public class EchoList {
         try {
             fw = new FileWriter(areaListFile, true);
             PrintWriter out = new PrintWriter(fw);
-            out.println(echo.ListString());
+            out.println(echo.getEchoString());
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
