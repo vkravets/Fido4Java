@@ -87,10 +87,10 @@ public class ScriptManager {
             if (scriptVariables.get(name) != null) {
                 scriptVariables.remove(name);
             } else {
-                // TODO: Log warn
+                logger.warn("Variable was scoped already");
             }
         } else {
-            // TODO: Log warn
+            logger.warn("Variable cannot be scoped. Name or Values is specified.");
         }
     }
 
