@@ -2,7 +2,13 @@ package org.fidonet.types;
 
 class Attribute {
 
-    public Attribute(short attr) {
+    private short attr;
+
+    public Attribute(short _attr) {
+        attr = _attr;
     }
 
+    public short getAttr() {
+        return attr;
+    }
 }

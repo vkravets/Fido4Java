@@ -5,8 +5,12 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.validators.ConfigValidator;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,13 +34,14 @@ public class JFtnConfig extends BaseConfig {
         @Override
         public boolean isValidate(JFtnConfig config) {
             return config.getValue("Inbound") != null &&
-                config.getValue("Tmp") != null &&
-                config.getValue("EchoPath") != null &&
-                config.getValue("Link") != null &&
-                config.getValue("SysOp") != null &&
-                config.getValue("Outbound") != null;
+                    config.getValue("Tmp") != null &&
+                    config.getValue("EchoPath") != null &&
+                    config.getValue("Link") != null &&
+                    config.getValue("SysOp") != null &&
+                    config.getValue("Outbound") != null;
         }
     }
+
     @Override
     public boolean isValidate() {
         JFtnConfigValidator validator = new JFtnConfigValidator();
@@ -68,10 +73,11 @@ public class JFtnConfig extends BaseConfig {
 
     public String getArealistFile() {
         String areaList = getValue("AreaListFile", "areas");
+        boolean created = false;
         try {
             File areasFile = new File(areaList);
             if (!areasFile.exists()) {
-                areasFile.createNewFile();
+                created = areasFile.createNewFile();
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
@@ -103,11 +109,13 @@ public class JFtnConfig extends BaseConfig {
                 if (!systemTemp.exists()) {
                     systemTemp.mkdirs();
                 }
+            } else {
+                tmpDir = "./temp";
             }
         }
-        if (tmpDir == null) {
-            tmpDir = "temp";
-        }
+//        if (tmpDir == null) {
+//            tmpDir = "temp";
+//        }
         File tmp = new File(tmpDir);
         if (!tmp.exists()) {
             logger.warn("Temp folder was not exists. Will be created...");

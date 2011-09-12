@@ -77,22 +77,27 @@ public class Tosser extends HasEventBus {
                     }
                 }
                 if (config.isDeleteTossedFiles() != 0) {
-                    file.delete();
+                    if (file.delete()) {
+                        logger.error("Error while deleting tossed boundle!");
+                    }
                 }
             }
         }
     }
 
-    private void saveBad(PktTemp pkt) {
+    private boolean saveBad(PktTemp pkt) {
         File bad = new File(config.getTmpDir() + pkt.name.replace(".pkt", ".bad"));
+        boolean result = true;
 
-        if (bad.exists()) return;
+        if (bad.exists()) return result;
 
         try {
-            bad.createNewFile();
+            result = bad.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        if (!result) return result;
 
         RandomAccessFile out = null;
 
@@ -111,7 +116,7 @@ public class Tosser extends HasEventBus {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        return true;
     }
 
 

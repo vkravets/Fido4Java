@@ -52,7 +52,7 @@ public class JToss {
             String commandString = args[0];
             Command command = commands.findCommandByName(commandString);
             if (command != null) {
-                logger.info("Executing "+commandString+" command...");
+                logger.info("Executing " + commandString + " command...");
                 command.execute(args);
             } else {
                 logger.debug("Trying to OOTB command...");
@@ -61,29 +61,6 @@ public class JToss {
                     tosser.runFast(config.getValue("inbound"));
                 } else if (args[0].equalsIgnoreCase("help")) {
                     Help();
-                } else if (args[0].equalsIgnoreCase("pull")) {
-//                        FTNAddr boss = new FTNAddr("2:5030/1111.0");
-//                        BinkP bink = new BinkP();
-//                        SessionResult res = bink.pull(config.getLink(boss), config);
-//                        SessFile[] files = res.getFiles();
-//                        for (int i = 0; i < res.getStatus(); i++) {
-//                            RandomAccessFile of = null;
-//                            try {
-//                                of = new RandomAccessFile(config.getInbound() + "/" + files[i].filename, "rw");
-//                                if (files[i].body != null) {
-//                                            of.write(files[i].body);
-//                                }
-//                                of.close();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            } finally {
-//                                if (of != null) {
-//                                    of.close();
-//                                }
-//                            }
-//                        }
-//
-//                        System.out.println("Session " + res.getStatus());
                 } else {
                     System.out.println("Error: Unknown commandline argument.");
                     Help();
