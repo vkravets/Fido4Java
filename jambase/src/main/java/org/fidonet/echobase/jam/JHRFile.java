@@ -19,10 +19,12 @@ class JHRFile {
 
     private RandomAccessFile jhr;
 
-    JHRFile(File tmp) {
+    public JHRFile(File tmp) {
         try {
             jhr = new RandomAccessFile(tmp, "rw");
         } catch (FileNotFoundException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -31,6 +33,8 @@ class JHRFile {
         try {
             jhr.seek(shift);
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
             return null;
         }
@@ -85,6 +89,8 @@ class JHRFile {
                 }
             }
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
         return result;
@@ -129,6 +135,8 @@ class JHRFile {
             result = (int) jhr.length();
             jhr.write(tmpbuf.array());
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
         return result;
@@ -143,6 +151,8 @@ class JHRFile {
             jhr.seek(0);
             readed = jhr.read(fh);
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
         if(readed != 1024)
@@ -161,6 +171,8 @@ class JHRFile {
             jhr.seek(0);
             jhr.write(fh.toByteArray());
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -169,6 +181,8 @@ class JHRFile {
         try {
             jhr.close();
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }

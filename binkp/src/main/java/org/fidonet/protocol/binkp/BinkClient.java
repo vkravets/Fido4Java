@@ -99,11 +99,14 @@ public class BinkClient implements Runnable {
         try {
             clientsock.connect(new InetSocketAddress("bbs.agooga.ru", 24554));
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
+        } finally {
             try {
                 clientsock.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
+            } catch (IOException e) {
+                // TODO logger
+                // TODO throw exception
             }
         }
 

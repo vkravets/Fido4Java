@@ -38,6 +38,7 @@ public class ScriptManager {
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         jythonEngine = scriptEngineManager.getEngineByExtension("py");
         if (jythonEngine == null) {
+            // TODO logger
             throw new VerifyError("Jython script engine is not found");
         }
         File scriptsFolder = new File(scriptFolder);
@@ -47,6 +48,7 @@ public class ScriptManager {
             jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", scriptsFolder.getCanonicalPath()));
         } catch (Exception e){
             logger.error(e.getMessage(), e);
+            // TODO throw exception
         }
     }
 
@@ -105,7 +107,8 @@ public class ScriptManager {
                         logger.debug("Loading " + file.getName());
                         runScript(file);
                     } catch (Exception e) {
-                        logger.trace(e.getMessage(), e);
+                        // TODO logger
+                        // TODO throw exception
                     }
                 }
             }

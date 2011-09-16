@@ -31,6 +31,7 @@ public class EchoList {
         try {
             fr = new FileReader(areaListFile);
         } catch (FileNotFoundException e) {
+            // TODO throw exception
             logger.error("Echolist not found!");
             return;
         }
@@ -71,7 +72,8 @@ public class EchoList {
             fr.close();
             file.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
         }
 
     }
@@ -107,13 +109,15 @@ public class EchoList {
             out.println(echo.getEchoString());
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
         } finally {
             if (fw != null) {
                 try {
                     fw.close();
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
+                    // TODO throw exception
                 }
             }
         }

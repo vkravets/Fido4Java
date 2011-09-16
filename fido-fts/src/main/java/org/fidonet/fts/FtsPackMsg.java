@@ -24,7 +24,7 @@ public class FtsPackMsg {
     private String[] splittedtext;
     public byte[] body;
 
-    private boolean Valid = true;
+    private boolean isValid = true;
 
 
     public FtsPackMsg() {
@@ -35,7 +35,7 @@ public class FtsPackMsg {
         type = buf.getShort();
         if (type != 2) {
             logger.debug("Seems like not a packet!");
-            Valid = false;
+            isValid = false;
             return;
         }
         origNode = buf.getShort();
@@ -99,7 +99,7 @@ public class FtsPackMsg {
     }
 
     public boolean isValid() {
-        return Valid;
+        return isValid;
     }
 
     public String getAchData() {

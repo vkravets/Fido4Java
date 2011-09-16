@@ -12,6 +12,8 @@ class JLRFile {
         try {
             jlr = new RandomAccessFile(tmp, "rw");
         } catch (FileNotFoundException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -20,6 +22,8 @@ class JLRFile {
         try {
             jlr.close();
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }

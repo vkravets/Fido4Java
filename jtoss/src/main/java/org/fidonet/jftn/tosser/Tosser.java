@@ -45,28 +45,34 @@ public class Tosser extends HasEventBus {
 
     public void runFast(String dirname) {
         if (dirname == null) {
+            // TODO throw exception
             logger.error("Tosser.Run: Error opening directory as inbound. Dirname is null.");
             return;
         }
         final File dir = new File(dirname);
         final File[] files = dir.listFiles();
         if (files == null) {
+            // TODO throw exception
             logger.error("Directory " + dirname + " not found!");
             return;
         }
         //TODO: We should make some checks!
+        //FIXME: It seems that defect exists here ;)
         if (files.length != 0) {
+            //FIXME: It seems that defect exists here ;)
             LinkedList<PktTemp> pktlist = null;
             for (File file : files) {
                 if (file.isFile() && isBunldeName(file.getName())) {
                     try {
                         pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // TODO logger
+                        // TODO throw exception
                     }
                 } else {
                     continue;
                 }
+                //FIXME: It seems that defect exists here ;)
                 if (pktlist != null) {
                     for (int i1 = 0; i1 < pktlist.size(); i1++) {
                         PktTemp aPktlist = pktlist.pop();

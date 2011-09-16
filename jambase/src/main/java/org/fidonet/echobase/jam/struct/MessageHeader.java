@@ -9,6 +9,7 @@ import java.util.LinkedList;
  * Time: 12:48:56
  */
 public class MessageHeader {
+    // TODO change field name to camel case (first latter is in lower case)
     public final byte[] signature = {'J', 'A', 'M', 0};
     public short revision = 1;
     public short reservedword = 0;

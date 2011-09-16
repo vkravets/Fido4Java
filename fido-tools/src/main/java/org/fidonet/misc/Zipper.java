@@ -24,6 +24,7 @@ public class Zipper {
             zip = new ZipFile(bound);
         } catch (IOException e) {
             logger.error("Zip error " + bound + ':' + e.getMessage());
+            // TODO throw exception
         }
 
         if (zip == null) {

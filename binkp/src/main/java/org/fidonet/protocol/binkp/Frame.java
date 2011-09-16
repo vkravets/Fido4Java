@@ -30,7 +30,7 @@ class Frame {
     //    short length;
     private byte[] data;
 
-    Frame() {
+    public Frame() {
 
     }
 

@@ -10,16 +10,6 @@ public class FTNAddr {
     private final int pnt;
     private final boolean valid;
 
-// --Commented out by Inspection START (13.11.10 21:53):
-//    public FTNAddr() {
-//        zone = 0;
-//        net = 0;
-//        node = 0;
-//        pnt = 0;
-//        valid = true;
-//    }
-// --Commented out by Inspection STOP (13.11.10 21:53)
-
     public FTNAddr(int z, int ne, int no, int p) {
         zone = z;
         net = ne;
@@ -81,30 +71,6 @@ public class FTNAddr {
         String hexnode = String.format("%04x",node);
         return hexnet + hexnode;
     }
-
-// --Commented out by Inspection START (13.11.10 21:53):
-//    public int getNet() {
-//        return net;
-//    }
-// --Commented out by Inspection STOP (13.11.10 21:53)
-
-// --Commented out by Inspection START (13.11.10 21:53):
-//    public int getNode() {
-//        return node;
-//    }
-// --Commented out by Inspection STOP (13.11.10 21:53)
-
-// --Commented out by Inspection START (13.11.10 21:53):
-//    public int getPnt() {
-//        return pnt;
-//    }
-// --Commented out by Inspection STOP (13.11.10 21:53)
-
-// --Commented out by Inspection START (13.11.10 21:53):
-//    public int getZone() {
-//        return zone;
-//    }
-// --Commented out by Inspection STOP (13.11.10 21:53)
 
     public boolean isValid() {
         return valid;

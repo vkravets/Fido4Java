@@ -70,6 +70,7 @@ public class JAMEchoBase implements EchoBase {
             lastrfile.createNewFile();
         } catch (IOException e) {
             logger.error("Unable to create files for area " + name);
+            // TODO throw exception
             return;
         }
 

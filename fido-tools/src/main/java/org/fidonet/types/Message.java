@@ -10,6 +10,7 @@ public class Message {
 
     private static Logger logger = Logger.getLogger(Message.class);
 
+    // TODO change field name to camel case (first latter is in lower case)
     private final String From;
     private final String To;
     private final String Subject;

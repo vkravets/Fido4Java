@@ -15,6 +15,8 @@ class JDXFile {
         try {
             jdx = new RandomAccessFile(tmp, "rw");
         } catch (FileNotFoundException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -23,6 +25,8 @@ class JDXFile {
         try {
             jdx.close();
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -35,6 +39,8 @@ class JDXFile {
             jdx.writeInt(Integer.reverseBytes(CRC));
             jdx.writeInt(Integer.reverseBytes(offset));
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
 
@@ -47,6 +53,8 @@ class JDXFile {
         try {
             jdx.seek(jdx.length() - 8);
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
 //            e.printStackTrace();
             return 0;
         }
@@ -55,6 +63,8 @@ class JDXFile {
             jdx.readInt();
             mshift = (Integer.reverseBytes(jdx.readInt()));
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
 //            e.printStackTrace();
             return 0;
         }

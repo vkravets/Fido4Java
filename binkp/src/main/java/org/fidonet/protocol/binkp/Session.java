@@ -148,6 +148,7 @@ class Session /*implements Runnable*/ {
             outstream.write(f.toByteArray());
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
+            // TODO throw exception
         }
     }
 
@@ -195,7 +196,8 @@ class Session /*implements Runnable*/ {
         try {
             outstream.write(f.toByteArray());
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw excepetion
         }
     }
 
@@ -207,7 +209,8 @@ class Session /*implements Runnable*/ {
         try {
             outstream.write(okcmd);
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
         }
     }
 
@@ -219,7 +222,8 @@ class Session /*implements Runnable*/ {
         try {
             outstream.write(okcmd);
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
         }
     }
 
@@ -239,14 +243,16 @@ class Session /*implements Runnable*/ {
         try {
             save = new FileOutputStream(inbound+"/"+f.filename);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            // TODO logger
+            // TODO throw exception
         }
         if(save != null)
         {
             try {
                 save.write(f.body);
             } catch (IOException e) {
-                e.printStackTrace();
+                // TODO logger
+                // TODO throw exception
             }
         }
     }

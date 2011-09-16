@@ -13,6 +13,8 @@ class JDTFile {
         try {
             jdt = new RandomAccessFile(tmp, "rw");
         } catch (FileNotFoundException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -23,6 +25,8 @@ class JDTFile {
         try {
             size = (int) jdt.length();
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
         return size;
@@ -33,6 +37,8 @@ class JDTFile {
             jdt.seek(jdt.length());
             jdt.write(buffer);
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
@@ -41,6 +47,8 @@ class JDTFile {
         try {
             jdt.close();
         } catch (IOException e) {
+            // TODO logger
+            // TODO throw exception
             e.printStackTrace();
         }
     }
