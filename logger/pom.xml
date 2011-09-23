@@ -12,6 +12,7 @@
     <groupId>org.fidonet.logger</groupId>
     <artifactId>logger</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <name>logger</name>
 
 
 </project>
