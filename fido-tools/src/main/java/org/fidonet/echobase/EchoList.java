@@ -1,6 +1,7 @@
 package org.fidonet.echobase;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.FTNAddr;
 
 import java.io.*;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public class EchoList {
 
-    private static Logger logger = Logger.getLogger(EchoList.class);
+    private static ILogger logger = LoggerFactory.getLogger(EchoList.class.getName());
 
     private HashMap<String, EchoCfg> list;
     private String areaListFile;

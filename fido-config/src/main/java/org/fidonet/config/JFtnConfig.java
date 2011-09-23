@@ -1,6 +1,7 @@
 package org.fidonet.config;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.validators.ConfigValidator;
@@ -21,7 +22,7 @@ import java.util.Map;
  */
 public class JFtnConfig extends BaseConfig {
 
-    private Logger logger = Logger.getLogger(JFtnConfig.class);
+    private ILogger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
 
     private Map<String, Link> links;
 

@@ -1,6 +1,5 @@
 package org.fidonet.jftn.tosser;
 
-import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.EchoMgr;
@@ -8,6 +7,8 @@ import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.event.HasEventBus;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.Link;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
 
-    private static Logger logger = Logger.getLogger(Tosser.class);
+    private static ILogger logger = LoggerFactory.getLogger(Tosser.class.getName());
 
     private EchoMgr areamgr;
     private Pattern bunlderegex;

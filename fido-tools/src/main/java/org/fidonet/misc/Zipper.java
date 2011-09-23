@@ -1,6 +1,7 @@
 package org.fidonet.misc;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +14,7 @@ import java.util.zip.ZipFile;
 
 public class Zipper {
 
-    public static Logger logger = Logger.getLogger(Zipper.class);
+    public static ILogger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: " + bound);

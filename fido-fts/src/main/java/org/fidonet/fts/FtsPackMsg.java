@@ -1,13 +1,14 @@
 package org.fidonet.fts;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 public class FtsPackMsg {
 
-    private static Logger logger = Logger.getLogger(FtsPackMsg.class);
+    private static ILogger logger = LoggerFactory.getLogger(FtsPackMsg.class.getName());
 
     private int type;
     private int origNode;

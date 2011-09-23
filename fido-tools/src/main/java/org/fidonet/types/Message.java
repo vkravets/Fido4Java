@@ -1,14 +1,15 @@
 package org.fidonet.types;
 
-import org.apache.log4j.Logger;
 import org.fidonet.fts.FtsPackMsg;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 public class Message {
 
-    private static Logger logger = Logger.getLogger(Message.class);
+    private static ILogger logger = LoggerFactory.getLogger(Message.class.getName());
 
     // TODO change field name to camel case (first latter is in lower case)
     private final String From;
@@ -133,9 +134,7 @@ public class Message {
     }
 
     public void DumpHead() {
-        if (logger.isDebugEnabled()) {
-            logger.debug("From: " + From + ' ' + FAddr + " To: " + To + ' ' + TAddr + " area: " + Area);
-        }
+        logger.debug("From: " + From + ' ' + FAddr + " To: " + To + ' ' + TAddr + " area: " + Area);
     }
 
     public boolean isEchomail() {

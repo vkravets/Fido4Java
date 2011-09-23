@@ -1,6 +1,7 @@
 package org.fidonet.jftn.engine.script;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -21,7 +22,7 @@ import java.util.Map;
  */
 public class ScriptManager {
 
-    private static Logger logger = Logger.getLogger(ScriptManager.class);
+    private static ILogger logger = LoggerFactory.getLogger(ScriptManager.class.getName());
 
     private ScriptEngine jythonEngine;
     private Map<String, Object> scriptVariables;

@@ -1,7 +1,8 @@
 package org.fidonet.protocol.binkp;
 
-import org.apache.log4j.Logger;
 import org.fidonet.config.IConfig;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -18,7 +19,7 @@ import java.nio.ByteOrder;
  */
 class Session /*implements Runnable*/ {
 
-    private Logger logger = Logger.getLogger(Session.class);
+    private ILogger logger = LoggerFactory.getLogger(Session.class.getName());
 
     private Socket sock = null;
     private InputStream instream = null;

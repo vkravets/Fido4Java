@@ -1,6 +1,7 @@
 package org.fidonet.jftn.share;
 
-import org.apache.log4j.Logger;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.Map;
  */
 public class CommandCollection {
 
-    private static Logger logger = Logger.getLogger(CommandCollection.class);
+    private static ILogger logger = LoggerFactory.getLogger(CommandCollection.class.getName());
 
     private Map<String, Command> commands;
 

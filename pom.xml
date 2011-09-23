@@ -38,6 +38,7 @@
         <module>jambase</module>
         <module>binkp</module>
         <module>jtoss</module>
+        <module>logger</module>
     </modules>
 
     <build>

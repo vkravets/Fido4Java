@@ -1,12 +1,13 @@
 package org.fidonet.echobase.jam;
 
-import org.apache.log4j.Logger;
 import org.fidonet.echobase.EchoBase;
 import org.fidonet.echobase.EchoCfg;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.types.Message;
 
@@ -22,7 +23,7 @@ import java.util.regex.Pattern;
 
 public class JAMEchoBase implements EchoBase {
 
-    private static Logger logger = Logger.getLogger(JAMEchoBase.class);
+    private static ILogger logger = LoggerFactory.getLogger(JAMEchoBase.class.getName());
 
     private String headerfilename;
     private String textfilename;

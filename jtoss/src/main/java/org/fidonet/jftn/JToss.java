@@ -1,6 +1,5 @@
 package org.fidonet.jftn;
 
-import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.engine.script.JFtnShare;
@@ -10,10 +9,12 @@ import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 public class JToss {
 
-    private static Logger logger = Logger.getLogger(JToss.class);
+    private static ILogger logger = LoggerFactory.getLogger(JToss.class.getName());
 
     private static void Help() {
         System.out.println("java ftn usage:");

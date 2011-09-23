@@ -1,7 +1,8 @@
 package org.fidonet.protocol.binkp;
 
-import org.apache.log4j.Logger;
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.protocol.binkp.BSO.OutBound;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -22,7 +23,7 @@ import java.util.Map;
  */
 public class BinkClient implements Runnable {
     
-    private Logger logger = Logger.getLogger(BinkClient.class);
+    private ILogger logger = LoggerFactory.getLogger(BinkClient.class.getName());
 
     private boolean active;
     private JFtnConfig config;

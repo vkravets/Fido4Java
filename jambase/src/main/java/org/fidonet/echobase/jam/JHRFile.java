@@ -1,9 +1,10 @@
 package org.fidonet.echobase.jam;
 
-import org.apache.log4j.Logger;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,7 +16,7 @@ import java.util.LinkedList;
 
 class JHRFile {
 
-    private static Logger logger = Logger.getLogger(JHRFile.class);
+    private static ILogger logger = LoggerFactory.getLogger(JHRFile.class.getName());
 
     private RandomAccessFile jhr;
 
