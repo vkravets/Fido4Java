@@ -19,7 +19,7 @@ public class LoggerFactory {
                 System.out.println("Logger engine error. Details: " + ex.getMessage());
             }
         }
-        return new ConsoleLogger();
+        return new ConsoleLogger(className);
     }
 
 }
