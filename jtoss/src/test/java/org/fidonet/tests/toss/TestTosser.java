@@ -35,7 +35,7 @@ public class TestTosser {
             tosser.runFast(config.getValue("Inbound"));
             EchoMgr echoMgr = tosser.getAreamgr();
             List<String> list = echoMgr.getEchos();
-            TestCase.assertEquals(6, list.size());
+            TestCase.assertEquals(8, list.size());
             TestCase.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
             TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
             // TODO: test echobase

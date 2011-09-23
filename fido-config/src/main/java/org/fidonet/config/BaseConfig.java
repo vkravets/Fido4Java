@@ -71,7 +71,6 @@ public abstract class BaseConfig implements IConfig {
     }
 
     private void setValue(String name, String value) {
-        // TODO: validate name and value
         if (validateData(name, value)) {
             List<String> values = props.get(name);
             if (values == null) {
@@ -83,7 +82,7 @@ public abstract class BaseConfig implements IConfig {
     }
 
     private Boolean validateData(String name, String value) {
-        return true;
+        return (name.length() > 0) && (value.length() > 0);
     }
 
     @Override

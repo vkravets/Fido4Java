@@ -18,10 +18,9 @@ public class Zipper {
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: " + bound);
-        ZipFile zip = null;
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
-        zip = new ZipFile(bound);
+        ZipFile zip = new ZipFile(bound);
 
         Enumeration entries = zip.entries();
 
@@ -46,10 +45,7 @@ public class Zipper {
                 resbuf.put(buf, 0, readed);
             }
             resbuf.position(0);
-            PktTemp pkt = new PktTemp();
-            pkt.name = entry.getName();
-            pkt.pkt = resbuf;
-
+            PktTemp pkt = new PktTemp(entry.getName(), resbuf);
             res.push(pkt);
         }
         zip.close();

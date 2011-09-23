@@ -17,7 +17,6 @@ import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -56,71 +55,50 @@ public class Tosser extends HasEventBus {
             throw new TosserException("Directory " + dirname + " not found!");
         }
         //TODO: We should make some checks!
-        //FIXME: It seems that defect exists here ;)
         if (files.length != 0) {
-            //FIXME: It seems that defect exists here ;)
-            LinkedList<PktTemp> pktlist = null;
             for (File file : files) {
                 if (file.isFile() && isBunldeName(file.getName())) {
                     try {
-                        pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
+                        LinkedList<PktTemp> pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
+                        while (!pktlist.isEmpty()) {
+                            PktTemp aPktlist = pktlist.pop();
+                            if (!tosspkt(aPktlist.getPkt())) {
+                                logger.info("Save to Tmp");
+                                saveBad(aPktlist);
+                            }
+                        }
+                        if (config.isDeleteTossedFiles() != 0) {
+                            if (file.delete()) {
+                                logger.error("Error while deleting tossed boundle!");
+                            }
+                        }
                     } catch (IOException e) {
                         logger.error(String.format("Failed to unpack %s. Details: %s", file.getAbsolutePath(), e.getMessage()), e);
-                    }
-                } else {
-                    continue;
-                }
-                //FIXME: It seems that defect exists here ;)
-                if (pktlist != null) {
-                    for (int i1 = 0; i1 < pktlist.size(); i1++) {
-                        PktTemp aPktlist = pktlist.pop();
-                        if (!tosspkt(aPktlist.pkt)) {
-                            logger.info("Save to Tmp");
-                            saveBad(aPktlist);
-                        }
-                    }
-                }
-                if (config.isDeleteTossedFiles() != 0) {
-                    if (file.delete()) {
-                        logger.error("Error while deleting tossed boundle!");
+                    } catch (TosserException e) {
+                        logger.error(String.format("Failed to toss %s. Details: %s", file.getAbsolutePath(), e.getMessage()), e);
                     }
                 }
             }
         }
     }
 
-    private boolean saveBad(PktTemp pkt) {
-        File bad = new File(config.getTmpDir() + pkt.name.replace(".pkt", ".bad"));
-        boolean result = true;
+    private void saveBad(PktTemp pkt) throws IOException, TosserException {
+        File bad = new File(config.getTmpDir() + pkt.getName().replace(".pkt", ".bad"));
 
-        if (bad.exists()) return result;
-
-        try {
-            result = bad.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (bad.exists()) {
+            logger.warn("Bad " + pkt.getName()  + " already exists. ");
+            // TODO: need to throw exception?
+            return;
+        }
+        if (!bad.createNewFile()) {
+            throw new TosserException("Creating bad packet was failed.");
         }
 
-        if (!result) return result;
+        RandomAccessFile out = new RandomAccessFile(bad, "rw");
 
-        RandomAccessFile out = null;
-
-        try {
-            out = new RandomAccessFile(bad, "rw");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        pkt.pkt.position(0);
-        try {
-            if (out != null) {
-                out.seek(0);
-                out.write(pkt.pkt.array());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return true;
+        pkt.getPkt().position(0);
+        out.seek(0);
+        out.write(pkt.getPkt().array());
     }
 
 
