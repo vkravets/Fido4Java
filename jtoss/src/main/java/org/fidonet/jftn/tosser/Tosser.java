@@ -3,10 +3,12 @@ package org.fidonet.jftn.tosser;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.EchoMgr;
+import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.event.HasEventBus;
+import org.fidonet.jftn.tosser.exception.TosserException;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.PktTemp;
@@ -30,7 +32,7 @@ public class Tosser extends HasEventBus {
     private Pattern bunlderegex;
     private JFtnConfig config;
 
-    public Tosser(JFtnConfig config) {
+    public Tosser(JFtnConfig config) throws IOException {
         this.config = config;
 
         EchoList echoList = new EchoList(config.getArealistFile());
@@ -44,18 +46,14 @@ public class Tosser extends HasEventBus {
         return bunlderegex.matcher(str).find();
     }
 
-    public void runFast(String dirname) {
+    public void runFast(String dirname) throws TosserException, IOException, EchoBaseException {
         if (dirname == null) {
-            // TODO throw exception
-            logger.error("Tosser.Run: Error opening directory as inbound. Dirname is null.");
-            return;
+            throw new TosserException("Error opening directory as inbound. Dirname is null.");
         }
         final File dir = new File(dirname);
         final File[] files = dir.listFiles();
         if (files == null) {
-            // TODO throw exception
-            logger.error("Directory " + dirname + " not found!");
-            return;
+            throw new TosserException("Directory " + dirname + " not found!");
         }
         //TODO: We should make some checks!
         //FIXME: It seems that defect exists here ;)
@@ -67,8 +65,7 @@ public class Tosser extends HasEventBus {
                     try {
                         pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
                     } catch (IOException e) {
-                        // TODO logger
-                        // TODO throw exception
+                        logger.error(String.format("Failed to unpack %s. Details: %s", file.getAbsolutePath(), e.getMessage()), e);
                     }
                 } else {
                     continue;
@@ -168,7 +165,7 @@ public class Tosser extends HasEventBus {
         inf.delete();
     }*/
 
-    private boolean tosspkt(ByteBuffer buf) {
+    private boolean tosspkt(ByteBuffer buf) throws IOException, EchoBaseException {
         final FtsPkt q = new FtsPkt(buf);
         Link origlink = config.getLink(q.getOrigaddr());
         if (origlink == null) {
@@ -196,7 +193,7 @@ public class Tosser extends HasEventBus {
         return true;
     }
 
-    private void processEchoMail(Message msg) {
+    private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg, config.getLink(msg.getUpLink()).getMyaddr());
 //        msg.DumpHead();
         //return;

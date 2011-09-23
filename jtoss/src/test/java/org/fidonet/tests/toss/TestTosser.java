@@ -40,6 +40,8 @@ public class TestTosser {
             TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
             // TODO: test echobase
         } catch (Exception e) {
+            System.out.println("Test Failed. Details: " + e.getMessage());
+            e.printStackTrace(System.out);
             TestCase.fail();
         }
 

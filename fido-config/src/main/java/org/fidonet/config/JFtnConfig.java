@@ -72,16 +72,13 @@ public class JFtnConfig extends BaseConfig {
         return links.get(addr.toString());
     }
 
-    public String getArealistFile() {
+    public String getArealistFile() throws IOException {
         String areaList = getValue("AreaListFile", "areas");
         boolean created = false;
-        try {
-            File areasFile = new File(areaList);
-            if (!areasFile.exists()) {
-                created = areasFile.createNewFile();
-            }
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+        File areasFile = new File(areaList);
+        if (!areasFile.exists()) {
+            areasFile.getParentFile().mkdirs();
+            created = areasFile.createNewFile();
         }
         return areaList;
     }
@@ -119,15 +116,16 @@ public class JFtnConfig extends BaseConfig {
 //        }
         File tmp = new File(tmpDir);
         if (!tmp.exists()) {
-            logger.warn("Temp folder was not exists. Will be created...");
+            logger.warn("Temp folder was not exists. Will created...");
             tmp.mkdirs();
+        } else {
+            try {
+                return tmp.getCanonicalPath() + System.getProperty("file.separator");
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
         }
-        try {
-            return tmp.getCanonicalPath() + System.getProperty("file.separator");
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-            return tmpDir + System.getProperty("file.separator");
-        }
+        return tmpDir + System.getProperty("file.separator");
     }
 
     public String getOutbound() {

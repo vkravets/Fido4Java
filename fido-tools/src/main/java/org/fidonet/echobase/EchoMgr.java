@@ -1,8 +1,10 @@
 package org.fidonet.echobase;
 
+import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
+import java.io.IOException;
 import java.util.List;
 
 public class EchoMgr {
@@ -17,7 +19,7 @@ public class EchoMgr {
         this.echoList = echoList;
     }
 
-    public void addMessage(Message msg, FTNAddr myAddr) {
+    public void addMessage(Message msg, FTNAddr myAddr) throws IOException, EchoBaseException {
         if (!echoList.isInList(msg.getArea().toLowerCase())) {
             echoList.addArea(msg.getArea().toLowerCase(), echoPath, msg.getUpLink(), myAddr);
             echosbase.createArea(msg.getArea().toLowerCase());
@@ -27,14 +29,14 @@ public class EchoMgr {
         echosbase.closeArea();
     }
 
-    public void getMessage(String area, int id) {
+    public void getMessage(String area, int id) throws EchoBaseException {
         echosbase.openArea(area);
         echosbase.getMessage(id);
         echosbase.closeArea();
 
     }
 
-    private void createArea(String name) {
+    private void createArea(String name) throws EchoBaseException {
         echosbase.createArea(name);
     }
 

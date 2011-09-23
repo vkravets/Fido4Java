@@ -62,7 +62,13 @@ public class BinkClient implements Runnable {
             if(f != null)
             {
                 Link l = getLink(f);
-                if(l!=null) poll(l);
+                if(l!=null) {
+                    try {
+                        poll(l);
+                    } catch (IOException e) {
+                        logger.error("Pull failed. Details: " + e.getMessage(), e);
+                    }
+                }
             }
             else
             {
@@ -82,11 +88,11 @@ public class BinkClient implements Runnable {
         setActive(false);
     }
     
-    public void poll(Link link) {
+    public void poll(Link link) throws IOException {
 
         if(!outb.setBusy(link.getAddr()))
         {
-            System.out.println("Error while setting busy " + link.getAddr().toString());
+            logger.error("Error while setting busy " + link.getAddr().toString());
             return;
         }
 
@@ -97,19 +103,7 @@ public class BinkClient implements Runnable {
             e.printStackTrace();
         }
 
-        try {
-            clientsock.connect(new InetSocketAddress("bbs.agooga.ru", 24554));
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-        } finally {
-            try {
-                clientsock.close();
-            } catch (IOException e) {
-                // TODO logger
-                // TODO throw exception
-            }
-        }
+        clientsock.connect(new InetSocketAddress("bbs.agooga.ru", 24554));
 
         if(!clientsock.isConnected()) return;
         Session s = new Session(clientsock, link, config);
@@ -117,7 +111,7 @@ public class BinkClient implements Runnable {
         System.out.println("Session end with code " + x);
         if(!outb.setUnBusy(link.getAddr()))
         {
-            System.out.println("Error while set unbusy " + link.getAddr().toString());
+            logger.error("Error while set unbusy " + link.getAddr().toString());
         }
         outb.cleanLo(link.getAddr());
     }

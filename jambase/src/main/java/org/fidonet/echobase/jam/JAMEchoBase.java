@@ -3,6 +3,7 @@ package org.fidonet.echobase.jam;
 import org.fidonet.echobase.EchoBase;
 import org.fidonet.echobase.EchoCfg;
 import org.fidonet.echobase.EchoList;
+import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
@@ -61,7 +62,7 @@ public class JAMEchoBase implements EchoBase {
         lastrfile = new File(lastrfilename);
     }
 
-    public void createArea(String name) {
+    public void createArea(String name) throws EchoBaseException {
         setFileNames(name);
         initFiles();
         try {
@@ -70,9 +71,7 @@ public class JAMEchoBase implements EchoBase {
             indexfile.createNewFile();
             lastrfile.createNewFile();
         } catch (IOException e) {
-            logger.error("Unable to create files for area " + name);
-            // TODO throw exception
-            return;
+            throw new EchoBaseException("Unable to create "+name+"area");
         }
 
         FixedHeaderInfoStruct hdr = new FixedHeaderInfoStruct();
@@ -100,31 +99,49 @@ public class JAMEchoBase implements EchoBase {
     }
 
     @Override
-    public void openArea(String name) {
+    public void openArea(String name) throws EchoBaseException {
         setFileNames(name);
         initFiles();
         if (!isExists()) {
             createArea(name);
         }
-        header = new JHRFile(headerfile);
-        text = new JDTFile(textfile);
-        index = new JDXFile(indexfile);
-        lastread = new JLRFile(lastrfile);
+        try {
+            header = new JHRFile(headerfile);
+            text = new JDTFile(textfile);
+            index = new JDXFile(indexfile);
+            lastread = new JLRFile(lastrfile);
+        } catch (FileNotFoundException e) {
+            throw new EchoBaseException(e.getMessage());
+        }
     }
 
     @Override
-    public void closeArea() {
-        header.close();
-        text.close();
-        index.close();
-        lastread.close();
+    public void closeArea() throws EchoBaseException {
+        try {
+            header.close();
+            text.close();
+            index.close();
+            lastread.close();
+        } catch (IOException e) {
+            throw new EchoBaseException(e.getMessage());
+        }
     }
 
     @Override
-    public void addMessage(Message msg) {
-        int shiftoflast = index.getLastMessageShift();
+    public void addMessage(Message msg)throws EchoBaseException {
+        int shiftoflast;
+        try {
+            shiftoflast = index.getLastMessageShift();
+        } catch (IOException e) {
+            shiftoflast = 0;
+        }
         int mesnum;
-        MessageHeader msgheader = header.getMsgHeaderByShift(shiftoflast);
+        MessageHeader msgheader = null;
+        try {
+            msgheader = header.getMsgHeaderByShift(shiftoflast);
+        } catch (IOException e) {
+            throw new EchoBaseException(e.getMessage());
+        }
         if (msgheader == null) {
             mesnum = 0;
         } else
@@ -133,7 +150,11 @@ public class JAMEchoBase implements EchoBase {
         MessageHeader newmsg = new MessageHeader();
         newmsg.MessageNumber = mesnum + 1;
         newmsg.TimesRead = 0;
-        newmsg.Offset = text.getSize();
+        try {
+            newmsg.Offset = text.getSize();
+        } catch (IOException e) {
+            throw new EchoBaseException(e.getMessage());
+        }
         String MSGID = msg.getSingleKludge("MSGID");
         newmsg.MSGIDcrc = MyCRC.CRC(MSGID.getBytes());
 
@@ -235,24 +256,27 @@ public class JAMEchoBase implements EchoBase {
         byte[] msgtext = msg.getBody();
 
         newmsg.TxtLen = msgtext.length;
-        int headeroffset = header.writeHeader(newmsg);
+        int headeroffset = 0;
+        try {
+            headeroffset = header.writeHeader(newmsg);
+            text.writeText(msgtext);
+            index.writeIndex(msg.getTo(), headeroffset);
 
-        text.writeText(msgtext);
-        index.writeIndex(msg.getTo(), headeroffset);
+            FixedHeaderInfoStruct fh = header.getFixedHeader();
+            fh.setActivemsg(fh.getActivemsg() + 1);
+            header.setFixedHeader(fh);
+        } catch (IOException e) {
+            throw new EchoBaseException(e.getMessage());
+        }
+    }
 
-        FixedHeaderInfoStruct fh = header.getFixedHeader();
-        fh.setActivemsg(fh.getActivemsg() + 1);
-        header.setFixedHeader(fh);
+    @Override
+    public void delMessage(int id) throws EchoBaseException {
 
     }
 
     @Override
-    public void delMessage(int id) {
-
-    }
-
-    @Override
-    public void getMessage(int id) {
+    public void getMessage(int id) throws EchoBaseException {
 
     }
 

@@ -9,47 +9,23 @@ class JDTFile {
 
     private RandomAccessFile jdt;
 
-    JDTFile(File tmp) {
-        try {
-            jdt = new RandomAccessFile(tmp, "rw");
-        } catch (FileNotFoundException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    public JDTFile(File tmp) throws FileNotFoundException {
+        jdt = new RandomAccessFile(tmp, "rw");
     }
 
 
-    public int getSize() {
+    public int getSize() throws IOException {
         int size = 0;
-        try {
-            size = (int) jdt.length();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+        size = (int) jdt.length();
         return size;
     }
 
-    public void writeText(byte[] buffer) {
-        try {
-            jdt.seek(jdt.length());
-            jdt.write(buffer);
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    public void writeText(byte[] buffer) throws IOException {
+        jdt.seek(jdt.length());
+        jdt.write(buffer);
     }
 
-    void close() {
-        try {
-            jdt.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    void close() throws IOException {
+        jdt.close();
     }
 }

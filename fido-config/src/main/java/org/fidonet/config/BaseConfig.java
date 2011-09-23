@@ -56,7 +56,6 @@ public abstract class BaseConfig implements IConfig {
             stream.close();
             file.close();
         } catch (IOException e) {
-            // TODO logger
             throw new ParseConfigException(e);
         }
 
@@ -67,7 +66,6 @@ public abstract class BaseConfig implements IConfig {
         try {
             load(new FileInputStream(fileName));
         } catch (FileNotFoundException e) {
-            // TODO logger
             throw new ParseConfigException(e);
         }
     }

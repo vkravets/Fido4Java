@@ -27,7 +27,7 @@ import java.io.PrintStream;
 public class TestHook extends HasEventBus {
 
     @Before
-    public void setupEnv() {
+    public void setupEnv() throws Exception {
         // Init ScriptManager
         ScriptManager scriptManager = new ScriptManager();
         // Init hook and command classes
@@ -38,11 +38,7 @@ public class TestHook extends HasEventBus {
         scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
         InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testHook.py");
-        try {
-            scriptManager.runScript(inputStream);
-        } catch (Exception e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        scriptManager.runScript(inputStream);
     }
 
     @After

@@ -6,10 +6,8 @@ import org.fidonet.logger.LoggerFactory;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import javax.script.ScriptException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,29 +26,23 @@ public class ScriptManager {
     private Map<String, Object> scriptVariables;
     private String scriptFolder;
 
-    public ScriptManager() {
+    public ScriptManager() throws ScriptException, IOException {
         this("./scripts/");
     }
 
-    public ScriptManager(String scriptFolder) {
+    public ScriptManager(String scriptFolder) throws IOException, ScriptException {
         scriptVariables = new HashMap<String, Object>();
         this.scriptFolder = scriptFolder;
 
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         jythonEngine = scriptEngineManager.getEngineByExtension("py");
         if (jythonEngine == null) {
-            // TODO logger
             throw new VerifyError("Jython script engine is not found");
         }
         File scriptsFolder = new File(scriptFolder);
-        try {
-            String fullScriptPath = scriptsFolder.getCanonicalPath();
-            logger.debug("Adding to PYTHON_PATH \""+fullScriptPath+"\" folder");
-            jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", scriptsFolder.getCanonicalPath()));
-        } catch (Exception e){
-            logger.error(e.getMessage(), e);
-            // TODO throw exception
-        }
+        String fullScriptPath = scriptsFolder.getCanonicalPath();
+        logger.debug("Adding to PYTHON_PATH \""+fullScriptPath+"\" folder");
+        jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", fullScriptPath));
     }
 
     private ScriptEngine getJythonScriptEngine() throws Exception {
@@ -81,7 +73,7 @@ public class ScriptManager {
         if (name != null && value != null) {
             scriptVariables.put(name, value);
         } else {
-            // TODO: Log warn
+            logger.warn(String.format("Variable will not be added. Name: \"%s\" Value:\"%s\"", name, value));
         }
     }
 
@@ -108,8 +100,7 @@ public class ScriptManager {
                         logger.debug("Loading " + file.getName());
                         runScript(file);
                     } catch (Exception e) {
-                        // TODO logger
-                        // TODO throw exception
+                        logger.error(String.format("Error during loading %s script. Details: %s", file.getName(), e.getMessage()), e);
                     }
                 }
             }

@@ -11,63 +11,33 @@ class JDXFile {
 
     private RandomAccessFile jdx;
 
-    JDXFile(File tmp) {
-        try {
-            jdx = new RandomAccessFile(tmp, "rw");
-        } catch (FileNotFoundException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    public JDXFile(File tmp) throws FileNotFoundException {
+        jdx = new RandomAccessFile(tmp, "rw");
     }
 
-    void close() {
-        try {
-            jdx.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    void close() throws IOException {
+        jdx.close();
     }
 
-    public void writeIndex(String uname, int offset) {
+    public void writeIndex(String uname, int offset) throws IOException {
         int CRC = MyCRC.CRC(uname.toLowerCase().getBytes());
-
-        try {
-            jdx.seek(jdx.length());
-            jdx.writeInt(Integer.reverseBytes(CRC));
-            jdx.writeInt(Integer.reverseBytes(offset));
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
-
+        jdx.seek(jdx.length());
+        jdx.writeInt(Integer.reverseBytes(CRC));
+        jdx.writeInt(Integer.reverseBytes(offset));
     }
 
-    public int getLastMessageShift() {
-        int mcrc = 0;
+    public int getLastMessageShift() throws IOException {
+//        int mcrc = 0;
         int mshift = 0;
 
-        try {
-            jdx.seek(jdx.length() - 8);
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-//            e.printStackTrace();
+        long offset = jdx.length() - 8;
+        if (offset < 0) {
             return 0;
         }
-        try {
-//            mcrc = (Integer.reverseBytes(jdx.readInt()));
-            jdx.readInt();
-            mshift = (Integer.reverseBytes(jdx.readInt()));
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-//            e.printStackTrace();
-            return 0;
-        }
+        jdx.seek(jdx.length() - 8);
+//        mcrc = (Integer.reverseBytes(jdx.readInt()));
+        jdx.readInt();
+        mshift = (Integer.reverseBytes(jdx.readInt()));
         return mshift;
     }
 }

@@ -15,15 +15,12 @@ public class HookInterpreter extends HasEventBus {
 
     public void registerHook(ScriptManager scriptManager, Class<? extends Event> hookClass, Object hook) throws Exception {
         if ((scriptManager == null)) {
-            // TODO logger
             throw new VerifyError("Parameter jftn is empty");
         }
         if ((hookClass == null)) {
-            // TODO logger
             throw new VerifyError("Parameter name is empty");
         }
         if (hook == null) {
-            // TODO logger
             throw new VerifyError("Parameter command is empty");
         }
         Hook commandObject = scriptManager.getInterface(hook, Hook.class);

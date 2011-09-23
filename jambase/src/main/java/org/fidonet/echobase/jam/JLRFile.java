@@ -8,24 +8,12 @@ import java.io.RandomAccessFile;
 class JLRFile {
     private RandomAccessFile jlr;
 
-    JLRFile(File tmp) {
-        try {
-            jlr = new RandomAccessFile(tmp, "rw");
-        } catch (FileNotFoundException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    public JLRFile(File tmp) throws FileNotFoundException {
+        jlr = new RandomAccessFile(tmp, "rw");
     }
 
-    void close() {
-        try {
-            jlr.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    void close() throws IOException {
+        jlr.close();
     }
 
 

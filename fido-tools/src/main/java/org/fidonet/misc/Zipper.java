@@ -21,16 +21,8 @@ public class Zipper {
         ZipFile zip = null;
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
-        try {
-            zip = new ZipFile(bound);
-        } catch (IOException e) {
-            logger.error("Zip error " + bound + ':' + e.getMessage());
-            // TODO throw exception
-        }
+        zip = new ZipFile(bound);
 
-        if (zip == null) {
-            return null;
-        }
         Enumeration entries = zip.entries();
 
         byte[] buf = new byte[1024];

@@ -19,15 +19,12 @@ public class CommandInterpreter {
 
     public void registerCommand(ScriptManager scriptManager, String name, Object command) throws Exception {
         if ((scriptManager == null)) {
-            // TODO logger
             throw new VerifyError("Parameter scriptManager is empty");
         }
         if ((name == null) || (name.trim().length() == 0)) {
-            // TODO logger
             throw new VerifyError("Parameter name is empty");
         }
         if (command == null) {
-            // TODO logger
             throw new VerifyError("Parameter command is empty");
         }
         Command commandObject = scriptManager.getInterface(command, Command.class);

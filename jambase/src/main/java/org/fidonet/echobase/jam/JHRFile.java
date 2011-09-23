@@ -20,84 +20,64 @@ class JHRFile {
 
     private RandomAccessFile jhr;
 
-    public JHRFile(File tmp) {
-        try {
-            jhr = new RandomAccessFile(tmp, "rw");
-        } catch (FileNotFoundException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    public JHRFile(File tmp) throws FileNotFoundException {
+        jhr = new RandomAccessFile(tmp, "rw");
     }
 
-    public MessageHeader getMsgHeaderByShift(int shift) {
-        try {
-            jhr.seek(shift);
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-            return null;
-        }
+    public MessageHeader getMsgHeaderByShift(int shift) throws IOException {
+        jhr.seek(shift);
         if (shift < 1024) return null;
         MessageHeader result = new MessageHeader();
 
-        try {
+        ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize);
+        int readed = jhr.read(tmpbuf.array());
+        if(readed != MessageHeader.MessageHeaderSize)
+        {
+            logger.error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
+        }
+        tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
+        tmpbuf.position(0);
 
-            ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize);
-            int readed = jhr.read(tmpbuf.array());
-            if(readed != MessageHeader.MessageHeaderSize)
-            {
-                logger.error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
-            }
-            tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
+        tmpbuf.get(result.signature);
+        result.revision = tmpbuf.getShort();
+        result.reservedword = tmpbuf.getShort();
+        result.SubfieldLen = tmpbuf.getInt();
+        result.TimesRead = tmpbuf.getInt();
+        result.MSGIDcrc = tmpbuf.getInt();
+        result.REPLYcrc = tmpbuf.getInt();
+        result.ReplyTo = tmpbuf.getInt();
+        result.Reply1st = tmpbuf.getInt();
+        result.Replynext = tmpbuf.getInt();
+        result.DateWritten = tmpbuf.getInt();
+        result.DateReceived = tmpbuf.getInt();
+        result.DateProcessed = tmpbuf.getInt();
+        result.MessageNumber = tmpbuf.getInt();
+        result.Attribute = tmpbuf.getInt();
+        result.Attribute2 = tmpbuf.getInt();
+        result.Offset = tmpbuf.getInt();
+        result.TxtLen = tmpbuf.getInt();
+        result.PasswordCRC = tmpbuf.getInt();
+        result.Cost = tmpbuf.getInt();
+        if (result.SubfieldLen != 0) {
+            tmpbuf = ByteBuffer.allocate(result.SubfieldLen);
+            jhr.read(tmpbuf.array());
             tmpbuf.position(0);
-
-            tmpbuf.get(result.signature);
-            result.revision = tmpbuf.getShort();
-            result.reservedword = tmpbuf.getShort();
-            result.SubfieldLen = tmpbuf.getInt();
-            result.TimesRead = tmpbuf.getInt();
-            result.MSGIDcrc = tmpbuf.getInt();
-            result.REPLYcrc = tmpbuf.getInt();
-            result.ReplyTo = tmpbuf.getInt();
-            result.Reply1st = tmpbuf.getInt();
-            result.Replynext = tmpbuf.getInt();
-            result.DateWritten = tmpbuf.getInt();
-            result.DateReceived = tmpbuf.getInt();
-            result.DateProcessed = tmpbuf.getInt();
-            result.MessageNumber = tmpbuf.getInt();
-            result.Attribute = tmpbuf.getInt();
-            result.Attribute2 = tmpbuf.getInt();
-            result.Offset = tmpbuf.getInt();
-            result.TxtLen = tmpbuf.getInt();
-            result.PasswordCRC = tmpbuf.getInt();
-            result.Cost = tmpbuf.getInt();
-            if (result.SubfieldLen != 0) {
-                tmpbuf = ByteBuffer.allocate(result.SubfieldLen);
-                jhr.read(tmpbuf.array());
-                tmpbuf.position(0);
-                tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
-                result.SubFieldList = new LinkedList<SubField>();
-                while (tmpbuf.position() < tmpbuf.capacity()) {
-                    SubField sf = new SubField();
-                    sf.loID = tmpbuf.getShort();
-                    sf.hiID = tmpbuf.getShort();
-                    sf.datalen = tmpbuf.getInt();
-                    sf.buffer = new byte[sf.datalen];
-                    tmpbuf.get(sf.buffer);
-                    result.SubFieldList.add(sf);
-                }
+            tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
+            result.SubFieldList = new LinkedList<SubField>();
+            while (tmpbuf.position() < tmpbuf.capacity()) {
+                SubField sf = new SubField();
+                sf.loID = tmpbuf.getShort();
+                sf.hiID = tmpbuf.getShort();
+                sf.datalen = tmpbuf.getInt();
+                sf.buffer = new byte[sf.datalen];
+                tmpbuf.get(sf.buffer);
+                result.SubFieldList.add(sf);
             }
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
         }
         return result;
     }
 
-    public int writeHeader(MessageHeader msghdr) {
+    public int writeHeader(MessageHeader msghdr) throws IOException {
         ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize + msghdr.SubfieldLen);
         tmpbuf.position(0);
         tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
@@ -131,31 +111,19 @@ class JHRFile {
             }
         }
         int result = -1;
-        try {
-            jhr.seek(jhr.length());
-            result = (int) jhr.length();
-            jhr.write(tmpbuf.array());
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+        jhr.seek(jhr.length());
+        result = (int) jhr.length();
+        jhr.write(tmpbuf.array());
         return result;
     }
 
-    public FixedHeaderInfoStruct getFixedHeader() {
+    public FixedHeaderInfoStruct getFixedHeader() throws IOException {
         byte[] fh = new byte[1024];
         ByteBuffer res = ByteBuffer.allocate(1024);
         int readed = 0;
         res.order(ByteOrder.LITTLE_ENDIAN);
-        try {
-            jhr.seek(0);
-            readed = jhr.read(fh);
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+        jhr.seek(0);
+        readed = jhr.read(fh);
         if(readed != 1024)
         {
             logger.error("Ooops! getFixedHeader() reads not 1024!");
@@ -166,26 +134,14 @@ class JHRFile {
         return result;
     }
 
-    public void setFixedHeader(FixedHeaderInfoStruct fh) {
+    public void setFixedHeader(FixedHeaderInfoStruct fh) throws IOException {
         fh.setModcounter(fh.getModcounter() + 1);
-        try {
-            jhr.seek(0);
-            jhr.write(fh.toByteArray());
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+        jhr.seek(0);
+        jhr.write(fh.toByteArray());
     }
 
-    void close() {
-        try {
-            jhr.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
-            e.printStackTrace();
-        }
+    void close() throws IOException {
+        jhr.close();
     }
 
 }

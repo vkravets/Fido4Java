@@ -20,62 +20,50 @@ public class EchoList {
         this.areaListFile = areaListFile;
     }
 
-    public void load(String filename) {
+    public void load(String filename) throws IOException {
         this.areaListFile = filename;
         this.load();
     }
 
-    public void load() {
+    public void load() throws IOException {
         list = new HashMap<String, EchoCfg>();
 
         FileReader fr;
-        try {
-            fr = new FileReader(areaListFile);
-        } catch (FileNotFoundException e) {
-            // TODO throw exception
-            logger.error("Echolist not found!");
-            return;
-        }
-
-        try {
-            String str;
-            final BufferedReader file = new BufferedReader(fr);
-            while ((str = file.readLine()) != null) {
-                if (str.contains("#")) {
-                    str = str.substring(0, str.indexOf('#'));
-                }
-                if (str.length() == 0) {
-                    continue;
-                }
-                if (str.toLowerCase().startsWith("echoarea")) {
-                    String[] area = str.split(" ");
-                    EchoCfg echo = new EchoCfg();
-                    echo.Name = area[1];
-                    echo.Path = area[2];
-                    for (int i = 3; i < area.length - 1; i++) {
-                        if (area[i].equals("-b")) {
-                            echo.Type = area[i + 1];
-                            i++;
-                        } else if (area[i].equals("-g")) {
-                            echo.Group = area[i + 1];
-                            i++;
-                        } else if (area[i].equals("-a")) {
-                            echo.AKA = new FTNAddr(area[i + 1]);
-                            i++;
-                        } else if (!area[i].startsWith("-")) {
-                            echo.Link = new FTNAddr(area[i]);
-                        }
-                    }
-                    list.put(echo.Name, echo);
-                }
+        fr = new FileReader(areaListFile);
+        String str;
+        final BufferedReader file = new BufferedReader(fr);
+        while ((str = file.readLine()) != null) {
+            if (str.contains("#")) {
+                str = str.substring(0, str.indexOf('#'));
             }
-
-            fr.close();
-            file.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
+            if (str.length() == 0) {
+                continue;
+            }
+            if (str.toLowerCase().startsWith("echoarea")) {
+                String[] area = str.split(" ");
+                EchoCfg echo = new EchoCfg();
+                echo.Name = area[1];
+                echo.Path = area[2];
+                for (int i = 3; i < area.length - 1; i++) {
+                    if (area[i].equals("-b")) {
+                        echo.Type = area[i + 1];
+                        i++;
+                    } else if (area[i].equals("-g")) {
+                        echo.Group = area[i + 1];
+                        i++;
+                    } else if (area[i].equals("-a")) {
+                        echo.AKA = new FTNAddr(area[i + 1]);
+                        i++;
+                    } else if (!area[i].startsWith("-")) {
+                        echo.Link = new FTNAddr(area[i]);
+                    }
+                }
+                list.put(echo.Name, echo);
+            }
         }
+
+        fr.close();
+        file.close();
 
     }
 
@@ -91,7 +79,7 @@ public class EchoList {
         return new ArrayList<String>(list.keySet());
     }
 
-    public void addArea(String name, String Path, FTNAddr link, FTNAddr myAddr) {
+    public void addArea(String name, String Path, FTNAddr link, FTNAddr myAddr) throws IOException {
         EchoCfg cfg = new EchoCfg();
         cfg.Name = name;
         cfg.Path = Path + System.getProperty("file.separator") + name;
@@ -102,24 +90,16 @@ public class EchoList {
         saveToList(cfg);
     }
 
-    private void saveToList(EchoCfg echo) {
+    private void saveToList(EchoCfg echo) throws IOException {
         FileWriter fw = null;
         try {
             fw = new FileWriter(areaListFile, true);
             PrintWriter out = new PrintWriter(fw);
             out.println(echo.getEchoString());
             out.close();
-        } catch (IOException e) {
-            // TODO logger
-            // TODO throw exception
         } finally {
             if (fw != null) {
-                try {
-                    fw.close();
-                } catch (IOException e) {
-                    logger.error(e.getMessage(), e);
-                    // TODO throw exception
-                }
+                fw.close();
             }
         }
 
