@@ -7,8 +7,8 @@ package org.fidonet.jftn.share;
  * Time: 11:19 AM
  * To change this template use File | Settings | File Templates.
  */
-public interface Command {
+public interface Command<I, R> {
 
-    public void execute(String argv[]);
+    public R execute(I argv);
 
 }

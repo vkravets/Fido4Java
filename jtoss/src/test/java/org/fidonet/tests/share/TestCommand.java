@@ -7,11 +7,9 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
-import org.fidonet.tests.tools.ConsoleOutputStream;
 import org.junit.Test;
 
 import java.io.InputStream;
-import java.io.PrintStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,16 +37,11 @@ public class TestCommand {
         } catch (Exception e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
-        Command command = commands.findCommandByName("test");
+        Command<String[], Object> command = commands.findCommandByName("test");
         TestCase.assertNotNull(command);
-
-        PrintStream console = System.out;
-        ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();
-        System.setOut(new PrintStream(consoleMonitor, true));
-        command.execute(new String[] {"test", "test2"});
-        System.out.flush();
-        System.setOut(console);
-        TestCase.assertEquals("Test [test, test2]", consoleMonitor.getBuffer());
+        String[] param = new String[]{"test", "test2"};
+        Object result = command.execute(param);
+        TestCase.assertEquals(param, result);
 
     }
 
