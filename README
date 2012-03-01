@@ -2,6 +2,8 @@
 JFtn readme v0.1
 ----------------
 
+BUILD STATUS: "!https://secure.travis-ci.org/vkravets/Fido4Java.png!":http://travis-ci.org/vkravets/Fido4Java
+
 ABOUT
 
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
