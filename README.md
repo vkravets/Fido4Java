@@ -10,7 +10,7 @@ Jenkins CI:
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
 To use JFtn you need installed JVM with at least 1.6.
 Feel free to report bugs and request for features.
-Its very simple for now and can be used only for read-only system. It cant toss netmail, have bugs,
+Its very simple for now and can be used only for read-only system. It can toss netmail, have bugs,
 and still under develompent.
 
 ### FEATURES
@@ -18,6 +18,9 @@ and still under develompent.
 Can store echomail in jam-base.
 Support several echo-links.
 Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
+
+### TODO
+
 
 ### INSTALL
 
