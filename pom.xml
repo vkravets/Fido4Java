@@ -19,14 +19,14 @@
 
     <distributionManagement>
         <repository>
-            <id>nexus</id>
+            <id>cloudbee</id>
             <name>JFtn release repository</name>
-            <url>dav:http://jftn.ru:8080/nexus/content/repositories/jftn</url>
+	    <url>dav::http://repository-vkravets.forge.cloudbees.com/release</url>
         </repository>
         <snapshotRepository>
-            <id>nexus</id>
+            <id>cloudbee</id>
             <name>JFtn snapshots repository</name>
-            <url>dav:http://jftn.ru:8080/nexus/content/repositories/jftn-snapshots</url>
+	    <url>dav:http://https://repository-vkravets.forge.cloudbees.com/snapshots</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
