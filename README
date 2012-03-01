@@ -4,9 +4,9 @@ JFtn readme v0.1
 
 ABOUT
 
-JFtn is a ftn-tosser written in Java.
+JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
 To use JFtn you need installed JVM with at least 1.6.
-Projects web is http://sourceforge.net/projects/jftn/. Feel free to report bugs and request for features.
+Feel free to report bugs and request for features.
 Its very simple for now and can be used only for read-only system. It cant toss netmail, have bugs,
 and still under develompent.
 
@@ -32,10 +32,10 @@ Starting from the command line. The first parameter must be action. Action can b
 DEVELOPERS
 
 For now there are a few developers (see below list), but you can join for develompent anytime.
-You can always get a fresh version at GitHub: https://github.com/dtoch/jftn.git or git://github.com/dtoch/jftn.git
+You can always get a fresh version at GitHub: github.com/vkravets/Fido4Java.git or git://github.com/vkravets/Fido4Java.git
 
 JFtn team members:
-    * Dmitriy Tochansky - tochansky<at>gmail.com or 2:5030/1111
     * Vladimir Kravets - vova.kravets<at>gmail.com or 2:467/70.113
+    * Dmitriy Tochansky - tochansky<at>gmail.com or 2:5030/1111 (original author of JFtn)
 
 Feel free to contact to us!
