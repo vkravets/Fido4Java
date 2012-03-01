@@ -1,7 +1,9 @@
 JFtn v0.1
 =========
 
-### BUILD STATUS: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
+### BUILD STATUS: 
+Travis CI: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
+Jenkins CI: 
 
 ### ABOUT
 
@@ -12,7 +14,6 @@ Its very simple for now and can be used only for read-only system. It cant toss 
 and still under develompent.
 
 ### FEATURES
-
 
 Can store echomail in jam-base.
 Support several echo-links.
