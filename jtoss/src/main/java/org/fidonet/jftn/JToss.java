@@ -32,6 +32,7 @@ public class JToss {
             config.load("jftn.conf");
         } catch (ParseConfigException e) {
             logger.error("Error during parsing config.", e);
+            System.exit(1);
         }
 
         // Loading Script engine
