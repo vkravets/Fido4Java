@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.HasEventBus;
 
@@ -13,7 +13,7 @@ import org.fidonet.jftn.event.HasEventBus;
  */
 public class HookInterpreter extends HasEventBus {
 
-    public void registerHook(ScriptManager scriptManager, Class<? extends Event> hookClass, Object hook) throws Exception {
+    public void registerHook(ScriptEngine scriptManager, Class<? extends Event> hookClass, Object hook) throws Exception {
         if ((scriptManager == null)) {
             throw new VerifyError("Parameter jftn is empty");
         }

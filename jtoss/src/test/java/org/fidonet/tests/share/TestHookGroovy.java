@@ -1,8 +1,8 @@
 package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
+import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnShare;
-import org.fidonet.jftn.engine.script.JythonScriptManager;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.event.Event;
 import org.fidonet.jftn.event.EventHandler;
@@ -25,12 +25,12 @@ import java.io.PrintStream;
  * Time: 4:42 PM
  * To change this template use File | Settings | File Templates.
  */
-public class TestHook extends HasEventBus {
+public class TestHookGroovy extends HasEventBus {
 
     @Before
     public void setupEnv() throws Exception {
         // Init JythonScriptManager
-        ScriptEngine scriptManager = new JythonScriptManager();
+        ScriptEngine scriptManager = new GroovyScriptManager();
         // Init hook and command classes
         HookInterpreter hookInterpreter = new HookInterpreter();
         CommandCollection commands = new CommandCollection();
@@ -38,7 +38,7 @@ public class TestHook extends HasEventBus {
         // Add to script scope "jftn" variable which have all above data
         scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
-        InputStream inputStream = JythonScriptManager.class.getClassLoader().getResourceAsStream("testHook.py");
+        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testHook.groovy");
         scriptManager.runScript(inputStream);
     }
 

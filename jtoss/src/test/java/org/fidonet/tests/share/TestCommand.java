@@ -2,7 +2,8 @@ package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
 import org.fidonet.jftn.engine.script.JFtnShare;
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.JythonScriptManager;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
@@ -22,8 +23,8 @@ public class TestCommand {
 
     @Test
     public void testCommandRegister() throws Exception {
-        // Init ScriptManager
-        ScriptManager scriptManager = new ScriptManager();
+        // Init JythonScriptManager
+        ScriptEngine scriptManager = new JythonScriptManager();
         // Init hook and command classes
         HookInterpreter hookInterpreter = new HookInterpreter();
         CommandCollection commands = new CommandCollection();
@@ -31,7 +32,7 @@ public class TestCommand {
         // Add to script scope "jftn" variable which have all above data
         scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
-        InputStream inputStream = ScriptManager.class.getClassLoader().getResourceAsStream("testCommand.py");
+        InputStream inputStream = JythonScriptManager.class.getClassLoader().getResourceAsStream("testCommand.py");
         try {
             scriptManager.runScript(inputStream);
         } catch (Exception e) {

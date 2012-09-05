@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,7 +17,7 @@ public class CommandInterpreter {
         this.commands = commands;
     }
 
-    public void registerCommand(ScriptManager scriptManager, String name, Object command) throws Exception {
+    public void registerCommand(ScriptEngine scriptManager, String name, Object command) throws Exception {
         if ((scriptManager == null)) {
             throw new VerifyError("Parameter scriptManager is empty");
         }

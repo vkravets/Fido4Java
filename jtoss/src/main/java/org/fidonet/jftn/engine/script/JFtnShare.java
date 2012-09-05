@@ -14,28 +14,28 @@ import org.fidonet.jftn.share.HookInterpreter;
  */
 public class JFtnShare  {
 
-    private ScriptManager scriptManager;
+    private ScriptEngine scriptEngine;
     private CommandInterpreter commands;
     private HookInterpreter hooks;
     private IConfig config;
 
-    public JFtnShare(ScriptManager scriptManager, HookInterpreter hooks, CommandInterpreter commands) {
-        this.scriptManager = scriptManager;
+    public JFtnShare(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
+        this.scriptEngine = scriptEngine;
         this.hooks = hooks;
         this.commands = commands;
     }
 
 
-    public ScriptManager getScriptManager() {
-        return scriptManager;
+    public ScriptEngine getScriptEngine() {
+        return scriptEngine;
     }
 
     public void registerCommand(String name, Object command) throws Exception {
-        commands.registerCommand(scriptManager, name, command);
+        commands.registerCommand(scriptEngine, name, command);
     }
 
     public void registerHook(Class<? extends Event> hookClass, Object hook) throws Exception {
-        hooks.registerHook(scriptManager, hookClass, hook);
+        hooks.registerHook(scriptEngine, hookClass, hook);
     }
 
     public IConfig getConfig() {

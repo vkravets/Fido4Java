@@ -3,7 +3,8 @@ package org.fidonet.jftn;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.engine.script.JFtnShare;
-import org.fidonet.jftn.engine.script.ScriptManager;
+import org.fidonet.jftn.engine.script.JythonScriptManager;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
@@ -36,7 +37,7 @@ public class JToss {
         }
 
         // Loading Script engine
-        ScriptManager scriptManager = new ScriptManager("scripts");
+        ScriptEngine scriptManager = new JythonScriptManager("scripts");
 
         HookInterpreter hooks = new HookInterpreter();
         CommandCollection commands = new CommandCollection();

@@ -18,19 +18,19 @@ import java.util.Map;
  * Time: 11:40 AM
  * To change this template use File | Settings | File Templates.
  */
-public class ScriptManager {
+public class JythonScriptManager implements org.fidonet.jftn.engine.script.ScriptEngine {
 
-    private static ILogger logger = LoggerFactory.getLogger(ScriptManager.class.getName());
+    private static ILogger logger = LoggerFactory.getLogger(JythonScriptManager.class.getName());
 
     private ScriptEngine jythonEngine;
     private Map<String, Object> scriptVariables;
     private String scriptFolder;
 
-    public ScriptManager() throws ScriptException, IOException {
+    public JythonScriptManager() throws ScriptException, IOException {
         this("./scripts/");
     }
 
-    public ScriptManager(String scriptFolder) throws IOException, ScriptException {
+    public JythonScriptManager(String scriptFolder) throws IOException, ScriptException {
         scriptVariables = new HashMap<String, Object>();
         this.scriptFolder = scriptFolder;
 
@@ -45,10 +45,6 @@ public class ScriptManager {
         jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", fullScriptPath));
     }
 
-    private ScriptEngine getJythonScriptEngine() throws Exception {
-        return jythonEngine;
-    }
-
     public <T> T getInterface(Object object, Class<T> type) {
         return ((Invocable)jythonEngine).getInterface(object, type);
     }
@@ -60,7 +56,6 @@ public class ScriptManager {
 
     public void runScript(InputStream stream) throws Exception {
         InputStreamReader reader = new InputStreamReader(stream);
-        ScriptEngine jythonEngine = getJythonScriptEngine();
         if (!scriptVariables.isEmpty()) {
             for (String name : scriptVariables.keySet()) {
                 jythonEngine.put(name, scriptVariables.get(name));
