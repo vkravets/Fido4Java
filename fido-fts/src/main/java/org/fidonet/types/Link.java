@@ -1,16 +1,30 @@
 package org.fidonet.types;
 
 public class Link {
-    private final FTNAddr addr;
-    private final FTNAddr myaddr;
-    private final String pass;
+    private FTNAddr addr;
+    private FTNAddr myaddr;
+    private String pass;
+    private String hostAddress;
+    private int port;
 
     public Link(String linkstr) {
-        int adrend = linkstr.indexOf(',');
-        int akaend = linkstr.indexOf(',', adrend + 1);
-        addr = new FTNAddr(linkstr.substring(0, adrend));
-        myaddr = new FTNAddr(linkstr.substring(adrend + 1, akaend));
-        pass = linkstr.substring(akaend + 1, linkstr.length());
+
+        String[] linkToken = linkstr.split(",");
+        if (linkToken.length < 2) {
+            throw new IllegalArgumentException("Invalid link configuration");
+        }
+        addr = new FTNAddr(linkToken[0].trim());
+        myaddr = new FTNAddr(linkToken[1].trim());
+        if (linkToken.length > 3)
+            pass = linkToken[2].trim();
+        if (linkToken.length >=4) {
+            String url = linkToken[3].trim();
+            if (url.indexOf(":") != -1) {
+                String[] hostToken = url.split(":");
+                this.hostAddress = hostToken[0];
+                this.port = Integer.valueOf(hostToken[1].trim());
+            }
+        }
     }
 
     public FTNAddr getAddr() {
@@ -28,5 +42,13 @@ public class Link {
     @Override
     public String toString() {
         return myaddr + " -> " + getAddr().toString();
+    }
+
+    public String getHostAddress() {
+        return hostAddress;
+    }
+
+    public int getPort() {
+        return port;
     }
 }

@@ -25,6 +25,9 @@ public class Log4jEngine implements ILogger{
     private Method info;
     private Method infoEx;
 
+    public static ILogger getLogger(Class<?> clazz)  throws LogEngineNotFoundException {
+        return Log4jEngine.getLogger(clazz.getCanonicalName());
+    }
 
     public static ILogger getLogger(String className) throws LogEngineNotFoundException {
         try {

@@ -20,7 +20,7 @@ debuglevel=1
 
 #
 # Links description
-# Link=<Link address>,<Out AKA>,<password>
+# Link=<Link address>,<Out AKA>,<password>[,host address]
 #
 Link=2:5030/1111.0,2:5030/1111.1111,12345678
 

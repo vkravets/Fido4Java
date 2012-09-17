@@ -11,6 +11,10 @@ public class LoggerFactory {
 
     public static boolean useLog4j = true;
 
+    public static ILogger getLogger(Class<?> clazz) {
+        return LoggerFactory.getLogger(clazz.getCanonicalName());
+    }
+
     public static ILogger getLogger(String className) {
         if (useLog4j) {
             try {

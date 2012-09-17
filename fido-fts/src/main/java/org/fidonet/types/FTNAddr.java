@@ -4,11 +4,11 @@ import java.util.regex.Pattern;
 
 public class FTNAddr {
 
-    private final int zone;
-    private final int net;
-    private final int node;
-    private final int pnt;
-    private final boolean valid;
+    private int zone = -1;
+    private int net = -1;
+    private int node = -1;
+    private int pnt = -1;
+    private boolean valid = false;
 
     public FTNAddr(int z, int ne, int no, int p) {
         zone = z;
@@ -59,6 +59,10 @@ public class FTNAddr {
             pnt = 0;
         }
         valid = true;
+    }
+
+    public FTNAddr(FTNAddr addr) {
+        this(addr.toString());
     }
 
     public String toString() {
