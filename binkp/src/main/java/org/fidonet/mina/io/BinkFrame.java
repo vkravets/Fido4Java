@@ -1,9 +1,9 @@
 package org.fidonet.mina.io;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import org.fidonet.mina.codec.DataInfo;
 import org.fidonet.mina.codec.DataReader;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -39,7 +39,7 @@ public class BinkFrame {
         byte cmd = -1;
         byte[] dataBuf = null;
         if (info.isCommand()) {
-            DataInputStream dataStream = new DataInputStream(new ByteInputStream(frame.getData(), frame.getData().length));
+            DataInputStream dataStream = new DataInputStream(new ByteArrayInputStream(frame.getData()));
             try {
                 cmd = dataStream.readByte();
                 dataBuf = new byte[info.getSize()-1];
