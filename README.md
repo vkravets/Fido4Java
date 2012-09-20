@@ -1,8 +1,12 @@
 JFtn v0.1
 =========
 
+[![Build Status](https://www.cloudbees.com/sites/default/files/Button-Built-on-CB-1.png)](http://vkravets.ci.cloudbees.com/)
+
 ### BUILD STATUS: 
-Travis CI: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
+[![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
+
+
 
 ### ABOUT
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
