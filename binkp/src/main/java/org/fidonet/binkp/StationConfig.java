@@ -1,9 +1,11 @@
 package org.fidonet.binkp;
 
+import org.fidonet.mina.ServerRole;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 9/17/12
  * Time: 11:08 AM
  */
@@ -13,6 +15,7 @@ public class StationConfig {
     private String location;
     private String NDL;
     private String address;
+    private ServerRole role;
 
     public StationConfig(String name, String sysopName, String location, String NDL, String address) {
         this.name = name;

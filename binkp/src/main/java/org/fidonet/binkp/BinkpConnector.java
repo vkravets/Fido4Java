@@ -145,7 +145,7 @@ public class BinkpConnector implements ProtocolConnector {
     }
 
     private BinkpCommand getCommand(int command) {
-        return BinkpCommand.findCommand(command);
+        return BinkpCommand.findCommand((byte)command);
     }
 
     /**

@@ -23,6 +23,9 @@ public class Link {
                 String[] hostToken = url.split(":");
                 this.hostAddress = hostToken[0];
                 this.port = Integer.valueOf(hostToken[1].trim());
+            } else {
+                this.hostAddress = url;
+                this.port = 0;
             }
         }
     }

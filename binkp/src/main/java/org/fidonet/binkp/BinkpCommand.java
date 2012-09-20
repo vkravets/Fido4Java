@@ -6,19 +6,30 @@ package org.fidonet.binkp;
  * 
  */
 public enum BinkpCommand {
-    M_NUL(0), M_ADR(1), M_PWD(2), M_FILE(3), M_OK(4), M_EOB(5), M_GOT(6), M_ERR(7), M_BSY(8), M_GET(9), M_SKIP(10), M_PROCESS_FILE(
-            99);
-    private int cmd;
+    M_NUL((byte)0),
+    M_ADR((byte)1),
+    M_PWD((byte)2),
+    M_FILE((byte)3),
+    M_OK((byte)4),
+    M_EOB((byte)5),
+    M_GOT((byte)6),
+    M_ERR((byte)7),
+    M_BSY((byte)8),
+    M_GET((byte)9),
+    M_SKIP((byte)10),
+    M_PROCESS_FILE((byte)99);
 
-    private BinkpCommand(int cmd) {
+    private byte cmd;
+
+    private BinkpCommand(byte cmd) {
         this.cmd = cmd;
     }
 
-    public int getCmd() {
+    public byte getCmd() {
         return cmd;
     }
 
-    public static BinkpCommand findCommand(int cmd) {
+    public static BinkpCommand findCommand(byte cmd) {
         for (BinkpCommand command : BinkpCommand.values()) {
             if (command.getCmd() == cmd) {
                 return command;

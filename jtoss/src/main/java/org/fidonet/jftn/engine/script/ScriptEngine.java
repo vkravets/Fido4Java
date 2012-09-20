@@ -6,7 +6,7 @@ import java.io.InputStream;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 9/5/12
  * Time: 8:12 PM
  */
