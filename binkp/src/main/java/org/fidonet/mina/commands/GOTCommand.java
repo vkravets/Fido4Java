@@ -1,6 +1,5 @@
 package org.fidonet.mina.commands;
 
-import com.sun.istack.internal.NotNull;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
 import org.fidonet.mina.io.FileInfo;
@@ -50,7 +49,7 @@ public class GOTCommand extends MessageCommand {
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        @NotNull FileInfo fileInfo = sessionContext.getRecvFiles().peek();
+        FileInfo fileInfo = sessionContext.getRecvFiles().peek();
         return String.format("%s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp());
     }
 }
