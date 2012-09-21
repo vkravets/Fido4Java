@@ -3,7 +3,6 @@ package org.fidonet.mina.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
 import org.fidonet.mina.io.BinkFrame;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +45,7 @@ public class CompositeMessage implements Command {
     }
 
     @Override
-    public BinkFrame getRawData() throws NotImplementedException {
+    public BinkFrame getRawData() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
