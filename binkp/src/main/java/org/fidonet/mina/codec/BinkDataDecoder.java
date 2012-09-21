@@ -18,8 +18,12 @@ public class BinkDataDecoder extends CumulativeProtocolDecoder {
     @Override
     protected boolean doDecode(IoSession session, IoBuffer in, ProtocolDecoderOutput out) throws Exception {
         int start = in.position();
+        if (in.remaining() < 2) return false;
         short dataInfoRaw = in.getShort();
         DataInfo dataInfo = DataReader.parseDataInfo(dataInfoRaw);
+        if (dataInfo == null) {
+            return false;
+        }
         if (in.remaining() < dataInfo.getSize()) {
             in.position(start);
             return false;

@@ -2,6 +2,9 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.io.FileInfo;
+
+import java.util.Deque;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,7 +26,13 @@ public class FILECommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
+        Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
+        FileInfo curFile = receivedFiles.peek();
+        if (curFile != null && !curFile.isFinished()) {
+            // TODO send resend(M_GET) since old file is not recieved fully
+        }
+        FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+        receivedFiles.addFirst(fileInfo);
     }
 
     @Override

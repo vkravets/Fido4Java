@@ -9,11 +9,11 @@ import org.fidonet.mina.io.BinkFrame;
  * Date: 9/19/12
  * Time: 7:16 PM
  */
-public class FileData implements Data {
+public class DataBulk implements Data {
 
     private byte[] data;
 
-    public FileData(byte[] data) {
+    public DataBulk(byte[] data) {
         this.data = data;
     }
 

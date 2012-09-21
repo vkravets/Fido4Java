@@ -4,10 +4,11 @@ import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
-import org.fidonet.mina.codec.FileData;
+import org.fidonet.mina.codec.DataBulk;
 import org.fidonet.mina.commands.*;
 import org.fidonet.mina.io.BinkData;
 import org.fidonet.mina.io.BinkFrame;
+import org.fidonet.mina.io.FileInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,9 +63,19 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
             command.handle(session, sessionContext, new String(binkData.getData()));
         } else {
             // try to get data bulk
-            FileData dataFile = new FileData(binkData.getData());
-            // process data bulk
-            System.out.println("Received data block with size " +dataFile.getRawData().getData().length  +" bytes");
+            DataBulk dataFile = new DataBulk(binkData.getData());
+            System.out.println("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
+            FileInfo info = sessionContext.getRecvFiles().peek();
+            if (info != null) {
+                long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
+                info.setCurSize(curSize);
+                info.setFinished(curSize == info.getSize());
+                if (info.isFinished()) {
+                    GOTCommand confirmRecv = new GOTCommand();
+                    confirmRecv.send(session, sessionContext);
+                    System.out.println(info);
+                }
+            }
         }
     }
 
