@@ -2,9 +2,8 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
 import org.fidonet.mina.io.FileInfo;
-
-import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,17 +24,12 @@ public class GOTCommand extends MessageCommand {
     }
 
     private FileInfo findSentFile(SessionContext sessionContext, FileInfo info) {
-        Iterator<FileInfo> iterator = sessionContext.getSendFiles().iterator();
-        boolean found = false;
-        FileInfo result = null;
-        while(found || iterator.hasNext()) {
-            FileInfo next = iterator.next();
-            found = next.equals(info);
-            if (found) {
-                result = next;
+        for (FileInfo next : sessionContext.getSendFiles()) {
+            if (next.equals(info)) {
+                return next;
             }
         }
-        return result;
+        return null;
     }
 
     @Override
@@ -44,6 +38,8 @@ public class GOTCommand extends MessageCommand {
         FileInfo sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {
             sentFile.setFinished(true);
+            long totalSize = sessionContext.getRecvFilesSize() + sentFile.getSize();
+            sessionContext.setRecvFilesSize(totalSize);
         }
     }
 

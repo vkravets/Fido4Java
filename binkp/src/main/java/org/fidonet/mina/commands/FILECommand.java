@@ -2,9 +2,12 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.SessionState;
 import org.fidonet.mina.io.FileInfo;
 
 import java.util.Deque;
+import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,6 +29,7 @@ public class FILECommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+        sessionContext.setState(SessionState.STATE_TRANSFER);
         Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
         FileInfo curFile = receivedFiles.peek();
         if (curFile != null && !curFile.isFinished()) {
@@ -38,6 +42,14 @@ public class FILECommand extends MessageCommand {
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
         // todo pop from files queue in session context first item
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+
+        Iterator<FileInfo> iterator = sessionContext.getSendFiles().iterator();
+        boolean isSent = true;
+        FileInfo fileInfo = null;
+        while (isSent && iterator.hasNext() ) {
+            fileInfo = iterator.next();
+            isSent = fileInfo.getCurSize() == fileInfo.getSize();
+        }
+        return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), fileInfo.getOffset());
     }
 }

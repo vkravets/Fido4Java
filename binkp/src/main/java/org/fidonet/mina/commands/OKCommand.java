@@ -2,6 +2,17 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.commands.share.Command;
+import org.fidonet.mina.io.FileData;
+import org.fidonet.mina.io.FileInfo;
+import org.fidonet.mina.io.FilesSender;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,7 +34,24 @@ public class OKCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+        // Password was right init file sending
+        Command traffic = new TRFCommand();
+        traffic.send(session, sessionContext);
 
+        Deque<FileInfo> files = sessionContext.getSendFiles();
+        Deque<FileData> sendingFiles = new LinkedBlockingDeque<FileData>();
+        Iterator<FileInfo> filesIterator = files.descendingIterator();
+        while(filesIterator.hasNext()) {
+            FileInfo info = filesIterator.next();
+            File file = new File(sessionContext.getLink().getBoxPath() + File.separator + info.getName());
+            if (file.exists()) {
+                sendingFiles.addFirst(new FileData(info, new FileInputStream(file)));
+            }
+        }
+
+        // Run thread to sending files
+        Thread sendFiles = new Thread(new FilesSender(session, sendingFiles, sessionContext));
+        sendFiles.start();
     }
 
     @Override

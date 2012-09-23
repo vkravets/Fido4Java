@@ -6,7 +6,6 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.fidonet.mina.codec.BinkDataDecoder;
 import org.fidonet.mina.codec.BinkDataEncoder;
-import org.fidonet.mina.commands.SessionContext;
 import org.fidonet.mina.io.BinkFrame;
 import org.fidonet.types.Link;
 
@@ -27,6 +26,8 @@ public class Client {
     private IoSession session;
     private Link link;
 
+    private boolean connected = false;
+
     public Client(Link link) {
         this.link = link;
     }
@@ -45,7 +46,8 @@ public class Client {
         int port = link.getPort() != 0 ? link.getPort(): BINK_PORT;
         ConnectFuture connection = connector.connect(new InetSocketAddress(hostname, port));
         connection.awaitUninterruptibly();
-        if (connection.isConnected()) {
+        connected = connection.isConnected();
+        if (connected) {
             session = connection.getSession();
         } else {
             System.out.println("Cannot connect to target host");
@@ -53,12 +55,16 @@ public class Client {
 
     }
 
-    public void disconnect() throws Exception {
+    public void close() throws Exception {
         if (session != null) {
             session.getCloseFuture().awaitUninterruptibly();
         }
         if (connector != null) {
             connector.dispose();
         }
+    }
+
+    public boolean isConnect() {
+        return connected;
     }
 }

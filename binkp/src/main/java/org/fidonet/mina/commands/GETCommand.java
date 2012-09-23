@@ -2,6 +2,7 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
 
 /**
  * Created by IntelliJ IDEA.

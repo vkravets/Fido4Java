@@ -1,5 +1,8 @@
 package org.fidonet.mina.commands;
 
+import org.apache.mina.core.session.IoSession;
+import org.fidonet.mina.SessionContext;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -11,11 +14,20 @@ public class TRFCommand extends NULCommand {
 
     @Override
     public String getArguments(SessionContext sessionContext) {
-        return "";
+        return String.format("%s %s", sessionContext.getSendMailSize(), sessionContext.getSendFilesSize());
     }
 
     @Override
     protected String getPrefix() {
         return "TRF";
+    }
+
+    @Override
+    public void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+        String[] token = commandArgs.split(" ");
+        if (token.length != 2)
+            throw new UnsupportedOperationException("Invalid TRF command arguments");
+        sessionContext.setRecvMailSize(Long.valueOf(token[0]));
+        sessionContext.setRecvFilesSize(Long.valueOf(token[1]));
     }
 }

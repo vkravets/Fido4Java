@@ -6,6 +6,7 @@ public class Link {
     private String pass;
     private String hostAddress;
     private int port;
+    private String boxPath;
 
     public Link(String linkstr) {
 
@@ -19,7 +20,7 @@ public class Link {
             pass = linkToken[2].trim();
         if (linkToken.length >=4) {
             String url = linkToken[3].trim();
-            if (url.indexOf(":") != -1) {
+            if (url.contains(":")) {
                 String[] hostToken = url.split(":");
                 this.hostAddress = hostToken[0];
                 this.port = Integer.valueOf(hostToken[1].trim());
@@ -35,7 +36,7 @@ public class Link {
     }
 
     public String getPass() {
-        return pass;
+        return (pass != null && pass.equals("-")) ? "":pass;
     }
 
     public FTNAddr getMyaddr() {
@@ -53,5 +54,13 @@ public class Link {
 
     public int getPort() {
         return port;
+    }
+
+    public String getBoxPath() {
+        return boxPath;
+    }
+
+    public void setBoxPath(String boxPath) {
+        this.boxPath = boxPath;
     }
 }

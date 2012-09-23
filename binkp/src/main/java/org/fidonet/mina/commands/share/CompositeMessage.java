@@ -1,7 +1,9 @@
-package org.fidonet.mina.commands;
+package org.fidonet.mina.commands.share;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.commands.MessageCommand;
 import org.fidonet.mina.io.BinkFrame;
 
 import java.util.ArrayList;

@@ -2,6 +2,9 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,6 +21,7 @@ public abstract class NULCommand extends MessageCommand{
 
     protected abstract String getPrefix();
     protected abstract String getArguments(SessionContext sessionContext);
+    protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {}
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
@@ -30,5 +34,8 @@ public abstract class NULCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+        String safePrefix = Pattern.quote(getPrefix());
+        String args = commandArgs.replaceFirst(safePrefix, "");
+        handleCommand(session, sessionContext, args.trim());
     }
 }

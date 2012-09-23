@@ -1,6 +1,8 @@
-package org.fidonet.mina.commands;
+package org.fidonet.mina.commands.share;
 
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.commands.*;
 import org.fidonet.mina.io.BinkData;
 
 import java.io.IOException;

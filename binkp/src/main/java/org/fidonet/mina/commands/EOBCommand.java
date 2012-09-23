@@ -2,6 +2,8 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.commands.share.Command;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,7 +25,11 @@ public class EOBCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-
+        sessionContext.setReceivingIsFinish(true);
+        if (sessionContext.isSendingIsFinish()) {
+            Command eob = new EOBCommand();
+            eob.send(session, sessionContext);
+        }
     }
 
     @Override

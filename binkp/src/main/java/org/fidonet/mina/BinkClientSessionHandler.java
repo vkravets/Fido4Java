@@ -6,6 +6,9 @@ import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
 import org.fidonet.mina.codec.DataBulk;
 import org.fidonet.mina.commands.*;
+import org.fidonet.mina.commands.share.Command;
+import org.fidonet.mina.commands.share.CommandFactory;
+import org.fidonet.mina.commands.share.CompositeMessage;
 import org.fidonet.mina.io.BinkData;
 import org.fidonet.mina.io.BinkFrame;
 import org.fidonet.mina.io.FileInfo;
@@ -32,6 +35,8 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
     public void sessionOpened(IoSession session) throws Exception {
         super.sessionOpened(session);    //To change body of overridden methods use File | Settings | File Templates.
 
+        boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
+
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
@@ -40,10 +45,18 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
         commands.add(new VERCommand());
         commands.add(new TIMECommand());
         commands.add(new ADRCommand());
-        commands.add(new PWDCommand());
+
+        if (isClient) {
+            commands.add(new PWDCommand());
+        }
 
         CompositeMessage greeting = new CompositeMessage(commands);
         greeting.send(session, sessionContext);
+        if (isClient) {
+            sessionContext.setState(SessionState.STATE_WAITOK);
+        } else {
+            sessionContext.setState(SessionState.STATE_WAITPWD);
+        }
 
     }
 

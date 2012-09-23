@@ -1,5 +1,7 @@
 package org.fidonet.mina.commands;
 
+import org.fidonet.mina.SessionContext;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;

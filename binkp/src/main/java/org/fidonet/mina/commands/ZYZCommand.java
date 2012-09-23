@@ -1,5 +1,7 @@
 package org.fidonet.mina.commands;
 
+import org.fidonet.mina.SessionContext;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets

@@ -2,6 +2,8 @@ package org.fidonet.mina.codec;
 
 import org.fidonet.mina.io.BinkFrame;
 
+import java.nio.ByteBuffer;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -12,15 +14,30 @@ import org.fidonet.mina.io.BinkFrame;
 public class DataBulk implements Data {
 
     private byte[] data;
+    private int len;
 
     public DataBulk(byte[] data) {
         this.data = data;
+        this.len = data.length;
+    }
+
+    public DataBulk(byte[] data, int len) {
+        this.data = data;
+        this.len = len;
     }
 
     @Override
     public BinkFrame getRawData() {
-        int len = data.length & 0x7fff;
-        return new BinkFrame((short) len, data);
+        int len = this.len & 0x7fff;
+        byte[] buf;
+        if (data.length != this.len) {
+            ByteBuffer _ = ByteBuffer.allocate(this.len);
+            _.put(data, 0, this.len);
+            buf = _.array();
+        } else {
+            buf = data;
+        }
+        return new BinkFrame((short) len, buf);
     }
 
     @Override

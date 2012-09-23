@@ -2,6 +2,8 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.SessionState;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,7 +24,7 @@ public class BSYCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
+        sessionContext.setState(SessionState.STATE_BSY);
     }
 
     @Override
