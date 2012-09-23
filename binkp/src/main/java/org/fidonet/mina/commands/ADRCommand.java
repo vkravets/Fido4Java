@@ -2,7 +2,10 @@ package org.fidonet.mina.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
+import org.fidonet.mina.ServerRole;
 import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.SessionState;
+import org.fidonet.mina.commands.share.Command;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,7 +27,13 @@ public class ADRCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
+        if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
+            Command pwd = new PWDCommand();
+            pwd.send(session, sessionContext);
+        } else {
+            sessionContext.setState(SessionState.STATE_WAITPWD);
+        }
+
     }
 
     @Override

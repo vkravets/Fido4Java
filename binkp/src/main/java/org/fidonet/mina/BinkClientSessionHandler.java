@@ -13,6 +13,7 @@ import org.fidonet.mina.io.BinkData;
 import org.fidonet.mina.io.BinkFrame;
 import org.fidonet.mina.io.FileInfo;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +38,11 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
+        if (!isClient) {
+            Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
+            opt_md5.send(session, sessionContext);
+        }
+
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
@@ -46,15 +52,9 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
         commands.add(new TIMECommand());
         commands.add(new ADRCommand());
 
-        if (isClient) {
-            commands.add(new PWDCommand());
-        }
-
         CompositeMessage greeting = new CompositeMessage(commands);
         greeting.send(session, sessionContext);
-        if (isClient) {
-            sessionContext.setState(SessionState.STATE_WAITOK);
-        } else {
+        if (!isClient) {
             sessionContext.setState(SessionState.STATE_WAITPWD);
         }
 

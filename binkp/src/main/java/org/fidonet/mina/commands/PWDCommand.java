@@ -39,6 +39,12 @@ public class PWDCommand extends MessageCommand{
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        return sessionContext.getLink().getPass();
+        return sessionContext.getPassword().getText();
+    }
+
+    @Override
+    public void send(IoSession session, SessionContext sessionContext) throws Exception {
+        super.send(session, sessionContext);
+        sessionContext.setState(SessionState.STATE_WAITOK);
     }
 }

@@ -10,6 +10,7 @@ package org.fidonet.mina;
 public enum SessionState {
     STATE_WAITOK, // State for client role - waiting authorization answer
     STATE_WAITPWD, // State for server role - waiting authorization step
+    STATE_IDLE,
     STATE_TRANSFER, // State for client/server role - begin transfer phase
     STATE_BSY, // State for client/server role - if server is busy.
     STATE_END, // State for ending session (all files was recivied, all files was sent)

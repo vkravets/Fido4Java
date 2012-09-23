@@ -3,6 +3,7 @@ package org.fidonet.mina.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.BinkpCommand;
 import org.fidonet.mina.SessionContext;
+import org.fidonet.mina.SessionState;
 import org.fidonet.mina.commands.share.Command;
 import org.fidonet.mina.io.FileData;
 import org.fidonet.mina.io.FileInfo;
@@ -34,6 +35,13 @@ public class OKCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+
+        if (commandArgs != null && commandArgs.length() > 0) {
+            sessionContext.setSecureSession(commandArgs.startsWith("secure"));
+        }
+
+        sessionContext.setState(SessionState.STATE_IDLE);
+
         // Password was right init file sending
         Command traffic = new TRFCommand();
         traffic.send(session, sessionContext);

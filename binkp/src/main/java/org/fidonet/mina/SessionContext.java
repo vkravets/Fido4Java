@@ -2,6 +2,7 @@ package org.fidonet.mina;
 
 import org.fidonet.binkp.StationConfig;
 import org.fidonet.mina.io.FileInfo;
+import org.fidonet.mina.io.Password;
 import org.fidonet.types.Link;
 
 import java.util.Deque;
@@ -45,9 +46,13 @@ public class SessionContext {
     private boolean sendingIsFinish = false;
     private boolean receivingIsFinish = false;
 
+    private boolean isSecureSession = false;
+    private Password password;
+
     public SessionContext(StationConfig config, Link link) {
         this.stationConfig = config;
         this.link = link;
+        this.password = new Password(link.getPass());
         this.recvFiles = new LinkedBlockingDeque<FileInfo>();
         this.sendFiles = new LinkedBlockingDeque<FileInfo>();
     }
@@ -138,5 +143,21 @@ public class SessionContext {
 
     public void setReceivingIsFinish(boolean receivingIsFinish) {
         this.receivingIsFinish = receivingIsFinish;
+    }
+
+    public boolean isSecureSession() {
+        return isSecureSession;
+    }
+
+    public void setSecureSession(boolean secureSession) {
+        isSecureSession = secureSession;
+    }
+
+    public Password getPassword() {
+        return password;
+    }
+
+    public void setPassword(Password password) {
+        this.password = password;
     }
 }
