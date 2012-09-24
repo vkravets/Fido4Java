@@ -4,6 +4,7 @@ import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.config.Password;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,7 +27,8 @@ public class PWDCommand extends MessageCommand{
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
-            if (sessionContext.getLink().getPass().equals(commandArgs)) {
+            Password password = sessionContext.getPassword();
+            if (password.getText().equals(commandArgs)) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
             } else {

@@ -64,7 +64,10 @@ public class OKCommand extends MessageCommand{
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (sessionContext.getPassword() != null) {
+            return "secure";
+        }
+        return "insecure";
     }
 
 }

@@ -25,7 +25,8 @@ public abstract class NULCommand extends MessageCommand{
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        return String.format("%s %s", getPrefix(), getArguments(sessionContext));
+        String args = getArguments(sessionContext);
+        return String.format("%s %s", getPrefix(),  args == null ? "":args);
     }
 
     public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {

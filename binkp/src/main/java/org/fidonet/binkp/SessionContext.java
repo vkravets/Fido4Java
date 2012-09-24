@@ -3,7 +3,7 @@ package org.fidonet.binkp;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
 import org.fidonet.binkp.io.FileInfo;
-import org.fidonet.binkp.io.Password;
+import org.fidonet.binkp.config.Password;
 import org.fidonet.types.Link;
 
 import java.util.Deque;

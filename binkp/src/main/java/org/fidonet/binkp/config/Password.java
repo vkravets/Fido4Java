@@ -1,4 +1,4 @@
-package org.fidonet.binkp.io;
+package org.fidonet.binkp.config;
 
 import java.security.MessageDigest;
 
@@ -18,7 +18,7 @@ public class Password {
 
 
     public Password(String password) {
-        this.password = password;
+        this.password = password == null || password.startsWith("-") ? null:password;
         this.isCrypt = false;
         this.md = null;
         this.key = null;
@@ -83,6 +83,9 @@ public class Password {
     }
 
     public String getText() {
+        if (password == null) {
+            return null;
+        }
         if (isCrypt) {
             return getCryptText();
         } else {

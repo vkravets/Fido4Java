@@ -3,6 +3,9 @@ package org.fidonet.binkp.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.io.FileInfo;
+
+import java.util.Deque;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,12 +27,13 @@ public class GETCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO handle resend
     }
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        // pop from queue of recieved file in session context
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
+        FileInfo curFile = receivedFiles.peek();
+        return String.format("%s %s %s %s", curFile.getName(), curFile.getSize(), curFile.getTimestamp(), curFile.getCurSize());
     }
 }

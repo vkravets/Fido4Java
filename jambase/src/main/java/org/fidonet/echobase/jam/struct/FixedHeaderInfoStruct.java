@@ -21,7 +21,7 @@ public class FixedHeaderInfoStruct {
     public byte[] toByteArray() {
         ByteBuffer res = ByteBuffer.allocate(1024);
         res.order(ByteOrder.LITTLE_ENDIAN);
-        res.put(this.signature);
+        res.put(signature);
         res.putInt(datecreated);
         res.putInt(modcounter);
         res.putInt(activemsg);
@@ -34,7 +34,7 @@ public class FixedHeaderInfoStruct {
     public void fromByteArray(ByteBuffer income) {
         income.position(0);
         income.order(ByteOrder.LITTLE_ENDIAN);
-        income.get(this.signature);
+        income.get(signature);
         datecreated = income.getInt();
         modcounter = income.getInt();
         activemsg = income.getInt();

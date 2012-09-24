@@ -1,7 +1,5 @@
 package org.fidonet.binkp.codec;
 
-import org.apache.mina.core.buffer.IoBuffer;
-
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -19,11 +17,6 @@ public class DataReader {
             return new DataInfo(command, len);
         }
         return null;
-    }
-
-    public DataInfo readInfo(IoBuffer buf) {
-        short dataInfo = buf.getShort();
-        return parseDataInfo(dataInfo);
     }
 
 }

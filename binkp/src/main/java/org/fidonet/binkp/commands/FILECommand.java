@@ -4,6 +4,7 @@ import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.io.FileInfo;
 
 import java.util.Deque;
@@ -33,7 +34,9 @@ public class FILECommand extends MessageCommand {
         Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
         FileInfo curFile = receivedFiles.peek();
         if (curFile != null && !curFile.isFinished()) {
-            // TODO send resend(M_GET) since old file is not recieved fully
+            // TODO send resend(M_GET) command since old file is not recieved fully
+            Command get = new GETCommand();
+            get.send(session, sessionContext);
         }
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
         receivedFiles.addFirst(fileInfo);

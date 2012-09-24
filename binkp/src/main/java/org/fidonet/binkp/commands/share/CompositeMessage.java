@@ -42,16 +42,15 @@ public class CompositeMessage implements Command {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public BinkFrame getRawData() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public boolean isCommand() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 }

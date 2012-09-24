@@ -3,7 +3,7 @@ package org.fidonet.fts;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-class ftsMsg {
+class FtsMsg {
     private final String From;
     private final String To;
     private final String Subject;
@@ -21,7 +21,7 @@ class ftsMsg {
     private final int nextreplay;
     private final String Text;
 
-    public ftsMsg(byte[] arr) {
+    public FtsMsg(byte[] arr) {
         final ByteBuffer x = ByteBuffer.allocate(arr.length);
         x.put(arr);
         x.rewind();

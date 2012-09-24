@@ -2,7 +2,7 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
-import org.fidonet.binkp.io.Password;
+import org.fidonet.binkp.config.Password;
 
 import java.security.MessageDigest;
 
@@ -22,7 +22,7 @@ public class OPTCommand extends NULCommand {
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
