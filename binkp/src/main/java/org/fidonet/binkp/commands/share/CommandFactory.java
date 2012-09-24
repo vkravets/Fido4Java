@@ -38,6 +38,8 @@ public class CommandFactory {
         commands.add(new ZYZCommand());
         commands.add(new OPTCommand());
         commands.add(new TRFCommand());
+        commands.add(new LogCommand());
+        commands.add(new SKIPCommand());
     }
 
     public static Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {

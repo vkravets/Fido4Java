@@ -1,12 +1,9 @@
 package org.fidonet.binkp;
 
-import org.fidonet.binkp.config.ServerRole;
-import org.fidonet.binkp.config.StationConfig;
-import org.fidonet.binkp.io.FileInfo;
 import org.fidonet.types.Link;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,48 +14,61 @@ import java.io.FilenameFilter;
  */
 public class Runner {
 
-    public static void main(String[] argv) throws Exception {
-        Link link = new Link("2:467/111,2:467/111.1,P@ssw0rd,localhost");
-        link.setBoxPath("/home/sly-arch/work/my/fido/temp/2");
-        Client client = new Client(link);
-        StationConfig config = new StationConfig("Test", "Test Test", "Ukraine", "ndl", "2:467/111.1@fidonet.org");
-        SessionContext context = new SessionContext(config, link);
+    private ExecutorService threadPoolExecutor;
 
-        File dirBox = new File(link.getBoxPath());
-        String[] files = dirBox.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                File file = new File(dir.getPath() + File.separator + name);
-                return !file.isDirectory();
-            }
-        });
+    public Runner() {
+        threadPoolExecutor = Executors.newFixedThreadPool(11);
+    }
 
-        long total = 0;
-        for (String file : files) {
-            File fileObject = new File(dirBox.getPath() + File.separator + file);
-            FileInfo fileInfo = new FileInfo(fileObject.getName(), fileObject.length(), fileObject.lastModified());
-            context.getSendFiles().addFirst(fileInfo);
-            total += fileObject.length();
-        }
-        context.setSendFilesSize(total);
+    public void poll(Link link, final SessionContext context) throws Exception {
+        final Client client = new Client(link);
+        Runnable clientRun = new Runnable() {
 
-        context.setServerRole(ServerRole.CLIENT);
-        client.connect(context);
-
-        if (client.isConnect()) {
-            try {
+            public void waitSessionFinish () throws InterruptedException {
                 for (;;) {
-                    Thread.sleep(1000);
-                    if (context.isReceivingIsFinish() && context.isSendingIsFinish()) {
+                    Thread.sleep(500);
+                    if (context.isReceivingIsFinish() && context.isSendingIsFinish() ||
+                            context.getState().equals(SessionState.STATE_ERR) ||
+                            context.getState().equals(SessionState.STATE_END)) {
                         break;
                     }
                 }
-            } finally {
-                client.close();
             }
-        } else {
-            client.close();
-        }
+
+            @Override
+            public void run() {
+                try {
+
+                    // TODO: Fill session context with files with need to send to this link
+
+                    client.run(context);
+                    if (client.isConnect()) {
+                        waitSessionFinish();
+                    }
+                } catch (Exception e) {
+                    // todo logger
+                } finally {
+                    client.stop(context);
+                }
+            }
+        };
+
+        threadPoolExecutor.submit(clientRun);
+    }
+
+    public void bindServer(final SessionContext context, final int port) {
+        Runnable runServer = new Runnable() {
+            @Override
+            public void run() {
+                Server server = new Server(port);
+                try {
+                    server.run(context);
+                } catch (Exception e) {
+                    // todo log
+                }
+            }
+        };
+        threadPoolExecutor.submit(runServer);
 
     }
 

@@ -3,6 +3,7 @@ package org.fidonet.binkp.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
 
 /**
@@ -24,9 +25,10 @@ public class GOTCommand extends MessageCommand {
     }
 
     private FileInfo findSentFile(SessionContext sessionContext, FileInfo info) {
-        for (FileInfo next : sessionContext.getSendFiles()) {
-            if (next.equals(info)) {
-                return next;
+        for (FileData next : sessionContext.getSendFiles()) {
+            FileInfo fileInfo = next.getInfo();
+            if (fileInfo.equals(info)) {
+                return fileInfo;
             }
         }
         return null;
@@ -45,7 +47,8 @@ public class GOTCommand extends MessageCommand {
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        FileInfo fileInfo = sessionContext.getRecvFiles().peek();
+        FileData fileData = sessionContext.getRecvFiles().peek();
+        FileInfo fileInfo = fileData.getInfo();
         return String.format("%s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp());
     }
 }

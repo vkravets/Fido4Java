@@ -6,7 +6,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.fidonet.binkp.codec.BinkDataDecoder;
 import org.fidonet.binkp.codec.BinkDataEncoder;
-import org.fidonet.binkp.handler.BinkClientSessionHandler;
+import org.fidonet.binkp.handler.BinkSessionHandler;
 import org.fidonet.binkp.io.BinkFrame;
 import org.fidonet.types.Link;
 
@@ -19,9 +19,8 @@ import java.net.InetSocketAddress;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Client {
+public class Client extends Connector {
     private long connectionTimeout = 30*1000L;
-    private static final int BINK_PORT = 24554;
 
     private NioSocketConnector connector;
     private IoSession session;
@@ -38,13 +37,13 @@ public class Client {
         this.connectionTimeout = connectionTimeout;
     }
 
-    public void connect(SessionContext sessionContext) throws Exception {
+    public void run(SessionContext sessionContext) throws Exception {
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
         connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataEncoder<BinkFrame>(),new BinkDataDecoder()));
-        connector.setHandler(new BinkClientSessionHandler(sessionContext));
+        connector.setHandler(new BinkSessionHandler(sessionContext));
         String hostname = link.getHostAddress();
-        int port = link.getPort() != 0 ? link.getPort(): BINK_PORT;
+        int port = link.getPort() != 0 ? link.getPort(): Connector.BINK_PORT;
         ConnectFuture connection = connector.connect(new InetSocketAddress(hostname, port));
         connection.awaitUninterruptibly();
         connected = connection.isConnected();
@@ -56,7 +55,7 @@ public class Client {
 
     }
 
-    public void close() throws Exception {
+    public void stop(SessionContext context) {
         if (session != null) {
             session.getCloseFuture().awaitUninterruptibly();
         }

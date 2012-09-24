@@ -3,7 +3,6 @@ package org.fidonet.binkp.handler;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.codec.DataBulk;
@@ -12,8 +11,10 @@ import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.commands.share.CommandFactory;
 import org.fidonet.binkp.commands.share.CompositeMessage;
+import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.io.BinkData;
 import org.fidonet.binkp.io.BinkFrame;
+import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
 
 import java.security.MessageDigest;
@@ -27,17 +28,33 @@ import java.util.List;
  * Date: 9/19/12
  * Time: 1:18 PM
  */
-public class BinkClientSessionHandler extends IoHandlerAdapter{
+public class BinkSessionHandler extends IoHandlerAdapter{
+
+    public static final String SESSION_CONTEXT_KEY = BinkSessionHandler.class.getName() + ".CONTEXT";
 
     private SessionContext sessionContext;
 
-    public BinkClientSessionHandler(SessionContext sessionContext) {
-        this.sessionContext = sessionContext;
+    public BinkSessionHandler() {
+        this.sessionContext = null;
+    }
+
+    public BinkSessionHandler(SessionContext context) {
+        this.sessionContext = context;
+    }
+
+    private SessionContext getSessionContext(IoSession session) {
+        if (sessionContext != null) {
+            return sessionContext;
+        } else {
+            return (SessionContext)session.getAttribute(SESSION_CONTEXT_KEY);
+        }
     }
 
     @Override
     public void sessionOpened(IoSession session) throws Exception {
         super.sessionOpened(session);    //To change body of overridden methods use File | Settings | File Templates.
+
+        SessionContext sessionContext = getSessionContext(session);
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
@@ -70,9 +87,19 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
 
     @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
+        SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
         BinkData binkData = BinkFrame.toBinkData(data);
-        Command command = CommandFactory.createCommand(sessionContext, binkData);
+        Command command;
+        try {
+            command = CommandFactory.createCommand(sessionContext, binkData);
+        } catch (UnknownCommandException ex) {
+            sessionContext.setLastErrorMessage(ex.getMessage());
+            Command error = new ERRCommand();
+            error.send(session, sessionContext);
+            session.close(false);
+            throw ex;
+        }
         if (command != null) {
             System.out.println(BinkCommand.findCommand(binkData.getCommand()));
             System.out.println(new String(binkData.getData()));
@@ -81,8 +108,9 @@ public class BinkClientSessionHandler extends IoHandlerAdapter{
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
             System.out.println("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
-            FileInfo info = sessionContext.getRecvFiles().peek();
-            if (info != null) {
+            FileData fileData = sessionContext.getRecvFiles().peek();
+            if (fileData != null) {
+                FileInfo info = fileData.getInfo();
                 long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
                 info.setCurSize(curSize);
                 info.setFinished(curSize == info.getSize());

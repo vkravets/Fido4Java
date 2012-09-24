@@ -69,6 +69,15 @@ public class FTNAddr {
         return zone + ":" + net + '/' + node + '.' + pnt;
     }
 
+    public String as5D() {
+        return toString() + "@fidonet.org";
+    }
+
+    public String as4D() {
+        return toString();
+    }
+
+
     public String toHex()
     {
         String hexnet = String.format("%04x",net);

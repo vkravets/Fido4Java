@@ -26,7 +26,11 @@ public abstract class NULCommand extends MessageCommand{
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
         String args = getArguments(sessionContext);
-        return String.format("%s %s", getPrefix(),  args == null ? "":args);
+        args = args == null ? "":args;
+        if (getPrefix() != null) {
+            return String.format("%s %s", getPrefix(), args);
+        }
+        return args;
     }
 
     public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
@@ -35,8 +39,11 @@ public abstract class NULCommand extends MessageCommand{
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        String safePrefix = Pattern.quote(getPrefix());
-        String args = commandArgs.replaceFirst(safePrefix, "");
-        handleCommand(session, sessionContext, args.trim());
+        String args = "";
+        if (getPrefix() != null) {
+            String safePrefix = Pattern.quote(getPrefix());
+            args = commandArgs.replaceFirst(safePrefix, "").trim();
+        }
+        handleCommand(session, sessionContext, args);
     }
 }

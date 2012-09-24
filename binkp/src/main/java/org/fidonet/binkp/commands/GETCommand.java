@@ -3,8 +3,11 @@ package org.fidonet.binkp.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
+import org.fidonet.binkp.io.FilesSender;
 
+import java.io.OutputStream;
 import java.util.Deque;
 
 /**
@@ -27,13 +30,21 @@ public class GETCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        // TODO handle resend
+        FilesSender filesSender = (FilesSender) session.setAttribute(FilesSender.FILESENDER_KEY);
+        if (filesSender != null) {
+            FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+            filesSender.skip(fileInfo, true);
+        }
     }
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
-        FileInfo curFile = receivedFiles.peek();
-        return String.format("%s %s %s %s", curFile.getName(), curFile.getSize(), curFile.getTimestamp(), curFile.getCurSize());
+        Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
+        FileData curFile = receivedFiles.peek();
+        if (curFile != null) {
+            FileInfo info = curFile.getInfo();
+            return String.format("%s %s %s %s", info.getName(), info.getSize(), info.getTimestamp(), info.getCurSize());
+        }
+        return null;
     }
 }

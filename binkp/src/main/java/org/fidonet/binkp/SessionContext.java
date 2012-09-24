@@ -1,11 +1,13 @@
 package org.fidonet.binkp;
 
+import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
-import org.fidonet.binkp.io.FileInfo;
-import org.fidonet.binkp.config.Password;
+import org.fidonet.binkp.io.FileData;
 import org.fidonet.types.Link;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Deque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -32,15 +34,15 @@ public class SessionContext {
     private String lastErrorMessage;
 
     // current link
-    private Link link;
+    private LinksInfo linksInfo;
 
     // received files number
     // queue received files
-    private Deque<FileInfo> recvFiles;
+    private Deque<FileData<OutputStream>> recvFiles;
 
     // send files number
     // queue send files
-    private Deque<FileInfo> sendFiles;
+    private Deque<FileData<InputStream>> sendFiles;
     private SessionState state;
     private ServerRole serverRole;
 
@@ -49,13 +51,17 @@ public class SessionContext {
 
     private boolean isSecureSession = false;
     private Password password;
+    private String logMessage;
 
-    public SessionContext(StationConfig config, Link link) {
+    public SessionContext(SessionContext context) {
+        this(context.getStationConfig(), context.getLinksInfo());
+    }
+
+    public SessionContext(StationConfig config, LinksInfo linksInfo) {
         this.stationConfig = config;
-        this.link = link;
-        this.password = new Password(link.getPass());
-        this.recvFiles = new LinkedBlockingDeque<FileInfo>();
-        this.sendFiles = new LinkedBlockingDeque<FileInfo>();
+        this.linksInfo = linksInfo;
+        this.recvFiles = new LinkedBlockingDeque<FileData<OutputStream>>();
+        this.sendFiles = new LinkedBlockingDeque<FileData<InputStream>>();
     }
 
     public String getLastErrorMessage() {
@@ -70,15 +76,15 @@ public class SessionContext {
         return stationConfig;
     }
 
-    public Link getLink() {
-        return link;
+    public LinksInfo getLinksInfo() {
+        return linksInfo;
     }
 
-    public Deque<FileInfo> getRecvFiles() {
+    public Deque<FileData<OutputStream>> getRecvFiles() {
         return recvFiles;
     }
 
-    public Deque<FileInfo> getSendFiles() {
+    public Deque<FileData<InputStream>> getSendFiles() {
         return sendFiles;
     }
 
@@ -155,10 +161,25 @@ public class SessionContext {
     }
 
     public Password getPassword() {
-        return password;
+        Link curLink = linksInfo.getCurLink();
+        if (curLink != null) {
+            return new Password(curLink.getPass());
+        }
+        return null;
     }
 
-    public void setPassword(Password password) {
-        this.password = password;
+    public Password getPassword(Link link) {
+        if (link != null) {
+            return new Password(link.getPass());
+        }
+        return null;
+    }
+
+    public String getLogMessage() {
+        return logMessage;
+    }
+
+    public void setLogMessage(String logMessage) {
+        this.logMessage = logMessage;
     }
 }

@@ -2,8 +2,10 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
+import org.fidonet.binkp.config.ServerRole;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,6 +31,11 @@ public class EOBCommand extends MessageCommand{
         if (sessionContext.isSendingIsFinish()) {
             Command eob = new EOBCommand();
             eob.send(session, sessionContext);
+            if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
+                sessionContext.setState(SessionState.STATE_END);
+            } else {
+                session.close(false);
+            }
         }
     }
 

@@ -17,6 +17,14 @@ public class Password {
     private String key;
 
 
+    public Password(String password, Boolean isCrypt, MessageDigest md, String key) {
+        this(password);
+        this.isCrypt = isCrypt;
+        this.md = md;
+        this.key = key;
+    }
+
+
     public Password(String password) {
         this.password = password == null || password.startsWith("-") ? null:password;
         this.isCrypt = false;

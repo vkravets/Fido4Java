@@ -14,6 +14,7 @@ public class FileInfo {
     private long size;
     private long timestamp;
     private boolean finished;
+    private boolean shouldSkip;
 
     private long offset;
 
@@ -22,6 +23,7 @@ public class FileInfo {
         this.size = size;
         this.timestamp = timestamp;
         this.finished = false;
+        this.shouldSkip = false;
     }
 
     public String getName() {
@@ -58,6 +60,14 @@ public class FileInfo {
 
     public void setCurSize(long curSize) {
         this.curSize = curSize;
+    }
+
+    public synchronized boolean isShouldSkip() {
+        return shouldSkip;
+    }
+
+    public synchronized void setSkip(boolean shouldSkip) {
+        this.shouldSkip = shouldSkip;
     }
 
     @Override

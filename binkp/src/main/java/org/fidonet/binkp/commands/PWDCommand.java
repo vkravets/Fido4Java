@@ -28,9 +28,13 @@ public class PWDCommand extends MessageCommand{
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
-            if (password.getText().equals(commandArgs)) {
+            Password remotePassword = new Password(commandArgs.trim(), password.isCrypt(), password.getMessageDigest(), password.getKey());
+            if (password.getText() == remotePassword.getText()) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
+
+                // TODO: Fill session context with files with need to send
+
             } else {
                 ERRCommand error = new ERRCommand();
                 sessionContext.setLastErrorMessage(String.format("Bad password \"%s\"", commandArgs));

@@ -2,7 +2,9 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.config.ServerRole;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,7 +27,12 @@ public class ERRCommand extends MessageCommand{
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         System.out.println("ERROR: " + commandArgs);
-        session.close(true);
+        sessionContext.setLastErrorMessage(commandArgs);
+        if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
+            sessionContext.setState(SessionState.STATE_ERR);
+        } else {
+            session.close(false);
+        }
     }
 
     @Override

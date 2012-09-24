@@ -1,7 +1,5 @@
 package org.fidonet.binkp.io;
 
-import java.io.InputStream;
-
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -9,16 +7,16 @@ import java.io.InputStream;
  * Date: 9/23/12
  * Time: 11:55 AM
  */
-public class FileData {
+public class FileData<T> {
 
     private FileInfo info;
-    private InputStream stream;
+    private T stream;
 
     public FileData(FileInfo info) {
-        this(info, null);
+        this.info = info;
     }
 
-    public FileData(FileInfo info, InputStream stream) {
+    public FileData(FileInfo info, T stream) {
         this.info = info;
         this.stream = stream;
     }
@@ -27,11 +25,12 @@ public class FileData {
         return info;
     }
 
-    public InputStream getStream() {
+    public T getStream() {
         return stream;
     }
 
-    public void setStream(InputStream stream) {
+    public void setStream(T stream) {
         this.stream = stream;
     }
+
 }

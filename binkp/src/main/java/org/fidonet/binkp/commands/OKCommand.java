@@ -6,14 +6,10 @@ import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.io.FileData;
-import org.fidonet.binkp.io.FileInfo;
 import org.fidonet.binkp.io.FilesSender;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Deque;
-import java.util.Iterator;
-import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by IntelliJ IDEA.
@@ -46,19 +42,11 @@ public class OKCommand extends MessageCommand{
         Command traffic = new TRFCommand();
         traffic.send(session, sessionContext);
 
-        Deque<FileInfo> files = sessionContext.getSendFiles();
-        Deque<FileData> sendingFiles = new LinkedBlockingDeque<FileData>();
-        Iterator<FileInfo> filesIterator = files.descendingIterator();
-        while(filesIterator.hasNext()) {
-            FileInfo info = filesIterator.next();
-            File file = new File(sessionContext.getLink().getBoxPath() + File.separator + info.getName());
-            if (file.exists()) {
-                sendingFiles.addFirst(new FileData(info, new FileInputStream(file)));
-            }
-        }
-
-        // Run thread to sending files
-        Thread sendFiles = new Thread(new FilesSender(session, sendingFiles, sessionContext));
+        Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
+        // Run thread to sending files in client mode
+        FilesSender filesSender = new FilesSender(session, files, sessionContext);
+        session.setAttribute(FilesSender.FILESENDER_KEY, filesSender);
+        Thread sendFiles = new Thread();
         sendFiles.start();
     }
 

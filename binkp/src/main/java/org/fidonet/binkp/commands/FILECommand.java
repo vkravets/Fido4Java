@@ -5,8 +5,12 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
+import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -31,28 +35,30 @@ public class FILECommand extends MessageCommand {
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         sessionContext.setState(SessionState.STATE_TRANSFER);
-        Deque<FileInfo> receivedFiles = sessionContext.getRecvFiles();
-        FileInfo curFile = receivedFiles.peek();
-        if (curFile != null && !curFile.isFinished()) {
-            // TODO send resend(M_GET) command since old file is not recieved fully
+        Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
+        FileData curFile = receivedFiles.peek();
+        if (curFile != null && !curFile.getInfo().isFinished()) {
             Command get = new GETCommand();
             get.send(session, sessionContext);
         }
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-        receivedFiles.addFirst(fileInfo);
+        FileData fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
+        receivedFiles.addFirst(fileData);
     }
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        // todo pop from files queue in session context first item
-
-        Iterator<FileInfo> iterator = sessionContext.getSendFiles().iterator();
+        Iterator<FileData<InputStream>> iterator = sessionContext.getSendFiles().iterator();
         boolean isSent = true;
         FileInfo fileInfo = null;
         while (isSent && iterator.hasNext() ) {
-            fileInfo = iterator.next();
+            FileData fileData = iterator.next();
+            fileInfo = fileData.getInfo();
             isSent = fileInfo.getCurSize() == fileInfo.getSize();
         }
-        return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), fileInfo.getOffset());
+        if (fileInfo != null) {
+            return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), fileInfo.getOffset());
+        }
+        return null;
     }
 }
