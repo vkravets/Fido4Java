@@ -19,6 +19,9 @@ import java.util.concurrent.LinkedBlockingDeque;
  * Time: 3:49 PM
  */
 public class SessionContext {
+
+    public static final String SESSION_CONTEXT_KEY = SessionContext.class.getName() + ".CONTEXT";
+
     // send size
     private long sendMailSize;
     private long sendFilesSize;

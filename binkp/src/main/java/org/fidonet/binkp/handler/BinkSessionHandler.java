@@ -30,8 +30,6 @@ import java.util.List;
  */
 public class BinkSessionHandler extends IoHandlerAdapter{
 
-    public static final String SESSION_CONTEXT_KEY = BinkSessionHandler.class.getName() + ".CONTEXT";
-
     private SessionContext sessionContext;
 
     public BinkSessionHandler() {
@@ -46,7 +44,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         if (sessionContext != null) {
             return sessionContext;
         } else {
-            return (SessionContext)session.getAttribute(SESSION_CONTEXT_KEY);
+            return (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
         }
     }
 

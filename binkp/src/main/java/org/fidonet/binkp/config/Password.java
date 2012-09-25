@@ -90,6 +90,7 @@ public class Password {
         return builder.toString();
     }
 
+    // return password text according to crypt setting
     public String getText() {
         if (password == null) {
             return null;
@@ -99,5 +100,10 @@ public class Password {
         } else {
             return password;
         }
+    }
+
+    // return password original password, w/o crypt even it was set
+    public String getPassword() {
+        return password;
     }
 }
