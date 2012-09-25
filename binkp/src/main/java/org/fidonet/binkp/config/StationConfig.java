@@ -14,7 +14,8 @@ public class StationConfig {
     private String NDL;
     private String address;
     private ServerRole role;
-    private boolean NRMode;
+    private boolean nrMode;
+    private boolean cryptMode;
 
     public StationConfig(String name, String sysopName, String location, String NDL, String address) {
         this.name = name;
@@ -53,10 +54,18 @@ public class StationConfig {
     }
 
     public boolean isNRMode() {
-        return NRMode;
+        return nrMode;
     }
 
-    public void setNRMode(boolean NRMode) {
-        this.NRMode = NRMode;
+    public void setNRMode(boolean state) {
+        this.nrMode = state;
+    }
+
+    public boolean isCryptMode() {
+        return cryptMode;
+    }
+
+    public void setCryptMode(boolean cryptMode) {
+        this.cryptMode = cryptMode;
     }
 }

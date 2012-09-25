@@ -22,19 +22,30 @@ public class OPTCommand extends NULCommand {
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        return null;
+        String args = "";
+        if (sessionContext.getStationConfig().isNRMode()) args += "NR ";
+        if (sessionContext.getStationConfig().isCryptMode()) args += "CRYPT ";
+        // TODO Add ND mode
+        return args.trim();
     }
 
     @Override
     protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        if (commandArgs.startsWith("CRAM")) {
-            String[] tokens = commandArgs.split("-");
-            String cryptType = tokens[1];
-            MessageDigest md = MessageDigest.getInstance(cryptType);
-            Password password = sessionContext.getPassword();
-            password.setCrypt(true);
-            password.setMd(md);
-            password.setKey(tokens[2]);
+        String[] tokens = commandArgs.trim().split(" ");
+        for (String token : tokens) {
+            if (token.startsWith("CRAM")) {
+                String[] cramTokens = commandArgs.split("-");
+                String cryptType = cramTokens[1];
+                MessageDigest md = MessageDigest.getInstance(cryptType);
+                Password password = sessionContext.getPassword();
+                password.setCrypt(true);
+                password.setMd(md);
+                password.setKey(cramTokens[2]);
+            } else if (token.equals("NR")) {
+                sessionContext.setNRMode(true);
+            } else if (token.equals("CRYPT")) {
+                sessionContext.setCryptMode(true);
+            }
         }
     }
 }

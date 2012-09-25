@@ -53,6 +53,9 @@ public class SessionContext {
     private Password password;
     private String logMessage;
 
+    private boolean nrMode = false;
+    private boolean cryptMode = false;
+
     public SessionContext(SessionContext context) {
         this(context.getStationConfig(), context.getLinksInfo());
     }
@@ -181,5 +184,21 @@ public class SessionContext {
 
     public void setLogMessage(String logMessage) {
         this.logMessage = logMessage;
+    }
+
+    public boolean isNRMode() {
+        return nrMode;
+    }
+
+    public void setNRMode(boolean nrMode) {
+        this.nrMode = nrMode;
+    }
+
+    public boolean isCryptMode() {
+        return cryptMode;
+    }
+
+    public void setCryptMode(boolean cryptMode) {
+        this.cryptMode = cryptMode;
     }
 }
