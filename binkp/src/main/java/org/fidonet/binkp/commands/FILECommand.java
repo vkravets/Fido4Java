@@ -44,6 +44,12 @@ public class FILECommand extends MessageCommand {
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
         FileData fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
         receivedFiles.addFirst(fileData);
+        // process NR mode
+        if (fileInfo.getOffset() < 0) {
+            fileInfo.setOffset(0);
+            Command get = new GETCommand();
+            get.send(session, sessionContext);
+        }
     }
 
     @Override
@@ -57,7 +63,12 @@ public class FILECommand extends MessageCommand {
             isSent = fileInfo.getCurSize() == fileInfo.getSize();
         }
         if (fileInfo != null) {
-            return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), fileInfo.getOffset());
+            long offset = fileInfo.getOffset();
+            if (sessionContext.getStationConfig().isNRMode() && offset == 0) {
+                fileInfo.setOffset(-1);
+            }
+            return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), offset);
+
         }
         return null;
     }

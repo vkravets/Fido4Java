@@ -14,6 +14,7 @@ public class StationConfig {
     private String NDL;
     private String address;
     private ServerRole role;
+    private boolean NRMode;
 
     public StationConfig(String name, String sysopName, String location, String NDL, String address) {
         this.name = name;
@@ -49,5 +50,13 @@ public class StationConfig {
 
     public void setRole(ServerRole role) {
         this.role = role;
+    }
+
+    public boolean isNRMode() {
+        return NRMode;
+    }
+
+    public void setNRMode(boolean NRMode) {
+        this.NRMode = NRMode;
     }
 }

@@ -2,6 +2,7 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
@@ -30,10 +31,22 @@ public class GETCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        FilesSender filesSender = (FilesSender) session.setAttribute(FilesSender.FILESENDER_KEY);
+        final FilesSender filesSender = (FilesSender) session.setAttribute(FilesSender.FILESENDER_KEY);
         if (filesSender != null) {
-            FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-            filesSender.skip(fileInfo, true);
+            final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+            if (sessionContext.getState().equals(SessionState.STATE_WAITGET)) {
+                Thread sendFileBegin = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            filesSender.getExchanger().exchange(fileInfo);
+                        } catch (InterruptedException ignored) {}
+                    }
+                });
+                sendFileBegin.join();
+            } else {
+                filesSender.skip(fileInfo, true);
+            }
         }
     }
 

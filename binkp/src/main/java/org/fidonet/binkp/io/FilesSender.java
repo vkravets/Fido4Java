@@ -12,6 +12,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Deque;
+import java.util.concurrent.Exchanger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,22 +30,28 @@ public class FilesSender implements Runnable {
     private static final int FILE_BLOCK_SIZE = 4096;
     private SessionContext sessionContext;
     private FileData<InputStream> curFile;
+    private Exchanger<FileInfo> exchanger;
 
     public FilesSender(IoSession session, Deque<FileData<InputStream>> files, SessionContext sessionContext) {
         this.files = files;
         this.session = session;
         this.sessionContext = sessionContext;
+        exchanger = new Exchanger<FileInfo>();
     }
 
     public boolean send(FileData<InputStream> data) throws Exception {
         DataInputStream reader = new DataInputStream(data.getStream());
         FileInfo fileInfo = data.getInfo();
-        if (fileInfo.getOffset() != 0) {
+        if (fileInfo.getOffset() >= 0 ) {
             if (fileInfo.getOffset() <= fileInfo.getSize()) {
                 reader.skip(fileInfo.getOffset());
             } else {
-
+                // TODO logger
             }
+        } else {
+            sessionContext.setState(SessionState.STATE_WAITGET);
+            fileInfo = exchanger.exchange(fileInfo);
+            System.out.println(fileInfo);
         }
         byte[] buf = new byte[FILE_BLOCK_SIZE];
         int read = reader.read(buf);
@@ -118,5 +125,9 @@ public class FilesSender implements Runnable {
                 // TODO logger
             }
         }
+    }
+
+    public Exchanger<FileInfo> getExchanger() {
+        return exchanger;
     }
 }
