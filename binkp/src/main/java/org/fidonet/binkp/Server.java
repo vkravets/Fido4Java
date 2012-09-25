@@ -53,13 +53,13 @@ public class Server extends Connector{
             @Override
             public void sessionCreated(IoSession session) throws Exception {
                 // got new connection to server
-                session.setAttribute(BinkSessionHandler.SESSION_CONTEXT_KEY, new SessionContext(context));
+                session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, new SessionContext(context));
                 //session.getRemoteAddress()
             }
 
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
-                SessionContext context = (SessionContext)session.getAttribute(BinkSessionHandler.SESSION_CONTEXT_KEY);
+                SessionContext context = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 if (context.getState().equals(SessionState.STATE_ERR)) {
                     // TODO log or out error message
                     context.getLastErrorMessage();
