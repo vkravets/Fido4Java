@@ -6,10 +6,8 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
-import org.fidonet.binkp.codec.BinkDataDecoder;
-import org.fidonet.binkp.codec.BinkDataEncoder;
+import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.handler.BinkSessionHandler;
-import org.fidonet.binkp.io.BinkFrame;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,7 +30,7 @@ public class Server extends Connector{
     @Override
     public void run(final SessionContext context) throws Exception {
         acceptor = new NioSocketAcceptor();
-        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataEncoder<BinkFrame>(),new BinkDataDecoder()));
+        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         acceptor.setHandler(new BinkSessionHandler());
         acceptor.addListener(new IoServiceListener() {
             @Override
@@ -64,6 +62,7 @@ public class Server extends Connector{
                     // TODO log or out error message
                     context.getLastErrorMessage();
                 }
+                session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
             }
         });
         acceptor.bind();

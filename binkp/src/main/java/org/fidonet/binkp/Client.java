@@ -4,10 +4,8 @@ import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
-import org.fidonet.binkp.codec.BinkDataDecoder;
-import org.fidonet.binkp.codec.BinkDataEncoder;
+import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.handler.BinkSessionHandler;
-import org.fidonet.binkp.io.BinkFrame;
 import org.fidonet.types.Link;
 
 import java.net.InetSocketAddress;
@@ -40,7 +38,7 @@ public class Client extends Connector {
     public void run(SessionContext sessionContext) throws Exception {
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
-        connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataEncoder<BinkFrame>(),new BinkDataDecoder()));
+        connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         connector.setHandler(new BinkSessionHandler(sessionContext));
         String hostname = link.getHostAddress();
         int port = link.getPort() != 0 ? link.getPort(): Connector.BINK_PORT;
