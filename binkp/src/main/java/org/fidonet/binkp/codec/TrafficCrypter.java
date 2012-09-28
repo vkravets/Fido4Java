@@ -1,5 +1,7 @@
 package org.fidonet.binkp.codec;
 
+import org.fidonet.binkp.crypt.*;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -9,19 +11,39 @@ package org.fidonet.binkp.codec;
  */
 public class TrafficCrypter {
 
-    private String password;
+    public static final String TRAFFIC_CRYPTER_KEY = TrafficCrypter.class.getName() + ".KEY";
 
-    public TrafficCrypter(String password) {
-        this.password = password;
+    private Encrypt encrypt;
+    private Decrypt decrypt;
+
+    public TrafficCrypter() {
+        this.encrypt = new DummyEncrypt();
+        this.decrypt = new DummyDecrypt();
     }
 
-    public byte[] decrypt(byte[] dataBuf, int size) {
-        // TODO decoding
-        return dataBuf;
+
+    public Encrypt getEncrypt() {
+        return encrypt;
     }
 
-    public byte[] encrypt(byte[] dataBuf, int length) {
-        // TODO encoding
-        return dataBuf;
+    public Decrypt getDecrypt() {
+        return decrypt;
+    }
+
+    public void setEncrypt(Encrypt encrypt) {
+        this.encrypt = encrypt;
+    }
+
+    public void setDecrypt(Decrypt decrypt) {
+        this.decrypt = decrypt;
+    }
+
+    public void encrypt(byte[] dataBuf, int length) {
+        encrypt.encryptData(dataBuf, length);
+    }
+
+    public void decrypt(byte[] dataBuf, int length) {
+        decrypt.decryptData(dataBuf, length);
     }
 }
+

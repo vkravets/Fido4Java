@@ -45,7 +45,9 @@ public class CommandFactory {
     public static Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {
         if (data.isCommand()) {
             String argsStr = new String(data.getData());
-            return createCommand(sessionContext, BinkCommand.findCommand(data.getCommand()), argsStr);
+            BinkCommand command = BinkCommand.findCommand(data.getCommand());
+            if (command != null)
+                return createCommand(sessionContext, command, argsStr);
         }
         return null;
     }

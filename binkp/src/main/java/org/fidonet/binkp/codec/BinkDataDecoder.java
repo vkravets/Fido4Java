@@ -4,8 +4,6 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-import org.fidonet.binkp.SessionContext;
-import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.io.BinkFrame;
 
 /**
@@ -21,29 +19,29 @@ public class BinkDataDecoder extends CumulativeProtocolDecoder {
     protected boolean doDecode(IoSession session, IoBuffer in, ProtocolDecoderOutput out) throws Exception {
         int start = in.position();
         if (in.remaining() < 2) return false;
-        short dataInfoRaw = in.getShort();
+
+        TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY);
+        trafficCrypter.getDecrypt().save();
+        byte[] byteBuf = new byte[2];
+        IoBuffer buf = IoBuffer.allocate(byteBuf.length);
+        in.get(byteBuf);
+        trafficCrypter.decrypt(byteBuf, byteBuf.length);
+        buf.put(byteBuf);
+        buf.flip();
+
+        short dataInfoRaw = buf.getShort();
         DataInfo dataInfo = DataReader.parseDataInfo(dataInfoRaw);
-        if (dataInfo == null) {
-            return false;
-        }
-        if (in.remaining() < dataInfo.getSize()) {
+        if (dataInfo == null || in.remaining() < dataInfo.getSize()) {
+            trafficCrypter.getDecrypt().restore();
             in.position(start);
             return false;
         }
         byte[] dataBuf = new byte[dataInfo.getSize()];
         in.get(dataBuf);
-
-        // Check if crypt mode is turn on
-        SessionContext sessionContext = (SessionContext) session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
-        boolean isCrypt = sessionContext.isCryptMode() && sessionContext.getStationConfig().isCryptMode();
-        Password password = sessionContext.getPassword();
-        boolean isMD5 = sessionContext.getPassword().isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
-        if  (isCrypt && isMD5) {
-            TrafficCrypter crypter = new TrafficCrypter(password.getPassword());
-            dataBuf = crypter.decrypt(dataBuf, dataInfo.getSize());
-        }
+        trafficCrypter.decrypt(dataBuf, dataBuf.length);
         BinkFrame data = new BinkFrame(dataInfoRaw, dataBuf);
         out.write(data);
+        in.position(start + 2 + dataInfo.getSize());
         return true;
     }
 

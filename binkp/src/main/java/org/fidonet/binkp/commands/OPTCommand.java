@@ -2,7 +2,11 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.binkp.codec.TrafficCrypter;
 import org.fidonet.binkp.config.Password;
+import org.fidonet.binkp.config.ServerRole;
+import org.fidonet.binkp.crypt.StandardDecrypt;
+import org.fidonet.binkp.crypt.StandardEncrypt;
 
 import java.security.MessageDigest;
 
@@ -45,6 +49,16 @@ public class OPTCommand extends NULCommand {
                 sessionContext.setNRMode(true);
             } else if (token.equals("CRYPT")) {
                 sessionContext.setCryptMode(true);
+                Password password = sessionContext.getPassword();
+                boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
+                if (isMD5) {
+                    TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY);
+                    char[] pass = password.getPassword().toCharArray();
+                    boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
+                    trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
+                    trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
+                }
+                System.out.println("Remote requests CRYPT mode");
             }
         }
     }

@@ -7,6 +7,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.fidonet.binkp.codec.BinkDataCodecFactory;
+import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.handler.BinkSessionHandler;
 
 /**
@@ -51,7 +52,9 @@ public class Server extends Connector{
             @Override
             public void sessionCreated(IoSession session) throws Exception {
                 // got new connection to server
-                session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, new SessionContext(context));
+                SessionContext sessionContext = new SessionContext(context);
+                sessionContext.setServerRole(ServerRole.SERVER);
+                session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
             }
 

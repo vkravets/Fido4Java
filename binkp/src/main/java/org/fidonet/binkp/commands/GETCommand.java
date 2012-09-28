@@ -43,6 +43,7 @@ public class GETCommand extends MessageCommand {
                         } catch (InterruptedException ignored) {}
                     }
                 });
+                sendFileBegin.start();
                 sendFileBegin.join();
             } else {
                 filesSender.skip(fileInfo, true);

@@ -167,11 +167,15 @@ public class SessionContext {
     }
 
     public Password getPassword() {
-        Link curLink = linksInfo.getCurLink();
-        if (curLink != null) {
-            return new Password(curLink.getPass());
+        if (password == null) {
+            Link curLink = linksInfo.getCurLink();
+            if (curLink != null) {
+                password = new Password(curLink.getPass());
+            } else {
+                return null;
+            }
         }
-        return null;
+        return password;
     }
 
     public Password getPassword(Link link) {

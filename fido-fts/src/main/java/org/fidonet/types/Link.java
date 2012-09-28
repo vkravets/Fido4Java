@@ -8,6 +8,14 @@ public class Link {
     private int port;
     private String boxPath;
 
+    public Link(FTNAddr addr, FTNAddr myaddr, String pass, String hostAddress, int port) {
+        this.addr = addr;
+        this.myaddr = myaddr;
+        this.pass = pass;
+        this.hostAddress = hostAddress;
+        this.port = port;
+    }
+
     public Link(String linkstr) {
 
         String[] linkToken = linkstr.split(",");

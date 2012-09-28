@@ -6,6 +6,7 @@ import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.codec.DataBulk;
+import org.fidonet.binkp.codec.TrafficCrypter;
 import org.fidonet.binkp.commands.*;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
@@ -53,6 +54,8 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         super.sessionOpened(session);    //To change body of overridden methods use File | Settings | File Templates.
 
         SessionContext sessionContext = getSessionContext(session);
+        session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
+        session.setAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
