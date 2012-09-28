@@ -17,6 +17,7 @@ import org.fidonet.binkp.config.StationConfig;
 import org.fidonet.binkp.handler.BinkSessionHandler;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -121,6 +122,10 @@ public class ClientTest {
         Thread thread = new Thread(new ClientMock(sessionContext));
         thread.start();
         thread.join();
+        FileInfo fileInfo = sessionContext.getRecvFiles().peek().getInfo();
+        Assert.assertEquals("0000FF8F.WE5", fileInfo.getName());
+        Assert.assertEquals(766, fileInfo.getSize());
+        Assert.assertEquals(true, fileInfo.isFinished());
     }
 
 }
