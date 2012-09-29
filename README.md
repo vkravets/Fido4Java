@@ -5,8 +5,10 @@ JFtn v0.1
 
 ### BUILD STATUS: 
 Travis: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
+
 Jenkins: [![Build Status](https://fido4java.ci.cloudbees.com/job/Fido4java/badge/icon)](https://fido4java.ci.cloudbees.com/job/Fido4java/)
 
+Jenkins page: https://fido4java.ci.cloudbees.com/job/Fido4java/
 
 
 ### ABOUT
