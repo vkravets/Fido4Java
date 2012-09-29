@@ -75,7 +75,7 @@ public class ClientTest {
                 decoder.decode(session, buf, session.getDecoderOutput());
                 Thread.sleep(100);
             }
-            Thread.sleep(2000);
+            Thread.sleep(1000);
             sessionContext.setState(SessionState.STATE_END);
         }
 
