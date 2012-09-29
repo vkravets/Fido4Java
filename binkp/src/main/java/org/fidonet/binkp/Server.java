@@ -46,7 +46,7 @@ public class Server extends Connector{
 
             @Override
             public void serviceDeactivated(IoService ioService) throws Exception {
-                // server is closed
+                Server.this.stop(context);
             }
 
             @Override
