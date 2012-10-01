@@ -78,19 +78,15 @@ public class FilesSender implements Runnable {
                 Command file = new FILECommand();
                 file.send(session, sessionContext);
                 curFile = files.poll();
-                boolean isSent = false;
                 try {
-                    isSent = send(curFile);
+                    send(curFile);
                 } catch (Exception e) {
                     // todo logger
                 }
-                if (isSent) {
-                    Command eob = new EOBCommand();
-                    eob.send(session, sessionContext);
-                    sessionContext.setSendingIsFinish(true);
-                }
             }
-
+            Command eob = new EOBCommand();
+            eob.send(session, sessionContext);
+            sessionContext.setSendingIsFinish(true);
         } catch (Exception e) {
             // todo logger
         }
