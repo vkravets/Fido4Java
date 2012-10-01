@@ -7,6 +7,7 @@ import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.config.ServerRole;
+import org.fidonet.binkp.events.DisconnectedEvent;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -55,11 +56,12 @@ public class ADRCommand extends MessageCommand {
                     linksInfo.setCurLink(curLink);
                     sessionContext.setState(SessionState.STATE_WAITPWD);
                 } else {
+                    sessionContext.setState(SessionState.STATE_ERR);
                     Command error = new ERRCommand();
                     String msg = "Link with address [%s] is not register on the node";
                     sessionContext.setLastErrorMessage(String.format(msg, commandArgs));
                     error.send(session, sessionContext);
-                    sessionContext.setState(SessionState.STATE_ERR);
+                    sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
                     session.close(false);
                 }
             }

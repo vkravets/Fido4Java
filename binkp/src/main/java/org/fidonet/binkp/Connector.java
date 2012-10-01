@@ -1,5 +1,7 @@
 package org.fidonet.binkp;
 
+import org.fidonet.events.HasEventBus;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -7,7 +9,7 @@ package org.fidonet.binkp;
  * Date: 9/24/12
  * Time: 3:46 PM
  */
-public abstract class Connector {
+public abstract class Connector extends HasEventBus {
 
     protected final static int BINK_PORT = 24554;
 

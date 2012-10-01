@@ -5,6 +5,8 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.config.Password;
+import org.fidonet.binkp.events.ConnectedEvent;
+import org.fidonet.binkp.events.DisconnectedEvent;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,13 +34,14 @@ public class PWDCommand extends MessageCommand{
             if (password.getText() == remotePassword.getText()) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
-
-                // TODO: Fill session context with files with need to send
-
+                sessionContext.sendEvent(new ConnectedEvent(sessionContext));
             } else {
                 ERRCommand error = new ERRCommand();
+                sessionContext.setState(SessionState.STATE_ERR);
                 sessionContext.setLastErrorMessage(String.format("Bad password \"%s\"", commandArgs));
                 error.send(session, sessionContext);
+                sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
+                session.close(false);
             }
         }
     }

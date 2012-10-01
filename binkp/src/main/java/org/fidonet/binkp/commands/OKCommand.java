@@ -5,6 +5,7 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
+import org.fidonet.binkp.events.ConnectedEvent;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FilesSender;
 
@@ -38,6 +39,8 @@ public class OKCommand extends MessageCommand{
 
         sessionContext.setState(SessionState.STATE_IDLE);
 
+        sessionContext.sendEvent(new ConnectedEvent(sessionContext));
+
         // Password was right init file sending
         Command traffic = new TRFCommand();
         traffic.send(session, sessionContext);
@@ -46,7 +49,7 @@ public class OKCommand extends MessageCommand{
         // Run thread to sending files in client mode
         FilesSender filesSender = new FilesSender(session, files, sessionContext);
         session.setAttribute(FilesSender.FILESENDER_KEY, filesSender);
-        Thread sendFiles = new Thread();
+        Thread sendFiles = new Thread(filesSender);
         sendFiles.start();
     }
 

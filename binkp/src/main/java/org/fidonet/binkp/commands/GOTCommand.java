@@ -3,8 +3,12 @@ package org.fidonet.binkp.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
+import org.fidonet.binkp.events.FileSendEvent;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,11 +28,11 @@ public class GOTCommand extends MessageCommand {
         return command.equals(BinkCommand.M_GOT) && args != null && args.length() > 0;
     }
 
-    private FileInfo findSentFile(SessionContext sessionContext, FileInfo info) {
-        for (FileData next : sessionContext.getSendFiles()) {
+    private FileData<InputStream> findSentFile(SessionContext sessionContext, FileInfo info) {
+        for (FileData<InputStream> next : sessionContext.getSendFiles()) {
             FileInfo fileInfo = next.getInfo();
             if (fileInfo.equals(info)) {
-                return fileInfo;
+                return next;
             }
         }
         return null;
@@ -37,17 +41,19 @@ public class GOTCommand extends MessageCommand {
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
-        FileInfo sentFile = findSentFile(sessionContext, info);
+        FileData<InputStream> sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {
-            sentFile.setFinished(true);
-            long totalSize = sessionContext.getRecvFilesSize() + sentFile.getSize();
-            sessionContext.setRecvFilesSize(totalSize);
+            FileInfo fileSentInfo = sentFile.getInfo();
+            fileSentInfo.setFinished(true);
+            sessionContext.sendEvent(new FileSendEvent(sessionContext, sentFile));
+            long totalSize = sessionContext.getRecvFilesSize() + fileSentInfo.getSize();
+            sessionContext.setSendFilesSize(totalSize);
         }
     }
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        FileData fileData = sessionContext.getRecvFiles().peek();
+        FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
         FileInfo fileInfo = fileData.getInfo();
         return String.format("%s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp());
     }

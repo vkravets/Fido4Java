@@ -6,6 +6,7 @@ import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.config.ServerRole;
+import org.fidonet.binkp.events.DisconnectedEvent;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,6 +32,7 @@ public class EOBCommand extends MessageCommand{
         if (sessionContext.isSendingIsFinish()) {
             Command eob = new EOBCommand();
             eob.send(session, sessionContext);
+            sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
                 sessionContext.setState(SessionState.STATE_END);
             } else {

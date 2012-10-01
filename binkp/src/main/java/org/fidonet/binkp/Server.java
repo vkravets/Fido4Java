@@ -32,16 +32,14 @@ public class Server extends Connector{
     public void run(final SessionContext context) throws Exception {
         acceptor = new NioSocketAcceptor();
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
-        acceptor.setHandler(new BinkSessionHandler());
+        acceptor.setHandler(new BinkSessionHandler(getEventBus()));
         acceptor.addListener(new IoServiceListener() {
             @Override
             public void serviceActivated(IoService ioService) throws Exception {
-                // server is started
             }
 
             @Override
             public void serviceIdle(IoService ioService, IdleStatus idleStatus) throws Exception {
-                // server waiting the connection
             }
 
             @Override

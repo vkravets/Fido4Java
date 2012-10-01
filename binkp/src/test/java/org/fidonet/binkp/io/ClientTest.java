@@ -14,12 +14,18 @@ import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.codec.BinkDataDecoder;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
+import org.fidonet.binkp.events.ConnectedEvent;
+import org.fidonet.binkp.events.DisconnectedEvent;
+import org.fidonet.binkp.events.FileReceivedEvent;
 import org.fidonet.binkp.handler.BinkSessionHandler;
+import org.fidonet.events.Event;
+import org.fidonet.events.EventHandler;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
 
@@ -45,7 +51,7 @@ public class ClientTest {
         public void run(SessionContext sessionContext) throws Exception {
             session = new ProtocolCodecSession();
             session.getFilterChain().addFirst("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
-            session.setHandler(new BinkSessionHandler(sessionContext));
+            session.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
             session.setTransportMetadata(new DefaultTransportMetadata(
                     "mina", "dummy", false, true,
                     SocketAddress.class, IoSessionConfig.class, Object.class));
@@ -111,7 +117,15 @@ public class ClientTest {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
         }
+
+        public void registerEvent(Class<? extends Event> eventClass, EventHandler<? extends Event> eventHandler) {
+            getEventBus().register(eventClass, eventHandler);
+        }
     }
+
+    private Boolean connected = false;
+    private Boolean disconnected = false;
+    private Boolean fileReceived = false;
 
     @Test
     public void testBaseFlow() throws InterruptedException {
@@ -119,13 +133,46 @@ public class ClientTest {
         LinksInfo linksInfo = new LinksInfo(new Link(new FTNAddr("2:467/110.113"), new FTNAddr("2:467/110"), "pass_i_f", "localhost", 24554));
         SessionContext sessionContext = new SessionContext(config, linksInfo);
         sessionContext.getStationConfig().setCryptMode(true);
-        Thread thread = new Thread(new ClientMock(sessionContext));
+        ClientMock clientMock = new ClientMock(sessionContext);
+        registerEvents(clientMock);
+        Thread thread = new Thread(clientMock);
         thread.start();
         thread.join();
         FileInfo fileInfo = sessionContext.getRecvFiles().peek().getInfo();
         Assert.assertEquals("0000FF8F.WE5", fileInfo.getName());
         Assert.assertEquals(766, fileInfo.getSize());
         Assert.assertEquals(true, fileInfo.isFinished());
+        Assert.assertEquals(true, connected);
+        Assert.assertEquals(true, disconnected);
+        Assert.assertEquals(true, fileReceived);
+    }
+
+    private void registerEvents(ClientMock client) {
+        client.registerEvent(ConnectedEvent.class, new EventHandler<ConnectedEvent>() {
+            @Override
+            public void onEventHandle(ConnectedEvent event) {
+                connected = true;
+            }
+        });
+
+        client.registerEvent(DisconnectedEvent.class, new EventHandler<DisconnectedEvent>() {
+            @Override
+            public void onEventHandle(DisconnectedEvent event) {
+                disconnected = true;
+            }
+        });
+
+        client.registerEvent(FileReceivedEvent.class, new EventHandler<FileReceivedEvent>() {
+            @Override
+            public void onEventHandle(FileReceivedEvent event) {
+                fileReceived = true;
+                FileInfo expectedInfo = new FileInfo("0000FF8F.WE5", 766, 1348664500L);
+                Assert.assertEquals(expectedInfo, event.getFile().getInfo());
+                Assert.assertEquals(true, event.getFile().getInfo().isFinished());
+                ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile().getStream();
+                Assert.assertEquals(766, outStream.toByteArray().length);
+            }
+        });
     }
 
 }

@@ -13,11 +13,15 @@ import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.commands.share.CommandFactory;
 import org.fidonet.binkp.commands.share.CompositeMessage;
 import org.fidonet.binkp.config.ServerRole;
+import org.fidonet.binkp.events.DisconnectedEvent;
+import org.fidonet.binkp.events.FileReceivedEvent;
 import org.fidonet.binkp.io.BinkData;
 import org.fidonet.binkp.io.BinkFrame;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
+import org.fidonet.events.EventBus;
 
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +36,18 @@ import java.util.List;
 public class BinkSessionHandler extends IoHandlerAdapter{
 
     private SessionContext sessionContext;
+    private EventBus eventBus;
 
-    public BinkSessionHandler() {
+    public BinkSessionHandler(EventBus eventBus) {
         this.sessionContext = null;
+        if (eventBus == null) {
+            throw new UnsupportedOperationException();
+        }
+        this.eventBus = eventBus;
     }
 
-    public BinkSessionHandler(SessionContext context) {
+    public BinkSessionHandler(SessionContext context, EventBus eventBus) {
+        this(eventBus);
         this.sessionContext = context;
     }
 
@@ -95,9 +105,11 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         try {
             command = CommandFactory.createCommand(sessionContext, binkData);
         } catch (UnknownCommandException ex) {
+            sessionContext.setState(SessionState.STATE_ERR);
             sessionContext.setLastErrorMessage(ex.getMessage());
             Command error = new ERRCommand();
             error.send(session, sessionContext);
+            sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             session.close(false);
             throw ex;
         }
@@ -109,15 +121,17 @@ public class BinkSessionHandler extends IoHandlerAdapter{
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
             System.out.println("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
-            FileData fileData = sessionContext.getRecvFiles().peek();
+            FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
             if (fileData != null) {
                 FileInfo info = fileData.getInfo();
                 long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
+                fileData.getStream().write(dataFile.getRawData().getData());
                 info.setCurSize(curSize);
                 info.setFinished(curSize == info.getSize());
                 if (info.isFinished()) {
                     GOTCommand confirmRecv = new GOTCommand();
                     confirmRecv.send(session, sessionContext);
+                    eventBus.notify(new FileReceivedEvent(sessionContext, fileData));
                     System.out.println(info);
                 }
             }

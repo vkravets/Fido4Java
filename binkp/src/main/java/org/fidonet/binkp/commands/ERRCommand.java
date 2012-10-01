@@ -5,6 +5,7 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.config.ServerRole;
+import org.fidonet.binkp.events.DisconnectedEvent;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,6 +29,7 @@ public class ERRCommand extends MessageCommand{
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
         System.out.println("ERROR: " + commandArgs);
         sessionContext.setLastErrorMessage(commandArgs);
+        sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
         if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
             sessionContext.setState(SessionState.STATE_ERR);
         } else {

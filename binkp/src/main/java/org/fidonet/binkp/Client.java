@@ -41,7 +41,7 @@ public class Client extends Connector {
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
         connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
-        connector.setHandler(new BinkSessionHandler(sessionContext));
+        connector.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
         String hostname = link.getHostAddress();
         int port = link.getPort() != 0 ? link.getPort(): Connector.BINK_PORT;
         ConnectFuture connection = connector.connect(new InetSocketAddress(hostname, port));

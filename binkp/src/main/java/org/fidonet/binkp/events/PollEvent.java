@@ -10,15 +10,28 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.events;
+package org.fidonet.binkp.events;
+
+import org.fidonet.binkp.SessionContext;
+import org.fidonet.types.Link;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Vladimir Kravets
- * Date: 8/29/11
- * Time: 4:49 PM
- * To change this template use File | Settings | File Templates.
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 10/1/12
+ * Time: 3:13 PM
  */
-public interface EventHandler<T extends Event> {
-    public void onEventHandle(T event);
+public class PollEvent extends AbstractEvent{
+
+    private Link link;
+
+    public PollEvent(SessionContext sessionContext, Link link) {
+        super(sessionContext);
+        this.link = link;
+    }
+
+    public Link getLink() {
+        return link;
+    }
 }

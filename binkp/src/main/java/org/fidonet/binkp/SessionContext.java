@@ -4,6 +4,8 @@ import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
 import org.fidonet.binkp.io.FileData;
+import org.fidonet.events.Event;
+import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
 
 import java.io.InputStream;
@@ -18,7 +20,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  * Date: 9/19/12
  * Time: 3:49 PM
  */
-public class SessionContext {
+public class SessionContext extends HasEventBus {
 
     public static final String SESSION_CONTEXT_KEY = SessionContext.class.getName() + ".CONTEXT";
 
@@ -207,5 +209,9 @@ public class SessionContext {
 
     public void setCryptMode(boolean cryptMode) {
         this.cryptMode = cryptMode;
+    }
+
+    public void sendEvent(Event event) {
+        getEventBus().notify(event);
     }
 }
