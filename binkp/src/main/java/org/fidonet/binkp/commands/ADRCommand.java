@@ -71,7 +71,7 @@ public class ADRCommand extends MessageCommand {
         Link res = null;
         for (Link link : links) {
             if (link.getAddr().equals(linkAddr)) {
-                res = null;
+                res = link;
                 break;
             }
         }
