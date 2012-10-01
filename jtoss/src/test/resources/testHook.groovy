@@ -1,4 +1,4 @@
-import org.fidonet.jftn.event.Event
+import org.fidonet.events.Event
 import org.fidonet.jftn.share.Hook
 import org.fidonet.tests.share.TestEvent
 
