@@ -115,8 +115,8 @@ public class ClientTest {
 
     @Test
     public void testBaseFlow() throws InterruptedException {
-        StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/70.113");
-        LinksInfo linksInfo = new LinksInfo(new Link(new FTNAddr("2:467/70.113"), new FTNAddr("2:467/70"), "pass_i_f", "localhost", 24554));
+        StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        LinksInfo linksInfo = new LinksInfo(new Link(new FTNAddr("2:467/110.113"), new FTNAddr("2:467/110"), "pass_i_f", "localhost", 24554));
         SessionContext sessionContext = new SessionContext(config, linksInfo);
         sessionContext.getStationConfig().setCryptMode(true);
         Thread thread = new Thread(new ClientMock(sessionContext));
