@@ -1,6 +1,6 @@
 package org.fidonet.jftn.tosser;
 
-import org.fidonet.jftn.event.Event;
+import org.fidonet.events.Event;
 import org.fidonet.types.Message;
 
 /**

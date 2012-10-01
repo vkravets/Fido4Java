@@ -1,8 +1,8 @@
 package org.fidonet.jftn.share;
 
+import org.fidonet.events.Event;
+import org.fidonet.events.HasEventBus;
 import org.fidonet.jftn.engine.script.ScriptEngine;
-import org.fidonet.jftn.event.Event;
-import org.fidonet.jftn.event.HasEventBus;
 
 /**
  * Created by IntelliJ IDEA.

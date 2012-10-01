@@ -1,6 +1,6 @@
 package org.fidonet.tests.share;
 
-import org.fidonet.jftn.event.Event;
+import org.fidonet.events.Event;
 
 /**
  * Created by IntelliJ IDEA.

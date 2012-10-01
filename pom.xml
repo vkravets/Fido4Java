@@ -32,6 +32,7 @@
     </distributionManagement>
 
     <modules>
+        <module>event-bus</module>
         <module>fido-fts</module>
         <module>fido-config</module>
         <module>fido-tools</module>

@@ -1,7 +1,7 @@
 package org.fidonet.jftn.engine.script;
 
 import org.fidonet.config.IConfig;
-import org.fidonet.jftn.event.Event;
+import org.fidonet.events.Event;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 

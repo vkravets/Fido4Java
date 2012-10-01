@@ -1,6 +1,6 @@
 package org.fidonet.jftn.share;
 
-import org.fidonet.jftn.event.EventHandler;
+import org.fidonet.events.EventHandler;
 
 /**
  * Created by IntelliJ IDEA.

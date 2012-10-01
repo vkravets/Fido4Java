@@ -1,4 +1,4 @@
-package org.fidonet.jftn.event;
+package org.fidonet.events;
 
 /**
  * Created by IntelliJ IDEA.

@@ -1,12 +1,12 @@
 package org.fidonet.tests.share;
 
 import junit.framework.TestCase;
+import org.fidonet.events.Event;
+import org.fidonet.events.EventHandler;
+import org.fidonet.events.HasEventBus;
 import org.fidonet.jftn.engine.script.JFtnShare;
 import org.fidonet.jftn.engine.script.JythonScriptManager;
 import org.fidonet.jftn.engine.script.ScriptEngine;
-import org.fidonet.jftn.event.Event;
-import org.fidonet.jftn.event.EventHandler;
-import org.fidonet.jftn.event.HasEventBus;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
