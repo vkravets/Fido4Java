@@ -4,6 +4,7 @@ import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
@@ -12,23 +13,33 @@ public class Message {
     private static ILogger logger = LoggerFactory.getLogger(Message.class.getName());
 
     // TODO change field name to camel case (first latter is in lower case)
-    private final String From;
-    private final String To;
-    private final String Subject;
-    private final byte[] byteSubj;
-    private final String Area;
-    private final String Text = "";
+    private String From;
+    private String To;
+    private String Subject;
+    private byte[] byteSubj;
+    private String Area;
+    private String Text = "";
     private FTNAddr FAddr;
     private FTNAddr TAddr;
     private String[] Kludges;
-    private final String[] splittedleeter;
-    private final boolean echomail;
-    private final Pattern collon = Pattern.compile(":");
-    private final Pattern collonorwhitespace = Pattern.compile("[:][:\\s]");
-    private final byte[] Body;
-    private final String msgDate;
-    private final Attribute attrs;
-    private final FTNAddr UpLink;
+    private String[] splittedleeter;
+    private boolean echomail;
+    private Pattern collon = Pattern.compile(":");
+    private Pattern collonorwhitespace = Pattern.compile("[:][:\\s]");
+    private byte[] Body;
+    private String msgDate;
+    private Attribute attrs;
+    private FTNAddr UpLink;
+
+    public Message(String from, String to, FTNAddr fromAddr, FTNAddr toAddr, String subj, String message, Date date) {
+        this.From = from;
+        this.To = to;
+        this.FAddr = fromAddr;
+        this.TAddr = toAddr;
+        this.Subject = subj;
+        this.Text = message;
+        this.msgDate = date.toString();
+    }
 
     public Message(FtsPackMsg src) {
         From = src.getFrom();
