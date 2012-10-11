@@ -42,8 +42,14 @@ public class FILECommand extends MessageCommand {
             get.send(session, sessionContext);
         }
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-        FileData fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
-        receivedFiles.addFirst(fileData);
+        FileData<OutputStream> fileData = sessionContext.getNotFinisheFileData(fileInfo);
+        if (fileData == null) {
+            fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
+            receivedFiles.addFirst(fileData);
+            Command get = new GETCommand();
+            get.send(session, sessionContext);
+        }
+
         // process NR mode
         if (fileInfo.getOffset() < 0) {
             fileInfo.setOffset(0);

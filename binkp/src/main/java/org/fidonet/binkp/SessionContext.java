@@ -4,13 +4,16 @@ import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
 import org.fidonet.binkp.io.FileData;
+import org.fidonet.binkp.io.FileInfo;
 import org.fidonet.events.Event;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -44,6 +47,7 @@ public class SessionContext extends HasEventBus {
     // received files number
     // queue received files
     private Deque<FileData<OutputStream>> recvFiles;
+    private List<FileData<OutputStream>> notFinishedFiles;
 
     // send files number
     // queue send files
@@ -71,6 +75,7 @@ public class SessionContext extends HasEventBus {
         this.linksInfo = linksInfo;
         this.recvFiles = new LinkedBlockingDeque<FileData<OutputStream>>();
         this.sendFiles = new LinkedBlockingDeque<FileData<InputStream>>();
+        this.notFinishedFiles = new ArrayList<FileData<OutputStream>>();
     }
 
     public String getLastErrorMessage() {
@@ -222,5 +227,17 @@ public class SessionContext extends HasEventBus {
 
     public void setBusy(boolean busy) {
         this.busy = busy;
+    }
+
+    public void setNotFinishedFiles(List<FileData<OutputStream>> files) {
+        notFinishedFiles.addAll(files);
+    }
+
+    public FileData<OutputStream> getNotFinisheFileData(FileInfo info) {
+        int pos = notFinishedFiles.indexOf(info);
+        if (pos != -1) {
+            return notFinishedFiles.get(pos);
+        }
+        return null;
     }
 }
