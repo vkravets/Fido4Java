@@ -60,6 +60,7 @@ public class SessionContext extends HasEventBus {
 
     private boolean nrMode = false;
     private boolean cryptMode = false;
+    private boolean busy = false;
 
     public SessionContext(SessionContext context) {
         this(context.getStationConfig(), context.getLinksInfo());
@@ -213,5 +214,13 @@ public class SessionContext extends HasEventBus {
 
     public void sendEvent(Event event) {
         getEventBus().notify(event);
+    }
+
+    public boolean isBusy() {
+        return busy;
+    }
+
+    public void setBusy(boolean busy) {
+        this.busy = busy;
     }
 }

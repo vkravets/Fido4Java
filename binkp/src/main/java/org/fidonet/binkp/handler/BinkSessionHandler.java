@@ -70,8 +70,14 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
         if (!isClient) {
-            Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
-            opt_md5.send(session, sessionContext);
+            if (sessionContext.isBusy()) {
+                Command bsy = new BSYCommand();
+                sessionContext.setLastErrorMessage("To many connections");
+                bsy.send(session, sessionContext);
+            } else {
+                Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
+                opt_md5.send(session, sessionContext);
+            }
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();

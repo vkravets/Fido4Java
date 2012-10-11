@@ -2,8 +2,7 @@ package org.fidonet.binkp;
 
 import org.fidonet.types.Link;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,7 +16,7 @@ public class Runner {
     private ExecutorService threadPoolExecutor;
 
     public Runner() {
-        threadPoolExecutor = Executors.newFixedThreadPool(11);
+        threadPoolExecutor = Executors.newCachedThreadPool();
     }
 
     public void poll(Link link, final SessionContext context) throws Exception {
@@ -38,9 +37,6 @@ public class Runner {
             @Override
             public void run() {
                 try {
-
-                    // TODO: Fill session context with files with need to send to this link
-
                     client.run(context);
                     if (client.isConnect()) {
                         waitSessionFinish();

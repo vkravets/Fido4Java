@@ -21,6 +21,8 @@ public class Server extends Connector{
 
     private NioSocketAcceptor acceptor;
     private int port = Connector.BINK_PORT;
+    private Integer userConnected = 0;
+    private static int MAX_USER_CONNECTED = 30;
 
     public Server() { }
 
@@ -51,19 +53,36 @@ public class Server extends Connector{
             public void sessionCreated(IoSession session) throws Exception {
                 // got new connection to server
                 SessionContext sessionContext = new SessionContext(context);
+                sessionContext.setBusy(context.isBusy());
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
+                synchronized (userConnected){
+                    userConnected++;
+                }
+                if (!context.isBusy() && userConnected > MAX_USER_CONNECTED) {
+                    synchronized (context) {
+                        context.setBusy(true);
+                    }
+                }
             }
 
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
-                SessionContext context = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
-                if (context.getState().equals(SessionState.STATE_ERR)) {
+                SessionContext sessionContext = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+                if (sessionContext.getState().equals(SessionState.STATE_ERR)) {
                     // TODO log or out error message
-                    context.getLastErrorMessage();
+                    sessionContext.getLastErrorMessage();
                 }
                 session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
+                synchronized (userConnected){
+                    userConnected--;
+                }
+                if (context.isBusy() && userConnected < MAX_USER_CONNECTED) {
+                    synchronized (context) {
+                        context.setBusy(false);
+                    }
+                }
             }
         });
         acceptor.bind();
