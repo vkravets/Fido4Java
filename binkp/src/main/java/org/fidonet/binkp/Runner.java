@@ -16,7 +16,9 @@ public class Runner {
     private ExecutorService threadPoolExecutor;
 
     public Runner() {
-        threadPoolExecutor = Executors.newCachedThreadPool();
+        threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,
+                                                    60L, TimeUnit.SECONDS,
+                                                    new SynchronousQueue<Runnable>());
     }
 
     public void poll(Link link, final SessionContext context) throws Exception {
