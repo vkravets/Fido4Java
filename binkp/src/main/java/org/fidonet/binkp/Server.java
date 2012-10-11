@@ -10,6 +10,9 @@ import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.handler.BinkSessionHandler;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -85,7 +88,8 @@ public class Server extends Connector{
                 }
             }
         });
-        acceptor.bind();
+        SocketAddress address = new InetSocketAddress(port);
+        acceptor.bind(address);
     }
 
     @Override
