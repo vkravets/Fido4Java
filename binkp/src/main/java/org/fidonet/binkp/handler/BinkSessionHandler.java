@@ -74,6 +74,8 @@ public class BinkSessionHandler extends IoHandlerAdapter{
                 Command bsy = new BSYCommand();
                 sessionContext.setLastErrorMessage("To many connections");
                 bsy.send(session, sessionContext);
+                sessionContext.setState(SessionState.STATE_BSY);
+                session.close(false);
             } else {
                 Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
                 opt_md5.send(session, sessionContext);

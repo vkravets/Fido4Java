@@ -73,7 +73,8 @@ public class Server extends Connector{
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
                 SessionContext sessionContext = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
-                if (sessionContext.getState().equals(SessionState.STATE_ERR)) {
+                if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
+                        sessionContext.getState().equals(SessionState.STATE_BSY)) {
                     // TODO log or out error message
                     sessionContext.getLastErrorMessage();
                 }
