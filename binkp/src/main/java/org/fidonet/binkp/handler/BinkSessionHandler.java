@@ -20,6 +20,8 @@ import org.fidonet.binkp.io.BinkFrame;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
 import org.fidonet.events.EventBus;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.io.OutputStream;
 import java.security.MessageDigest;
@@ -34,6 +36,8 @@ import java.util.List;
  * Time: 1:18 PM
  */
 public class BinkSessionHandler extends IoHandlerAdapter{
+
+    private static ILogger log = LoggerFactory.getLogger(BinkSessionHandler.class);
 
     private SessionContext sessionContext;
     private EventBus eventBus;
@@ -64,6 +68,8 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         super.sessionOpened(session);    //To change body of overridden methods use File | Settings | File Templates.
 
         SessionContext sessionContext = getSessionContext(session);
+        log.debug(String.format("Session is opened with %s", sessionContext.getLinksInfo().getCurLink().toString()));
+
         session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
         session.setAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
 
@@ -94,6 +100,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         CompositeMessage greeting = new CompositeMessage(commands);
         greeting.send(session, sessionContext);
         if (!isClient) {
+            log.debug("Greeting was sent. Waiting password...");
             sessionContext.setState(SessionState.STATE_WAITPWD);
         }
 
@@ -101,7 +108,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
 
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        log.error(cause.getMessage(), cause);
     }
 
     @Override
@@ -113,6 +120,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         try {
             command = CommandFactory.createCommand(sessionContext, binkData);
         } catch (UnknownCommandException ex) {
+            log.error(ex.getMessage(), ex);
             sessionContext.setState(SessionState.STATE_ERR);
             sessionContext.setLastErrorMessage(ex.getMessage());
             Command error = new ERRCommand();
