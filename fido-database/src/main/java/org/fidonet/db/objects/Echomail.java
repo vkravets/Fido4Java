@@ -35,7 +35,7 @@ public class Echomail {
     @DatabaseField(generatedId = true, columnName = "id", canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
-    @DatabaseField(columnName = "id_echoarea", foreign = true, foreignAutoRefresh = true)
+    @DatabaseField(columnName = "id_echoarea", foreign = true, foreignAutoRefresh = false)
     private Echoarea area;
 
     @DatabaseField(columnName = "from_name", canBeNull = false)
