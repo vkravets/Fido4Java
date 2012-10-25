@@ -20,8 +20,7 @@ import com.j256.ormlite.table.TableUtils;
 import org.fidonet.db.objects.*;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,15 +35,20 @@ public class OrmManager {
     private String user = null;
     private String password = null;
 
-    private ConnectionSource connectionSource;
+    protected ConnectionSource connectionSource;
 
     private Map<Class<?>, Dao<?, ?>> daoMap;
 
-    private Dao<Echoarea, Long> daoEchoareas;
-    private Dao<Echomail, Long> daoEchomail;
-    private Dao<Link, Long> daoLinks;
-    private Dao<Netmail, Long> daoNetmail;
-    private Dao<Subscription, ?> daoSubscriptions;
+    private static Set<Class<?>> daoClasses;
+
+    static {
+        daoClasses = new HashSet<Class<?>>();
+        daoClasses.add(Echoarea.class);
+        daoClasses.add(Echomail.class);
+        daoClasses.add(Link.class);
+        daoClasses.add(Netmail.class);
+        daoClasses.add(Subscription.class);
+    }
 
     public OrmManager(String jdbcUrl) {
         this.jdbcUrl = jdbcUrl;
@@ -68,20 +72,10 @@ public class OrmManager {
 
         daoMap = new HashMap<Class<?>, Dao<?, ?>>();
 
-        daoEchoareas = DaoManager.createDao(connectionSource, Echoarea.class);
-        daoMap.put(Echoarea.class, daoEchoareas);
+        for (Class<?> daoClass : daoClasses) {
+            daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
+        }
 
-        daoEchomail = DaoManager.createDao(connectionSource, Echomail.class);
-        daoMap.put(Echomail.class, daoEchomail);
-
-        daoLinks = DaoManager.createDao(connectionSource, Link.class);
-        daoMap.put(Link.class, daoLinks);
-
-        daoNetmail = DaoManager.createDao(connectionSource, Netmail.class);
-        daoMap.put(Netmail.class, daoNetmail);
-
-        daoSubscriptions = DaoManager.createDao(connectionSource, Subscription.class);
-        daoMap.put(Subscription.class, daoSubscriptions);
         createTable();
     }
 
@@ -100,6 +94,14 @@ public class OrmManager {
 
     public <T, ID> Dao<T, ID> getDao(Class<T> clazz) {
         return (Dao<T, ID>) daoMap.get(clazz);
+    }
+
+    public <T extends Dao<?, ?>> Set<T> getAllDaos() {
+        Set<T> result = new HashSet<T>();
+        for (Class<?> daoClass : daoClasses) {
+            result.add((T) daoMap.get(daoClass));
+        }
+        return result;
     }
 
     public void initDefaults() {
