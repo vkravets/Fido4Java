@@ -2,6 +2,8 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,6 +13,9 @@ import org.fidonet.binkp.SessionContext;
  * Time: 1:40 PM
  */
 public class LogCommand extends NULCommand {
+
+    ILogger log = LoggerFactory.getLogger(LogCommand.class);
+
     @Override
     protected String getPrefix() {
         return null;
@@ -23,6 +28,6 @@ public class LogCommand extends NULCommand {
 
     @Override
     protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        System.out.println("REMOTE -> " + commandArgs);
+        log.info("REMOTE -> " + commandArgs);
     }
 }

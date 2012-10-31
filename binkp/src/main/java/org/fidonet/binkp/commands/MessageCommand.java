@@ -5,6 +5,8 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.io.BinkFrame;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -16,6 +18,8 @@ import java.nio.ByteBuffer;
  * Time: 2:27 PM
  */
 public abstract class MessageCommand implements Command {
+
+    protected ILogger log = LoggerFactory.getLogger(MessageCommand.class);
 
     protected BinkCommand commandType;
 
@@ -36,6 +40,7 @@ public abstract class MessageCommand implements Command {
     @Override
     public void send(IoSession session, SessionContext sessionContext) throws Exception {
         String cmdArgs = getCommandArguments(sessionContext);
+        log.debug("Sending message " + BinkCommand.findCommand(commandType.getCmd()) + "["+cmdArgs+"]");
         session.write(getData(cmdArgs));
     }
 

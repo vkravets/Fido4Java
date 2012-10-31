@@ -3,6 +3,7 @@ package org.fidonet.binkp.commands;
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.codec.TrafficCrypter;
+import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.crypt.StandardDecrypt;
@@ -45,6 +46,8 @@ public class OPTCommand extends NULCommand {
                 password.setCrypt(true);
                 password.setMd(md);
                 password.setKey(cramTokens[2]);
+                Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
+                opt_md5.send(session, sessionContext);
             } else if (token.equals("NR")) {
                 sessionContext.setNRMode(true);
             } else if (token.equals("CRYPT")) {

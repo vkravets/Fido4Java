@@ -24,7 +24,6 @@ import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 
 import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +64,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
 
     @Override
     public void sessionOpened(IoSession session) throws Exception {
-        super.sessionOpened(session);    //To change body of overridden methods use File | Settings | File Templates.
+        super.sessionOpened(session);
 
         SessionContext sessionContext = getSessionContext(session);
         log.debug(String.format("Session is opened with %s", sessionContext.getLinksInfo().getCurLink().toString()));
@@ -75,17 +74,13 @@ public class BinkSessionHandler extends IoHandlerAdapter{
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
-        if (!isClient) {
-            if (sessionContext.isBusy()) {
-                Command bsy = new BSYCommand();
-                sessionContext.setLastErrorMessage("To many connections");
-                bsy.send(session, sessionContext);
-                sessionContext.setState(SessionState.STATE_BSY);
-                session.close(false);
-            } else {
-                Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
-                opt_md5.send(session, sessionContext);
-            }
+        if (!isClient && sessionContext.isBusy()) {
+            log.info("Server is busy. Sending BSY command...");
+            Command bsy = new BSYCommand();
+            sessionContext.setLastErrorMessage("To many connections");
+            bsy.send(session, sessionContext);
+            sessionContext.setState(SessionState.STATE_BSY);
+            session.close(false);
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
@@ -130,16 +125,17 @@ public class BinkSessionHandler extends IoHandlerAdapter{
             throw ex;
         }
         if (command != null) {
-            System.out.println(BinkCommand.findCommand(binkData.getCommand()));
-            System.out.println(new String(binkData.getData()));
+            log.debug("Get command: " + BinkCommand.findCommand(binkData.getCommand()));
+            log.debug("Command data: " + new String(binkData.getData()));
             command.handle(session, sessionContext, new String(binkData.getData()));
         } else {
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
-            System.out.println("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
+            log.debug("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
             FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
             if (fileData != null) {
                 FileInfo info = fileData.getInfo();
+                log.debug("Saving data bulk for " + info.getName() + " file");
                 long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
                 fileData.getStream().write(dataFile.getRawData().getData());
                 info.setCurSize(curSize);
@@ -148,7 +144,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
                     GOTCommand confirmRecv = new GOTCommand();
                     confirmRecv.send(session, sessionContext);
                     eventBus.notify(new FileReceivedEvent(sessionContext, fileData));
-                    System.out.println(info);
+                    log.info("Got " + info.getName() + " file with " + info.getSize() + " bytes file size");
                 }
             }
         }
