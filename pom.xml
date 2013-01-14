@@ -19,12 +19,12 @@
 
     <distributionManagement>
         <repository>
-            <id>cloudbee</id>
+            <id>cloudbees-release</id>
             <name>JFtn release repository</name>
             <url>dav::http://repository-fido4java.forge.cloudbees.com/release</url>
         </repository>
         <snapshotRepository>
-            <id>cloudbee</id>
+            <id>cloudbees-snapshot</id>
             <name>JFtn snapshots repository</name>
             <url>dav:http://repository-fido4java.forge.cloudbees.com/snapshots</url>
             <uniqueVersion>false</uniqueVersion>
