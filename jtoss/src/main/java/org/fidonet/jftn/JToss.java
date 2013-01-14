@@ -15,7 +15,7 @@ import org.fidonet.logger.LoggerFactory;
 
 public class JToss {
 
-    private static ILogger logger = LoggerFactory.getLogger(JToss.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JToss.class.getName());
 
     private static void Help() {
         System.out.println("java ftn usage:");

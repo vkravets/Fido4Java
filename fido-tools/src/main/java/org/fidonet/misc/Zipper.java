@@ -14,7 +14,7 @@ import java.util.zip.ZipFile;
 
 public class Zipper {
 
-    public static ILogger logger = LoggerFactory.getLogger(Zipper.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: " + bound);

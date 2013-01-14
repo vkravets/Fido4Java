@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 public class JAMEchoBase implements EchoBase {
 
-    private static ILogger logger = LoggerFactory.getLogger(JAMEchoBase.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JAMEchoBase.class.getName());
 
     private String headerfilename;
     private String textfilename;

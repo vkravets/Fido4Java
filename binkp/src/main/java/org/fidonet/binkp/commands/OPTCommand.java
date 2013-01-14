@@ -61,7 +61,7 @@ public class OPTCommand extends NULCommand {
                     trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
                     trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
                 }
-                System.out.println("Remote requests CRYPT mode");
+                log.info("Remote requests CRYPT mode");
             }
         }
     }

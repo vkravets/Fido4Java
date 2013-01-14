@@ -16,7 +16,7 @@ import java.util.*;
  */
 public abstract class BaseConfig implements IConfig {
 
-    private static ILogger logger = LoggerFactory.getLogger(BaseConfig.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(BaseConfig.class.getName());
 
     private Map<String, List<String>> props;
 

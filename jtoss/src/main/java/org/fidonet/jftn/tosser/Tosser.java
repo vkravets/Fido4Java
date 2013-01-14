@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
 
-    private static ILogger logger = LoggerFactory.getLogger(Tosser.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(Tosser.class.getName());
 
     private EchoMgr areamgr;
     private Pattern bunlderegex;

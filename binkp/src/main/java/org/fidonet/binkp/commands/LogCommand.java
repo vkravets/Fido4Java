@@ -2,8 +2,6 @@ package org.fidonet.binkp.commands;
 
 import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.SessionContext;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,8 +11,6 @@ import org.fidonet.logger.LoggerFactory;
  * Time: 1:40 PM
  */
 public class LogCommand extends NULCommand {
-
-    ILogger log = LoggerFactory.getLogger(LogCommand.class);
 
     @Override
     protected String getPrefix() {

@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class BinkSessionHandler extends IoHandlerAdapter{
 
-    private static ILogger log = LoggerFactory.getLogger(BinkSessionHandler.class);
+    private static final ILogger log = LoggerFactory.getLogger(BinkSessionHandler.class.getName());
 
     private SessionContext sessionContext;
     private EventBus eventBus;

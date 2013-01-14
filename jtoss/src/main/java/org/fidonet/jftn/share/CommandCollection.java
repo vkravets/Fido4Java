@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class CommandCollection {
 
-    private static ILogger logger = LoggerFactory.getLogger(CommandCollection.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(CommandCollection.class.getName());
 
     private Map<String, Command> commands;
 

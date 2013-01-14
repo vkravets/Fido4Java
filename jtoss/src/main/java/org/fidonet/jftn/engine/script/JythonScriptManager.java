@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class JythonScriptManager implements org.fidonet.jftn.engine.script.ScriptEngine {
 
-    private static ILogger logger = LoggerFactory.getLogger(JythonScriptManager.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JythonScriptManager.class.getName());
 
     private ScriptEngine jythonEngine;
     private Map<String, Object> scriptVariables;

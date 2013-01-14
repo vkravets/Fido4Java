@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class JFtnConfig extends BaseConfig {
 
-    private ILogger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
 
     private Map<String, Link> links;
 

@@ -16,14 +16,17 @@ public class LoggerFactory {
     }
 
     public static ILogger getLogger(String className) {
+        ILogger log = new ConsoleLogger(className);
         if (useLog4j) {
             try {
-                return Log4jEngine.getLogger(className);
+                ILogger logger = Log4jEngine.getLogger(className);
+                if (logger != null)
+                    return logger;
             } catch (LogEngineNotFoundException ex) {
-                System.out.println("Logger engine error. Details: " + ex.getMessage());
+                log.error("Logger engine error. Details: " + ex.getMessage());
             }
         }
-        return new ConsoleLogger(className);
+        return log;
     }
 
 }

@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 public class Message {
 
-    private static ILogger logger = LoggerFactory.getLogger(Message.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(Message.class.getName());
 
     // TODO change field name to camel case (first latter is in lower case)
     private String From;

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class EchoList {
 
-    private static ILogger logger = LoggerFactory.getLogger(EchoList.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(EchoList.class.getName());
 
     private HashMap<String, EchoCfg> list;
     private String areaListFile;

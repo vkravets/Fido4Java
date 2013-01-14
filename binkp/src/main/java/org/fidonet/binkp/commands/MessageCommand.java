@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class MessageCommand implements Command {
 
-    protected ILogger log = LoggerFactory.getLogger(MessageCommand.class);
+    protected static final ILogger log = LoggerFactory.getLogger(MessageCommand.class);
 
     protected BinkCommand commandType;
 

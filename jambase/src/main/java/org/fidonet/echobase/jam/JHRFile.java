@@ -16,7 +16,7 @@ import java.util.LinkedList;
 
 class JHRFile {
 
-    private static ILogger logger = LoggerFactory.getLogger(JHRFile.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JHRFile.class.getName());
 
     private RandomAccessFile jhr;
 

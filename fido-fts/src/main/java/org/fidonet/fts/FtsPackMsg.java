@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class FtsPackMsg {
 
-    private static ILogger logger = LoggerFactory.getLogger(FtsPackMsg.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(FtsPackMsg.class.getName());
 
     private int type;
     private int origNode;
