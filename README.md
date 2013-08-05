@@ -10,6 +10,8 @@ Jenkins: [![Build Status](https://fido4java.ci.cloudbees.com/job/Fido4java/badge
 
 Drone IO: [![Build Status](https://drone.io/github.com/vkravets/Fido4Java/status.png)](https://drone.io/github.com/vkravets/Fido4Java/latest)
 
+BuildHive: [![Build Status](https://buildhive.cloudbees.com/job/vkravets/job/Fido4Java/badge/icon)](https://buildhive.cloudbees.com/job/vkravets/job/Fido4Java/)
+
 Jenkins page: https://fido4java.ci.cloudbees.com/job/Fido4java/
 
 
