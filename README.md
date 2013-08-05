@@ -46,7 +46,7 @@ You can always get a fresh version at GitHub: github.com/vkravets/Fido4Java.git 
 
 JFtn team members:
 
-* Vladimir Kravets -- (vova.kravets<at>gmail.com or 2:467/70.113)
-* Dmitriy Tochansky -- (tochansky<at>gmail.com or 2:5030/1111) original author of JFtn
+* Vladimir Kravets -- (vova.kravets\<at\>gmail.com or 2:467/70.113)
+* Dmitriy Tochansky -- (tochansky\<at\>gmail.com or 2:5030/1111) original author of JFtn
 
 Feel free to contact to us!
