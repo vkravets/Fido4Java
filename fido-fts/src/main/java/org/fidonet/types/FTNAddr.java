@@ -30,12 +30,12 @@ package org.fidonet.types;
 
 import java.util.regex.Pattern;
 
-public class FTNAddr {
+public class FTNAddr implements Comparable<FTNAddr> {
 
-    private int zone = -1;
-    private int net = -1;
-    private int node = -1;
-    private int pnt = -1;
+    private Integer zone = -1;
+    private Integer net = -1;
+    private Integer node = -1;
+    private Integer pnt = -1;
     private boolean valid = false;
 
     public FTNAddr(int z, int ne, int no, int p) {
@@ -59,7 +59,6 @@ public class FTNAddr {
         int nodee = addr.indexOf('.');
         final int pnte = addr.length();
         if (ze == -1) {
-            //System.out.println("Fuck fts!");
             zone = -1;
             net = -1;
             node = -1;
@@ -117,10 +116,66 @@ public class FTNAddr {
         return valid;
     }
 
-    public boolean isEquals(FTNAddr raddr) {
-        return (raddr.zone == zone) &&
-                (raddr.net == net) &&
-                (raddr.node == node) &&
-                (raddr.pnt == pnt);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FTNAddr addr = (FTNAddr) o;
+
+        if (net != null ? !net.equals(addr.net) : addr.net != null) return false;
+        if (node != null ? !node.equals(addr.node) : addr.node != null) return false;
+        if (pnt != null ? !pnt.equals(addr.pnt) : addr.pnt != null) return false;
+        if (zone != null ? !zone.equals(addr.zone) : addr.zone != null) return false;
+
+        return true;
     }
+
+    @Override
+    public int hashCode() {
+        int result = zone != null ? zone.hashCode() : 0;
+        result = 31 * result + (net != null ? net.hashCode() : 0);
+        result = 31 * result + (node != null ? node.hashCode() : 0);
+        result = 31 * result + (pnt != null ? pnt.hashCode() : 0);
+        return result;
+    }
+
+    public Integer getZone() {
+        return zone;
+    }
+
+    public Integer getNet() {
+        return net;
+    }
+
+    public Integer getNode() {
+        return node;
+    }
+
+    public Integer getPnt() {
+        return pnt;
+    }
+
+    @Override
+    public int compareTo(FTNAddr o) {
+        int zoneCompare = o.getZone().compareTo(this.getZone());
+        if (zoneCompare == 0) {
+            int netCompare = o.getNet().compareTo(this.getNet());
+            if (netCompare == 0) {
+                int nodeCompare = o.getNode().compareTo(this.getNode());
+                if (nodeCompare == 0) {
+                    return o.getPnt().compareTo(this.getPnt());
+                }
+                return nodeCompare;
+            }
+            return netCompare;
+        }
+        return zoneCompare;
+    }
+    
+    public static FTNAddr valueOf(String addr) {
+        return new FTNAddr(addr);
+    }
+    
+    
 }
