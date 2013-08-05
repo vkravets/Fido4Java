@@ -28,6 +28,7 @@
 
 package org.fidonet.fts;
 
+import org.fidonet.tools.StringTools;
 import org.fidonet.types.FTNAddr;
 
 import java.util.*;
@@ -43,6 +44,7 @@ import java.util.*;
 public abstract class AbstractFidoAddresses {
 
     protected Set<FTNAddr> addresses;
+    protected static final int WRAP_LENGTH = 72;
     
     public AbstractFidoAddresses() { }
 
@@ -128,6 +130,11 @@ public abstract class AbstractFidoAddresses {
             }
         }
         return stringBuilder.toString();
+    }
+    
+    protected List<String> getWrapStrings(int wrapLength) {
+        String original = toString();
+        return StringTools.wrap(original, wrapLength);
     }
     
 }

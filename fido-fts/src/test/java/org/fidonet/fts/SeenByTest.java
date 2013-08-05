@@ -32,6 +32,9 @@ import junit.framework.TestCase;
 import org.fidonet.types.FTNAddr;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -61,5 +64,63 @@ public class SeenByTest {
         actualPath.add(FTNAddr.valueOf("2:5040/102"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
         TestCase.assertEquals(pathString, actualPath.toString());
+    }
+
+    @Test
+    public void testSortedSeenByToMessageString() {
+        String pathString = "SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102\n" +
+                            "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042\n";
+        SeenBy actualPath = new SeenBy();
+        actualPath.add(FTNAddr.valueOf("2:5060/545"));
+        actualPath.add(FTNAddr.valueOf("2:5060/580"));
+        actualPath.add(FTNAddr.valueOf("2:5020/545"));
+        actualPath.add(FTNAddr.valueOf("2:5020/4441"));
+        actualPath.add(FTNAddr.valueOf("2:5080/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5020/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5070/70"));
+        actualPath.add(FTNAddr.valueOf("2:5070/69"));
+        actualPath.add(FTNAddr.valueOf("2:5070/80"));
+        actualPath.add(FTNAddr.valueOf("2:5030/100"));
+        actualPath.add(FTNAddr.valueOf("2:5030/102"));
+        actualPath.add(FTNAddr.valueOf("2:5050/103"));
+        actualPath.add(FTNAddr.valueOf("2:5040/102"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        actualPath.add(FTNAddr.valueOf("2:467/60"));
+        actualPath.add(FTNAddr.valueOf("2:467/113"));
+        actualPath.add(FTNAddr.valueOf("2:467/100"));
+        actualPath.add(FTNAddr.valueOf("2:467/150"));
+        actualPath.add(FTNAddr.valueOf("2:467/68"));
+        actualPath.add(FTNAddr.valueOf("2:467/780"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        TestCase.assertEquals(pathString, actualPath.toSeenByString());
+    }
+
+    @Test
+    public void testSortedSeenByToMessageStrings() {
+        List<String> pathString = Arrays.asList("SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102",
+                                            "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042");
+        SeenBy actualPath = new SeenBy();
+        actualPath.add(FTNAddr.valueOf("2:5060/545"));
+        actualPath.add(FTNAddr.valueOf("2:5060/580"));
+        actualPath.add(FTNAddr.valueOf("2:5020/545"));
+        actualPath.add(FTNAddr.valueOf("2:5020/4441"));
+        actualPath.add(FTNAddr.valueOf("2:5080/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5020/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5070/70"));
+        actualPath.add(FTNAddr.valueOf("2:5070/69"));
+        actualPath.add(FTNAddr.valueOf("2:5070/80"));
+        actualPath.add(FTNAddr.valueOf("2:5030/100"));
+        actualPath.add(FTNAddr.valueOf("2:5030/102"));
+        actualPath.add(FTNAddr.valueOf("2:5050/103"));
+        actualPath.add(FTNAddr.valueOf("2:5040/102"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        actualPath.add(FTNAddr.valueOf("2:467/60"));
+        actualPath.add(FTNAddr.valueOf("2:467/113"));
+        actualPath.add(FTNAddr.valueOf("2:467/100"));
+        actualPath.add(FTNAddr.valueOf("2:467/150"));
+        actualPath.add(FTNAddr.valueOf("2:467/68"));
+        actualPath.add(FTNAddr.valueOf("2:467/780"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        TestCase.assertEquals(pathString, Arrays.asList(actualPath.toSeenByStrings()));
     }
 }

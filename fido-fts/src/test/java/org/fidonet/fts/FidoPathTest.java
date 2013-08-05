@@ -32,6 +32,9 @@ import junit.framework.TestCase;
 import org.fidonet.types.FTNAddr;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -70,5 +73,55 @@ public class FidoPathTest {
         actualPath.add(FTNAddr.valueOf("2:5050/103"));
 
         TestCase.assertEquals(pathString, actualPath.toString());
+    }
+
+    @Test
+    public void testPathToMessageString() {
+        String pathString = "\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5\n" +
+                            "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070\n";
+        FidoPath actualPath = new FidoPath();
+        actualPath.add(FTNAddr.valueOf("2:5020/545"));
+        actualPath.add(FTNAddr.valueOf("2:5020/4441"));
+        actualPath.add(FTNAddr.valueOf("2:5020/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5030/100"));
+        actualPath.add(FTNAddr.valueOf("2:5030/102"));
+        actualPath.add(FTNAddr.valueOf("2:5040/102"));
+        actualPath.add(FTNAddr.valueOf("2:5050/103"));
+        actualPath.add(FTNAddr.valueOf("2:5050/90"));
+        actualPath.add(FTNAddr.valueOf("2:5050/100"));
+        actualPath.add(FTNAddr.valueOf("2:5050/130"));
+        actualPath.add(FTNAddr.valueOf("2:5050/5"));
+        actualPath.add(FTNAddr.valueOf("2:462/100"));
+        actualPath.add(FTNAddr.valueOf("2:462/68768"));
+        actualPath.add(FTNAddr.valueOf("2:462/7657324"));
+        actualPath.add(FTNAddr.valueOf("2:462/53824823"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        actualPath.add(FTNAddr.valueOf("2:467/7070"));
+        TestCase.assertEquals(pathString, actualPath.toPathString());
+    }
+
+    @Test
+    public void testPathToMessageStrings() {
+        List<String> pathString = Arrays.asList("\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5",
+                                                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070");
+        FidoPath actualPath = new FidoPath();
+        actualPath.add(FTNAddr.valueOf("2:5020/545"));
+        actualPath.add(FTNAddr.valueOf("2:5020/4441"));
+        actualPath.add(FTNAddr.valueOf("2:5020/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5030/100"));
+        actualPath.add(FTNAddr.valueOf("2:5030/102"));
+        actualPath.add(FTNAddr.valueOf("2:5040/102"));
+        actualPath.add(FTNAddr.valueOf("2:5050/103"));
+        actualPath.add(FTNAddr.valueOf("2:5050/90"));
+        actualPath.add(FTNAddr.valueOf("2:5050/100"));
+        actualPath.add(FTNAddr.valueOf("2:5050/130"));
+        actualPath.add(FTNAddr.valueOf("2:5050/5"));
+        actualPath.add(FTNAddr.valueOf("2:462/100"));
+        actualPath.add(FTNAddr.valueOf("2:462/68768"));
+        actualPath.add(FTNAddr.valueOf("2:462/7657324"));
+        actualPath.add(FTNAddr.valueOf("2:462/53824823"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        actualPath.add(FTNAddr.valueOf("2:467/7070"));
+        TestCase.assertEquals(pathString, Arrays.asList(actualPath.toPathStrings()));
     }
 }

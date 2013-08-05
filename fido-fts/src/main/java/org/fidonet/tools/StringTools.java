@@ -26,58 +26,67 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.fts;
+package org.fidonet.tools;
 
-import org.fidonet.tools.StringTools;
-import org.fidonet.types.FTNAddr;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 8/5/13
- * Time: 11:58 AM
+ * Time: 3:18 PM
  */
-public class SeenBy extends AbstractFidoAddresses {
+public class StringTools {
     
-    private static final String SEEN_BY_LINE_PREFIX = "SEEN-BY: ";
-
-    public SeenBy() {
-        addresses = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
-            @Override
-            public int compare(FTNAddr o1, FTNAddr o2) {
-                return o2.compareTo(o1);
+    public static final String NEW_LINE = "\n";
+    
+    public static List<String> wrap(String str, int wrapLength) {
+        if (str == null) return null;
+        if (wrapLength < 1) wrapLength = 1;
+        List<String> result = new ArrayList<String>();
+        int inputLineLength = str.length();
+        int offset = 0;
+        while ((inputLineLength - offset) > wrapLength) {
+            if (str.charAt(offset) == ' ') {
+                offset++;
+                continue;
             }
-        });
-    }
-
-    public SeenBy(Set<FTNAddr> addresses) {
-        if (addresses instanceof TreeSet) {
-            this.addresses = addresses;
-        } else {
-            this.addresses = new TreeSet<FTNAddr>(addresses); 
+            int spaceToWrapAt = str.lastIndexOf(' ', wrapLength + offset);
+            if (spaceToWrapAt >= offset) {
+                result.add(str.substring(offset, spaceToWrapAt));
+                offset = spaceToWrapAt + 1;
+            } else {
+                spaceToWrapAt = str.indexOf(' ', wrapLength + offset);
+                if (spaceToWrapAt >= 0) {
+                    result.add(str.substring(offset, spaceToWrapAt));
+                    offset = spaceToWrapAt + 1;
+                } else {
+                    result.add(str.substring(offset));
+                    offset = inputLineLength;
+                }
+            }
         }
+        result.add(str.substring(offset));
+        return result;
+    }
+    
+    public static String join(Collection<String> strings, String sep, String prefix) {
+        StringBuilder sb = new StringBuilder();
+        for (String string : strings) {
+            sb.append(prefix).append(string).append(sep);
+        }
+        return sb.toString();
     }
 
-    public static SeenBy valueOf(String addressesString, int defaultZone) {
-        Set<FTNAddr> path = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
-            @Override
-            public int compare(FTNAddr o1, FTNAddr o2) {
-                return o2.compareTo(o1);
-            }
-        });
-        return new SeenBy(parseAddresses(addressesString, defaultZone, path));
+    public static String join(Collection<String> strings) {
+        return join(strings, NEW_LINE, "");
+    }
+    
+    public static String join(Collection<String> strings, String prefix) {
+        return join(strings, NEW_LINE, prefix);
     }
 
-    public String toSeenByString() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH-SEEN_BY_LINE_PREFIX.length());
-        return StringTools.join(wrapLines, SEEN_BY_LINE_PREFIX);
-    }
-
-    public String[] toSeenByStrings() {
-        // FIXME: possible performance issue
-        return toSeenByString().split("\\n");
-    }
 }

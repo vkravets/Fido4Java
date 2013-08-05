@@ -26,58 +26,31 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.fts;
+package org.fidonet.fts.tools;
 
+import junit.framework.TestCase;
 import org.fidonet.tools.StringTools;
-import org.fidonet.types.FTNAddr;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 8/5/13
- * Time: 11:58 AM
+ * Time: 3:39 PM
  */
-public class SeenBy extends AbstractFidoAddresses {
+public class StringToolsTest {
     
-    private static final String SEEN_BY_LINE_PREFIX = "SEEN-BY: ";
-
-    public SeenBy() {
-        addresses = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
-            @Override
-            public int compare(FTNAddr o1, FTNAddr o2) {
-                return o2.compareTo(o1);
-            }
-        });
-    }
-
-    public SeenBy(Set<FTNAddr> addresses) {
-        if (addresses instanceof TreeSet) {
-            this.addresses = addresses;
-        } else {
-            this.addresses = new TreeSet<FTNAddr>(addresses); 
-        }
-    }
-
-    public static SeenBy valueOf(String addressesString, int defaultZone) {
-        Set<FTNAddr> path = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
-            @Override
-            public int compare(FTNAddr o1, FTNAddr o2) {
-                return o2.compareTo(o1);
-            }
-        });
-        return new SeenBy(parseAddresses(addressesString, defaultZone, path));
-    }
-
-    public String toSeenByString() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH-SEEN_BY_LINE_PREFIX.length());
-        return StringTools.join(wrapLines, SEEN_BY_LINE_PREFIX);
-    }
-
-    public String[] toSeenByStrings() {
-        // FIXME: possible performance issue
-        return toSeenByString().split("\\n");
+    @Test
+    public void testWrap() {
+        String inputStr = "463/68 5005/49 5019/40 5020/400 545 758 830 849 1042 2992 4441 5035/85 5050/57 5051/41 5053/400 5054/1 5075/35 5083/444 6078/80 6090/1";
+        String[] expected = new String[] {"463/68 5005/49 5019/40 5020/400 545 758 830 849 1042 2992 4441",
+                                          "5035/85 5050/57 5051/41 5053/400 5054/1 5075/35 5083/444 6078/80",
+                                          "6090/1"};
+        List<String> actualList = StringTools.wrap(inputStr, 72 - "SEEN-BY: ".length() + 1);
+        TestCase.assertEquals(Arrays.asList(expected), actualList);
     }
 }
