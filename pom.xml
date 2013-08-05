@@ -61,6 +61,8 @@
 
     <modules>
         <module>event-bus</module>
+        <module>logger</module>
+        <module>plugin-manager</module>
         <module>fido-fts</module>
         <module>fido-config</module>
         <module>fido-tools</module>
@@ -68,8 +70,6 @@
         <module>jambase</module>
         <module>binkp</module>
         <module>jtoss</module>
-        <module>logger</module>
-        <module>plugin-manager</module>
     </modules>
 
     <build>
