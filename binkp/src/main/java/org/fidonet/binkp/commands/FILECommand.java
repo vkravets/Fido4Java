@@ -70,7 +70,7 @@ public class FILECommand extends MessageCommand {
             get.send(session, sessionContext);
         }
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-        FileData<OutputStream> fileData = sessionContext.getNotFinisheFileData(fileInfo);
+        FileData<OutputStream> fileData = sessionContext.getNotFinishedFileData(fileInfo);
         if (fileData == null) {
             fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
             receivedFiles.addFirst(fileData);

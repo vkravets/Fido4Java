@@ -261,7 +261,7 @@ public class SessionContext extends HasEventBus {
         notFinishedFiles.addAll(files);
     }
 
-    public FileData<OutputStream> getNotFinisheFileData(FileInfo info) {
+    public FileData<OutputStream> getNotFinishedFileData(FileInfo info) {
         int pos = notFinishedFiles.indexOf(info);
         if (pos != -1) {
             return notFinishedFiles.get(pos);
