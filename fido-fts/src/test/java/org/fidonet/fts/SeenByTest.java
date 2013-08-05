@@ -28,30 +28,38 @@
 
 package org.fidonet.fts;
 
+import junit.framework.TestCase;
 import org.fidonet.types.FTNAddr;
-
-import java.util.*;
+import org.junit.Test;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 8/5/13
- * Time: 11:59 AM
+ * Time: 1:01 PM
  */
-public class FidoPath extends AbstractFidoAddresses {
-
-    public FidoPath() {
-        addresses = new LinkedHashSet<FTNAddr>();
+public class SeenByTest {
+    
+    
+    @Test 
+    public void testSortedSeenByToString() {
+        String pathString = "467/1313 5020/545 1042 4441 5030/100 102 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042";
+        SeenBy actualPath = new SeenBy();
+        actualPath.add(FTNAddr.valueOf("2:5060/545"));
+        actualPath.add(FTNAddr.valueOf("2:5060/580"));
+        actualPath.add(FTNAddr.valueOf("2:5020/545"));
+        actualPath.add(FTNAddr.valueOf("2:5020/4441"));
+        actualPath.add(FTNAddr.valueOf("2:5080/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5020/1042"));
+        actualPath.add(FTNAddr.valueOf("2:5070/70"));
+        actualPath.add(FTNAddr.valueOf("2:5070/69"));
+        actualPath.add(FTNAddr.valueOf("2:5070/80"));
+        actualPath.add(FTNAddr.valueOf("2:5030/100"));
+        actualPath.add(FTNAddr.valueOf("2:5030/102"));
+        actualPath.add(FTNAddr.valueOf("2:5050/103"));
+        actualPath.add(FTNAddr.valueOf("2:5040/102"));
+        actualPath.add(FTNAddr.valueOf("2:467/1313"));
+        TestCase.assertEquals(pathString, actualPath.toString());
     }
-
-    public FidoPath(Set<FTNAddr> addresses) {
-        super(addresses);
-    }
-
-    public static FidoPath valueOf(String addressesString, int defaultZone) {
-        Set<FTNAddr> addresses = new LinkedHashSet<FTNAddr>();
-        return new FidoPath(parseAddresses(addressesString, defaultZone, addresses));
-    }
-
 }

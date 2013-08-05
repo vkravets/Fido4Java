@@ -30,28 +30,44 @@ package org.fidonet.fts;
 
 import org.fidonet.types.FTNAddr;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 8/5/13
- * Time: 11:59 AM
+ * Time: 11:58 AM
  */
-public class FidoPath extends AbstractFidoAddresses {
+public class SeenBy extends AbstractFidoAddresses {
 
-    public FidoPath() {
-        addresses = new LinkedHashSet<FTNAddr>();
+    public SeenBy() {
+        addresses = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
+            @Override
+            public int compare(FTNAddr o1, FTNAddr o2) {
+                return o2.compareTo(o1);
+            }
+        });
     }
 
-    public FidoPath(Set<FTNAddr> addresses) {
-        super(addresses);
+    public SeenBy(Set<FTNAddr> addresses) {
+        if (addresses instanceof TreeSet) {
+            this.addresses = addresses;
+        } else {
+            this.addresses = new TreeSet<FTNAddr>(addresses); 
+        }
     }
 
-    public static FidoPath valueOf(String addressesString, int defaultZone) {
-        Set<FTNAddr> addresses = new LinkedHashSet<FTNAddr>();
-        return new FidoPath(parseAddresses(addressesString, defaultZone, addresses));
+    public static SeenBy valueOf(String addressesString, int defaultZone) {
+        Set<FTNAddr> path = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
+            @Override
+            public int compare(FTNAddr o1, FTNAddr o2) {
+                return o2.compareTo(o1);
+            }
+        });
+        return new SeenBy(parseAddresses(addressesString, defaultZone, path));
     }
-
+    
 }
