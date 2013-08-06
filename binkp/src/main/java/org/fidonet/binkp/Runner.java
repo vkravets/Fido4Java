@@ -30,7 +30,10 @@ package org.fidonet.binkp;
 
 import org.fidonet.types.Link;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,6 +45,8 @@ import java.util.concurrent.*;
 public class Runner {
 
     private ExecutorService threadPoolExecutor;
+    private Client client;
+    private Server server;
 
     public Runner() {
         threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,
@@ -49,8 +54,7 @@ public class Runner {
                                                     new SynchronousQueue<Runnable>());
     }
 
-    public void poll(Link link, final SessionContext context) throws Exception {
-        final Client client = new Client(link);
+    public void poll(final Link link, final SessionContext context) throws Exception {
         Runnable clientRun = new Runnable() {
 
             public void waitSessionFinish () throws InterruptedException {
@@ -67,6 +71,7 @@ public class Runner {
             @Override
             public void run() {
                 try {
+                    client = new Client(link);
                     client.run(context);
                     if (client.isConnect()) {
                         waitSessionFinish();
@@ -74,7 +79,8 @@ public class Runner {
                 } catch (Exception e) {
                     // todo logger
                 } finally {
-                    client.stop(context);
+                    client.stop();
+                    client = null;
                 }
             }
         };
@@ -86,7 +92,7 @@ public class Runner {
         Runnable runServer = new Runnable() {
             @Override
             public void run() {
-                Server server = new Server(port);
+                server = new Server(port);
                 try {
                     server.run(context);
                 } catch (Exception e) {
@@ -95,7 +101,11 @@ public class Runner {
             }
         };
         threadPoolExecutor.submit(runServer);
-
+    }
+    
+    public void shutdown() {
+        server.stop();
+        threadPoolExecutor.shutdown();
     }
 
 }

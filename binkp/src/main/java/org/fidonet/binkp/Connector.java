@@ -42,6 +42,6 @@ public abstract class Connector extends HasEventBus {
     protected final static int BINK_PORT = 24554;
 
     public abstract void run(SessionContext sessionContext) throws Exception;
-    public abstract void stop(SessionContext sessionContext);
+    public abstract void stop();
 
 }

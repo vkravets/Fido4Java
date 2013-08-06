@@ -83,7 +83,7 @@ public class Client extends Connector {
 
     }
 
-    public void stop(SessionContext context) {
+    public void stop() {
         if (session != null) {
             session.getCloseFuture().awaitUninterruptibly();
         }

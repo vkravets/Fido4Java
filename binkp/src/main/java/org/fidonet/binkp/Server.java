@@ -77,7 +77,7 @@ public class Server extends Connector{
 
             @Override
             public void serviceDeactivated(IoService ioService) throws Exception {
-                Server.this.stop(context);
+                Server.this.stop();
             }
 
             @Override
@@ -122,7 +122,8 @@ public class Server extends Connector{
     }
 
     @Override
-    public void stop(SessionContext context) {
+    public void stop() {
+        acceptor.unbind();
         acceptor.dispose();
     }
 }

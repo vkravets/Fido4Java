@@ -89,7 +89,7 @@ public class ClientTest {
         }
 
         @Override
-        public void stop(SessionContext sessionContext) {
+        public void stop() {
             session.close();
         }
 
