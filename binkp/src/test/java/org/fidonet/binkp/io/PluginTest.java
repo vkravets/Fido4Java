@@ -26,82 +26,39 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.plugins;
+package org.fidonet.binkp.io;
 
-import org.fidonet.events.HasEventBus;
-import org.openide.util.Lookup;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import junit.framework.TestCase;
+import org.fidonet.binkp.Runner;
+import org.fidonet.jftn.plugins.PluginException;
+import org.fidonet.jftn.plugins.PluginManager;
+import org.junit.Test;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 8/5/13
- * Time: 9:05 PM
+ * Date: 8/6/13
+ * Time: 10:54 AM
  */
-public class PluginManager extends HasEventBus {
-    private static PluginManager ourInstance = new PluginManager();
+public class PluginTest {
 
-    public static PluginManager getInstance() {
-        return ourInstance;
-    }
-
-    private static final Map<String, Plugin> plugins = new HashMap<String, Plugin>();
-
-    private PluginManager() {
-
-    }
-
-    public void loadPlugins() {
-        Lookup lookupService = Lookup.getDefault();
-        Lookup.Template<Plugin> pluginTemplate = new Lookup.Template<Plugin>(Plugin.class);
-        Lookup.Result<Plugin> pluginResult = lookupService.lookup(pluginTemplate);
-        Collection<? extends Plugin> plugins = pluginResult.allInstances();
-        // Load all plugins before it's loading 
-        for (Plugin plugin : plugins) {
-            addPlugin(plugin.getPluginInfo().getId(), plugin);
+    @Test
+    public void pluginTest() {
+        PluginManager manager = PluginManager.getInstance();
+        manager.loadPlugins();
+        boolean exception = false;
+        Runner binkp = null;
+        try {
+            binkp = manager.getContext("binkp");
+        } catch (PluginException ex) {
+            exception = true;
+            ex.printStackTrace();
+        } catch (ClassCastException ex) {
+            exception = true;
+            ex.printStackTrace();
         }
-        // After loading all plugins, try to init and load it
-        for (Plugin plugin : plugins) {
-            try {
-                plugin.init(this, getEventBus());
-                plugin.load();
-            } catch (PluginException e) {
-                // TODO: logger
-            }
-
-        }
+        TestCase.assertEquals(false, exception);
+        TestCase.assertNotNull(binkp);
     }
-
-    public void unloadPlugins() {
-        for (Plugin plugin : getPlugins().values()) {
-            try {
-                plugin.unload();
-            } catch (PluginException e) {
-                // TODO: logger
-            }
-        }
-        plugins.clear();
-    }
-
-    private static void addPlugin(String id, Plugin plugin) {
-        plugins.put(id, plugin);
-    }
-
-    private static void removePlugin(String id) {
-        plugins.remove(id);
-    }
-
-    private static Map<String, Plugin> getPlugins() {
-        return plugins;
-    }
-    
-    public <T> T getContext(String id) throws PluginException {
-        Plugin plugin = plugins.get(id);
-        if (plugin == null) throw new PluginException("Plugin \""+id+"\" is not found or is not loaded");
-        return (T) plugin.getContext();
-    } 
 }
