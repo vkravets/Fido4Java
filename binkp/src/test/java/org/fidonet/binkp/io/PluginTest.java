@@ -57,6 +57,8 @@ public class PluginTest {
         } catch (ClassCastException ex) {
             exception = true;
             ex.printStackTrace();
+        } finally {
+            PluginManager.getInstance().unloadPlugins();
         }
         TestCase.assertEquals(false, exception);
         TestCase.assertNotNull(binkp);

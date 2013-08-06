@@ -48,6 +48,7 @@ public class SchedulerPluginTest {
             e.printStackTrace();
         } finally {
             schedule.stop();
+            PluginManager.getInstance().unloadPlugins();
         }
         TestCase.assertEquals(Boolean.TRUE, taskExecute[0]);
     }
