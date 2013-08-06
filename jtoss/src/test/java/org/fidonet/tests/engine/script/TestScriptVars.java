@@ -36,6 +36,7 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -49,6 +50,7 @@ import java.io.InputStream;
 public class TestScriptVars {
 
     @Test
+    @Ignore
     public void testCommandRegister() throws Exception {
         // Init JythonScriptManager
         ScriptEngine scriptManager = new JythonScriptManager();
