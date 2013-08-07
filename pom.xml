@@ -71,6 +71,7 @@
         <module>scheduler</module>
         <module>binkp</module>
         <module>jtoss</module>
+        <module>web-interface</module>
     </modules>
 
     <build>
