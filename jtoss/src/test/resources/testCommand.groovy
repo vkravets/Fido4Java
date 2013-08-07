@@ -26,6 +26,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
+
+
 import org.fidonet.jftn.share.Command
 
 class TossCommand implements Command<String[], String[]> {

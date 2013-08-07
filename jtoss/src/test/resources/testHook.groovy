@@ -26,6 +26,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
+
+
 import org.fidonet.events.Event
 import org.fidonet.jftn.share.Hook
 import org.fidonet.tests.share.TestEvent

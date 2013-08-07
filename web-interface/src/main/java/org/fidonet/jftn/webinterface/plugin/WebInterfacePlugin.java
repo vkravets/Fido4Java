@@ -1,4 +1,4 @@
-package org.fidonet.jftn.webinterface.plugin; /******************************************************************************
+/******************************************************************************
  * Copyright (c) 2013, Vladimir Kravets                                       *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -25,6 +25,8 @@ package org.fidonet.jftn.webinterface.plugin; /*********************************
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,             *
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
+
+package org.fidonet.jftn.webinterface.plugin;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
