@@ -70,7 +70,6 @@ public class DatabasePlugin implements Plugin {
             ormManager.connect();
             ormManager.createTable();
         } catch (SQLException e) {
-            // TODO: logger
             throw new PluginException(e);
         }
         

@@ -70,8 +70,8 @@
         <module>jambase</module>
         <module>scheduler</module>
         <module>binkp</module>
-        <module>jtoss</module>
         <module>web-interface</module>
+        <module>jtoss</module>
     </modules>
 
     <build>

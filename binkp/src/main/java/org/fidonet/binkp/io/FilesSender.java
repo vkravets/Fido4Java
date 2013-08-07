@@ -35,6 +35,8 @@ import org.fidonet.binkp.codec.DataBulk;
 import org.fidonet.binkp.commands.EOBCommand;
 import org.fidonet.binkp.commands.FILECommand;
 import org.fidonet.binkp.commands.share.Command;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -52,6 +54,7 @@ import java.util.concurrent.Exchanger;
 public class FilesSender implements Runnable {
 
     public static final String FILESENDER_KEY = FilesSender.class.getName() + ".KEY";
+    public static final ILogger logger = LoggerFactory.getLogger(FilesSender.class); 
 
     private Deque<FileData<InputStream>> files;
     private IoSession session;
@@ -72,9 +75,11 @@ public class FilesSender implements Runnable {
         FileInfo fileInfo = data.getInfo();
         if (fileInfo.getOffset() >= 0 ) {
             if (fileInfo.getOffset() <= fileInfo.getSize()) {
-                reader.skip(fileInfo.getOffset());
+                long skippedBytes = reader.skip(fileInfo.getOffset());
+                assert skippedBytes == fileInfo.getOffset();
             } else {
-                // TODO logger
+                logger.warn("File current offset greater than size of file", new Throwable());
+                logger.debug(fileInfo.toString());
             }
         } else {
             sessionContext.setState(SessionState.STATE_WAITGET);
@@ -109,14 +114,14 @@ public class FilesSender implements Runnable {
                 try {
                     send(curFile);
                 } catch (Exception e) {
-                    // todo logger
+                    logger.error("Unable to sent file " + curFile.getInfo().toString());
                 }
             }
             Command eob = new EOBCommand();
             eob.send(session, sessionContext);
             sessionContext.setSendingIsFinish(true);
         } catch (Exception e) {
-            // todo logger
+            logger.error("Unable to send files", e);
         }
 
     }
@@ -146,7 +151,7 @@ public class FilesSender implements Runnable {
                     files.addLast(new FileData<InputStream>(fileInfo, fileData.getStream()));
                 }
             } else {
-                // TODO logger
+                logger.warn("File is not found the the queue " + fileInfo.toString());
             }
         }
     }

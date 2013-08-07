@@ -37,9 +37,12 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.handler.BinkSessionHandler;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,8 +55,10 @@ public class Server extends Connector{
 
     private NioSocketAcceptor acceptor;
     private int port = Connector.BINK_PORT;
-    private Integer userConnected = 0;
+    private final AtomicReference<Integer> userConnected = new AtomicReference<Integer>(0);
     private static int MAX_USER_CONNECTED = 30;
+    
+    private static ILogger logger = LoggerFactory.getLogger(Server.class);  
 
     public Server() { }
 
@@ -88,10 +93,10 @@ public class Server extends Connector{
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
-                synchronized (userConnected){
-                    userConnected++;
+                synchronized (userConnected.get()){
+                    userConnected.set(userConnected.get()+1);
                 }
-                if (!context.isBusy() && userConnected > MAX_USER_CONNECTED) {
+                if (!context.isBusy() && userConnected.get() > MAX_USER_CONNECTED) {
                     synchronized (context) {
                         context.setBusy(true);
                     }
@@ -103,14 +108,13 @@ public class Server extends Connector{
                 SessionContext sessionContext = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                         sessionContext.getState().equals(SessionState.STATE_BSY)) {
-                    // TODO log or out error message
-                    sessionContext.getLastErrorMessage();
+                    logger.warn("Client close with error: " +sessionContext.getLastErrorMessage());
                 }
                 session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 synchronized (userConnected){
-                    userConnected--;
+                    userConnected.set(userConnected.get()-1);
                 }
-                if (context.isBusy() && userConnected < MAX_USER_CONNECTED) {
+                if (context.isBusy() && userConnected.get() < MAX_USER_CONNECTED) {
                     synchronized (context) {
                         context.setBusy(false);
                     }

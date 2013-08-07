@@ -23,7 +23,6 @@ public class PluginManagerTest {
     public void testDependenciesSortList() {
         
         PluginManager manager =  PluginManager.getInstance();
-        //     private Collection<? extends Plugin> sortDependencies(Collection<? extends Plugin> plugins) {
         List<Plugin> plugins = new ArrayList<Plugin>();
         plugins.add(new PluginA());
         plugins.add(new PluginB());
@@ -34,8 +33,10 @@ public class PluginManagerTest {
         plugins.add(new PluginG());
         
         try {
+            //     private Collection<? extends Plugin> sortDependencies(Collection<? extends Plugin> plugins) {
             Method sort = manager.getClass().getDeclaredMethod("sortDependencies", Collection.class);
             sort.setAccessible(true);
+            //noinspection unchecked
             Collection<? extends Plugin> sortPlugins = (Collection<? extends Plugin>) sort.invoke(manager, plugins);
             StringBuilder actual = new StringBuilder();
             for (Plugin plugin : sortPlugins) {

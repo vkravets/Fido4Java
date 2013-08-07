@@ -28,6 +28,8 @@
 
 package org.fidonet.binkp;
 
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.Link;
 
 import java.util.concurrent.ExecutorService;
@@ -47,6 +49,8 @@ public class Runner {
     private ExecutorService threadPoolExecutor;
     private Client client;
     private Server server;
+    
+    private static final ILogger logger = LoggerFactory.getLogger(Runner.class);
 
     public Runner() {
         threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,
@@ -77,7 +81,7 @@ public class Runner {
                         waitSessionFinish();
                     }
                 } catch (Exception e) {
-                    // todo logger
+                    logger.error("Client unexpectedly stops", e);
                 } finally {
                     client.stop();
                     client = null;
@@ -96,7 +100,7 @@ public class Runner {
                 try {
                     server.run(context);
                 } catch (Exception e) {
-                    // todo log
+                    logger.error("Server unexpectedly stops", e);
                 }
             }
         };

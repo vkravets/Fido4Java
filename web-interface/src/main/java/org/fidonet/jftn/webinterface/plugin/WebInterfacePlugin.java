@@ -64,7 +64,6 @@ public class WebInterfacePlugin implements Plugin{
             serverConnector.setPort(80);
             server.setConnectors(new Connector[]{serverConnector});
         } catch (Exception e) {
-            // TODO: logger
             throw new PluginException(e);
         }
     }
@@ -74,7 +73,6 @@ public class WebInterfacePlugin implements Plugin{
         try {
             server.stop();
         } catch (Exception e) {
-            // TODO: logger
             throw new PluginException(e);
         } finally {
             server = null;

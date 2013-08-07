@@ -29,6 +29,8 @@
 package org.fidonet.jftn.plugins;
 
 import org.fidonet.events.HasEventBus;
+import org.fidonet.logger.ILogger;
+import org.fidonet.logger.LoggerFactory;
 import org.openide.util.Lookup;
 
 import java.util.*;
@@ -42,6 +44,8 @@ import java.util.*;
  */
 public class PluginManager extends HasEventBus {
     private static PluginManager ourInstance = new PluginManager();
+    
+    public static final ILogger logger = LoggerFactory.getLogger(PluginManager.class);
 
     public static PluginManager getInstance() {
         return ourInstance;
@@ -73,7 +77,7 @@ public class PluginManager extends HasEventBus {
                 plugin.init(this, getEventBus());
                 plugin.load();
             } catch (PluginException e) {
-                // TODO: logger
+                logger.error("Unable to load " + plugin.getPluginInfo().getId() + " plugin", e);
             }
 
         }
@@ -125,7 +129,7 @@ public class PluginManager extends HasEventBus {
             try {
                 plugin.unload();
             } catch (PluginException e) {
-                // TODO: logger
+                logger.error("Unable to unload "+plugin.getPluginInfo().getId()+" plugin", e);
             }
         }
         plugins.clear();
