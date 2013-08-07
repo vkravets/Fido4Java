@@ -28,6 +28,10 @@
 
 package org.fidonet.jftn.plugins;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -42,12 +46,15 @@ public class PluginInformation {
     
     private String id;
     private String description;
+    private List<String> dependecies;
 
-    public PluginInformation(String id, int majorVersion, int minorVersion, String description) {
+    public PluginInformation(String id, int majorVersion, int minorVersion, String description, String ... dependencies) {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
         this.id = id;
         this.description = description;
+        this.dependecies = Arrays.asList(dependencies);
+        Collections.sort(this.dependecies);
     }
 
     public int getMajorVersion() {
@@ -65,5 +72,8 @@ public class PluginInformation {
     public String getDescription() {
         return description;
     }
-    
+
+    public List<String> getDependencies() {
+        return dependecies;
+    }
 }
