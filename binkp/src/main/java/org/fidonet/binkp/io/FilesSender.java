@@ -54,7 +54,7 @@ import java.util.concurrent.Exchanger;
 public class FilesSender implements Runnable {
 
     public static final String FILESENDER_KEY = FilesSender.class.getName() + ".KEY";
-    public static final ILogger logger = LoggerFactory.getLogger(FilesSender.class); 
+    public static final ILogger logger = LoggerFactory.getLogger(FilesSender.class);
 
     private Deque<FileData<InputStream>> files;
     private IoSession session;
@@ -73,7 +73,7 @@ public class FilesSender implements Runnable {
     public boolean send(FileData<InputStream> data) throws Exception {
         DataInputStream reader = new DataInputStream(data.getStream());
         FileInfo fileInfo = data.getInfo();
-        if (fileInfo.getOffset() >= 0 ) {
+        if (fileInfo.getOffset() >= 0) {
             if (fileInfo.getOffset() <= fileInfo.getSize()) {
                 long skippedBytes = reader.skip(fileInfo.getOffset());
                 assert skippedBytes == fileInfo.getOffset();

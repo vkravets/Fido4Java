@@ -49,20 +49,20 @@ public class Runner {
     private ExecutorService threadPoolExecutor;
     private Client client;
     private Server server;
-    
+
     private static final ILogger logger = LoggerFactory.getLogger(Runner.class);
 
     public Runner() {
         threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,
-                                                    60L, TimeUnit.SECONDS,
-                                                    new SynchronousQueue<Runnable>());
+                60L, TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>());
     }
 
     public void poll(final Link link, final SessionContext context) throws Exception {
         Runnable clientRun = new Runnable() {
 
-            public void waitSessionFinish () throws InterruptedException {
-                for (;;) {
+            public void waitSessionFinish() throws InterruptedException {
+                for (; ; ) {
                     Thread.sleep(500);
                     if (context.isReceivingIsFinish() && context.isSendingIsFinish() ||
                             context.getState().equals(SessionState.STATE_ERR) ||
@@ -106,7 +106,7 @@ public class Runner {
         };
         threadPoolExecutor.submit(runServer);
     }
-    
+
     public void shutdown() {
         server.stop();
         threadPoolExecutor.shutdown();

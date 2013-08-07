@@ -35,7 +35,7 @@ package org.fidonet.binkp.crypt;
  * Date: 9/28/12
  * Time: 4:01 PM
  */
-public class DummyDecrypt implements Decrypt{
+public class DummyDecrypt implements Decrypt {
 
     @Override
     public int decryptData(byte[] buff) {

@@ -38,7 +38,7 @@ import org.fidonet.types.Link;
  * Date: 10/1/12
  * Time: 3:13 PM
  */
-public class PollEvent extends AbstractEvent{
+public class PollEvent extends AbstractEvent {
 
     private Link link;
 

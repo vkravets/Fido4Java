@@ -43,9 +43,9 @@ import org.fidonet.jftn.plugins.PluginManager;
  * Time: 10:44 AM
  */
 public class BinkPPlugin implements Plugin {
-    
+
     private Runner ranner;
-    
+
     @Override
     public PluginInformation getPluginInfo() {
         return new PluginInformation("binkp", 1, 0, "Realization of BinkP protocol.");

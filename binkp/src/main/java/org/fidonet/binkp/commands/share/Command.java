@@ -41,6 +41,8 @@ import org.fidonet.binkp.codec.Data;
  */
 public interface Command extends Data {
     public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args);
+
     public void send(IoSession session, SessionContext sessionContext) throws Exception;
+
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception;
 }

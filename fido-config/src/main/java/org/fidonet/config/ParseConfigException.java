@@ -34,7 +34,7 @@ package org.fidonet.config;
  * Date: 9/2/11
  * Time: 2:10 AM
  */
-public class ParseConfigException extends Exception{
+public class ParseConfigException extends Exception {
     /**
      * Constructs a new exception with <code>null</code> as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a

@@ -13,16 +13,16 @@ import java.util.List;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/7/13
  * Time: 1:36 PM
  */
 public class PluginManagerTest {
-    
+
     @Test
     public void testDependenciesSortList() {
-        
-        PluginManager manager =  PluginManager.getInstance();
+
+        PluginManager manager = PluginManager.getInstance();
         List<Plugin> plugins = new ArrayList<Plugin>();
         plugins.add(new PluginA());
         plugins.add(new PluginB());
@@ -31,7 +31,7 @@ public class PluginManagerTest {
         plugins.add(new PluginE());
         plugins.add(new PluginF());
         plugins.add(new PluginG());
-        
+
         try {
             //     private Collection<? extends Plugin> sortDependencies(Collection<? extends Plugin> plugins) {
             Method sort = manager.getClass().getDeclaredMethod("sortDependencies", Collection.class);
@@ -54,5 +54,5 @@ public class PluginManagerTest {
             TestCase.fail();
         }
     }
-    
+
 }

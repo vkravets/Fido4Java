@@ -47,7 +47,7 @@ import java.net.InetSocketAddress;
  * Time: 2:02 PM
  */
 public class Client extends Connector {
-    private long connectionTimeout = 30*1000L;
+    private long connectionTimeout = 30 * 1000L;
 
     private NioSocketConnector connector;
     private IoSession session;
@@ -71,7 +71,7 @@ public class Client extends Connector {
         connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         connector.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
         String hostname = link.getHostAddress();
-        int port = link.getPort() != 0 ? link.getPort(): Connector.BINK_PORT;
+        int port = link.getPort() != 0 ? link.getPort() : Connector.BINK_PORT;
         ConnectFuture connection = connector.connect(new InetSocketAddress(hostname, port));
         connection.awaitUninterruptibly();
         connected = connection.isConnected();

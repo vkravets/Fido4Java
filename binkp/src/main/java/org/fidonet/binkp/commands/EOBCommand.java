@@ -43,7 +43,7 @@ import org.fidonet.binkp.events.DisconnectedEvent;
  * Date: 9/19/12
  * Time: 3:14 PM
  */
-public class EOBCommand extends MessageCommand{
+public class EOBCommand extends MessageCommand {
 
     public EOBCommand() {
         super(BinkCommand.M_EOB);

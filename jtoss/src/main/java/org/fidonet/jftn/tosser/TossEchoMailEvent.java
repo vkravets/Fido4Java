@@ -36,7 +36,7 @@ import org.fidonet.types.Message;
  * Date: 8/29/11
  * Time: 5:47 PM
  */
-public class TossEchoMailEvent extends TossNetmailEvent{
+public class TossEchoMailEvent extends TossNetmailEvent {
 
     public TossEchoMailEvent(Message message) {
         super(message);

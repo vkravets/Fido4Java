@@ -57,12 +57,12 @@ public class CommandCollection {
             if (cmd == null) {
                 commands.put(name, command);
             } else {
-                logger.warn("\""+name+"\" command already registered!");
+                logger.warn("\"" + name + "\" command already registered!");
             }
         }
     }
 
-    public Command findCommandByName(String name){
+    public Command findCommandByName(String name) {
         return commands.get(name);
     }
 

@@ -37,5 +37,6 @@ package org.fidonet.binkp.crypt;
  */
 public interface Encrypt {
     public int encryptData(byte[] buff);
+
     public int encryptData(byte[] buff, int bufSize);
 }

@@ -99,7 +99,7 @@ public class JAMEchoBase implements EchoBase {
             indexfile.createNewFile();
             lastrfile.createNewFile();
         } catch (IOException e) {
-            throw new EchoBaseException("Unable to create "+name+"area");
+            throw new EchoBaseException("Unable to create " + name + "area");
         }
 
         FixedHeaderInfoStruct hdr = new FixedHeaderInfoStruct();
@@ -156,7 +156,7 @@ public class JAMEchoBase implements EchoBase {
     }
 
     @Override
-    public void addMessage(Message msg)throws EchoBaseException {
+    public void addMessage(Message msg) throws EchoBaseException {
         int shiftoflast;
         try {
             shiftoflast = index.getLastMessageShift();

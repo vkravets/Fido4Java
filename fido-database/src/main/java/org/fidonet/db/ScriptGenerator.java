@@ -72,7 +72,7 @@ public class ScriptGenerator {
 
     private static String listToString(List<?> list, String sep) {
         StringBuilder sb = new StringBuilder();
-        for (Object item:list) {
+        for (Object item : list) {
             sb.append(item).append(sep);
         }
         return sb.toString();
@@ -129,13 +129,12 @@ public class ScriptGenerator {
     }
 
 
-
     public static void main(String[] argv) throws IOException, SQLException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         OrmManagerEx ormManager = new OrmManagerEx(argv[0]);
         ormManager.connect();
 
         List<BaseDaoImpl<?, ?>> daos = new ArrayList<BaseDaoImpl<?, ?>>();
-        daos.addAll(ormManager.<BaseDaoImpl<?, ?>> getAllDaos());
+        daos.addAll(ormManager.<BaseDaoImpl<?, ?>>getAllDaos());
 
         OutputStream createTablesStream = new FileOutputStream("createTables.sql");
         String createTablesScriptContent = generateCreateScript(ormManager.getConnectionSource(), daos);

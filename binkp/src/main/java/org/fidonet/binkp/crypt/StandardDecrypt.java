@@ -50,7 +50,7 @@ public class StandardDecrypt implements Decrypt {
             int val = buff[i] & 0xff;
             val = (val ^ zipCryptoEngine.decryptByte()) & 0xff;
             zipCryptoEngine.updateKeys((byte) val);
-            buff[i] = (byte)val;
+            buff[i] = (byte) val;
         }
         return len;
     }
@@ -69,7 +69,7 @@ public class StandardDecrypt implements Decrypt {
         if (isClient) {
             zipCryptoEngine.initKeys("-".toCharArray());
             for (char pc : password) {
-                zipCryptoEngine.updateKeys((byte)(pc & 0xff));
+                zipCryptoEngine.updateKeys((byte) (pc & 0xff));
             }
         } else {
             zipCryptoEngine.initKeys(password);

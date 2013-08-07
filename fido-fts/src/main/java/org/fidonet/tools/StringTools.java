@@ -40,9 +40,9 @@ import java.util.List;
  * Time: 3:18 PM
  */
 public class StringTools {
-    
+
     public static final String NEW_LINE = "\n";
-    
+
     public static List<String> wrap(String str, int wrapLength) {
         if (str == null) return null;
         if (wrapLength < 1) wrapLength = 1;
@@ -72,7 +72,7 @@ public class StringTools {
         result.add(str.substring(offset));
         return result;
     }
-    
+
     public static String join(Collection<String> strings, String sep, String prefix) {
         StringBuilder sb = new StringBuilder();
         for (String string : strings) {
@@ -84,7 +84,7 @@ public class StringTools {
     public static String join(Collection<String> strings) {
         return join(strings, NEW_LINE, "");
     }
-    
+
     public static String join(Collection<String> strings, String prefix) {
         return join(strings, NEW_LINE, prefix);
     }

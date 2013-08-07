@@ -60,7 +60,7 @@ public class StandardEncrypt implements Encrypt {
     }
 
     public int encryptData(byte[] buff, int len) {
-        for (int i = 0; i <  len; i++) {
+        for (int i = 0; i < len; i++) {
             buff[i] = encryptByte(buff[i]);
         }
         return len;

@@ -43,9 +43,9 @@ import java.util.List;
  * Time: 1:01 PM
  */
 public class FidoPathTest {
-    
+
     @Test
-    public void testPathFromString(){
+    public void testPathFromString() {
         String pathString = "5020/545 4441 1042 5030/100 102 5040/102 5050/103";
         FidoPath expectedPath = new FidoPath();
         expectedPath.add(FTNAddr.valueOf("2:5020/545"));
@@ -55,12 +55,12 @@ public class FidoPathTest {
         expectedPath.add(FTNAddr.valueOf("2:5030/102"));
         expectedPath.add(FTNAddr.valueOf("2:5040/102"));
         expectedPath.add(FTNAddr.valueOf("2:5050/103"));
-        
+
         FidoPath actualPath = FidoPath.valueOf(pathString, 2);
         TestCase.assertEquals(expectedPath, actualPath);
     }
-    
-    @Test 
+
+    @Test
     public void testPathToString() {
         String pathString = "5020/545 4441 1042 5030/100 102 5040/102 5050/103";
         FidoPath actualPath = new FidoPath();
@@ -78,7 +78,7 @@ public class FidoPathTest {
     @Test
     public void testPathToMessageString() {
         String pathString = "\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5\n" +
-                            "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070\n";
+                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070\n";
         FidoPath actualPath = new FidoPath();
         actualPath.add(FTNAddr.valueOf("2:5020/545"));
         actualPath.add(FTNAddr.valueOf("2:5020/4441"));
@@ -103,7 +103,7 @@ public class FidoPathTest {
     @Test
     public void testPathToMessageStrings() {
         List<String> pathString = Arrays.asList("\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5",
-                                                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070");
+                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070");
         FidoPath actualPath = new FidoPath();
         actualPath.add(FTNAddr.valueOf("2:5020/545"));
         actualPath.add(FTNAddr.valueOf("2:5020/4441"));

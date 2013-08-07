@@ -40,7 +40,7 @@ import java.util.List;
  */
 public class EventBus {
 
-    public HashMap<Class<?>,List<EventHandler>> eventListenerMap;
+    public HashMap<Class<?>, List<EventHandler>> eventListenerMap;
 
     public EventBus() {
         eventListenerMap = new HashMap<Class<?>, List<EventHandler>>();

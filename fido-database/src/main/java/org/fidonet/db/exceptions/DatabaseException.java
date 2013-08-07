@@ -31,7 +31,7 @@ package org.fidonet.db.exceptions;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/7/13
  * Time: 10:05 AM
  */

@@ -36,7 +36,10 @@ import com.j256.ormlite.table.TableUtils;
 import org.fidonet.db.objects.*;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.

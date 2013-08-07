@@ -64,7 +64,8 @@ public class Link {
     @DatabaseField(columnName = "flags", defaultValue = "")
     private String flags;
 
-    public Link() {}
+    public Link() {
+    }
 
     public Long getId() {
         return id;

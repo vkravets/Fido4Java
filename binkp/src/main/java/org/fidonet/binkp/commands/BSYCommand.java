@@ -40,7 +40,7 @@ import org.fidonet.binkp.commands.share.BinkCommand;
  * Date: 9/19/12
  * Time: 6:15 PM
  */
-public class BSYCommand extends MessageCommand{
+public class BSYCommand extends MessageCommand {
     public BSYCommand() {
         super(BinkCommand.M_BSY);
     }

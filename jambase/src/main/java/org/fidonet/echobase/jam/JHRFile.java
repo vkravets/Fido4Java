@@ -59,8 +59,7 @@ class JHRFile {
 
         ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize);
         int readed = jhr.read(tmpbuf.array());
-        if(readed != MessageHeader.MessageHeaderSize)
-        {
+        if (readed != MessageHeader.MessageHeaderSize) {
             logger.error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
         }
         tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
@@ -152,8 +151,7 @@ class JHRFile {
         res.order(ByteOrder.LITTLE_ENDIAN);
         jhr.seek(0);
         readed = jhr.read(fh);
-        if(readed != 1024)
-        {
+        if (readed != 1024) {
             logger.error("Ooops! getFixedHeader() reads not 1024!");
         }
         res.put(fh);

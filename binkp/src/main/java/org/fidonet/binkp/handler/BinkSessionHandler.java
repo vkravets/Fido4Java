@@ -62,7 +62,7 @@ import java.util.List;
  * Date: 9/19/12
  * Time: 1:18 PM
  */
-public class BinkSessionHandler extends IoHandlerAdapter{
+public class BinkSessionHandler extends IoHandlerAdapter {
 
     private static final ILogger log = LoggerFactory.getLogger(BinkSessionHandler.class.getName());
 
@@ -86,7 +86,7 @@ public class BinkSessionHandler extends IoHandlerAdapter{
         if (sessionContext != null) {
             return sessionContext;
         } else {
-            return (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+            return (SessionContext) session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
         }
     }
 

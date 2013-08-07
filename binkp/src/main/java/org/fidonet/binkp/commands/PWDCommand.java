@@ -43,7 +43,7 @@ import org.fidonet.binkp.events.DisconnectedEvent;
  * Date: 9/19/12
  * Time: 3:14 PM
  */
-public class PWDCommand extends MessageCommand{
+public class PWDCommand extends MessageCommand {
 
     public PWDCommand() {
         super(BinkCommand.M_PWD);

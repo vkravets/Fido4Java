@@ -41,20 +41,23 @@ import java.util.regex.Pattern;
  * Date: 9/19/12
  * Time: 5:15 PM
  */
-public abstract class NULCommand extends MessageCommand{
+public abstract class NULCommand extends MessageCommand {
 
     public NULCommand() {
         super(BinkCommand.M_NUL);
     }
 
     protected abstract String getPrefix();
+
     protected abstract String getArguments(SessionContext sessionContext);
-    protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {}
+
+    protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
+    }
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
         String args = getArguments(sessionContext);
-        args = args == null ? "":args;
+        args = args == null ? "" : args;
         if (getPrefix() != null) {
             return String.format("%s %s", getPrefix(), args);
         }

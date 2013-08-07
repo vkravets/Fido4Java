@@ -44,7 +44,7 @@ import java.io.OutputStream;
  * Date: 9/25/12
  * Time: 2:35 PM
  */
-public class SKIPCommand extends MessageCommand{
+public class SKIPCommand extends MessageCommand {
 
     public SKIPCommand() {
         super(BinkCommand.M_SKIP);

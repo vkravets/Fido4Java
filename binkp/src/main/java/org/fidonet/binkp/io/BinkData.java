@@ -65,7 +65,7 @@ public class BinkData {
         int len = data.getData().length;
         ByteBuffer buf;
         if (data.isCommand()) {
-            buf = ByteBuffer.allocate(len+1);
+            buf = ByteBuffer.allocate(len + 1);
             buf.put(data.getCommand());
             len = +1;
             len |= 0x8000;

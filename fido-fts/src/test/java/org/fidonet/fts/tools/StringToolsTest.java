@@ -43,13 +43,13 @@ import java.util.List;
  * Time: 3:39 PM
  */
 public class StringToolsTest {
-    
+
     @Test
     public void testWrap() {
         String inputStr = "463/68 5005/49 5019/40 5020/400 545 758 830 849 1042 2992 4441 5035/85 5050/57 5051/41 5053/400 5054/1 5075/35 5083/444 6078/80 6090/1";
-        String[] expected = new String[] {"463/68 5005/49 5019/40 5020/400 545 758 830 849 1042 2992 4441",
-                                          "5035/85 5050/57 5051/41 5053/400 5054/1 5075/35 5083/444 6078/80",
-                                          "6090/1"};
+        String[] expected = new String[]{"463/68 5005/49 5019/40 5020/400 545 758 830 849 1042 2992 4441",
+                "5035/85 5050/57 5051/41 5053/400 5054/1 5075/35 5083/444 6078/80",
+                "6090/1"};
         List<String> actualList = StringTools.wrap(inputStr, 72 - "SEEN-BY: ".length() + 1);
         TestCase.assertEquals(Arrays.asList(expected), actualList);
     }

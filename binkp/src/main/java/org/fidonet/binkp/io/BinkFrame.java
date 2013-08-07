@@ -47,7 +47,7 @@ import java.io.IOException;
 public class BinkFrame {
 
     private static final short MAX_DATA_SIZE = 32767;
-    private static final ILogger logger = LoggerFactory.getLogger(BinkFrame.class); 
+    private static final ILogger logger = LoggerFactory.getLogger(BinkFrame.class);
 
     private short dataInfo;
     private byte[] data;
@@ -73,9 +73,9 @@ public class BinkFrame {
             DataInputStream dataStream = new DataInputStream(new ByteArrayInputStream(frame.getData()));
             try {
                 cmd = dataStream.readByte();
-                dataBuf = new byte[info.getSize()-1];
+                dataBuf = new byte[info.getSize() - 1];
                 int read = dataStream.read(dataBuf);
-                assert read==info.getSize()-1;
+                assert read == -1 && info.getSize() == 1 || read == info.getSize() - 1;
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
             }

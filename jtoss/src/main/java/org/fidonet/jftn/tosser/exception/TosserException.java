@@ -34,7 +34,7 @@ package org.fidonet.jftn.tosser.exception;
  * Date: 9/23/11
  * Time: 12:41 PM
  */
-public class TosserException extends Exception{
+public class TosserException extends Exception {
     /**
      * Constructs a new exception with <code>null</code> as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a

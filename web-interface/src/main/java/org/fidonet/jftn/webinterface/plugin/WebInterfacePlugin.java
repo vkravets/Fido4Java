@@ -38,14 +38,14 @@ import org.fidonet.jftn.plugins.PluginManager;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/7/13
  * Time: 10:38 AM
  */
-public class WebInterfacePlugin implements Plugin{
-    
+public class WebInterfacePlugin implements Plugin {
+
     private Server server;
-    
+
     @Override
     public PluginInformation getPluginInfo() {
         return new PluginInformation("web-interface", 1, 0, "Integrates Jetty application server.");

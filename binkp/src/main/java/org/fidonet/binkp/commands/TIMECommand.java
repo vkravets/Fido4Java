@@ -42,7 +42,7 @@ import java.util.Locale;
  * Date: 9/19/12
  * Time: 5:10 PM
  */
-public class TIMECommand extends NULCommand{
+public class TIMECommand extends NULCommand {
 
     private static final DateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
 

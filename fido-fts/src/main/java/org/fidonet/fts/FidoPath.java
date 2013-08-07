@@ -31,7 +31,9 @@ package org.fidonet.fts;
 import org.fidonet.tools.StringTools;
 import org.fidonet.types.FTNAddr;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,7 +43,7 @@ import java.util.*;
  * Time: 11:59 AM
  */
 public class FidoPath extends AbstractFidoAddresses {
-    
+
     public static final String PATH_LINE_PREFIX = "\001PATH: ";
 
     public FidoPath() {
@@ -58,12 +60,12 @@ public class FidoPath extends AbstractFidoAddresses {
     }
 
     public String toPathString() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH-PATH_LINE_PREFIX.length());
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - PATH_LINE_PREFIX.length());
         return StringTools.join(wrapLines, PATH_LINE_PREFIX);
     }
 
     public String[] toPathStrings() {
         // FIXME: possible performance issue
         return toPathString().split("\\n");
-    }    
+    }
 }

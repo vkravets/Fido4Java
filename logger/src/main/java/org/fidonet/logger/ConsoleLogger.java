@@ -40,7 +40,7 @@ import java.util.Date;
  * Date: 9/23/11
  * Time: 10:11 AM
  */
-public class ConsoleLogger implements ILogger{
+public class ConsoleLogger implements ILogger {
 
     private static String debugPrefix = "DEBUG";
     private static String warnPrefix = "WARN";
@@ -58,17 +58,17 @@ public class ConsoleLogger implements ILogger{
     private String fqdmClassName;
 
     static {
-      try {
-          Class[] noArgs = null;
-          getStackTraceMethod = Throwable.class.getMethod("getStackTrace", noArgs);
-          Class stackTraceElementClass = Class.forName("java.lang.StackTraceElement");
-          getClassNameMethod = stackTraceElementClass.getMethod("getClassName", noArgs);
-          getMethodNameMethod = stackTraceElementClass.getMethod("getMethodName", noArgs);
-          getFileNameMethod = stackTraceElementClass.getMethod("getFileName", noArgs);
-          getLineNumberMethod = stackTraceElementClass.getMethod("getLineNumber", noArgs);
-      } catch(ClassNotFoundException ignored) {
-      } catch(NoSuchMethodException ignored) {
-      }
+        try {
+            Class[] noArgs = null;
+            getStackTraceMethod = Throwable.class.getMethod("getStackTrace", noArgs);
+            Class stackTraceElementClass = Class.forName("java.lang.StackTraceElement");
+            getClassNameMethod = stackTraceElementClass.getMethod("getClassName", noArgs);
+            getMethodNameMethod = stackTraceElementClass.getMethod("getMethodName", noArgs);
+            getFileNameMethod = stackTraceElementClass.getMethod("getFileName", noArgs);
+            getLineNumberMethod = stackTraceElementClass.getMethod("getLineNumber", noArgs);
+        } catch (ClassNotFoundException ignored) {
+        } catch (NoSuchMethodException ignored) {
+        }
     }
 
     public ConsoleLogger(String className) {
@@ -80,11 +80,11 @@ public class ConsoleLogger implements ILogger{
             try {
                 Object[] noArgs = null;
                 Throwable t = new Throwable();
-                Object[] elements =  (Object[]) getStackTraceMethod.invoke(t, noArgs);
+                Object[] elements = (Object[]) getStackTraceMethod.invoke(t, noArgs);
                 String prevClass = NA;
-                for(int i = elements.length - 1; i >= 0; i--) {
+                for (int i = elements.length - 1; i >= 0; i--) {
                     String thisClass = (String) getClassNameMethod.invoke(elements[i], noArgs);
-                    if(ConsoleLogger.class.getName().equals(thisClass)) {
+                    if (ConsoleLogger.class.getName().equals(thisClass)) {
                         int caller = i + 1;
                         if (caller < elements.length) {
                             String className = prevClass;
@@ -114,13 +114,13 @@ public class ConsoleLogger implements ILogger{
                     }
                     prevClass = thisClass;
                 }
-            } catch(IllegalAccessException ignored) {
-            } catch(InvocationTargetException ex) {
+            } catch (IllegalAccessException ignored) {
+            } catch (InvocationTargetException ex) {
                 if (ex.getTargetException() instanceof InterruptedException
                         || ex.getTargetException() instanceof InterruptedIOException) {
                     Thread.currentThread().interrupt();
                 }
-            } catch(RuntimeException ignored) {
+            } catch (RuntimeException ignored) {
             }
         }
         return null;

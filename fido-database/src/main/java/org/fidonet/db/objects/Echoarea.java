@@ -50,7 +50,8 @@ public class Echoarea {
     @DatabaseField(columnName = "description", canBeNull = true)
     private String description;
 
-    public Echoarea() {}
+    public Echoarea() {
+    }
 
     public Long getId() {
         return id;

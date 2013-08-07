@@ -37,7 +37,7 @@ import java.lang.reflect.Method;
  * Date: 9/23/11
  * Time: 9:22 AM
  */
-public class Log4jEngine implements ILogger{
+public class Log4jEngine implements ILogger {
 
     private static Boolean isLog4jExists = null;
     private static Class log4jClass = null;
@@ -52,7 +52,7 @@ public class Log4jEngine implements ILogger{
     private Method info;
     private Method infoEx;
 
-    public static ILogger getLogger(Class<?> clazz)  throws LogEngineNotFoundException {
+    public static ILogger getLogger(Class<?> clazz) throws LogEngineNotFoundException {
         return Log4jEngine.getLogger(clazz.getCanonicalName());
     }
 

@@ -37,7 +37,7 @@ import org.fidonet.binkp.SessionContext;
  * Date: 9/19/12
  * Time: 5:09 PM
  */
-public class ZYZCommand extends NULCommand{
+public class ZYZCommand extends NULCommand {
 
     @Override
     protected String getArguments(SessionContext sessionContext) {

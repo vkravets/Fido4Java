@@ -49,7 +49,7 @@ import java.util.List;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager implements IBase{
+public class DatabaseManager implements IBase {
 
     private final OrmManager dbManager;
 
@@ -92,11 +92,11 @@ public class DatabaseManager implements IBase{
 
     @Override
     public Iterator<Message> getMessages(String areaname) {
-        Dao<Echomail,Object> echomails = dbManager.getDao(Echomail.class);
+        Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
-        QueryBuilder<Echomail,Object> echomailQueryBuilder = echomails.queryBuilder();
+        QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
-        List<Message> result= new ArrayList<Message>();
+        List<Message> result = new ArrayList<Message>();
         try {
             List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
             if (echoareaList.size() == 0) {
@@ -173,7 +173,6 @@ public class DatabaseManager implements IBase{
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
-
 
 
     @Override

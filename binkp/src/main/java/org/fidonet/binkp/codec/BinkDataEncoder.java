@@ -47,9 +47,9 @@ public class BinkDataEncoder<T extends BinkFrame> extends ProtocolEncoderAdapter
     @Override
     public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception {
         BinkFrame msg = (T) message;
-        IoBuffer buf = IoBuffer.allocate(msg.getData().length+2);
+        IoBuffer buf = IoBuffer.allocate(msg.getData().length + 2);
         buf.setAutoExpand(false);
-        ByteBuffer bufCrypt = ByteBuffer.allocate(msg.getData().length+2);
+        ByteBuffer bufCrypt = ByteBuffer.allocate(msg.getData().length + 2);
         bufCrypt.putShort(msg.getDataInfo());
         bufCrypt.put(msg.getData());
         bufCrypt.flip();

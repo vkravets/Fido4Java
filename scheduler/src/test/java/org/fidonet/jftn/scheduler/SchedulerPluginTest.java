@@ -9,12 +9,12 @@ import org.junit.Test;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/6/13
  * Time: 4:01 PM
  */
 public class SchedulerPluginTest {
-    
+
     @Test
     @Ignore
     public void pluginTest() {
@@ -33,7 +33,7 @@ public class SchedulerPluginTest {
         }
         TestCase.assertEquals(false, exception);
         TestCase.assertNotNull(schedule);
-        
+
         schedule.start();
         final Boolean[] taskExecute = {false};
         schedule.schedule("* * * * *", new Runnable() {
@@ -43,7 +43,7 @@ public class SchedulerPluginTest {
             }
         });
         try {
-            Thread.sleep(1000*61);
+            Thread.sleep(1000 * 61);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {

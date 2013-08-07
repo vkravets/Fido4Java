@@ -41,15 +41,15 @@ import java.sql.SQLException;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/7/13
  * Time: 9:53 AM
  */
 public class DatabasePlugin implements Plugin {
-    
+
     private DatabaseManager manager;
     private String databaseUrl;
-    
+
     @Override
     public PluginInformation getPluginInfo() {
         return new PluginInformation("database", 1, 0, "Store information in the database");
@@ -57,8 +57,8 @@ public class DatabasePlugin implements Plugin {
 
     @Override
     public void init(PluginManager manager, EventBus eventBus) {
-          // TODO: Load configuration from file
-        databaseUrl = "jdbc:derby:./database/TestDerby;create=true";         
+        // TODO: Load configuration from file
+        databaseUrl = "jdbc:derby:./database/TestDerby;create=true";
 
     }
 
@@ -72,13 +72,13 @@ public class DatabasePlugin implements Plugin {
         } catch (SQLException e) {
             throw new PluginException(e);
         }
-        
+
         manager = new DatabaseManager(ormManager);
     }
 
     @Override
     public void unload() throws PluginException {
-        
+
     }
 
     @Override

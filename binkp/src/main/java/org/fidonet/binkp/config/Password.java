@@ -54,7 +54,7 @@ public class Password {
 
 
     public Password(String password) {
-        this.password = password == null || password.startsWith("-") ? null:password;
+        this.password = password == null || password.startsWith("-") ? null : password;
         this.isCrypt = false;
         this.md = null;
         this.key = null;
@@ -92,7 +92,7 @@ public class Password {
 
         for (int i = 0; i < key.length(); i += 2) {
             String byteString = key.substring(i, i + 2);
-            textKey[i / 2] = (byte)Integer.parseInt(byteString, 16);
+            textKey[i / 2] = (byte) Integer.parseInt(byteString, 16);
         }
 
         for (int i = 0; i < text.length; i++) {

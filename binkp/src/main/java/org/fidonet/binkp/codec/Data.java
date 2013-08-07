@@ -39,5 +39,6 @@ import org.fidonet.binkp.io.BinkFrame;
  */
 public interface Data {
     public BinkFrame getRawData();
+
     public boolean isCommand();
 }

@@ -77,7 +77,8 @@ public class Netmail {
     @DatabaseField(columnName = "attr", canBeNull = false)
     private Integer attr;
 
-    public Netmail() {}
+    public Netmail() {
+    }
 
     public Long getId() {
         return id;

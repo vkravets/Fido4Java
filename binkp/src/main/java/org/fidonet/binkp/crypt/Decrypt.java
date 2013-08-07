@@ -37,7 +37,10 @@ package org.fidonet.binkp.crypt;
  */
 public interface Decrypt {
     public int decryptData(byte[] buff);
+
     public int decryptData(byte[] buff, int bufSize);
+
     public void save();
+
     public void restore();
 }

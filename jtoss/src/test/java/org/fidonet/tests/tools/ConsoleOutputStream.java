@@ -43,7 +43,7 @@ public class ConsoleOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        buffer += String.valueOf((char )b);
+        buffer += String.valueOf((char) b);
     }
 
     @Override

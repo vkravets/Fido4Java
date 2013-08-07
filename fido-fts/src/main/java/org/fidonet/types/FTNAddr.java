@@ -105,10 +105,9 @@ public class FTNAddr implements Comparable<FTNAddr> {
     }
 
 
-    public String toHex()
-    {
-        String hexnet = String.format("%04x",net);
-        String hexnode = String.format("%04x",node);
+    public String toHex() {
+        String hexnet = String.format("%04x", net);
+        String hexnode = String.format("%04x", node);
         return hexnet + hexnode;
     }
 
@@ -172,10 +171,10 @@ public class FTNAddr implements Comparable<FTNAddr> {
         }
         return zoneCompare;
     }
-    
+
     public static FTNAddr valueOf(String addr) {
         return new FTNAddr(addr);
     }
-    
-    
+
+
 }

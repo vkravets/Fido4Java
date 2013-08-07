@@ -45,8 +45,9 @@ public abstract class AbstractFidoAddresses {
 
     protected Set<FTNAddr> addresses;
     protected static final int WRAP_LENGTH = 72;
-    
-    public AbstractFidoAddresses() { }
+
+    public AbstractFidoAddresses() {
+    }
 
     public AbstractFidoAddresses(Set<FTNAddr> path) {
         this.addresses = path;
@@ -69,7 +70,7 @@ public abstract class AbstractFidoAddresses {
     public void add(FTNAddr addr) {
         addresses.add(addr);
     }
-    
+
     public void addAll(Collection<? extends FTNAddr> addresses) {
         this.addresses.addAll(addresses);
     }
@@ -131,10 +132,10 @@ public abstract class AbstractFidoAddresses {
         }
         return stringBuilder.toString();
     }
-    
+
     protected List<String> getWrapStrings(int wrapLength) {
         String original = toString();
         return StringTools.wrap(original, wrapLength);
     }
-    
+
 }

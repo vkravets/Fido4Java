@@ -103,7 +103,7 @@ public class EchoList {
         return list.get(name);
     }
 
-    public List<String> getEchoList () {
+    public List<String> getEchoList() {
         return new ArrayList<String>(list.keySet());
     }
 

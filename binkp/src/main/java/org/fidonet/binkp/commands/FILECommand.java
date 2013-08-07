@@ -91,7 +91,7 @@ public class FILECommand extends MessageCommand {
         Iterator<FileData<InputStream>> iterator = sessionContext.getSendFiles().iterator();
         boolean isSent = true;
         FileInfo fileInfo = null;
-        while (isSent && iterator.hasNext() ) {
+        while (isSent && iterator.hasNext()) {
             FileData fileData = iterator.next();
             fileInfo = fileData.getInfo();
             isSent = fileInfo.getCurSize() == fileInfo.getSize();

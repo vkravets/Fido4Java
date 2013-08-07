@@ -38,14 +38,14 @@ import org.fidonet.events.EventBus;
  * Time: 9:33 PM
  */
 public interface Plugin {
-    
+
     public PluginInformation getPluginInfo();
-    
+
     public void init(PluginManager manager, EventBus eventBus);
-    
+
     public void load() throws PluginException;
-    
+
     public void unload() throws PluginException;
-    
+
     public Object getContext();
 }

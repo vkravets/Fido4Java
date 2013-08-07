@@ -68,7 +68,8 @@ public class GETCommand extends MessageCommand {
                     public void run() {
                         try {
                             filesSender.getExchanger().exchange(fileInfo);
-                        } catch (InterruptedException ignored) {}
+                        } catch (InterruptedException ignored) {
+                        }
                     }
                 });
                 sendFileBegin.start();

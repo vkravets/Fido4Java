@@ -54,7 +54,7 @@ public class Link {
         myaddr = new FTNAddr(linkToken[1].trim());
         if (linkToken.length > 3)
             pass = linkToken[2].trim();
-        if (linkToken.length >=4) {
+        if (linkToken.length >= 4) {
             String url = linkToken[3].trim();
             if (url.contains(":")) {
                 String[] hostToken = url.split(":");
@@ -72,7 +72,7 @@ public class Link {
     }
 
     public String getPass() {
-        return (pass != null && pass.equals("-")) ? "":pass;
+        return (pass != null && pass.equals("-")) ? "" : pass;
     }
 
     public FTNAddr getMyaddr() {

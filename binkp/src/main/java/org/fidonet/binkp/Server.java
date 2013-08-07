@@ -51,16 +51,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Server extends Connector{
+public class Server extends Connector {
 
     private NioSocketAcceptor acceptor;
     private int port = Connector.BINK_PORT;
     private final AtomicReference<Integer> userConnected = new AtomicReference<Integer>(0);
     private static int MAX_USER_CONNECTED = 30;
-    
-    private static ILogger logger = LoggerFactory.getLogger(Server.class);  
 
-    public Server() { }
+    private static ILogger logger = LoggerFactory.getLogger(Server.class);
+
+    public Server() {
+    }
 
     public Server(int port) {
         this.port = port;
@@ -93,8 +94,8 @@ public class Server extends Connector{
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
-                synchronized (userConnected.get()){
-                    userConnected.set(userConnected.get()+1);
+                synchronized (userConnected.get()) {
+                    userConnected.set(userConnected.get() + 1);
                 }
                 if (!context.isBusy() && userConnected.get() > MAX_USER_CONNECTED) {
                     synchronized (context) {
@@ -105,14 +106,14 @@ public class Server extends Connector{
 
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
-                SessionContext sessionContext = (SessionContext)session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+                SessionContext sessionContext = (SessionContext) session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                         sessionContext.getState().equals(SessionState.STATE_BSY)) {
-                    logger.warn("Client close with error: " +sessionContext.getLastErrorMessage());
+                    logger.warn("Client close with error: " + sessionContext.getLastErrorMessage());
                 }
                 session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
-                synchronized (userConnected){
-                    userConnected.set(userConnected.get()-1);
+                synchronized (userConnected) {
+                    userConnected.set(userConnected.get() - 1);
                 }
                 if (context.isBusy() && userConnected.get() < MAX_USER_CONNECTED) {
                     synchronized (context) {

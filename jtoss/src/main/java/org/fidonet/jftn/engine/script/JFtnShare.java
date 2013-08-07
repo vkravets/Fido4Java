@@ -39,7 +39,7 @@ import org.fidonet.jftn.share.HookInterpreter;
  * Date: 8/31/11
  * Time: 10:29 AM
  */
-public class JFtnShare  {
+public class JFtnShare {
 
     private ScriptEngine scriptEngine;
     private CommandInterpreter commands;

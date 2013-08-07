@@ -57,7 +57,7 @@ public class TestTosser {
             TestCase.fail(e.getMessage());
         }
 
-        try{
+        try {
             Tosser tosser = new Tosser(config);
             tosser.runFast(config.getValue("Inbound"));
             EchoMgr echoMgr = tosser.getAreamgr();
@@ -71,7 +71,6 @@ public class TestTosser {
             e.printStackTrace(System.out);
             TestCase.fail();
         }
-
 
 
     }

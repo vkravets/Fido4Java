@@ -73,7 +73,7 @@ public abstract class BaseConfig implements IConfig {
                 }
                 Scanner scanner = new Scanner(str);
                 scanner.useDelimiter("=");
-                if (scanner.hasNext()){
+                if (scanner.hasNext()) {
                     String name = scanner.next();
                     String value = scanner.next();
                     setValue(name.trim().toLowerCase(), value.trim());

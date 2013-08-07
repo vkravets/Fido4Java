@@ -47,7 +47,7 @@ import java.util.Deque;
  * Date: 9/19/12
  * Time: 3:14 PM
  */
-public class OKCommand extends MessageCommand{
+public class OKCommand extends MessageCommand {
 
     public OKCommand() {
         super(BinkCommand.M_OK);

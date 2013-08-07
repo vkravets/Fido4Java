@@ -42,7 +42,7 @@ import org.fidonet.binkp.events.DisconnectedEvent;
  * Date: 9/19/12
  * Time: 3:14 PM
  */
-public class ERRCommand extends MessageCommand{
+public class ERRCommand extends MessageCommand {
 
     public ERRCommand() {
         super(BinkCommand.M_ERR);

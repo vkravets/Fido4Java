@@ -28,7 +28,10 @@
 
 package org.fidonet.binkp.codec;
 
-import org.fidonet.binkp.crypt.*;
+import org.fidonet.binkp.crypt.Decrypt;
+import org.fidonet.binkp.crypt.DummyDecrypt;
+import org.fidonet.binkp.crypt.DummyEncrypt;
+import org.fidonet.binkp.crypt.Encrypt;
 
 /**
  * Created by IntelliJ IDEA.

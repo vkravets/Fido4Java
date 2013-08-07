@@ -40,15 +40,15 @@ import java.util.List;
  * Time: 9:34 PM
  */
 public class PluginInformation {
-    
+
     private int majorVersion;
     private int minorVersion;
-    
+
     private String id;
     private String description;
     private List<String> dependecies;
 
-    public PluginInformation(String id, int majorVersion, int minorVersion, String description, String ... dependencies) {
+    public PluginInformation(String id, int majorVersion, int minorVersion, String description, String... dependencies) {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
         this.id = id;

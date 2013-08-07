@@ -84,7 +84,8 @@ public class Echomail {
     @DatabaseField(columnName = "attr", dataType = DataType.INTEGER)
     private int attr;
 
-    public Echomail() {}
+    public Echomail() {
+    }
 
     public Long getId() {
         return id;

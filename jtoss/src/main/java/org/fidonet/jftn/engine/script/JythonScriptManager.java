@@ -68,12 +68,12 @@ public class JythonScriptManager implements org.fidonet.jftn.engine.script.Scrip
         }
         File scriptsFolder = new File(scriptFolder);
         String fullScriptPath = scriptsFolder.getCanonicalPath();
-        logger.debug("Adding to PYTHON_PATH \""+fullScriptPath+"\" folder");
+        logger.debug("Adding to PYTHON_PATH \"" + fullScriptPath + "\" folder");
         jythonEngine.eval(String.format("import sys; sys.path.append(\"%s\")", fullScriptPath));
     }
 
     public <T> T getInterface(Object object, Class<T> type) {
-        return ((Invocable)jythonEngine).getInterface(object, type);
+        return ((Invocable) jythonEngine).getInterface(object, type);
     }
 
     public void runScript(File script) throws Exception {
@@ -117,7 +117,7 @@ public class JythonScriptManager implements org.fidonet.jftn.engine.script.Scrip
         if (fileList != null) {
             for (File file : fileList) {
                 String fileName = file.getName();
-                if (fileName.indexOf(".py") == fileName.length()-3) {
+                if (fileName.indexOf(".py") == fileName.length() - 3) {
                     try {
                         logger.debug("Loading " + file.getName());
                         runScript(file);

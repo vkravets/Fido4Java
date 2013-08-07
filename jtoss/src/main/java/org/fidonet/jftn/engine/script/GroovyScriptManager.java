@@ -113,7 +113,7 @@ public class GroovyScriptManager implements org.fidonet.jftn.engine.script.Scrip
         if (fileList != null) {
             for (File file : fileList) {
                 String fileName = file.getName();
-                if (fileName.indexOf(".groovy") == fileName.length()-3) {
+                if (fileName.indexOf(".groovy") == fileName.length() - 3) {
                     try {
                         logger.debug("Loading " + file.getName());
                         runScript(file);

@@ -102,7 +102,7 @@ public class ClientTest {
             int size = 0;
             byte[] bytes = new byte[bufSize];
             ProtocolDecoder decoder = new BinkDataDecoder();
-            while ( ( size = stream.read(bytes) ) != -1 ) {
+            while ((size = stream.read(bytes)) != -1) {
                 IoBuffer buf = IoBuffer.allocate(size);
                 buf.put(bytes, 0, size);
                 buf.flip();

@@ -52,13 +52,13 @@ public class CreateDatabaseTest {
 
     private OrmManager ormManager;
     private DatabaseManager databaseManager;
-    private Dao<Link,Long> daoLinks;
+    private Dao<Link, Long> daoLinks;
 
     @Before
     public void setUp() throws SQLException {
         File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
         System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-        ormManager = new OrmManager("jdbc:derby:"+pathDb+"/TestDerby;create=true");
+        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
         ormManager.connect();
         ormManager.createTable();
         databaseManager = new DatabaseManager(ormManager);
@@ -80,12 +80,12 @@ public class CreateDatabaseTest {
             link.setFlags("BINKD");
             daoLinks.create(link);
 
-            QueryBuilder<Link,Long> linkQueryBuilder = daoLinks.queryBuilder();
+            QueryBuilder<Link, Long> linkQueryBuilder = daoLinks.queryBuilder();
 
             List<Link> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
             Assert.assertEquals(1, address.size());
             Assert.assertTrue(daoLinks.objectsEqual(link, address.get(0)));
-            DeleteBuilder<Link,Long> deleteBuilder = daoLinks.deleteBuilder();
+            DeleteBuilder<Link, Long> deleteBuilder = daoLinks.deleteBuilder();
             deleteBuilder.where().eq("id", link.getId());
             deleteBuilder.delete();
         } catch (SQLException e) {

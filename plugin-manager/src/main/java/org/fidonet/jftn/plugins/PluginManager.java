@@ -44,7 +44,7 @@ import java.util.*;
  */
 public class PluginManager extends HasEventBus {
     private static PluginManager ourInstance = new PluginManager();
-    
+
     public static final ILogger logger = LoggerFactory.getLogger(PluginManager.class);
 
     public static PluginManager getInstance() {
@@ -62,12 +62,12 @@ public class PluginManager extends HasEventBus {
         Lookup.Template<Plugin> pluginTemplate = new Lookup.Template<Plugin>(Plugin.class);
         Lookup.Result<Plugin> pluginResult = lookupService.lookup(pluginTemplate);
         Collection<? extends Plugin> plugins = pluginResult.allInstances();
-        
+
         // Register all plugins before it's loading 
         for (Plugin plugin : plugins) {
             addPlugin(plugin.getPluginInfo().getId(), plugin);
         }
-        
+
         // sort plugins for loading according to its dependencies 
         plugins = sortDependencies(plugins);
 
@@ -102,7 +102,7 @@ public class PluginManager extends HasEventBus {
                 firstPlugins.add(plugin);
             }
         }
-        
+
         result.addAll(firstPlugins);
         result.addAll(pluginsWithDeps);
         return result;
@@ -129,7 +129,7 @@ public class PluginManager extends HasEventBus {
             try {
                 plugin.unload();
             } catch (PluginException e) {
-                logger.error("Unable to unload "+plugin.getPluginInfo().getId()+" plugin", e);
+                logger.error("Unable to unload " + plugin.getPluginInfo().getId() + " plugin", e);
             }
         }
         plugins.clear();
@@ -146,10 +146,10 @@ public class PluginManager extends HasEventBus {
     private static Map<String, Plugin> getPlugins() {
         return plugins;
     }
-    
+
     public <T> T getContext(String id) throws PluginException {
         Plugin plugin = plugins.get(id);
-        if (plugin == null) throw new PluginException("Plugin \""+id+"\" is not found or is not loaded");
+        if (plugin == null) throw new PluginException("Plugin \"" + id + "\" is not found or is not loaded");
         return (T) plugin.getContext();
-    } 
+    }
 }

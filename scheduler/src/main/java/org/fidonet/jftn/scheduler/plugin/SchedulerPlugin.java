@@ -10,21 +10,22 @@ import org.fidonet.jftn.scheduler.Scheduler;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vladimir.kravets-ukr@hp.com
+ * E-Mail: vova.kravets@gmail.com
  * Date: 8/6/13
  * Time: 2:46 PM
  */
 public class SchedulerPlugin implements Plugin {
-    
+
     private Scheduler scheduler;
-    
+
     @Override
     public PluginInformation getPluginInfo() {
         return new PluginInformation("schedule", 1, 0, "Cron-like scheduler functionality plugin");
     }
 
     @Override
-    public void init(PluginManager manager, EventBus eventBus) { }
+    public void init(PluginManager manager, EventBus eventBus) {
+    }
 
     @Override
     public void load() throws PluginException {

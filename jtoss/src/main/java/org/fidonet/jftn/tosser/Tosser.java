@@ -114,7 +114,7 @@ public class Tosser extends HasEventBus {
         File bad = new File(config.getTmpDir() + pkt.getName().replace(".pkt", ".bad"));
 
         if (bad.exists()) {
-            logger.warn("Bad " + pkt.getName()  + " already exists. ");
+            logger.warn("Bad " + pkt.getName() + " already exists. ");
             // TODO: need to throw exception?
             return;
         }
