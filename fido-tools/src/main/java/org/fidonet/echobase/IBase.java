@@ -42,10 +42,10 @@ import java.util.Iterator;
  */
 public interface IBase {
 
-    public void open();
+    public boolean open();
 
-    public void createArea(String areaName);
-    public void createArea(String areaName, String description);
+    public boolean createArea(String areaName);
+    public boolean createArea(String areaName, String description);
 
     public void addMessage(Message message, String areaname);
 

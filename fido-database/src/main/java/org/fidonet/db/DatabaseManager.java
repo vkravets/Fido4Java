@@ -58,22 +58,24 @@ public class DatabaseManager implements IBase{
     }
 
     @Override
-    public void open() {
+    public boolean open() {
         try {
             dbManager.connect();
             dbManager.createTable();
         } catch (SQLException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            // TODO: logger
+            return false;
         }
+        return true;
     }
 
     @Override
-    public void createArea(String areaName) {
-        this.createArea(areaName, null);
+    public boolean createArea(String areaName) {
+        return this.createArea(areaName, null);
     }
 
     @Override
-    public void createArea(String areaName, String description) {
+    public boolean createArea(String areaName, String description) {
         Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
         Echoarea echoarea = new Echoarea();
         echoarea.setName(areaName);
@@ -82,8 +84,10 @@ public class DatabaseManager implements IBase{
         try {
             echoareas.create(echoarea);
         } catch (SQLException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            // TODO: logger
+            return false;
         }
+        return true;
     }
 
     @Override
@@ -174,6 +178,5 @@ public class DatabaseManager implements IBase{
 
     @Override
     public void close() {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
