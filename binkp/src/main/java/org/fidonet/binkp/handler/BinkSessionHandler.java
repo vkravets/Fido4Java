@@ -138,11 +138,12 @@ public class BinkSessionHandler extends IoHandlerAdapter {
     public void messageReceived(IoSession session, Object message) throws Exception {
         SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
-        BinkData binkData = BinkFrame.toBinkData(data);
-        Command command;
+        Command command = null; 
+        BinkData binkData = null;
         try {
+            binkData = BinkFrame.toBinkData(data);
             command = CommandFactory.createCommand(sessionContext, binkData);
-        } catch (UnknownCommandException ex) {
+        } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             sessionContext.setState(SessionState.STATE_ERR);
             sessionContext.setLastErrorMessage(ex.getMessage());
@@ -151,7 +152,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             session.close(false);
             throw ex;
-        }
+        } 
         if (command != null) {
             log.debug("Get command: " + BinkCommand.findCommand(binkData.getCommand()));
             log.debug("Command data: " + new String(binkData.getData()));
