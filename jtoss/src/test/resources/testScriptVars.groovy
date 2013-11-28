@@ -1,6 +1,3 @@
-import org.fidonet.jftn.share.Command
-import org.fidonet.tests.engine.script.TestScriptObject
-
 /******************************************************************************
  * Copyright (c) 2013, Vladimir Kravets                                       *
  * All rights reserved.                                                       *
@@ -28,6 +25,9 @@ import org.fidonet.tests.engine.script.TestScriptObject
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,             *
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
+
+import org.fidonet.jftn.share.Command
+import org.fidonet.tests.engine.script.TestScriptObject
 
 /**
  * Created by IntelliJ IDEA.

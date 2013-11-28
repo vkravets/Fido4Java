@@ -1,8 +1,3 @@
-import org.fidonet.config.JFtnConfig
-import org.fidonet.jftn.engine.script.JFtnShare
-import org.fidonet.jftn.share.Command
-import org.fidonet.jftn.tosser.Tosser
-
 /******************************************************************************
  * Copyright (c) 2013, Vladimir Kravets                                       *
  * All rights reserved.                                                       *
@@ -30,6 +25,11 @@ import org.fidonet.jftn.tosser.Tosser
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,             *
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
+
+import org.fidonet.config.JFtnConfig
+import org.fidonet.jftn.engine.script.JFtnShare
+import org.fidonet.jftn.share.Command
+import org.fidonet.jftn.tosser.Tosser
 
 class TossCommand implements Command<String, Boolean> {
 
