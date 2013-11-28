@@ -29,16 +29,16 @@
 package org.fidonet.tests.engine.script;
 
 import junit.framework.TestCase;
+import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnShare;
-import org.fidonet.jftn.engine.script.JythonScriptManager;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.script.ScriptContext;
 import java.io.InputStream;
 
 /**
@@ -50,22 +50,20 @@ import java.io.InputStream;
 public class TestScriptVars {
 
     @Test
-    @Ignore
     public void testCommandRegister() throws Exception {
-        // Init JythonScriptManager
-        ScriptEngine scriptManager = new JythonScriptManager();
+        ScriptEngine scriptManager = new GroovyScriptManager();
         // Init hook and command classes
         HookInterpreter hookInterpreter = new HookInterpreter();
         CommandCollection commands = new CommandCollection();
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
-        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
+        scriptManager.putVariable("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
-        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testScriptVars.py");
+        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testScriptVars.groovy");
         TestScriptObject test = new TestScriptObject();
+        scriptManager.putVariable("testScriptVar", test);
         try {
 
-            scriptManager.addScriptVar("testScriptVar", test);
             scriptManager.runScript(inputStream);
         } catch (Exception e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
@@ -73,6 +71,7 @@ public class TestScriptVars {
         Command command = commands.findCommandByName("test");
         TestCase.assertNotNull(command);
 
+        //noinspection unchecked
         command.execute(null);
         TestCase.assertEquals("testVar", test.getVar());
     }

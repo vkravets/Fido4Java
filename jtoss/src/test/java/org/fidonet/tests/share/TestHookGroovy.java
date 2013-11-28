@@ -63,7 +63,7 @@ public class TestHookGroovy extends HasEventBus {
         CommandCollection commands = new CommandCollection();
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
-        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
+        scriptManager.putVariable("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
         InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testHook.groovy");
         scriptManager.runScript(inputStream);

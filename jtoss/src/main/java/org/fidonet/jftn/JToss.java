@@ -72,7 +72,7 @@ public class JToss {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         JFtnShare shareObject = new JFtnShare(scriptManager, hooks, commandInterpreter);
         shareObject.setConfig(config);
-        scriptManager.addScriptVar("jftn", shareObject);
+        scriptManager.putVariable("jftn", shareObject);
         // Loading all scripts
         scriptManager.reloadScripts();
 

@@ -52,11 +52,6 @@ public class JFtnShare {
         this.commands = commands;
     }
 
-
-    public ScriptEngine getScriptEngine() {
-        return scriptEngine;
-    }
-
     public void registerCommand(String name, Object command) throws Exception {
         commands.registerCommand(scriptEngine, name, command);
     }

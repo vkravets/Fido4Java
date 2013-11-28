@@ -57,14 +57,15 @@ public class TestCommandGroovy {
         CommandCollection commands = new CommandCollection();
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
-        scriptManager.addScriptVar("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
+        scriptManager.putVariable("jftn", new JFtnShare(scriptManager, hookInterpreter, commandInterpreter));
 
         InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testCommand.groovy");
         try {
             scriptManager.runScript(inputStream);
         } catch (Exception e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
+        //noinspection unchecked
         Command<String[], Object> command = commands.findCommandByName("test");
         TestCase.assertNotNull(command);
         String[] param = new String[]{"test", "test2"};

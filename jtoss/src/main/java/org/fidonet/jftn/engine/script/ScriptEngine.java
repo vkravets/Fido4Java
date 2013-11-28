@@ -34,7 +34,6 @@ import java.io.InputStream;
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
- * E-Mail: vova.kravets@gmail.com
  * Date: 9/5/12
  * Time: 8:12 PM
  */
@@ -47,7 +46,9 @@ public interface ScriptEngine {
 
     public void reloadScripts();
 
-    public void addScriptVar(String name, Object object);
+    public void putVariable(String name, Object object);
 
-    public void removeScriptVar(String name, Object value);
+    public void removeVariable(String name, Object value);
+
+    public javax.script.ScriptEngine getEngine();
 }
