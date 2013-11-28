@@ -159,4 +159,8 @@ public class JFtnConfig extends BaseConfig {
         return getValue("outbound");
     }
 
+    public String getInbound() {
+        return getValue("inbound");
+    }
+
 }

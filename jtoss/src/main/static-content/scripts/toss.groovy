@@ -1,3 +1,8 @@
+import org.fidonet.config.JFtnConfig
+import org.fidonet.jftn.engine.script.JFtnShare
+import org.fidonet.jftn.share.Command
+import org.fidonet.jftn.tosser.Tosser
+
 /******************************************************************************
  * Copyright (c) 2013, Vladimir Kravets                                       *
  * All rights reserved.                                                       *
@@ -26,19 +31,21 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
+class TossCommand implements Command<String, Boolean> {
 
+    private JFtnShare share;
 
-import org.fidonet.jftn.share.Command
-
-class TossCommand implements Command<String[], String[]> {
+    public TestCommand(JFtnShare share) {
+        this.share = share;
+    }
 
     @Override
-    String[] execute(String[] argv) {
-        def test = new TestModule()
-        test.testModule()
-        return argv
+    public Boolean execute(String param) {
+        def config = (JFtnConfig) share.getConfig()
+        def tosser = new Tosser(config)
+        tosser.runFast(config.getInbound())
     }
 }
 
-jftn.registerCommand("test", new TossCommand())
+jftn.registerCommand("tosspack", TossCommand(jftn))
 
