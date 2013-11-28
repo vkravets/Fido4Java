@@ -38,7 +38,7 @@ import org.fidonet.binkp.io.FileData;
  * Date: 10/1/12
  * Time: 2:52 PM
  */
-public class FileEvent<T> extends AbstractEvent {
+public class FileEvent<T> extends BinkpAbstractEvent {
 
     private FileData<T> file;
 

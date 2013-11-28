@@ -38,11 +38,11 @@ import org.fidonet.events.Event;
  * Date: 10/1/12
  * Time: 2:49 PM
  */
-public class AbstractEvent implements Event {
+public class BinkpAbstractEvent implements Event {
 
     private SessionContext sessionContext;
 
-    public AbstractEvent(SessionContext sessionContext) {
+    public BinkpAbstractEvent(SessionContext sessionContext) {
         this.sessionContext = sessionContext;
     }
 

@@ -51,6 +51,8 @@ public class LoggerFactory {
                     return logger;
             } catch (LogEngineNotFoundException ex) {
                 log.error("Logger engine error. Details: " + ex.getMessage());
+                log.info("Using console logger");
+                return log;
             }
         }
         return log;

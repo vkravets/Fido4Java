@@ -37,7 +37,7 @@ import org.fidonet.binkp.SessionContext;
  * Date: 10/1/12
  * Time: 2:45 PM
  */
-public class DisconnectedEvent extends AbstractEvent {
+public class DisconnectedEvent extends BinkpAbstractEvent {
     public DisconnectedEvent(SessionContext sessionContext) {
         super(sessionContext);
     }
