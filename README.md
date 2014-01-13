@@ -12,6 +12,8 @@ Drone IO: [![Build Status](https://drone.io/github.com/vkravets/Fido4Java/status
 
 BuildHive: [![Build Status](https://buildhive.cloudbees.com/job/vkravets/job/Fido4Java/badge/icon)](https://buildhive.cloudbees.com/job/vkravets/job/Fido4Java/)
 
+Coveralls Status: [![Coverage Status](https://coveralls.io/repos/vkravets/Fido4Java/badge.png)](https://coveralls.io/r/vkravets/Fido4Java)
+
 Jenkins page: https://fido4java.ci.cloudbees.com/job/Fido4java/
 
 
