@@ -26,46 +26,22 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.jftn.share;
 
-import org.fidonet.config.IConfig;
 import org.fidonet.events.Event;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.events.HasEventBus;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
- * Date: 8/31/11
- * Time: 10:29 AM
+ * Date: 8/29/11
+ * Time: 11:31 AM
  */
-public class JFtnShare {
+public class HookInterpreter extends HasEventBus {
 
-    private ScriptEngine scriptEngine;
-    private CommandInterpreter commands;
-    private HookInterpreter hooks;
-    private IConfig config;
-
-    public JFtnShare(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
-        this.scriptEngine = scriptEngine;
-        this.hooks = hooks;
-        this.commands = commands;
-    }
-
-    public void registerCommand(String name, Object command) throws Exception {
-        commands.registerCommand(scriptEngine, name, command);
-    }
-
-    public void registerHook(Class<? extends Event> hookClass, Object hook) throws Exception {
-        hooks.registerHook(scriptEngine, hookClass, hook);
-    }
-
-    public IConfig getConfig() {
-        return config;
-    }
-
-    public void setConfig(IConfig config) {
-        this.config = config;
+    public void registerHook(Class<? extends Event> hookClass, Hook hook) throws Exception {
+        getEventBus().register(hookClass, hook);
     }
 
 }

@@ -27,15 +27,15 @@
  ******************************************************************************/
 
 import org.fidonet.config.JFtnConfig
-import org.fidonet.jftn.engine.script.JFtnShare
+import org.fidonet.jftn.engine.script.JFtnScriptService
 import org.fidonet.jftn.share.Command
 import org.fidonet.jftn.tosser.Tosser
 
 class TossCommand implements Command<String, Boolean> {
 
-    private JFtnShare share;
+    private JFtnScriptService share;
 
-    public TestCommand(JFtnShare share) {
+    public TestCommand(JFtnScriptService share) {
         this.share = share;
     }
 

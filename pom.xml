@@ -62,16 +62,17 @@
     <modules>
         <module>event-bus</module>
         <module>logger</module>
+        <module>script-api</module>
         <module>plugin-manager</module>
         <module>fido-fts</module>
         <module>fido-config</module>
         <module>fido-tools</module>
         <module>fido-database</module>
-        <module>jambase</module>
-        <module>scheduler</module>
         <module>binkp</module>
-        <module>web-interface</module>
+        <module>jambase</module>
         <module>jtoss</module>
+        <module>scheduler</module>
+        <module>web-interface</module>
     </modules>
 
     <build>
@@ -118,7 +119,7 @@
                     <version>1.0-alpha-1</version>
                 </plugin>
 
-                <!-- Static analysis for occurences of bug patterns -->
+                <!-- Static analysis for occurrences of bug patterns -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>findbugs-maven-plugin</artifactId>
@@ -154,6 +155,12 @@
                 <artifactId>junit</artifactId>
                 <version>4.11</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.16</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

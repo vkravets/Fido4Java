@@ -30,7 +30,7 @@ package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.jftn.engine.script.JFtnShare;
+import org.fidonet.jftn.engine.script.JFtnScriptService;
 import org.fidonet.jftn.engine.script.JythonScriptManager;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
@@ -70,11 +70,10 @@ public class JToss {
         HookInterpreter hooks = new HookInterpreter();
         CommandCollection commands = new CommandCollection();
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
-        JFtnShare shareObject = new JFtnShare(scriptManager, hooks, commandInterpreter);
+        JFtnScriptService shareObject = new JFtnScriptService(scriptManager, hooks, commandInterpreter);
         shareObject.setConfig(config);
-        scriptManager.putVariable("jftn", shareObject);
         // Loading all scripts
-        scriptManager.reloadScripts();
+        scriptManager.reloadScripts(shareObject);
 
         if (args.length == 0) {
             System.out.println("Error: No action in commandline.");

@@ -28,15 +28,14 @@
 
 package org.fidonet.jftn.engine.script;
 
+import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
+import org.fidonet.jftn.engine.script.exception.NotSupportedScriptEngine;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 
 import javax.script.Invocable;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngineManager;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,6 +46,7 @@ import java.util.Map;
 public abstract class AbstractScriptManager implements ScriptEngine {
 
     private static final ILogger logger = LoggerFactory.getLogger(AbstractScriptManager.class.getName());
+    private static final String REGISTER_FUNC_NAME = "register";
 
     private String scriptFolder = "";
     private javax.script.ScriptEngine engine;
@@ -55,7 +55,8 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         String fileExtension = getFileExtension();
         javax.script.ScriptEngine scriptEngine = scriptEngineManager.getEngineByExtension(fileExtension);
-        if (scriptEngine == null) throw new EngineNotFoundException(String.format("Engine for \"%s\" file extension was not found", fileExtension));
+        if (scriptEngine == null)
+            throw new EngineNotFoundException(String.format("Engine for \"%s\" file extension was not found", fileExtension));
         setScriptEngine(scriptEngine);
     }
 
@@ -80,41 +81,21 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         this.engine = engine;
     }
 
-    public <T> T getInterface(Object object, Class<T> type) {
-        return ((Invocable) engine).getInterface(object, type);
-    }
-
-    public void runScript(File script) throws Exception {
-        InputStream inputStream = new FileInputStream(script);
-        this.runScript(inputStream);
-    }
-
-    public void runScript(InputStream stream) throws Exception {
+    public void registerScript(InputStream stream, Object... params) throws Exception {
         InputStreamReader reader = new InputStreamReader(stream);
         engine.eval(reader);
-    }
 
-    public void putVariable(String name, Object value) {
-        if (name != null && value != null) {
-            engine.put(name, value);
-        } else {
-            logger.warn(String.format("Variable will not be added. Name: \"%s\" Value:\"%s\"", name, value));
+        try {
+            Invocable invocableEngine = (Invocable) engine;
+            invocableEngine.invokeFunction(REGISTER_FUNC_NAME, params);
+        } catch (ClassCastException ex) {
+            throw new NotSupportedScriptEngine("This script engine is not supported", ex);
+        } catch (NoSuchMethodException ex) {
+            logger.warn("Script doesn't have register function. Skip");
         }
     }
 
-    public void removeVariable(String name, Object value) {
-        if (name != null && value != null) {
-            if (engine.get(name) != null) {
-                engine.getBindings(ScriptContext.ENGINE_SCOPE).remove(name);
-            } else {
-                logger.warn("Variable was scoped already");
-            }
-        } else {
-            logger.warn("Variable cannot be scoped. Name or Values is specified.");
-        }
-    }
-
-    public void reloadScripts() {
+    public void reloadScripts(Object ... params) {
         File scriptFolderFile = new File(scriptFolder);
         File[] fileList = scriptFolderFile.listFiles();
         if (fileList != null) {
@@ -123,7 +104,7 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                 if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
                     try {
                         logger.debug("Loading " + file.getName());
-                        runScript(file);
+                        registerScript(new FileInputStream(file), params);
                     } catch (Exception e) {
                         logger.error(String.format("Error during loading %s script. Details: %s", file.getName(), e.getMessage()), e);
                     }

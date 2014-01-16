@@ -26,35 +26,46 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.share;
+package org.fidonet.jftn.engine.script;
 
-import org.fidonet.jftn.engine.script.ScriptEngine;
+import org.fidonet.config.IConfig;
+import org.fidonet.events.Event;
+import org.fidonet.jftn.share.Command;
+import org.fidonet.jftn.share.CommandInterpreter;
+import org.fidonet.jftn.share.Hook;
+import org.fidonet.jftn.share.HookInterpreter;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
- * Date: 8/29/11
- * Time: 11:31 AM
+ * Date: 8/31/11
+ * Time: 10:29 AM
  */
-public class CommandInterpreter {
+public class JFtnScriptService {
 
-    private CommandCollection commands;
+    private CommandInterpreter commands;
+    private HookInterpreter hooks;
+    private IConfig config;
 
-    public CommandInterpreter(CommandCollection commands) {
+    public JFtnScriptService(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
+        this.hooks = hooks;
         this.commands = commands;
     }
 
-    public void registerCommand(ScriptEngine scriptManager, String name, Object command) throws Exception {
-        if ((scriptManager == null)) {
-            throw new VerifyError("Parameter scriptManager is empty");
-        }
-        if ((name == null) || (name.trim().length() == 0)) {
-            throw new VerifyError("Parameter name is empty");
-        }
-        if (command == null) {
-            throw new VerifyError("Parameter command is empty");
-        }
-        Command commandObject = scriptManager.getInterface(command, Command.class);
-        commands.addCommand(name, commandObject);
+    public void registerCommand(String name, Command command) throws Exception {
+        commands.registerCommand(name, command);
     }
+
+    public void registerHook(Class<? extends Event> hookClass, Hook hook) throws Exception {
+        hooks.registerHook(hookClass, hook);
+    }
+
+    public IConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(IConfig config) {
+        this.config = config;
+    }
+
 }

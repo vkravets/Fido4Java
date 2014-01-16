@@ -4,7 +4,7 @@
  *                                                                            *
  * Redistribution and use in source and binary forms, with or without         *
  * modification, are permitted provided that the following conditions are     *
- * met: Redistributions of source code must retain the above copyright notice,
+ * met: Redistributions of source code must retain the above copyright notice, 
  * this list of conditions and the following disclaimer.                      *
  * Redistributions in binary form must reproduce the above copyright notice,  *
  * this list of conditions and the following disclaimer in the documentation  *
@@ -13,32 +13,35 @@
  * may be used to endorse or promote products derived from this software      *
  * without specific prior written permission.                                 *
  *                                                                            *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,      *
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR     *
  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR          *
  * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,      *
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,        *
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
  * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,   *
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR    *
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,             *
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-import org.fidonet.events.Event
-import org.fidonet.jftn.share.Hook
-import org.fidonet.tests.share.TestEvent
+package org.fidonet.jftn.engine.script;
 
-class TestHook implements Hook {
+import java.io.File;
+import java.io.InputStream;
 
-    @Override
-    void onEventHandle(Event event) {
-        def myEvent = (TestEvent) event;
-        def str = String.format("TestHook %s", myEvent.getParam())
-        System.out.print(str)
-    }
+/**
+ * Created by IntelliJ IDEA.
+ * Author: Vladimir Kravets
+ * Date: 9/5/12
+ * Time: 8:12 PM
+ */
+public interface ScriptEngine {
+
+    public void registerScript(InputStream script, Object ... params) throws Exception;
+
+    public void reloadScripts(Object ... params);
+
+    public javax.script.ScriptEngine getEngine();
 }
-
-jftn.registerHook(TestEvent, new TestHook())
-

@@ -26,38 +26,25 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.jftn.share;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
-
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import org.fidonet.jftn.engine.script.ScriptEngine;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
  * Date: 8/29/11
- * Time: 11:40 AM
+ * Time: 11:31 AM
  */
-public class GroovyScriptManager extends AbstractScriptManager {
+public class CommandInterpreter {
 
-    public GroovyScriptManager() throws EngineNotFoundException {
-        super();
+    private CommandCollection commands;
+
+    public CommandInterpreter(CommandCollection commands) {
+        this.commands = commands;
     }
 
-    public GroovyScriptManager(String scriptFolder) throws EngineNotFoundException {
-        super(scriptFolder);
+    public void registerCommand(String name, Command command) throws Exception {
+        commands.addCommand(name, command);
     }
-
-    @Override
-    protected String getFileExtension() {
-        return "groovy";
-    }
-
 }
