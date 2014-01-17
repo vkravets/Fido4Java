@@ -37,7 +37,7 @@ import net.engio.mbassy.bus.config.BusConfiguration;
  * Date: 8/29/11
  * Time: 4:32 PM
  */
-public class EventBus extends MBassador {
+public class EventBus extends MBassador<Event> {
     public EventBus() {
         super(BusConfiguration.Default());
     }
