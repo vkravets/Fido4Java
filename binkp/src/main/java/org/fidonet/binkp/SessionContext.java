@@ -246,7 +246,7 @@ public class SessionContext extends HasEventBus {
     }
 
     public void sendEvent(Event event) {
-        getEventBus().notify(event);
+        getEventBus().publish(event);
     }
 
     public boolean isBusy() {

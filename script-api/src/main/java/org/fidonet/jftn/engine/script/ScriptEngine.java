@@ -41,7 +41,11 @@ public interface ScriptEngine {
 
     public void registerScript(InputStream script, Object ... params) throws Exception;
 
+    public void unregisterScript(InputStream script, Object ... params) throws Exception;
+
     public void reloadScripts(Object ... params);
+
+    public void reloadScripts(Boolean forceUnload, Object ... params);
 
     public javax.script.ScriptEngine getEngine();
 }

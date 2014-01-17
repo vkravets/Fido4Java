@@ -28,7 +28,15 @@
 
 package org.fidonet.events;
 
+import net.engio.mbassy.bus.MBassador;
+import net.engio.mbassy.bus.config.BusConfiguration;
+import net.engio.mbassy.listener.Handler;
+import net.engio.mbassy.listener.Invoke;
+import net.engio.mbassy.subscription.Subscription;
+import net.engio.mbassy.subscription.SubscriptionManager;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -38,40 +46,9 @@ import java.util.List;
  * Date: 8/29/11
  * Time: 4:32 PM
  */
-public class EventBus {
-
-    public HashMap<Class<?>, List<EventHandler>> eventListenerMap;
-
+public class EventBus extends MBassador {
     public EventBus() {
-        eventListenerMap = new HashMap<Class<?>, List<EventHandler>>();
+        super(BusConfiguration.Default());
     }
 
-    public void register(Class<? extends Event> event, EventHandler listener) {
-        List<EventHandler> listeners = eventListenerMap.get(event);
-        if (listeners == null) {
-            listeners = new ArrayList<EventHandler>();
-            eventListenerMap.put(event, listeners);
-        }
-        listeners.add(listener);
-    }
-
-    public void notify(Event event) {
-        List<EventHandler> allListeners = getAllListeners(event.getClass());
-        for (EventHandler handler : allListeners) {
-            handler.onEventHandle(event);
-        }
-    }
-
-    public List<EventHandler> getAllListeners(Class<?> event) {
-        List<EventHandler> listener = eventListenerMap.get(event);
-        if (listener != null) {
-            return new ArrayList<EventHandler>(listener);
-        } else {
-            return new ArrayList<EventHandler>();
-        }
-    }
-
-    public void clear() {
-        eventListenerMap.clear();
-    }
 }

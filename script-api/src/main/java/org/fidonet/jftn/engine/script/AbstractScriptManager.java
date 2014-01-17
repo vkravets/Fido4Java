@@ -35,6 +35,7 @@ import org.fidonet.logger.LoggerFactory;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.*;
 
 /**
@@ -47,6 +48,7 @@ public abstract class AbstractScriptManager implements ScriptEngine {
 
     private static final ILogger logger = LoggerFactory.getLogger(AbstractScriptManager.class.getName());
     private static final String REGISTER_FUNC_NAME = "register";
+    private static final String UNREGISTER_FUNC_NAME = "unload";
 
     private String scriptFolder = "";
     private javax.script.ScriptEngine engine;
@@ -82,12 +84,20 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     }
 
     public void registerScript(InputStream stream, Object... params) throws Exception {
+        scriptCallFunctions(stream, REGISTER_FUNC_NAME, params);
+    }
+
+    public void unregisterScript(InputStream stream, Object... params) throws Exception {
+        scriptCallFunctions(stream, UNREGISTER_FUNC_NAME, params);
+    }
+
+    private void scriptCallFunctions(InputStream stream, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
         InputStreamReader reader = new InputStreamReader(stream);
         engine.eval(reader);
 
         try {
             Invocable invocableEngine = (Invocable) engine;
-            invocableEngine.invokeFunction(REGISTER_FUNC_NAME, params);
+            invocableEngine.invokeFunction(funcName, params);
         } catch (ClassCastException ex) {
             throw new NotSupportedScriptEngine("This script engine is not supported", ex);
         } catch (NoSuchMethodException ex) {
@@ -95,7 +105,11 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         }
     }
 
-    public void reloadScripts(Object ... params) {
+    public void reloadScripts(Object... params) {
+        reloadScripts(false, params);
+    }
+
+    public void reloadScripts(Boolean forceUnload, Object... params) {
         File scriptFolderFile = new File(scriptFolder);
         File[] fileList = scriptFolderFile.listFiles();
         if (fileList != null) {
@@ -104,6 +118,7 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                 if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
                     try {
                         logger.debug("Loading " + file.getName());
+                        if (forceUnload) unregisterScript(new FileInputStream(file), params);
                         registerScript(new FileInputStream(file), params);
                     } catch (Exception e) {
                         logger.error(String.format("Error during loading %s script. Details: %s", file.getName(), e.getMessage()), e);

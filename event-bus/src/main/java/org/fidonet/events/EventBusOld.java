@@ -26,51 +26,52 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.events;
 
-import org.fidonet.config.IConfig;
-import org.fidonet.events.AbstractEventHandler;
-import org.fidonet.events.Event;
-import org.fidonet.jftn.share.Command;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.Hook;
-import org.fidonet.jftn.share.HookInterpreter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
- * Date: 8/31/11
- * Time: 10:29 AM
+ * Date: 8/29/11
+ * Time: 4:32 PM
  */
-public class JFtnScriptService {
+public class EventBusOld {
 
-    private CommandInterpreter commands;
-    private HookInterpreter hooks;
-    private IConfig config;
+    public HashMap<Class<?>, List<EventHandler>> eventListenerMap;
 
-    public JFtnScriptService(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
-        this.hooks = hooks;
-        this.commands = commands;
+    public EventBusOld() {
+        eventListenerMap = new HashMap<Class<?>, List<EventHandler>>();
     }
 
-    public void registerCommand(String name, Command command) throws Exception {
-        commands.registerCommand(name, command);
+    public void register(Class<? extends Event> event, EventHandler listener) {
+        List<EventHandler> listeners = eventListenerMap.get(event);
+        if (listeners == null) {
+            listeners = new ArrayList<EventHandler>();
+            eventListenerMap.put(event, listeners);
+        }
+        listeners.add(listener);
     }
 
-    public void registerHook(AbstractEventHandler hook) throws Exception {
-        hooks.registerHook(hook);
+    public void notify(Event event) {
+        List<EventHandler> allListeners = getAllListeners(event.getClass());
+        for (EventHandler handler : allListeners) {
+            handler.onEventHandle(event);
+        }
     }
 
-    public void unregisterHook(AbstractEventHandler hook) throws Exception {
-        hooks.unregisterHook(hook);
+    public List<EventHandler> getAllListeners(Class<?> event) {
+        List<EventHandler> listener = eventListenerMap.get(event);
+        if (listener != null) {
+            return new ArrayList<EventHandler>(listener);
+        } else {
+            return new ArrayList<EventHandler>();
+        }
     }
 
-    public IConfig getConfig() {
-        return config;
+    public void clear() {
+        eventListenerMap.clear();
     }
-
-    public void setConfig(IConfig config) {
-        this.config = config;
-    }
-
 }

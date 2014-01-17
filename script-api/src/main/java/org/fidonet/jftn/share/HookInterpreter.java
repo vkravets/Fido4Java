@@ -28,7 +28,9 @@
 
 package org.fidonet.jftn.share;
 
+import org.fidonet.events.AbstractEventHandler;
 import org.fidonet.events.Event;
+import org.fidonet.events.EventBus;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 
@@ -40,8 +42,11 @@ import org.fidonet.jftn.engine.script.ScriptEngine;
  */
 public class HookInterpreter extends HasEventBus {
 
-    public void registerHook(Class<? extends Event> hookClass, Hook hook) throws Exception {
-        getEventBus().register(hookClass, hook);
+    public void registerHook(AbstractEventHandler hook) throws Exception {
+        getEventBus().subscribe(hook);
     }
 
+    public void unregisterHook(AbstractEventHandler hook) throws Exception {
+        getEventBus().unsubscribe(hook);
+    }
 }

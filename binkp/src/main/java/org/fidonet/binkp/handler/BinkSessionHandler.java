@@ -172,7 +172,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
                 if (info.isFinished()) {
                     GOTCommand confirmRecv = new GOTCommand();
                     confirmRecv.send(session, sessionContext);
-                    eventBus.notify(new FileReceivedEvent(sessionContext, fileData));
+                    eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
                     log.info("Got " + info.getName() + " file with " + info.getSize() + " bytes file size");
                 }
             }

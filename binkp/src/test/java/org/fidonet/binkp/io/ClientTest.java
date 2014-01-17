@@ -42,9 +42,7 @@ import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.codec.BinkDataDecoder;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
-import org.fidonet.binkp.events.ConnectedEvent;
-import org.fidonet.binkp.events.DisconnectedEvent;
-import org.fidonet.binkp.events.FileReceivedEvent;
+import org.fidonet.binkp.events.*;
 import org.fidonet.binkp.handler.BinkSessionHandler;
 import org.fidonet.events.Event;
 import org.fidonet.events.EventHandler;
@@ -146,14 +144,17 @@ public class ClientTest {
             }
         }
 
-        public void registerEvent(Class<? extends Event> eventClass, EventHandler<? extends Event> eventHandler) {
-            getEventBus().register(eventClass, eventHandler);
+        public void registerEvent(EventHandler eventHandler) {
+            getEventBus().subscribe(eventHandler);
         }
     }
 
     private Boolean connected = false;
     private Boolean disconnected = false;
     private Boolean fileReceived = false;
+    private DisconnectedEventHandler disconnectedEventHandler;
+    private ConnectedEventHandler connectedEventHandler;
+    private FileReceivedEventHandler fileReceivedEventHandler;
 
     @Test
     public void testBaseFlow() throws InterruptedException {
@@ -176,21 +177,23 @@ public class ClientTest {
     }
 
     private void registerEvents(ClientMock client) {
-        client.registerEvent(ConnectedEvent.class, new EventHandler<ConnectedEvent>() {
+        connectedEventHandler = new ConnectedEventHandler() {
             @Override
             public void onEventHandle(ConnectedEvent event) {
                 connected = true;
             }
-        });
+        };
+        client.registerEvent(connectedEventHandler);
 
-        client.registerEvent(DisconnectedEvent.class, new EventHandler<DisconnectedEvent>() {
+        disconnectedEventHandler = new DisconnectedEventHandler() {
             @Override
             public void onEventHandle(DisconnectedEvent event) {
                 disconnected = true;
             }
-        });
+        };
+        client.registerEvent(disconnectedEventHandler);
 
-        client.registerEvent(FileReceivedEvent.class, new EventHandler<FileReceivedEvent>() {
+        fileReceivedEventHandler = new FileReceivedEventHandler() {
             @Override
             public void onEventHandle(FileReceivedEvent event) {
                 fileReceived = true;
@@ -200,7 +203,8 @@ public class ClientTest {
                 ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile().getStream();
                 Assert.assertEquals(766, outStream.toByteArray().length);
             }
-        });
+        };
+        client.registerEvent(fileReceivedEventHandler);
     }
 
 }

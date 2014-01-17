@@ -26,28 +26,23 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.events;
+package org.fidonet.jftn.tosser;
 
-import org.fidonet.binkp.SessionContext;
-import org.fidonet.types.Link;
+import net.engio.mbassy.listener.Handler;
+import net.engio.mbassy.listener.Invoke;
+import org.fidonet.events.AbstractEventHandler;
+import org.fidonet.jftn.tosser.TossEchoMailEvent;
 
 /**
  * Created by IntelliJ IDEA.
- * Author: Vladimir Kravets
- * E-Mail: vova.kravets@gmail.com
- * Date: 10/1/12
- * Time: 3:13 PM
+ * User: Vladimir Kravets
+ * Date: 8/29/11
+ * Time: 5:47 PM
  */
-public class PollEvent extends BinkpAbstractEvent {
+public abstract class TossNetmailEventHandler extends AbstractEventHandler<TossNetmailEvent> {
 
-    private Link link;
-
-    public PollEvent(SessionContext sessionContext, Link link) {
-        super(sessionContext);
-        this.link = link;
-    }
-
-    public Link getLink() {
-        return link;
+    @Handler(rejectSubtypes = true, delivery = Invoke.Asynchronously)
+    public void handle(TossNetmailEvent event) {
+        onEventHandle(event);
     }
 }

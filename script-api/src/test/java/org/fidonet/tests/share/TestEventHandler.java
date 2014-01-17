@@ -26,51 +26,26 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.tests.share;
 
-import org.fidonet.config.IConfig;
+import net.engio.mbassy.listener.Handler;
+import net.engio.mbassy.listener.Invoke;
+import net.engio.mbassy.listener.Listener;
+import net.engio.mbassy.listener.References;
 import org.fidonet.events.AbstractEventHandler;
-import org.fidonet.events.Event;
-import org.fidonet.jftn.share.Command;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.Hook;
-import org.fidonet.jftn.share.HookInterpreter;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets
- * Date: 8/31/11
- * Time: 10:29 AM
+ * Date: 8/30/11
+ * Time: 4:49 PM
  */
-public class JFtnScriptService {
+@Listener(references = References.Strong)
+public abstract class TestEventHandler extends AbstractEventHandler<TestEvent> {
 
-    private CommandInterpreter commands;
-    private HookInterpreter hooks;
-    private IConfig config;
-
-    public JFtnScriptService(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
-        this.hooks = hooks;
-        this.commands = commands;
-    }
-
-    public void registerCommand(String name, Command command) throws Exception {
-        commands.registerCommand(name, command);
-    }
-
-    public void registerHook(AbstractEventHandler hook) throws Exception {
-        hooks.registerHook(hook);
-    }
-
-    public void unregisterHook(AbstractEventHandler hook) throws Exception {
-        hooks.unregisterHook(hook);
-    }
-
-    public IConfig getConfig() {
-        return config;
-    }
-
-    public void setConfig(IConfig config) {
-        this.config = config;
+    @Handler(rejectSubtypes = true, delivery = Invoke.Asynchronously)
+    public void handle(TestEvent event) {
+        onEventHandle(event);
     }
 
 }

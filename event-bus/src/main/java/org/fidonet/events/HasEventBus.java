@@ -28,6 +28,8 @@
 
 package org.fidonet.events;
 
+import net.engio.mbassy.bus.MBassador;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Vladimir Kravets

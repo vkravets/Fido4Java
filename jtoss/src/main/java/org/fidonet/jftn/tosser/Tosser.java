@@ -189,10 +189,10 @@ public class Tosser extends HasEventBus {
             if (msg.isEchomail()) {
                 processEchoMail(msg);
                 // Call onTossEchoMsg hook
-                getEventBus().notify(new TossEchoMailEvent(msg));
+                getEventBus().publish(new TossEchoMailEvent(msg));
             } else {
                 // Call onTossNetMail hook
-                getEventBus().notify(new TossNetmailEvent(msg));
+                getEventBus().publish(new TossNetmailEvent(msg));
                 logger.debug("Netmail was found");
             }
         }

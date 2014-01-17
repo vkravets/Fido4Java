@@ -26,51 +26,28 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.binkp.events;
 
-import org.fidonet.config.IConfig;
-import org.fidonet.events.AbstractEventHandler;
-import org.fidonet.events.Event;
-import org.fidonet.jftn.share.Command;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.Hook;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.binkp.SessionContext;
+import org.fidonet.types.Link;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Vladimir Kravets
- * Date: 8/31/11
- * Time: 10:29 AM
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 10/1/12
+ * Time: 3:13 PM
  */
-public class JFtnScriptService {
+public class PoolEvent extends BinkpAbstractEvent {
 
-    private CommandInterpreter commands;
-    private HookInterpreter hooks;
-    private IConfig config;
+    private Link link;
 
-    public JFtnScriptService(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
-        this.hooks = hooks;
-        this.commands = commands;
+    public PoolEvent(SessionContext sessionContext, Link link) {
+        super(sessionContext);
+        this.link = link;
     }
 
-    public void registerCommand(String name, Command command) throws Exception {
-        commands.registerCommand(name, command);
+    public Link getLink() {
+        return link;
     }
-
-    public void registerHook(AbstractEventHandler hook) throws Exception {
-        hooks.registerHook(hook);
-    }
-
-    public void unregisterHook(AbstractEventHandler hook) throws Exception {
-        hooks.unregisterHook(hook);
-    }
-
-    public IConfig getConfig() {
-        return config;
-    }
-
-    public void setConfig(IConfig config) {
-        this.config = config;
-    }
-
 }

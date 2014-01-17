@@ -29,18 +29,24 @@
 import org.fidonet.events.Event
 import org.fidonet.jftn.share.Hook
 import org.fidonet.tests.share.TestEvent
+import org.fidonet.tests.share.TestEventHandler
 
-class TestHook implements Hook {
+class TestHook extends TestEventHandler {
 
     @Override
-    void onEventHandle(Event event) {
-        def myEvent = (TestEvent) event;
-        def str = String.format("TestHook %s", myEvent.getParam())
+    void onEventHandle(TestEvent event) {
+        def str = String.format("TestHook %s", event.getParam())
         System.out.print(str)
     }
 }
 
+def hook = null
+
 def register(serviceApi) {
-    serviceApi.registerHook(TestEvent, new TestHook())
+    hook = new TestHook()
+    serviceApi.registerHook(hook)
 }
 
+def unload(serviceApi) {
+    serviceApi.unregisterHook(hook)
+}
