@@ -31,7 +31,7 @@ package org.fidonet.db;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
-import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.fidonet.db.objects.Link;
 import org.junit.After;
 import org.junit.Before;
@@ -82,14 +82,14 @@ public class CreateDatabaseTest {
             QueryBuilder<Link, Long> linkQueryBuilder = daoLinks.queryBuilder();
 
             List<Link> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
-            Assert.assertEquals(1, address.size());
-            Assert.assertTrue(daoLinks.objectsEqual(link, address.get(0)));
+            TestCase.assertEquals(1, address.size());
+            TestCase.assertTrue(daoLinks.objectsEqual(link, address.get(0)));
             DeleteBuilder<Link, Long> deleteBuilder = daoLinks.deleteBuilder();
             deleteBuilder.where().eq("id", link.getId());
             deleteBuilder.delete();
         } catch (SQLException e) {
             e.printStackTrace();
-            Assert.fail();
+            TestCase.fail();
         }
     }
 

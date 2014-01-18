@@ -113,7 +113,7 @@ public class OrmManager {
 
     public void dropTables() throws SQLException {
         for (Dao<?, ?> dao : daoMap.values()) {
-            if (!dao.isTableExists()) {
+            if (dao.isTableExists()) {
                 TableUtils.dropTable(connectionSource, dao.getDataClass(), true);
             }
         }

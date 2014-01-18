@@ -32,6 +32,7 @@ import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,11 +53,13 @@ public interface IBase {
     public Iterator<Message> getMessages(Link link, int bundleSize);
     public Iterator<Message> getMessages(Link link, String areaname, int bundleSize);
     public Iterator<Message> getMessages(Link link, String areaname, long startMessage, int bundleSize);
-
     public Message getMessage(String area, int id);
-
     public Message getMessage(int id);
-
     public long getMessageSize(String areaname);
+
+    public List<String> getAreas();
+
+    public boolean isAreaExists(String name);
+
     public void close();
 }

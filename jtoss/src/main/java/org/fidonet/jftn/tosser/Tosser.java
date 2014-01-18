@@ -29,7 +29,6 @@
 package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.exceptions.EchoBaseException;
@@ -61,11 +60,7 @@ public class Tosser extends HasEventBus {
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
-
-        EchoList echoList = new EchoList(config.getArealistFile());
-
-        echoList.load();
-        this.areamgr = new EchoMgr(base, echoList, config.getEchoPath());
+        this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
 
@@ -200,7 +195,7 @@ public class Tosser extends HasEventBus {
     }
 
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
-        areamgr.addMessage(msg, config.getLink(msg.getUpLink()).getMyaddr());
+        areamgr.addMessage(msg);
 //        msg.DumpHead();
         //return;
     }

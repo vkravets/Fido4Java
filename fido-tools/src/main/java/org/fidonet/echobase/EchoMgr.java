@@ -29,7 +29,6 @@
 package org.fidonet.echobase;
 
 import org.fidonet.echobase.exceptions.EchoBaseException;
-import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
@@ -38,31 +37,23 @@ import java.util.List;
 public class EchoMgr {
 
     private final IBase echosbase;
-    private EchoList echoList;
-    private String echoPath;
 
-    public EchoMgr(IBase base, EchoList echoList, String echoPath) {
+    public EchoMgr(IBase base) {
         this.echosbase = base;
-        this.echoPath = echoPath;
-        this.echoList = echoList;
     }
 
-    public void addMessage(Message msg, FTNAddr myAddr) throws IOException, EchoBaseException {
-        if (!echoList.isInList(msg.getArea().toLowerCase())) {
-            echoList.addArea(msg.getArea().toLowerCase(), echoPath, msg.getUpLink(), myAddr);
+    public void addMessage(Message msg) throws IOException, EchoBaseException {
+        if (isEchoExists(msg.getArea().toLowerCase())) {
             echosbase.createArea(msg.getArea().toLowerCase());
         }
-        echosbase.open();
         echosbase.addMessage(msg, msg.getArea().toLowerCase());
     }
 
     public void getMessage(String area, int id) throws EchoBaseException {
-        echosbase.open();
         echosbase.getMessage(area, id);
     }
 
     public void getMessage(int id) throws EchoBaseException {
-        echosbase.open();
         echosbase.getMessage(id);
     }
 
@@ -71,11 +62,11 @@ public class EchoMgr {
     }
 
     public List<String> getEchos() {
-        return echoList.getEchoList();
+        return echosbase.getAreas();
     }
 
     public boolean isEchoExists(String name) {
-        return echoList.isInList(name);
+        return echosbase.isAreaExists(name);
     }
 
     public void close() {

@@ -202,6 +202,31 @@ public class DatabaseManager implements IBase {
         }
     }
 
+    public List<String> getAreas() {
+        Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
+        List<String> result = new ArrayList<String>();
+        try {
+            List<Echoarea> echoareaList = echoareasDao.queryBuilder().query();
+            for (Echoarea echo : echoareaList) {
+                result.add(echo.getName());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();  //todo: logger
+        }
+        return result;
+    }
+
+    public boolean isAreaExists(String name) {
+        Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
+        try {
+            List<Echoarea> echoareaList = echoareasDao.queryBuilder().where().eq("name", name).query();
+            return echoareaList.size() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();  //todo: logger
+        }
+        return false;
+    }
+
 
     @Override
     public void close() {
