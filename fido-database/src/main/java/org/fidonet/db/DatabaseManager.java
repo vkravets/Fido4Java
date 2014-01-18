@@ -60,8 +60,10 @@ public class DatabaseManager implements IBase {
     @Override
     public boolean open() {
         try {
-            dbManager.connect();
-            dbManager.createTable();
+            if (!dbManager.isConnect()) {
+                dbManager.connect();
+            }
+            dbManager.createTables();
         } catch (SQLException e) {
             // TODO: logger
             return false;
@@ -107,45 +109,73 @@ public class DatabaseManager implements IBase {
                 result.add(echomail.toMessage());
             }
         } catch (SQLException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();  //todo: logger
         }
         return result.iterator();
     }
 
     @Override
     public Iterator<Message> getMessages(String areaname, int bundleSize) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  //todo: implement
     }
 
     @Override
     public Iterator<Message> getMessages(Link link) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  //todo: implement
     }
 
     @Override
     public Iterator<Message> getMessages(Link link, int bundleSize) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null; //todo: implement
     }
 
     @Override
     public Iterator<Message> getMessages(Link link, String areaname, int bundleSize) {
-        return null;
+        return null; //todo: implement
     }
 
     @Override
     public Iterator<Message> getMessages(Link link, String areaname, long startMessage, int bundleSize) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  //todo: implement
+    }
+
+    @Override
+    public Message getMessage(String area, int id) {
+        Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
+        Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
+        QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
+        QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
+        try {
+            List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", area).query();
+            if (echoareaList.size() == 0) {
+                return null;
+            }
+            List<Echomail> query = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId()).eq("id", id).query();
+            if (query.size() > 0)
+                return query.get(0).toMessage();
+        } catch (SQLException e) {
+            e.printStackTrace(); // TODO: logger
+        }
+        return null;
+    }
+
+    @Override
+    public Message getMessage(int id) {
+        Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
+        QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
+        try {
+            List<Echomail> query = echomailQueryBuilder.where().eq("id", id).query();
+            if (query.size() > 0)
+                return query.get(0).toMessage();
+        } catch (SQLException e) {
+            e.printStackTrace();  // TODO: logger
+        }
+        return null;
     }
 
     @Override
     public long getMessageSize(String areaname) {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean isDupe(Message message) {
-        // TODO: check if this is dupe
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -163,19 +193,18 @@ public class DatabaseManager implements IBase {
                 area.setName(areaname);
                 echoareasDao.create(area);
             }
-            if (!isDupe(message)) {
-                Echomail echomail = Echomail.fromMessage(message, area);
-                echomailDao.create(echomail);
-            }
+            Echomail echomail = Echomail.fromMessage(message, area);
+            echomailDao.create(echomail);
         } catch (SQLException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();  //todo: logger
         } catch (ParseException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();  //todo: logger
         }
     }
 
 
     @Override
     public void close() {
+        dbManager.disconnect();
     }
 }

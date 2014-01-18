@@ -34,8 +34,8 @@ import com.j256.ormlite.table.DatabaseTable;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -51,6 +51,9 @@ public class Echomail {
     @DatabaseField(generatedId = true, columnName = "id", canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
+    @DatabaseField(columnName = "msgId", canBeNull = false, unique = true, uniqueIndex = true)
+    private String msgId;
+
     @DatabaseField(columnName = "id_echoarea", foreign = true, foreignAutoRefresh = false)
     private Echoarea area;
 
@@ -63,7 +66,7 @@ public class Echomail {
     @DatabaseField(columnName = "from_addr", canBeNull = false)
     private String fromAddr;
 
-    @DatabaseField(columnName = "to_addr", canBeNull = false)
+    @DatabaseField(columnName = "to_addr", canBeNull = true)
     private String toAddr;
 
     @DatabaseField(columnName = "message_date", canBeNull = false, dataType = DataType.DATE_LONG)
@@ -171,6 +174,14 @@ public class Echomail {
         this.path = path;
     }
 
+    public String getMsgId() {
+        return msgId;
+    }
+
+    public void setMsgId(String msgId) {
+        this.msgId = msgId;
+    }
+
     public Message toMessage() {
         return toMessage(this);
     }
@@ -188,16 +199,20 @@ public class Echomail {
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-        DateFormat format = DateFormat.getDateInstance();
-        msg.setDate(format.parse(message.getMsgDate()));
+//        DateFormat format = DateFormat.getDateInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yy  HH:mm:ss");
+        Date msgDate = dateFormat.parse(message.getMsgDate());
+        msg.setDate(msgDate);
         msg.setFromAddr(message.getFAddr().as5D());
-        msg.setToAddr(message.getTAddr().as5D());
+        if (message.getTAddr() != null)
+            msg.setToAddr(message.getTAddr().as5D());
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(new String(message.getByteSubj()));
         msg.setText(message.getText());
         msg.setPath("");
         msg.setSeenBy("");
+        msg.setMsgId(message.getMsgId());
         return msg;
     }
 }

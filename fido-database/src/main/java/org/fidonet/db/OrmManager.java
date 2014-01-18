@@ -95,7 +95,7 @@ public class OrmManager {
             daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
         }
 
-        createTable();
+        createTables();
     }
 
     public boolean isConnect() {
@@ -103,10 +103,18 @@ public class OrmManager {
     }
 
 
-    public void createTable() throws SQLException {
+    public void createTables() throws SQLException {
         for (Dao<?, ?> dao : daoMap.values()) {
             if (!dao.isTableExists()) {
                 TableUtils.createTable(connectionSource, dao.getDataClass());
+            }
+        }
+    }
+
+    public void dropTables() throws SQLException {
+        for (Dao<?, ?> dao : daoMap.values()) {
+            if (!dao.isTableExists()) {
+                TableUtils.dropTable(connectionSource, dao.getDataClass(), true);
             }
         }
     }

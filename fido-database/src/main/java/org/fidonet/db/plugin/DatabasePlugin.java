@@ -68,7 +68,7 @@ public class DatabasePlugin implements Plugin {
         OrmManager ormManager = new OrmManager(databaseUrl);
         try {
             ormManager.connect();
-            ormManager.createTable();
+            ormManager.createTables();
         } catch (SQLException e) {
             throw new PluginException(e);
         }

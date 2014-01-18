@@ -58,6 +58,7 @@ public class Message {
     private String msgDate;
     private Attribute attrs;
     private FTNAddr UpLink;
+    private String msgId;
 
     public Message(String from, String to, FTNAddr fromAddr, FTNAddr toAddr, String subj, String message, Date date) {
         this.From = from;
@@ -129,7 +130,7 @@ public class Message {
 
 
         if (echomail) {
-            tryDetectAddresses();
+            tryDetectAddressesAndId();
         }
 
     }
@@ -149,11 +150,14 @@ public class Message {
         return null;
     }
 
-    void tryDetectAddresses() {
+    void tryDetectAddressesAndId() {
         final String fmpt = getSingleKludge("MSGID: ");
         Pattern p = Pattern.compile("[\\s@]");
         if (fmpt != null) {
-            FAddr = new FTNAddr(p.split(fmpt)[0]);
+            // todo: error handling
+            String[] tokens = p.split(fmpt);
+            FAddr = new FTNAddr(tokens[0]);
+            msgId = tokens[1].trim();
         } else {
             FAddr = new FTNAddr(-1, -1, -1, -1);
         }
@@ -169,6 +173,7 @@ public class Message {
                 }
             }
         }
+
 
     }
 
@@ -227,4 +232,9 @@ public class Message {
     public FTNAddr getUpLink() {
         return UpLink;
     }
+
+    public String getMsgId() {
+        return msgId;
+    }
+
 }

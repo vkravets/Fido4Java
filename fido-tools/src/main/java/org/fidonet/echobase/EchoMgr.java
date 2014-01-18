@@ -37,11 +37,11 @@ import java.util.List;
 
 public class EchoMgr {
 
-    private final EchoBase echosbase;
+    private final IBase echosbase;
     private EchoList echoList;
     private String echoPath;
 
-    public EchoMgr(EchoBase base, EchoList echoList, String echoPath) {
+    public EchoMgr(IBase base, EchoList echoList, String echoPath) {
         this.echosbase = base;
         this.echoPath = echoPath;
         this.echoList = echoList;
@@ -52,16 +52,18 @@ public class EchoMgr {
             echoList.addArea(msg.getArea().toLowerCase(), echoPath, msg.getUpLink(), myAddr);
             echosbase.createArea(msg.getArea().toLowerCase());
         }
-        echosbase.openArea(msg.getArea().toLowerCase());
-        echosbase.addMessage(msg);
-        echosbase.closeArea();
+        echosbase.open();
+        echosbase.addMessage(msg, msg.getArea().toLowerCase());
     }
 
     public void getMessage(String area, int id) throws EchoBaseException {
-        echosbase.openArea(area);
-        echosbase.getMessage(id);
-        echosbase.closeArea();
+        echosbase.open();
+        echosbase.getMessage(area, id);
+    }
 
+    public void getMessage(int id) throws EchoBaseException {
+        echosbase.open();
+        echosbase.getMessage(id);
     }
 
     private void createArea(String name) throws EchoBaseException {
@@ -76,4 +78,7 @@ public class EchoMgr {
         return echoList.isInList(name);
     }
 
+    public void close() {
+        echosbase.close();
+    }
 }

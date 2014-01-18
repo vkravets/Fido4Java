@@ -59,15 +59,14 @@ public class CreateDatabaseTest {
         File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
         System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
         ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
-        ormManager.connect();
-        ormManager.createTable();
         databaseManager = new DatabaseManager(ormManager);
+        databaseManager.open();
         daoLinks = ormManager.getDao(Link.class);
     }
 
     @After
     public void tearDown() throws SQLException {
-        ormManager.disconnect();
+        databaseManager.close();
     }
 
     @Test

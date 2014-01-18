@@ -40,7 +40,8 @@
 
     <!-- Build Settings -->
     <properties>
-        <sourceEncoding>UTF-8</sourceEncoding> <!-- in Maven 3. -->
+        <sourceEncoding>UTF-8</sourceEncoding>
+        <!-- in Maven 3. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -73,6 +74,7 @@
         <module>jtoss</module>
         <module>scheduler</module>
         <module>web-interface</module>
+        <module>jftn-bundle</module>
     </modules>
 
     <build>

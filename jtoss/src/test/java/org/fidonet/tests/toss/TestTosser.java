@@ -31,11 +31,18 @@ package org.fidonet.tests.toss;
 import junit.framework.TestCase;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
+import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.jftn.tosser.Tosser;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -45,6 +52,34 @@ import java.util.List;
  * Time: 5:42 PM
  */
 public class TestTosser {
+
+    private OrmManager ormManager;
+    private DatabaseManager databaseManager;
+
+    private static File computeTestDataRoot(Class anyTestClass) {
+        final String clsUri = anyTestClass.getName().replace('.', '/') + ".class";
+        final URL url = anyTestClass.getClassLoader().getResource(clsUri);
+        final String clsPath = url.getPath();
+        final File root = new File(clsPath.substring(0, clsPath.length() - clsUri.length()));
+        return new File(root.getParentFile(), "test-data");
+    }
+
+
+    @Before
+    public void setUp() throws SQLException {
+        File pathDb = computeTestDataRoot(TestTosser.class);
+        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
+        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+        databaseManager = new DatabaseManager(ormManager);
+        databaseManager.open();
+    }
+
+    @After
+    public void tearDown() throws SQLException {
+        ormManager.dropTables();
+        databaseManager.close();
+    }
+
 
     @Test
     public void testToss() {
@@ -58,7 +93,7 @@ public class TestTosser {
         }
 
         try {
-            Tosser tosser = new Tosser(config);
+            Tosser tosser = new Tosser(config, databaseManager);
             tosser.runFast(config.getValue("Inbound"));
             EchoMgr echoMgr = tosser.getAreamgr();
             List<String> list = echoMgr.getEchos();

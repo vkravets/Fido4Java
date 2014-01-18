@@ -37,13 +37,12 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
-import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 
-public class JToss {
+public class JFtnRunner {
 
-    private static final ILogger logger = LoggerFactory.getLogger(JToss.class.getName());
+    private static final ILogger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
 
     private static void Help() {
         System.out.println("java ftn usage:");
@@ -87,8 +86,8 @@ public class JToss {
             } else {
                 logger.debug("Trying to OOTB command...");
                 if (args[0].equalsIgnoreCase("toss")) {
-                    Tosser tosser = new Tosser(config);
-                    tosser.runFast(config.getValue("inbound"));
+//                    Tosser tosser = new Tosser(config);
+//                    tosser.runFast(config.getValue("inbound"));
                 } else if (args[0].equalsIgnoreCase("help")) {
                     Help();
                 } else {

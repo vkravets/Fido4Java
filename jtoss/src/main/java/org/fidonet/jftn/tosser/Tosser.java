@@ -31,8 +31,8 @@ package org.fidonet.jftn.tosser;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.EchoMgr;
+import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.exceptions.EchoBaseException;
-import org.fidonet.echobase.jam.JAMEchoBase;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
@@ -59,13 +59,13 @@ public class Tosser extends HasEventBus {
     private Pattern bunlderegex;
     private JFtnConfig config;
 
-    public Tosser(JFtnConfig config) throws IOException {
+    public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
 
         EchoList echoList = new EchoList(config.getArealistFile());
 
         echoList.load();
-        this.areamgr = new EchoMgr(new JAMEchoBase(echoList), echoList, config.getEchoPath());
+        this.areamgr = new EchoMgr(base, echoList, config.getEchoPath());
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
 
