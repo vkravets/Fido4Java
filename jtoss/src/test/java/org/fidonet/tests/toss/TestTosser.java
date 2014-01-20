@@ -35,6 +35,8 @@ import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.tools.CharsetTools;
+import org.fidonet.types.Message;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +44,11 @@ import org.junit.Test;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -100,7 +106,18 @@ public class TestTosser {
             TestCase.assertEquals(8, list.size());
             TestCase.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
             TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
-            // TODO: test echobase
+            Iterator<Message> messages = databaseManager.getMessages("ru.anime");
+            while (messages.hasNext()) {
+                Message message = messages.next();
+                System.out.println("**************************************");
+                System.out.println(message.toString());
+                System.out.println(message.getMessageCharset());
+                Charset charset = CharsetTools.charsetDetect(message.getMessageCharset());
+                CharBuffer b = charset.decode(ByteBuffer.wrap(message.getBody().getBytes(charset)));
+                String body = new String(b.array());
+                System.out.println(body.replaceAll("\\u0001", "@").replaceAll("\\r", "\r\n"));
+                System.out.println("++++++++++++++++++++++++++++++++++++++");
+            }
         } catch (Exception e) {
             System.out.println("Test Failed. Details: " + e.getMessage());
             e.printStackTrace(System.out);

@@ -38,12 +38,14 @@ import org.fidonet.echobase.jam.struct.SubField;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.MyCRC;
+import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -220,7 +222,7 @@ public class JAMEchoBase implements EchoBase {
 
         SubField Subject = new SubField();
         Subject.loID = 6;
-        Subject.buffer = msg.getByteSubj();
+        Subject.buffer = msg.getSubject().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
         Subject.datalen = Subject.buffer.length;
         newmsg.SubFieldList.add(Subject);
 
@@ -281,7 +283,7 @@ public class JAMEchoBase implements EchoBase {
         }
 
 
-        byte[] msgtext = msg.getBody();
+        byte[] msgtext = msg.getBody().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         newmsg.TxtLen = msgtext.length;
         int headeroffset = 0;

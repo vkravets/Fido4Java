@@ -30,9 +30,10 @@ package org.fidonet.fts;
 
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
+import org.fidonet.tools.CharsetTools;
 
 import java.nio.ByteBuffer;
-import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 public class FtsPackMsg {
 
@@ -45,16 +46,13 @@ public class FtsPackMsg {
     private int destNet;
     private short attr;
     private int cost;
-    private byte[] DateTime; // 20 bytes
-    private byte[] From; // 36 bytes
-    private byte[] To; // 36
-    private byte[] Subj;
-    private String Text = "";
-    private String[] splittedtext;
+    private byte[] dateTime; // 20 bytes
+    private String from; // 36 bytes
+    private String to; // 36
+    private String subj;
     public byte[] body;
 
     private boolean isValid = true;
-
 
     public FtsPackMsg() {
 
@@ -75,7 +73,7 @@ public class FtsPackMsg {
         cost = buf.getShort();
         final byte[] tmp = new byte[20];
         buf.get(tmp, 0, 20);
-        DateTime = tmp;
+        dateTime = tmp;
 
         ByteBuffer tmpbuffer = ByteBuffer.allocate(65535);
         byte end = 1;
@@ -84,30 +82,33 @@ public class FtsPackMsg {
             tmpbuffer.put(end);
         }
 
-        To = new byte[tmpbuffer.position() - 1];
+        byte[] to_array = new byte[tmpbuffer.position() - 1];
         tmpbuffer.position(0);
-        tmpbuffer.get(To);
+        tmpbuffer.get(to_array);
         tmpbuffer.position(0);
+        to = new String(to_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         end = 1;
         while (end != 0) {
             end = buf.get();
             tmpbuffer.put(end);
         }
-        From = new byte[tmpbuffer.position() - 1];
+        byte[] from_array = new byte[tmpbuffer.position() - 1];
         tmpbuffer.position(0);
-        tmpbuffer.get(From);
+        tmpbuffer.get(from_array);
         tmpbuffer.position(0);
+        from = new String(from_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         end = 1;
         while (end != 0) {
             end = buf.get();
             tmpbuffer.put(end);
         }
-        Subj = new byte[tmpbuffer.position() - 1];
+        byte[] subj_array = new byte[tmpbuffer.position() - 1];
         tmpbuffer.position(0);
-        tmpbuffer.get(Subj);
+        tmpbuffer.get(subj_array);
         tmpbuffer.position(0);
+        subj = new String(subj_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         end = 1;
         while (end != 0) {
@@ -115,16 +116,12 @@ public class FtsPackMsg {
             tmpbuffer.put(end);
         }
 
-//        Text = new String(tmpx.array(), 0, tmpx.position() - 1);
-        body = new byte[tmpbuffer.position() - 1];
+        byte[] body_array = new byte[tmpbuffer.position() - 1];
         tmpbuffer.position(0);
-        tmpbuffer.get(body);
+        tmpbuffer.get(body_array);
         tmpbuffer.position(0);
-
-        Text = new String(body);
-
-        Pattern newstr = Pattern.compile("\r");
-        splittedtext = newstr.split(Text);
+        body = new byte[body_array.length];
+        System.arraycopy(body_array, 0, body, 0, body_array.length);
     }
 
     public boolean isValid() {
@@ -132,7 +129,7 @@ public class FtsPackMsg {
     }
 
     public String getAchData() {
-        return new String(DateTime);
+        return new String(dateTime);
     }
 
     public short getAttr() {
@@ -152,7 +149,7 @@ public class FtsPackMsg {
     }
 
     public String getFrom() {
-        return new String(From);
+        return from;
     }
 
     public int getOrigNet() {
@@ -163,27 +160,23 @@ public class FtsPackMsg {
         return origNode;
     }
 
-    public byte[] getSubj() {
-        return Subj.clone();
-    }
-
-    public String getText() {
-        return Text;
+    public String getSubj() {
+        return subj;
     }
 
     public String getTo() {
-        return new String(To);
+        return to;
+    }
+
+    public byte[] getBody() {
+        return body;
     }
 
     public int getType() {
         return type;
     }
 
-    public String[] getSplittedtext() {
-        return splittedtext.clone();
-    }
-
     public byte[] getDateTime() {
-        return DateTime.clone();
+        return dateTime.clone();
     }
 }

@@ -196,7 +196,7 @@ public class Tosser extends HasEventBus {
 
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg);
-//        msg.DumpHead();
+//        msg.dumpHead();
         //return;
     }
 

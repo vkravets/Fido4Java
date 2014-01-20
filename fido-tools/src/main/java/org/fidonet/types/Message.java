@@ -31,7 +31,10 @@ package org.fidonet.types;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
+import org.fidonet.tools.CharsetTools;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
@@ -40,58 +43,88 @@ public class Message {
 
     private static final ILogger logger = LoggerFactory.getLogger(Message.class.getName());
 
-    // TODO change field name to camel case (first latter is in lower case)
-    private String From;
-    private String To;
-    private String Subject;
-    private byte[] byteSubj;
-    private String Area;
-    private String Text = "";
-    private FTNAddr FAddr;
-    private FTNAddr TAddr;
-    private String[] Kludges;
-    private String[] splittedleeter;
+    private String from;
+    private String to;
+    private String subject;
+    private String area;
+    private FTNAddr fAddr;
+    private FTNAddr tAddr;
+    private String[] kludges;
     private boolean echomail;
-    private Pattern collon = Pattern.compile(":");
-    private Pattern collonorwhitespace = Pattern.compile("[:][:\\s]");
-    private byte[] Body;
+    private static final Pattern collon = Pattern.compile(":");
+    private static final Pattern collonorwhitespace = Pattern.compile("[:][:\\s]");
+    private String body;
     private String msgDate;
     private Attribute attrs;
-    private FTNAddr UpLink;
+    private FTNAddr upLink;
     private String msgId;
 
     public Message(String from, String to, FTNAddr fromAddr, FTNAddr toAddr, String subj, String message, Date date) {
-        this.From = from;
-        this.To = to;
-        this.FAddr = fromAddr;
-        this.TAddr = toAddr;
-        this.Subject = subj;
-        this.Text = message;
+        this.from = from;
+        this.to = to;
+        this.fAddr = fromAddr;
+        this.tAddr = toAddr;
+        this.subject = subj;
+        this.body = message;
         this.msgDate = date.toString();
     }
 
     public Message(FtsPackMsg src) {
-        From = src.getFrom();
-        To = src.getTo();
-        byteSubj = src.getSubj();
-        Subject = new String(byteSubj);
+        from = src.getFrom();
+        to = src.getTo();
+        subject = src.getSubj();
         attrs = new Attribute(src.getAttr());
         byte[] ttTime = src.getDateTime();
         msgDate = new String(ttTime);
         int net = src.getOrigNet();
         int node = src.getOrigNode();
-        UpLink = new FTNAddr(2, net, node, 0);
+        upLink = new FTNAddr(2, net, node, 0);
 
-        splittedleeter = src.getSplittedtext();
-        if (splittedleeter[0].startsWith("AREA:")) {
-            Area = collon.split(splittedleeter[0])[1];
+
+        kludges = getKludgesFromBody(src.getBody());
+//        String messageCharsetName = getMessageCharset();
+//        Charset charset = CharsetTools.charsetDetect(messageCharsetName);
+//        CharBuffer decode = charset.decode(ByteBuffer.wrap(src.getBody()));
+//        body = new String(decode.array());
+        try {
+            body = new String(src.getBody(), CharsetTools.DEFAULT_ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            logger.warn(e.getMessage(), e);
+        }
+
+        if (echomail) {
+            tryDetectAddressesAndId();
+        }
+
+    }
+
+    public String[] getKludgesFromBody(byte[] body) {
+        if (body != null && body.length > 0) {
+            String bodyStr = new String(body, Charset.forName(CharsetTools.DEFAULT_ENCODING));
+            return getKludgesFromBody(bodyStr.split("\\r"));
+        }
+        return null;
+    }
+
+    public void updateKludges() {
+        kludges = getKludgesFromBody(body);
+    }
+
+    public String[] getKludgesFromBody(String body) {
+        return getKludgesFromBody(body.split("\\r"));
+    }
+
+    public String[] getKludgesFromBody(String[] lines) {
+        final LinkedList<String> kltmp = new LinkedList<String>();
+        if (lines[0].startsWith("AREA:")) {
+            area = collon.split(lines[0])[1];
             echomail = true;
         } else {
-            Area = "";
+            area = "";
             echomail = false;
         }
-        final LinkedList<String> kltmp = new LinkedList<String>();
-        for (String x : splittedleeter) {
+
+        for (String x : lines) {
             if (x.lastIndexOf(1) == 0) {
                 kltmp.add(x.substring(1, x.length()));
             } else {
@@ -100,43 +133,13 @@ public class Message {
                 }
             }
         }
-        Kludges = new String[kltmp.size()];
-        Kludges = kltmp.toArray(Kludges);
-
-        int bodystart = 0;
-        int bodyend = 0;
-        for (int i = 1; i < src.body.length; i++) {
-            if ((src.body[i] == 0x0d) && (src.body[i + 1] != 0x1)) {
-                bodystart = i + 1;
-                break;
-            }
-        }
-
-        for (int i = bodystart; i < src.body.length; i++) {
-            if ((src.body[i] == 0x0d) && (src.body[i + 1] == 'S') && (src.body[i + 2] == 'E')) {
-                bodyend = i + 1;
-                break;
-            }
-        }
-
-        Body = new byte[bodyend - bodystart];
-
-/*        for (int i = bodystart; i < bodyend; i++) {
-            Body[i - bodystart] = src.body[i];
-        }*/
-
-
-        System.arraycopy(src.body, bodystart, Body, /*bodystart - bodystart*/ 0, bodyend - bodystart);
-
-
-        if (echomail) {
-            tryDetectAddressesAndId();
-        }
-
+        String[] result = new String[kltmp.size()];
+        return kltmp.toArray(result);
     }
 
     public String getSingleKludge(String kl) {
-        for (String Kludge : Kludges) {
+        StringBuilder result = new StringBuilder();
+        for (String Kludge : kludges) {
             if (Kludge.startsWith(kl)) {
                 String kkk;
                 try {
@@ -144,10 +147,12 @@ public class Message {
                 } catch (ArrayIndexOutOfBoundsException e) {
                     kkk = "";
                 }
-                return kkk;
+                result.append(kkk).append(" ");
             }
         }
-        return null;
+
+        String s = result.toString().trim();
+        return s.isEmpty() ? null : s;
     }
 
     void tryDetectAddressesAndId() {
@@ -156,29 +161,28 @@ public class Message {
         if (fmpt != null) {
             // todo: error handling
             String[] tokens = p.split(fmpt);
-            FAddr = new FTNAddr(tokens[0]);
+            fAddr = new FTNAddr(tokens[0].trim());
             msgId = tokens[1].trim();
         } else {
-            FAddr = new FTNAddr(-1, -1, -1, -1);
+            fAddr = new FTNAddr(-1, -1, -1, -1);
         }
 
-        if (!FAddr.isValid()) {
+        if (!fAddr.isValid()) {
 
+            String[] splittedleeter = body.split("\\r");
             for (int i = 0; i < splittedleeter.length; i++) {
                 if (splittedleeter[i].indexOf("SEEN-BY:") == 0) {
                     if (splittedleeter[i - 1].contains("Origin:")) {
                         final String origin = splittedleeter[i - 1];
-                        FAddr = new FTNAddr(origin.substring(origin.indexOf('(') + 1, origin.indexOf(')')));
+                        fAddr = new FTNAddr(origin.substring(origin.indexOf('(') + 1, origin.indexOf(')')));
                     }
                 }
             }
         }
-
-
     }
 
-    public void DumpHead() {
-        logger.debug("From: " + From + ' ' + FAddr + " To: " + To + ' ' + TAddr + " area: " + Area);
+    public void dumpHead() {
+        logger.debug("from: " + from + ' ' + fAddr + " to: " + to + ' ' + tAddr + " area: " + area);
     }
 
     public boolean isEchomail() {
@@ -186,19 +190,11 @@ public class Message {
     }
 
     public String getArea() {
-        return Area;
-    }
-
-    public String[] getSplittedleeter() {
-        return splittedleeter.clone();
-    }
-
-    public String getText() {
-        return Text;
+        return area;
     }
 
     public String[] getKludges() {
-        return Kludges.clone();
+        return kludges.clone();
     }
 
     public String getMsgDate() {
@@ -206,35 +202,59 @@ public class Message {
     }
 
     public String getFrom() {
-        return From;
+        return from;
     }
 
     public String getTo() {
-        return To;
+        return to;
     }
 
     public FTNAddr getFAddr() {
-        return FAddr;
-    }
-
-    public byte[] getByteSubj() {
-        return byteSubj.clone();
+        return fAddr;
     }
 
     public FTNAddr getTAddr() {
-        return TAddr;
+        return tAddr;
     }
 
-    public byte[] getBody() {
-        return Body.clone();
+    public String getBody() {
+        return body;
+    }
+
+    public String getBodyInMessageCharset() {
+        Charset charset = CharsetTools.charsetDetect(getMessageCharset());
+        return new String(charset.encode(body).array());
     }
 
     public FTNAddr getUpLink() {
-        return UpLink;
+        return upLink;
     }
 
     public String getMsgId() {
         return msgId;
     }
 
+    public String getSubject() {
+        return subject;
+    }
+
+    public String getMessageCharset() {
+        String messageEncoding = getSingleKludge("CHRS");
+        if (messageEncoding == null) {
+            return CharsetTools.DEFAULT_ENCODING;
+        }
+        return messageEncoding.split(" ")[0];
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "from='" + from + '\'' +
+                ", to='" + to + '\'' +
+                ", area='" + area + '\'' +
+                ", subject='" + subject + '\'' +
+                ", msgDate='" + msgDate + '\'' +
+                ", msgId='" + msgId + '\'' +
+                '}';
+    }
 }

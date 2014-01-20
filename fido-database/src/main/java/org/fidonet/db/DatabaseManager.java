@@ -98,7 +98,7 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
-        List<Message> result = new ArrayList<Message>();
+        final List<Message> result = new ArrayList<Message>();
         try {
             List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
             if (echoareaList.size() == 0) {
@@ -150,7 +150,7 @@ public class DatabaseManager implements IBase {
             if (echoareaList.size() == 0) {
                 return null;
             }
-            List<Echomail> query = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId()).eq("id", id).query();
+            List<Echomail> query = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId()).and().eq("id", id).query();
             if (query.size() > 0)
                 return query.get(0).toMessage();
         } catch (SQLException e) {

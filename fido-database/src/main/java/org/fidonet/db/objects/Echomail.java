@@ -182,24 +182,37 @@ public class Echomail {
         this.msgId = msgId;
     }
 
+    public int getAttr() {
+        return attr;
+    }
+
+    public void setAttr(int attr) {
+        this.attr = attr;
+    }
+
     public Message toMessage() {
         return toMessage(this);
     }
 
     public static Message toMessage(Echomail echomail) {
-        return new Message(echomail.getFromName(),
+        FTNAddr toAddr = null;
+        if (echomail.getToAddr() != null) {
+            toAddr = new FTNAddr(echomail.getToAddr());
+        }
+        Message message = new Message(echomail.getFromName(),
                 echomail.getToName(),
                 new FTNAddr(echomail.getFromAddr()),
-                new FTNAddr(echomail.getToAddr()),
+                toAddr,
                 echomail.getSubject(),
                 echomail.getText(),
                 echomail.getDate());
+        message.updateKludges();
+        return message;
     }
 
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-//        DateFormat format = DateFormat.getDateInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yy  HH:mm:ss");
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);
@@ -208,11 +221,12 @@ public class Echomail {
             msg.setToAddr(message.getTAddr().as5D());
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
-        msg.setSubject(new String(message.getByteSubj()));
-        msg.setText(message.getText());
-        msg.setPath("");
-        msg.setSeenBy("");
+        msg.setSubject(message.getSubject());
+        msg.setText(message.getBody());
+        msg.setPath(message.getSingleKludge("PATH"));
+        msg.setSeenBy(message.getSingleKludge("SEEN-BY"));
         msg.setMsgId(message.getMsgId());
         return msg;
     }
+
 }

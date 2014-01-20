@@ -26,50 +26,38 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.echobase;
+package org.fidonet.tools;
 
-import org.fidonet.echobase.exceptions.EchoBaseException;
-import org.fidonet.types.Message;
 
-import java.io.IOException;
-import java.util.List;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.HashMap;
+import java.util.Map;
 
-public class EchoMgr {
+/**
+ * Created by IntelliJ IDEA.
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 1/19/14
+ * Time: 3:54 PM
+ */
+public class CharsetTools {
 
-    private final IBase echosbase;
+    public static final String DEFAULT_ENCODING = "CP866";
 
-    public EchoMgr(IBase base) {
-        this.echosbase = base;
-    }
 
-    public void addMessage(Message msg) throws IOException, EchoBaseException {
-        if (isEchoExists(msg.getArea().toLowerCase())) {
-            echosbase.createArea(msg.getArea().toLowerCase());
+    public static Charset charsetDetect(String messageCharset) {
+        Map<String, Charset> fidoToJavaCharsetMap = new HashMap<String, Charset>();
+        fidoToJavaCharsetMap.put("IBMPC", Charset.forName(DEFAULT_ENCODING));
+        fidoToJavaCharsetMap.put("+7_FIDO", Charset.forName(DEFAULT_ENCODING));
+        try {
+            return Charset.forName(messageCharset);
+        } catch (UnsupportedCharsetException e) {
+            Charset charset = fidoToJavaCharsetMap.get(messageCharset);
+            if (charset == null) {
+                charset = Charset.forName(DEFAULT_ENCODING);
+            }
+            return charset;
         }
-        echosbase.addMessage(msg, msg.getArea().toLowerCase());
-    }
-
-    public Message getMessage(String area, int id) throws EchoBaseException {
-        return echosbase.getMessage(area, id);
-    }
-
-    public Message getMessage(int id) throws EchoBaseException {
-        return echosbase.getMessage(id);
-    }
-
-    private void createArea(String name) throws EchoBaseException {
-        echosbase.createArea(name);
-    }
-
-    public List<String> getEchos() {
-        return echosbase.getAreas();
-    }
-
-    public boolean isEchoExists(String name) {
-        return echosbase.isAreaExists(name);
-    }
-
-    public void close() {
-        echosbase.close();
     }
 }
