@@ -35,7 +35,6 @@ import org.apache.thrift.async.TAsyncClientManager;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingSocket;
 import org.apache.thrift.transport.TSocket;
@@ -45,8 +44,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -62,65 +59,7 @@ public class TestServer {
 
     @Before
     public void setUp() {
-        server = new Server(TEST_SERVER_PORT, new ServerHandler() {
-            @Override
-            public Api.Iface getApiHandler() {
-                return new Api.Iface() {
-
-                    @Override
-                    public Response ping() throws TException {
-                        return Response.OK;
-                    }
-
-                    @Override
-                    public VersionResponse getVersion() throws TException {
-                        return new VersionResponse(Response.OK, "1.0.1");
-                    }
-                };
-            }
-
-            @Override
-            public LoginService.Iface getLoginHandler() {
-                return new LoginService.Iface() {
-                    @Override
-                    public LoginResponse login(Credential cred) throws TException {
-                        TestCase.assertEquals(new Credential("test", "test"), cred);
-                        return new LoginResponse(Response.OK, "session_id_test_1");
-                    }
-
-                    @Override
-                    public void logout(String session_id) throws TException {
-                        TestCase.assertEquals("session_id_test_1", session_id);
-                    }
-                };
-            }
-
-            @Override
-            public MessageService.Iface getMessageHandler() {
-                return new MessageService.Iface() {
-                    @Override
-                    public List<Message> getMessages(String area) throws TException {
-                        TestCase.assertEquals("test_area", area);
-                        return new ArrayList<Message>();
-                    }
-                };
-            }
-
-            @Override
-            public StatisticService.Iface getStatisticsHandler() {
-                return new StatisticService.Iface() {
-                    @Override
-                    public JavaStatistics getJavaStatistics() throws TException {
-                        return new JavaStatistics("1.7", 1024L, 512L, (short) 10, (short) 2);
-                    }
-
-                    @Override
-                    public NodeStatistics getNodeStatistics() throws TException {
-                        return new NodeStatistics("1.0", (short) 13, 100, 23098, 101);
-                    }
-                };
-            }
-        });
+        server = new Server(TEST_SERVER_PORT, new ServerHandlerTestMock());
         server.run();
         System.out.println("Server Started");
     }
@@ -142,69 +81,87 @@ public class TestServer {
             Api.Client apiClient = new Api.Client(apiProtocol);
             LoginService.Client logClient = new LoginService.Client(loginProtocol);
             transport.open();
+            System.out.println("[CLIENT] Api.getVersion");
             TestCase.assertEquals(new VersionResponse(Response.OK, "1.0.1"), apiClient.getVersion());
             TestCase.assertEquals(Response.OK, apiClient.ping());
+            System.out.println("[CLIENT] LoginService.login()");
             LoginResponse login = logClient.login(new Credential("test", "test"));
             TestCase.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login);
+            System.out.println("[CLIENT] LoginService.logout()");
+            logClient.logout("session_id_test_1");
 
-            Api.AsyncClient apiAsyncClient = new Api.AsyncClient(new TProtocolFactory() {
-                @Override
-                public TProtocol getProtocol(TTransport tTransport) {
-                    return new TMultiplexedProtocol(new TBinaryProtocol(tTransport), "api");
-                }
-            },
-                    new TAsyncClientManager(), new TNonblockingSocket("127.0.0.1", 30001));
-            apiAsyncClient.ping(new AsyncMethodCallback<Api.AsyncClient.ping_call>() {
-                @Override
-                public void onComplete(Api.AsyncClient.ping_call response) {
-                    try {
-                        TestCase.assertEquals(Response.OK, response.getResult());
-                    } catch (TException e) {
-                        this.onError(e);
-                    }
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    TestCase.fail(e.getMessage());
-                }
-            });
-
-            LoginService.AsyncClient loginAsyncClient = new LoginService.AsyncClient(new TProtocolFactory() {
-                @Override
-                public TProtocol getProtocol(TTransport tTransport) {
-                    return new TMultiplexedProtocol(new TBinaryProtocol(tTransport), "login");
-                }
-            },
-                    new TAsyncClientManager(), new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT));
-            loginAsyncClient.login(new Credential("test", "test"), new AsyncMethodCallback<LoginService.AsyncClient.login_call>() {
-                @Override
-                public void onComplete(LoginService.AsyncClient.login_call login_call) {
-                    try {
-                        TestCase.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login_call.getResult());
-                    } catch (TException e) {
-                        this.onError(e);
-                    }
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    TestCase.fail(e.getMessage());
-                }
-            });
-
-            Thread.sleep(1000);
         } catch (TException e) {
             e.printStackTrace();
-        } catch (IOException e) {
+        }
+    }
+
+    @Test
+    public void testASyncClient() {
+        try {
+
+            for (int k = 0; k < 100; k++) {
+                final int i = k;
+                TNonblockingSocket transportApi = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
+                Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
+                        new TMultiplexedProtocolFactory("api"),
+                        new TAsyncClientManager(),
+                        transportApi);
+                // Make async call of ping RPC API
+                apiAsyncClient.ping(new AsyncMethodCallback<Api.AsyncClient.ping_call>() {
+                    @Override
+                    public void onComplete(Api.AsyncClient.ping_call response) {
+                        try {
+                            System.out.println("[CLIENT] Async Api.ping() " + i);
+                            TestCase.assertEquals(Response.OK, response.getResult());
+                        } catch (TException e) {
+                            this.onError(e);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        TestCase.fail(e.getMessage());
+                    }
+                });
+
+
+                TNonblockingSocket transportLogin = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
+                LoginService.AsyncClient loginAsyncClient = new LoginService.AsyncClient(
+                        new TMultiplexedProtocolFactory("login"),
+                        new TAsyncClientManager(),
+                        transportLogin);
+
+                // Make async call of login RPC API
+                loginAsyncClient.login(new Credential("test", "test"), new AsyncMethodCallback<LoginService.AsyncClient.login_call>() {
+                    @Override
+                    public void onComplete(LoginService.AsyncClient.login_call login_call) {
+                        try {
+                            System.out.println("[CLIENT] Async LoginService.login() " + i);
+                            TestCase.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login_call.getResult());
+                        } catch (TException e) {
+                            this.onError(e);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        e.printStackTrace();
+                        TestCase.fail(e.getMessage());
+                    }
+                });
+            }
+            Thread.sleep(4000);
+        } catch (TException e) {
             e.printStackTrace();
+            TestCase.fail(e.getMessage());
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            if (transport != null) {
-                transport.close();
-            }
+            TestCase.fail(e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            TestCase.fail(e.getMessage());
         }
+
     }
 
 }
