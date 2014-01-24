@@ -50,6 +50,7 @@
     </pluginRepositories>
 
     <build>
+
         <plugins>
             <!-- Turn off thrift compile since on Jenkins there no Thrift
             <plugin>
@@ -70,6 +71,26 @@
                 </executions>
             </plugin>
             -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <!-- Workaround till thrift compiler will not be implemented on pure Java =) -->
+                                <source>${project.basedir}/generated-sources/thrift</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
