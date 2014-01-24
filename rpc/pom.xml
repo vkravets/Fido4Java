@@ -51,6 +51,7 @@
 
     <build>
         <plugins>
+            <!-- Turn off thrift compile since on Jenkins there no Thrift
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>thrift-maven-plugin</artifactId>
@@ -68,6 +69,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
     </build>
 
