@@ -75,6 +75,7 @@
         <module>scheduler</module>
         <module>web-interface</module>
         <module>jftn-bundle</module>
+        <module>rpc</module>
     </modules>
 
     <build>

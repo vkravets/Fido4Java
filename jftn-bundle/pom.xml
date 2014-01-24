@@ -47,60 +47,65 @@
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>fido-config</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>fido-database</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>fido-tools</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.events</groupId>
             <artifactId>event-bus</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>script-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.logger</groupId>
             <artifactId>logger</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
             <artifactId>plugin-manager</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn.plugin</groupId>
             <artifactId>scheduler</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn.plugin</groupId>
             <artifactId>web-interface</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>jtoss</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.protocol</groupId>
             <artifactId>binkp</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
+            <groupId>org.fidonet.jftn</groupId>
+            <artifactId>rpc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+        <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
@@ -134,7 +139,7 @@
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>package</phase>
                         <configuration>
                             <outputDirectory>${project.build.directory}/pack/lib</outputDirectory>
                             <includeScope>compile</includeScope>
@@ -171,7 +176,7 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>package</phase>
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/build-resources/package-assembly.xml</descriptor>
