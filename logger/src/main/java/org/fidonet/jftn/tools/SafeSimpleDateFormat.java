@@ -59,7 +59,7 @@ public class SafeSimpleDateFormat {
     private DateFormatInfo dfInfo;
 
     public SafeSimpleDateFormat() {
-        this("dd.MM.yy HH:mm:ss.SSS", null);
+        this("dd/MM/yy HH:mm:ss.SSS", null);
     }
 
     public SafeSimpleDateFormat(String format) {
@@ -103,7 +103,7 @@ public class SafeSimpleDateFormat {
         }
 
         public Locale getLocale() {
-            return locale;
+            return locale == null ? Locale.getDefault() : locale;
         }
 
         @Override
