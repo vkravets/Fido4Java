@@ -42,7 +42,7 @@ import org.fidonet.logger.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,12 +55,13 @@ public class Server extends Connector {
 
     private NioSocketAcceptor acceptor;
     private int port = Connector.BINK_PORT;
-    private final AtomicReference<Integer> userConnected = new AtomicReference<Integer>(0);
+    private final AtomicInteger userConnected = new AtomicInteger(0);
     private static int MAX_USER_CONNECTED = 30;
 
     private static ILogger logger = LoggerFactory.getLogger(Server.class);
 
     public Server() {
+        this(BINK_PORT);
     }
 
     public Server(int port) {
@@ -94,8 +95,8 @@ public class Server extends Connector {
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
-                synchronized (userConnected.get()) {
-                    userConnected.set(userConnected.get() + 1);
+                synchronized (userConnected) {
+                    userConnected.set(userConnected.incrementAndGet());
                 }
                 if (!context.isBusy() && userConnected.get() > MAX_USER_CONNECTED) {
                     synchronized (context) {
@@ -113,7 +114,7 @@ public class Server extends Connector {
                 }
                 session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 synchronized (userConnected) {
-                    userConnected.set(userConnected.get() - 1);
+                    userConnected.set(userConnected.decrementAndGet());
                 }
                 if (context.isBusy() && userConnected.get() < MAX_USER_CONNECTED) {
                     synchronized (context) {
