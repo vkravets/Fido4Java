@@ -44,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -56,6 +57,8 @@ public class TestServer {
 
     private Server server;
     private static final int TEST_SERVER_PORT = 30001;
+    private final static AtomicInteger pingCurIndex = new AtomicInteger(0);
+    private final static AtomicInteger loginCurIndex = new AtomicInteger(0);
 
     @Before
     public void setUp() {
@@ -99,7 +102,7 @@ public class TestServer {
     public void testASyncClient() {
         try {
 
-            for (int k = 0; k < 100; k++) {
+            for (int k = 0; k < 50; k++) {
                 final int i = k;
                 TNonblockingSocket transportApi = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
                 Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
@@ -115,6 +118,9 @@ public class TestServer {
                             TestCase.assertEquals(Response.OK, response.getResult());
                         } catch (TException e) {
                             this.onError(e);
+                        }
+                        synchronized (pingCurIndex) {
+                            pingCurIndex.set(pingCurIndex.incrementAndGet());
                         }
                     }
 
@@ -141,6 +147,9 @@ public class TestServer {
                         } catch (TException e) {
                             this.onError(e);
                         }
+                        synchronized (loginCurIndex) {
+                            loginCurIndex.set(loginCurIndex.incrementAndGet());
+                        }
                     }
 
                     @Override
@@ -150,7 +159,9 @@ public class TestServer {
                     }
                 });
             }
-            Thread.sleep(4000);
+            Thread.sleep(6000);
+            TestCase.assertEquals(loginCurIndex.get(), 50);
+            TestCase.assertEquals(pingCurIndex.get(), 50);
         } catch (TException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
