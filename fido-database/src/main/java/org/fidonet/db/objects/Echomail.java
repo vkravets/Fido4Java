@@ -31,11 +31,11 @@ package org.fidonet.db.objects;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -213,7 +213,7 @@ public class Echomail {
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yy  HH:mm:ss");
+        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss");
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);
         msg.setFromAddr(message.getFAddr().as5D());

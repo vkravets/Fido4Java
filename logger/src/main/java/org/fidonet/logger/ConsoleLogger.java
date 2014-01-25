@@ -28,10 +28,11 @@
 
 package org.fidonet.logger;
 
+import org.fidonet.jftn.tools.SafeSimpleDateFormat;
+
 import java.io.InterruptedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -127,7 +128,7 @@ public class ConsoleLogger implements ILogger {
     }
 
     public void log(String prefix, String message) {
-        String time = new SimpleDateFormat().format(new Date());
+        String time = new SafeSimpleDateFormat().format(new Date());
         String location = getLocationString();
         System.out.println(String.format("%s %s [%s] %s", time, location, prefix, message));
     }

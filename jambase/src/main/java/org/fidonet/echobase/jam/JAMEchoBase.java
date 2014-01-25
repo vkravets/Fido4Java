@@ -35,6 +35,7 @@ import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
+import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.logger.ILogger;
 import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.MyCRC;
@@ -46,8 +47,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -193,9 +193,14 @@ public class JAMEchoBase implements EchoBase {
 
         newmsg.Attribute |= 0x01000000; // MSG_TYPEECHO
 
-        SimpleDateFormat df = new SimpleDateFormat("dd MMM yy  HH:mm:ss", Locale.US);
+        SafeSimpleDateFormat df = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss", Locale.US);
 
-        Date date = df.parse(msg.getMsgDate(), new ParsePosition(0));
+        Date date;
+        try {
+            date = df.parse(msg.getMsgDate());
+        } catch (ParseException e) {
+            throw new EchoBaseException(e.getMessage(), e);
+        }
 
         newmsg.DateWritten = (int) (date.getTime() / 1000L);
         newmsg.DateReceived = 0; //(int) (System.currentTimeMillis() / 1000L);

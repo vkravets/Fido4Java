@@ -29,9 +29,8 @@
 package org.fidonet.binkp.commands;
 
 import org.fidonet.binkp.SessionContext;
+import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
@@ -44,7 +43,7 @@ import java.util.Locale;
  */
 public class TIMECommand extends NULCommand {
 
-    private static final DateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
+    private static final SafeSimpleDateFormat format = new SafeSimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
 
     @Override
     public String getArguments(SessionContext sessionContext) {
