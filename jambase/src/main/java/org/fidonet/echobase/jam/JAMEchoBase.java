@@ -36,11 +36,11 @@ import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
 import org.fidonet.jftn.tools.SafeSimpleDateFormat;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
 
 public class JAMEchoBase implements EchoBase {
 
-    private static final ILogger logger = LoggerFactory.getLogger(JAMEchoBase.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(JAMEchoBase.class.getName());
 
     private String headerfilename;
     private String textfilename;

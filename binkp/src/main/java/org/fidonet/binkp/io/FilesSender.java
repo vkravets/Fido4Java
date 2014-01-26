@@ -35,8 +35,8 @@ import org.fidonet.binkp.codec.DataBulk;
 import org.fidonet.binkp.commands.EOBCommand;
 import org.fidonet.binkp.commands.FILECommand;
 import org.fidonet.binkp.commands.share.Command;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -54,7 +54,7 @@ import java.util.concurrent.Exchanger;
 public class FilesSender implements Runnable {
 
     public static final String FILESENDER_KEY = FilesSender.class.getName() + ".KEY";
-    public static final ILogger logger = LoggerFactory.getLogger(FilesSender.class);
+    public static final Logger logger = LoggerFactory.getLogger(FilesSender.class);
 
     private Deque<FileData<InputStream>> files;
     private IoSession session;

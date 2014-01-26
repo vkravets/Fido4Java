@@ -37,8 +37,8 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.fidonet.binkp.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.handler.BinkSessionHandler;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -58,7 +58,7 @@ public class Server extends Connector {
     private final AtomicInteger userConnected = new AtomicInteger(0);
     private static int MAX_USER_CONNECTED = 30;
 
-    private static ILogger logger = LoggerFactory.getLogger(Server.class);
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
     public Server() {
         this(BINK_PORT);

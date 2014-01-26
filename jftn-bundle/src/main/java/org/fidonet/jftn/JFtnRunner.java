@@ -37,12 +37,12 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JFtnRunner {
 
-    private static final ILogger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
 
     private static void Help() {
         System.out.println("java ftn usage:");

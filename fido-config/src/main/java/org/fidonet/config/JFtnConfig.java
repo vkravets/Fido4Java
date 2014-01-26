@@ -28,11 +28,11 @@
 
 package org.fidonet.config;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.validators.ConfigValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ import java.util.Map;
  */
 public class JFtnConfig extends BaseConfig {
 
-    private static final ILogger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
 
     private Map<String, Link> links;
 

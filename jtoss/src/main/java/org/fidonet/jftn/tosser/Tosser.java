@@ -36,12 +36,12 @@ import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.exception.TosserException;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
 
-    private static final ILogger logger = LoggerFactory.getLogger(Tosser.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(Tosser.class.getName());
 
     private EchoMgr areamgr;
     private Pattern bunlderegex;

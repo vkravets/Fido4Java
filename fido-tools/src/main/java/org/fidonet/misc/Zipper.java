@@ -28,8 +28,8 @@
 
 package org.fidonet.misc;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ import java.util.zip.ZipFile;
 
 public class Zipper {
 
-    private static final ILogger logger = LoggerFactory.getLogger(Zipper.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: " + bound);

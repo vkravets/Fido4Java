@@ -28,9 +28,9 @@
 
 package org.fidonet.echobase;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.FTNAddr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import java.util.List;
 
 public class EchoList {
 
-    private static final ILogger logger = LoggerFactory.getLogger(EchoList.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(EchoList.class.getName());
 
     private HashMap<String, EchoCfg> list;
     private String areaListFile;

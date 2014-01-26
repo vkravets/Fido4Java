@@ -33,8 +33,8 @@ import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.commands.share.BinkCommand;
 import org.fidonet.binkp.commands.share.Command;
 import org.fidonet.binkp.io.BinkFrame;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -47,7 +47,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class MessageCommand implements Command {
 
-    protected static final ILogger log = LoggerFactory.getLogger(MessageCommand.class);
+    protected static final Logger log = LoggerFactory.getLogger(MessageCommand.class);
 
     protected BinkCommand commandType;
 

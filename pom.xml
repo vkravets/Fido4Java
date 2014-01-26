@@ -61,8 +61,8 @@
     </distributionManagement>
 
     <modules>
+        <module>tools</module>
         <module>event-bus</module>
-        <module>logger</module>
         <module>script-api</module>
         <module>plugin-manager</module>
         <module>fido-fts</module>
@@ -136,7 +136,7 @@
                     <version>2.9</version>
                     <configuration>
                         <systemPropertyVariables>
-                            <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
+                            <!--<log4j.defaultInitOverride>true</log4j.defaultInitOverride>-->
                         </systemPropertyVariables>
                     </configuration>
                     <dependencies>
@@ -160,9 +160,14 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.16</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>1.7.5</version>
                 <scope>provided</scope>
             </dependency>
         </dependencies>

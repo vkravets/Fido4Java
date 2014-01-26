@@ -29,9 +29,9 @@
 package org.fidonet.types;
 
 import org.fidonet.fts.FtsPackMsg;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.tools.CharsetTools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 
 public class Message {
 
-    private static final ILogger logger = LoggerFactory.getLogger(Message.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(Message.class.getName());
 
     private String from;
     private String to;

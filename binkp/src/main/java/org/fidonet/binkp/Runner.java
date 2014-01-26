@@ -28,9 +28,9 @@
 
 package org.fidonet.binkp;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.types.Link;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -50,7 +50,7 @@ public class Runner {
     private Client client;
     private Server server;
 
-    private static final ILogger logger = LoggerFactory.getLogger(Runner.class);
+    private static final Logger logger = LoggerFactory.getLogger(Runner.class);
 
     public Runner() {
         threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,

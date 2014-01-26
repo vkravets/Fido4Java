@@ -59,9 +59,9 @@ public class DataBulk implements Data {
         int len = this.len & 0x7fff;
         byte[] buf;
         if (data.length != this.len) {
-            ByteBuffer _ = ByteBuffer.allocate(this.len);
-            _.put(data, 0, this.len);
-            buf = _.array();
+            ByteBuffer tmp = ByteBuffer.allocate(this.len);
+            tmp.put(data, 0, this.len);
+            buf = tmp.array();
         } else {
             buf = data;
         }

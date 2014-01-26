@@ -41,10 +41,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>fido-config</artifactId>
             <version>${project.version}</version>
@@ -70,9 +66,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.fidonet.logger</groupId>
-            <artifactId>logger</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
@@ -105,7 +105,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-        <groupId>junit</groupId>
+            <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
     </dependencies>

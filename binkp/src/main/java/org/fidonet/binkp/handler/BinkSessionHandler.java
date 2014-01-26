@@ -48,8 +48,8 @@ import org.fidonet.binkp.io.BinkFrame;
 import org.fidonet.binkp.io.FileData;
 import org.fidonet.binkp.io.FileInfo;
 import org.fidonet.events.EventBus;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ import java.util.List;
  */
 public class BinkSessionHandler extends IoHandlerAdapter {
 
-    private static final ILogger log = LoggerFactory.getLogger(BinkSessionHandler.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(BinkSessionHandler.class.getName());
 
     private SessionContext sessionContext;
     private EventBus eventBus;

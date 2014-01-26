@@ -28,8 +28,8 @@
 
 package org.fidonet.jftn.share;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class CommandCollection {
 
-    private static final ILogger logger = LoggerFactory.getLogger(CommandCollection.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(CommandCollection.class.getName());
 
     private Map<String, Command> commands;
 

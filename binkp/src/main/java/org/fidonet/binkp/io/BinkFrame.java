@@ -30,8 +30,8 @@ package org.fidonet.binkp.io;
 
 import org.fidonet.binkp.codec.DataInfo;
 import org.fidonet.binkp.codec.DataReader;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -47,7 +47,7 @@ import java.io.IOException;
 public class BinkFrame {
 
     private static final short MAX_DATA_SIZE = 32767;
-    private static final ILogger logger = LoggerFactory.getLogger(BinkFrame.class);
+    private static final Logger logger = LoggerFactory.getLogger(BinkFrame.class);
 
     private short dataInfo;
     private byte[] data;

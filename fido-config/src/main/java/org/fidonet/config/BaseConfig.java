@@ -29,8 +29,8 @@
 package org.fidonet.config;
 
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -43,7 +43,7 @@ import java.util.*;
  */
 public abstract class BaseConfig implements IConfig {
 
-    private static final ILogger logger = LoggerFactory.getLogger(BaseConfig.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(BaseConfig.class.getName());
 
     private Map<String, List<String>> props;
 

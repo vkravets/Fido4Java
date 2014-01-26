@@ -28,16 +28,16 @@
 
 package org.fidonet.fts;
 
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
 import org.fidonet.tools.CharsetTools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class FtsPackMsg {
 
-    private static final ILogger logger = LoggerFactory.getLogger(FtsPackMsg.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(FtsPackMsg.class.getName());
 
     private int type;
     private int origNode;

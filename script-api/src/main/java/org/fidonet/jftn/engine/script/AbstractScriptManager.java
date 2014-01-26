@@ -30,8 +30,8 @@ package org.fidonet.jftn.engine.script;
 
 import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
 import org.fidonet.jftn.engine.script.exception.NotSupportedScriptEngine;
-import org.fidonet.logger.ILogger;
-import org.fidonet.logger.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngineManager;
@@ -49,7 +49,7 @@ import java.io.InputStreamReader;
  */
 public abstract class AbstractScriptManager implements ScriptEngine {
 
-    private static final ILogger logger = LoggerFactory.getLogger(AbstractScriptManager.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(AbstractScriptManager.class.getName());
     private static final String REGISTER_FUNC_NAME = "register";
     private static final String UNREGISTER_FUNC_NAME = "unload";
 
