@@ -46,7 +46,6 @@ import java.io.IOException;
  */
 public class BinkFrame {
 
-    private static final short MAX_DATA_SIZE = 32767;
     private static final Logger logger = LoggerFactory.getLogger(BinkFrame.class);
 
     private short dataInfo;
