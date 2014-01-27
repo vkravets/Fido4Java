@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp.codec;
 
+import org.apache.mina.core.session.AttributeKey;
 import org.fidonet.binkp.crypt.Decrypt;
 import org.fidonet.binkp.crypt.DummyDecrypt;
 import org.fidonet.binkp.crypt.DummyEncrypt;
@@ -42,7 +43,7 @@ import org.fidonet.binkp.crypt.Encrypt;
  */
 public class TrafficCrypter {
 
-    public static final String TRAFFIC_CRYPTER_KEY = TrafficCrypter.class.getName() + ".KEY";
+    public static final AttributeKey TRAFFIC_CRYPTER_KEY = new AttributeKey(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
 
     private Encrypt encrypt;
     private Decrypt decrypt;
