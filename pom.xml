@@ -44,6 +44,8 @@
         <!-- in Maven 3. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <derby.version>10.9.1.0</derby.version>
     </properties>
 
     <distributionManagement>

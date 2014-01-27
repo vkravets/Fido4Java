@@ -46,9 +46,11 @@ public class SchedulerPlugin implements Plugin {
 
     private Scheduler scheduler;
 
+    public static final String SCHEDULER_PLUGIN_ID = "schedule";
+
     @Override
     public PluginInformation getPluginInfo() {
-        return new PluginInformation("schedule", 1, 0, "Cron-like scheduler functionality plugin");
+        return new PluginInformation(SCHEDULER_PLUGIN_ID, 1, 0, "Cron-like scheduler functionality plugin");
     }
 
     @Override

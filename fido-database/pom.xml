@@ -58,8 +58,8 @@
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>10.9.1.0</version>
-            <scope>provided</scope>
+            <version>${derby.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>

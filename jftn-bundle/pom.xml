@@ -75,7 +75,13 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.fidonet.jftn</groupId>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <version>${derby.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+        <groupId>org.fidonet.jftn</groupId>
             <artifactId>plugin-manager</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -124,7 +130,7 @@
                             <classpathLayoutType>custom</classpathLayoutType>
                             <customClasspathLayout>$${artifact.artifactId}.$${artifact.extension}
                             </customClasspathLayout>
-                            <mainClass>org.fidonet.jftn.JftnRunner</mainClass>
+                            <mainClass>org.fidonet.jftn.JFtnRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -135,23 +141,11 @@
                 <version>2.2</version>
                 <executions>
                     <execution>
-                        <id>Copy all needed dependency to lib folder</id>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/pack/lib</outputDirectory>
-                            <includeScope>compile</includeScope>
-                            <stripVersion>true</stripVersion>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>Copy jtoss for packing</id>
                         <goals>
                             <goal>copy</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>package</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -161,6 +155,18 @@
                                 </artifactItem>
                             </artifactItems>
                             <outputDirectory>${project.build.directory}/pack/lib</outputDirectory>
+                            <stripVersion>true</stripVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>Copy all needed dependency to lib folder</id>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/pack/lib</outputDirectory>
+                            <includeScope>compile</includeScope>
                             <stripVersion>true</stripVersion>
                         </configuration>
                     </execution>

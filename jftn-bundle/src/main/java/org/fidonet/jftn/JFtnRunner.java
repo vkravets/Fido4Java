@@ -28,6 +28,7 @@
 
 package org.fidonet.jftn;
 
+import org.fidonet.binkp.Connector;
 import org.fidonet.binkp.LinksInfo;
 import org.fidonet.binkp.Runner;
 import org.fidonet.binkp.SessionContext;
@@ -36,8 +37,13 @@ import org.fidonet.binkp.plugin.BinkPPlugin;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.fidonet.jftn.scheduler.Scheduler;
+import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
+import org.fidonet.types.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 
 public class JFtnRunner {
 
@@ -66,27 +72,29 @@ public class JFtnRunner {
         final PluginManager pluginManager = PluginManager.getInstance();
         pluginManager.loadPlugins();
 
-        Runner binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
-        binkpRunner.bindServer(new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), new LinksInfo()), 9090);
+        final Runner binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
+        final SessionContext binkpSession = new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), new LinksInfo(new ArrayList<Link>()));
+        binkpRunner.bindServer(binkpSession, Connector.BINK_PORT);
 
-        final Thread mainThread = Thread.currentThread();
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+        Scheduler scheduler = pluginManager.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID);
+        scheduler.schedule("* */10 * * *", new Runnable() {
             @Override
             public void run() {
-                keepRun = false;
-                try {
-                    pluginManager.unloadPlugins();
-                    mainThread.join();
-                } catch (InterruptedException ignored) {
-
+                logger.info("Polling all uplinks");
+                for (Link link : binkpSession.getLinksInfo().getLinks()) {
+                    try {
+                        binkpRunner.poll(link, binkpSession);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                    }
                 }
-                logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
-
             }
-        }));
+        });
+
+        final Thread mainThread = Thread.currentThread();
 
         // locked thread
-        Thread lockThread = new Thread(new Runnable() {
+        final Thread lockThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (keepRun) {
@@ -101,6 +109,24 @@ public class JFtnRunner {
         });
         lockThread.setDaemon(true);
         lockThread.start();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                keepRun = false;
+                try {
+                    pluginManager.unloadPlugins();
+                    lockThread.interrupt();
+                    mainThread.join();
+                } catch (InterruptedException ignored) {
+
+                }
+                logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
+
+            }
+        }));
+
+
         lockThread.join();
     }
 }
