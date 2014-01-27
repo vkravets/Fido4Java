@@ -43,11 +43,14 @@ import java.util.*;
  * Time: 9:05 PM
  */
 public class PluginManager extends HasEventBus {
-    private static PluginManager ourInstance = new PluginManager();
+    private static PluginManager ourInstance;
 
     public static final Logger logger = LoggerFactory.getLogger(PluginManager.class);
 
     public static PluginManager getInstance() {
+        if (ourInstance == null) {
+            ourInstance = new PluginManager();
+        }
         return ourInstance;
     }
 
@@ -73,11 +76,16 @@ public class PluginManager extends HasEventBus {
 
         // After loading all plugins, try to init and load it
         for (Plugin plugin : plugins) {
+            String pluginId = plugin.getPluginInfo().getId();
             try {
+                long startTime = System.currentTimeMillis();
+                logger.info(String.format("Loading %s plugin", pluginId));
                 plugin.init(this, getEventBus());
                 plugin.load();
+                logger.info(String.format("Plugin %s was successfully loaded", pluginId));
+                logger.debug(String.format("Plugin %s loading time is %dms", pluginId, System.currentTimeMillis() - startTime));
             } catch (PluginException e) {
-                logger.error("Unable to load " + plugin.getPluginInfo().getId() + " plugin", e);
+                logger.error("Unable to load " + pluginId + " plugin", e);
             }
 
         }

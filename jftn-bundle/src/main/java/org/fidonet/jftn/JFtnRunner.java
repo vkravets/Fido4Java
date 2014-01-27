@@ -28,32 +28,32 @@
 
 package org.fidonet.jftn;
 
+import org.fidonet.binkp.LinksInfo;
+import org.fidonet.binkp.Runner;
+import org.fidonet.binkp.SessionContext;
+import org.fidonet.binkp.config.StationConfig;
+import org.fidonet.binkp.plugin.BinkPPlugin;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.jftn.engine.script.JFtnScriptService;
-import org.fidonet.jftn.engine.script.JythonScriptManager;
-import org.fidonet.jftn.engine.script.ScriptEngine;
-import org.fidonet.jftn.share.Command;
-import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.plugins.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JFtnRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
+    private static Boolean keepRun = true;
 
     private static void Help() {
-        System.out.println("java ftn usage:");
-        System.out.println("jftn <action>:");
-        System.out.println("    help - show this help");
-        System.out.println("    toss - toss incoming echomail");
+//        System.out.println("java ftn usage:");
+//        System.out.println("jftn <action>:");
+//        System.out.println("    help - show this help");
+//        System.out.println("    toss - toss incoming echomail");
     }
 
     public static void main(String[] args) throws Exception {
 
-        logger.debug("Starting JToss...");
+        logger.info("Starting JFtnNode...");
         final long starttime = System.currentTimeMillis();
         JFtnConfig config = new JFtnConfig();
         try {
@@ -63,40 +63,44 @@ public class JFtnRunner {
             System.exit(1);
         }
 
-        // Loading Script engine
-        ScriptEngine scriptManager = new JythonScriptManager("scripts");
+        final PluginManager pluginManager = PluginManager.getInstance();
+        pluginManager.loadPlugins();
 
-        HookInterpreter hooks = new HookInterpreter();
-        CommandCollection commands = new CommandCollection();
-        CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
-        JFtnScriptService shareObject = new JFtnScriptService(scriptManager, hooks, commandInterpreter);
-        shareObject.setConfig(config);
-        // Loading all scripts
-        scriptManager.reloadScripts(shareObject);
+        Runner binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
+        binkpRunner.bindServer(new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), new LinksInfo()), 9090);
 
-        if (args.length == 0) {
-            System.out.println("Error: No action in commandline.");
-            Help();
-        } else {
-            String commandString = args[0];
-            Command command = commands.findCommandByName(commandString);
-            if (command != null) {
-                logger.info("Executing " + commandString + " command...");
-                command.execute(args);
-            } else {
-                logger.debug("Trying to OOTB command...");
-                if (args[0].equalsIgnoreCase("toss")) {
-//                    Tosser tosser = new Tosser(config);
-//                    tosser.runFast(config.getValue("inbound"));
-                } else if (args[0].equalsIgnoreCase("help")) {
-                    Help();
-                } else {
-                    System.out.println("Error: Unknown commandline argument.");
-                    Help();
+        final Thread mainThread = Thread.currentThread();
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                keepRun = false;
+                try {
+                    pluginManager.unloadPlugins();
+                    mainThread.join();
+                } catch (InterruptedException ignored) {
+
+                }
+                logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
+
+            }
+        }));
+
+        // locked thread
+        Thread lockThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (keepRun) {
+                    logger.debug("alive");
+                    try {
+                        Thread.sleep(300000); // every 5 min
+                    } catch (InterruptedException ignored) {
+                        break;
+                    }
                 }
             }
-        }
-
-        logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
+        });
+        lockThread.setDaemon(true);
+        lockThread.start();
+        lockThread.join();
     }
 }

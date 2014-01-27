@@ -46,9 +46,11 @@ public class BinkPPlugin implements Plugin {
 
     private Runner ranner;
 
+    public static final String BINKP_PLUGIN_ID = "binkp";
+
     @Override
     public PluginInformation getPluginInfo() {
-        return new PluginInformation("binkp", 1, 0, "Realization of BinkP protocol.");
+        return new PluginInformation(BINKP_PLUGIN_ID, 1, 0, "Realization of BinkP protocol.");
     }
 
     @Override
