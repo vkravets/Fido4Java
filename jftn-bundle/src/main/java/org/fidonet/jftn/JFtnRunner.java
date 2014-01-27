@@ -122,7 +122,7 @@ public class JFtnRunner {
                 } catch (InterruptedException ignored) {
 
                 }
-                logger.debug("Finish working (time: " + (System.currentTimeMillis() - starttime) / 1000.0 + " sec)");
+                logger.debug("Finish working (time: {} sec)", (int) (System.currentTimeMillis() - starttime) / 1000.0);
 
             }
         }));

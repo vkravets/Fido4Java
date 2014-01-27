@@ -68,7 +68,7 @@ public abstract class BaseConfig implements IConfig {
                     continue;
                 }
                 if (!str.contains("=")) {
-                    logger.debug("Error in config string " + strnum);
+                    logger.debug("Error in config string on {} line", strnum);
                     break;
                 }
                 Scanner scanner = new Scanner(str);

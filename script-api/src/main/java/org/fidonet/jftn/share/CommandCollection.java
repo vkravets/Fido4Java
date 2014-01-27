@@ -57,7 +57,7 @@ public class CommandCollection {
             if (cmd == null) {
                 commands.put(name, command);
             } else {
-                logger.warn("\"" + name + "\" command already registered!");
+                logger.warn("\"{}\" command already registered!", name);
             }
         }
     }

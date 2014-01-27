@@ -45,7 +45,7 @@ public class Zipper {
     private static final Logger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
-        logger.info("Unpack and toss: " + bound);
+        logger.info("Unpack and toss: {}", bound);
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
         ZipFile zip = new ZipFile(bound);
@@ -62,7 +62,7 @@ public class Zipper {
                 continue;
             }
 
-            logger.debug("        " + entry.getName());
+            logger.debug("        {}", entry.getName());
 
             ByteBuffer resbuf = ByteBuffer.allocate((int) entry.getSize());
             resbuf.order(ByteOrder.LITTLE_ENDIAN);

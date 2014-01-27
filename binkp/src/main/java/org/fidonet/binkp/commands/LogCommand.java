@@ -52,6 +52,6 @@ public class LogCommand extends NULCommand {
 
     @Override
     protected void handleCommand(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        log.info("REMOTE -> " + commandArgs);
+        log.info("REMOTE -> {}", commandArgs);
     }
 }

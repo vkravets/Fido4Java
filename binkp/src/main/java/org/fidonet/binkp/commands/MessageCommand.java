@@ -68,7 +68,7 @@ public abstract class MessageCommand implements Command {
     @Override
     public void send(IoSession session, SessionContext sessionContext) throws Exception {
         String cmdArgs = getCommandArguments(sessionContext);
-        log.debug("Sending message " + BinkCommand.findCommand(commandType.getCmd()) + "[" + cmdArgs + "]");
+        log.debug("Sending message {} [{}]", BinkCommand.findCommand(commandType.getCmd()), cmdArgs);
         session.write(getData(cmdArgs));
     }
 

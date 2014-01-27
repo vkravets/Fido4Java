@@ -182,7 +182,7 @@ public class Message {
     }
 
     public void dumpHead() {
-        logger.debug("from: " + from + ' ' + fAddr + " to: " + to + ' ' + tAddr + " area: " + area);
+        logger.debug("from: {} {} to: {} {} area: {}", from, fAddr, to, tAddr, area);
     }
 
     public boolean isEchomail() {

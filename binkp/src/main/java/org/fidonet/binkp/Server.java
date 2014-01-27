@@ -110,7 +110,7 @@ public class Server extends Connector {
                 SessionContext sessionContext = (SessionContext) session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                         sessionContext.getState().equals(SessionState.STATE_BSY)) {
-                    logger.warn("Client close with error: " + sessionContext.getLastErrorMessage());
+                    logger.warn("Client close with error: {}", sessionContext.getLastErrorMessage());
                 }
                 session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
                 synchronized (userConnected) {

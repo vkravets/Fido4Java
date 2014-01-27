@@ -79,7 +79,7 @@ public class FilesSender implements Runnable {
                 long skippedBytes = reader.skip(fileInfo.getOffset());
                 assert skippedBytes == fileInfo.getOffset();
             } else {
-                logger.warn("File current offset greater than size of file", new Throwable());
+                logger.warn("{} file have current offset greater than file size", fileInfo.getName(), new Throwable());
                 logger.debug(fileInfo.toString());
             }
         } else {
@@ -115,7 +115,7 @@ public class FilesSender implements Runnable {
                 try {
                     send(curFile);
                 } catch (Exception e) {
-                    logger.error("Unable to sent file " + curFile.getInfo().toString());
+                    logger.error("Unable to sent file {}", curFile.getInfo().toString());
                 }
             }
             Command eob = new EOBCommand();
@@ -152,7 +152,7 @@ public class FilesSender implements Runnable {
                     files.addLast(new FileData<InputStream>(fileInfo, fileData.getStream()));
                 }
             } else {
-                logger.warn("File is not found the the queue " + fileInfo.toString());
+                logger.warn("File is not found the the queue {}", fileInfo.toString());
             }
         }
     }

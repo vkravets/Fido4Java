@@ -96,9 +96,9 @@ public class Tosser extends HasEventBus {
                             }
                         }
                     } catch (IOException e) {
-                        logger.error(String.format("Failed to unpack %s. Details: %s", file.getAbsolutePath(), e.getMessage()), e);
+                        logger.error("Failed to unpack {}. Details: {}", file.getAbsolutePath(), e.getMessage(), e);
                     } catch (TosserException e) {
-                        logger.error(String.format("Failed to toss %s. Details: %s", file.getAbsolutePath(), e.getMessage()), e);
+                        logger.error("Failed to toss {}. Details: {}", file.getAbsolutePath(), e.getMessage(), e);
                     }
                 }
             }
@@ -109,7 +109,7 @@ public class Tosser extends HasEventBus {
         File bad = new File(config.getTmpDir() + pkt.getName().replace(".pkt", ".bad"));
 
         if (bad.exists()) {
-            logger.warn("Bad " + pkt.getName() + " already exists. ");
+            logger.warn("Bad {} already exists.", pkt.getName());
             // TODO: need to throw exception?
             return;
         }

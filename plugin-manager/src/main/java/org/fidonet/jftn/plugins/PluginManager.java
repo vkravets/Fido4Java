@@ -79,13 +79,13 @@ public class PluginManager extends HasEventBus {
             String pluginId = plugin.getPluginInfo().getId();
             try {
                 long startTime = System.currentTimeMillis();
-                logger.info(String.format("Loading %s plugin", pluginId));
+                logger.info("Loading {} plugin", pluginId);
                 plugin.init(this, getEventBus());
                 plugin.load();
-                logger.info(String.format("Plugin %s was successfully loaded", pluginId));
-                logger.debug(String.format("Plugin %s loading time is %dms", pluginId, System.currentTimeMillis() - startTime));
+                logger.info("Plugin {} was successfully loaded", pluginId);
+                logger.debug("Plugin {} loading time is {}ms", pluginId, System.currentTimeMillis() - startTime);
             } catch (PluginException e) {
-                logger.error("Unable to load " + pluginId + " plugin", e);
+                logger.error("Unable to load {} plugin", pluginId, e);
             }
 
         }
@@ -137,7 +137,7 @@ public class PluginManager extends HasEventBus {
             try {
                 plugin.unload();
             } catch (PluginException e) {
-                logger.error("Unable to unload " + plugin.getPluginInfo().getId() + " plugin", e);
+                logger.error("Unable to unload {} plugin", plugin.getPluginInfo().getId(), e);
             }
         }
         plugins.clear();

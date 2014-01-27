@@ -95,7 +95,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         super.sessionOpened(session);
 
         SessionContext sessionContext = getSessionContext(session);
-        log.debug(String.format("Session is opened with %s", sessionContext.getLinksInfo().getCurLink().toString()));
+        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
 
         session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
         session.setAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
@@ -154,17 +154,17 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             throw ex;
         }
         if (command != null) {
-            log.debug("Get command: " + BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: " + new String(binkData.getData()));
+            log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
+            log.debug("Command data: {}", new String(binkData.getData()));
             command.handle(session, sessionContext, new String(binkData.getData()));
         } else {
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
-            log.debug("Received data block with size " + dataFile.getRawData().getData().length + " bytes");
+            log.debug("Received data block with size {}bytes", dataFile.getRawData().getData().length);
             FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
             if (fileData != null) {
                 FileInfo info = fileData.getInfo();
-                log.debug("Saving data bulk for " + info.getName() + " file");
+                log.debug("Saving data bulk for {} file", info.getName());
                 long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
                 fileData.getStream().write(dataFile.getRawData().getData());
                 info.setCurSize(curSize);
@@ -173,7 +173,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
                     GOTCommand confirmRecv = new GOTCommand();
                     confirmRecv.send(session, sessionContext);
                     eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
-                    log.info("Got " + info.getName() + " file with " + info.getSize() + " bytes file size");
+                    log.info("Got {} file with {} bytes file size", info.getName(), info.getSize());
                 }
             }
         }

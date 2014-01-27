@@ -120,11 +120,11 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                 String fileName = file.getName();
                 if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
                     try {
-                        logger.debug("Loading " + file.getName());
+                        logger.debug("Loading ", file.getName());
                         if (forceUnload) unregisterScript(new FileInputStream(file), params);
                         registerScript(new FileInputStream(file), params);
                     } catch (Exception e) {
-                        logger.error(String.format("Error during loading %s script. Details: %s", file.getName(), e.getMessage()), e);
+                        logger.error("Error during loading {} script. Details: {}", file.getName(), e.getMessage(), e);
                     }
                 }
             }
