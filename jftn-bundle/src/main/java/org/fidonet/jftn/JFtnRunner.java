@@ -90,6 +90,7 @@ public class JFtnRunner {
                 }
             }
         });
+        scheduler.start();
 
         final Thread mainThread = Thread.currentThread();
 
@@ -98,7 +99,7 @@ public class JFtnRunner {
             @Override
             public void run() {
                 while (keepRun) {
-                    logger.debug("alive");
+                    logger.debug("It's alive!");
                     try {
                         Thread.sleep(300000); // every 5 min
                     } catch (InterruptedException ignored) {

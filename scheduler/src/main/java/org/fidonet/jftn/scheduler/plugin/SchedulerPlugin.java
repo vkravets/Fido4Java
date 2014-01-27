@@ -64,6 +64,7 @@ public class SchedulerPlugin implements Plugin {
 
     @Override
     public void unload() throws PluginException {
+        scheduler.stop();
         scheduler = null;
     }
 

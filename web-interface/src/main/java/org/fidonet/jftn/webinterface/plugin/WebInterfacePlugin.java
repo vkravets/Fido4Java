@@ -63,8 +63,9 @@ public class WebInterfacePlugin implements Plugin {
         try {
             server = new Server();
             ServerConnector serverConnector = new ServerConnector(server);
-            serverConnector.setPort(80);
+            serverConnector.setPort(8080);
             server.setConnectors(new Connector[]{serverConnector});
+            server.start();
         } catch (Exception e) {
             throw new PluginException(e);
         }

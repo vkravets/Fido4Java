@@ -78,6 +78,7 @@ public class DatabasePlugin implements Plugin {
 
     @Override
     public void unload() throws PluginException {
+        manager.close();
 
     }
 

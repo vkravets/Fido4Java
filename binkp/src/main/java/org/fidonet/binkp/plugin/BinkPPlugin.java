@@ -66,6 +66,7 @@ public class BinkPPlugin implements Plugin {
 
     @Override
     public void unload() throws PluginException {
+        ranner.shutdown();
         ranner = null;
     }
 
