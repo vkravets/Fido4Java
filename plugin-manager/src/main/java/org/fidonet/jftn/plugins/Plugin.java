@@ -30,6 +30,8 @@ package org.fidonet.jftn.plugins;
 
 import org.fidonet.events.EventBus;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -47,5 +49,5 @@ public interface Plugin {
 
     public void unload() throws PluginException;
 
-    public Object getContext();
+    public WeakReference<Object> getContext();
 }

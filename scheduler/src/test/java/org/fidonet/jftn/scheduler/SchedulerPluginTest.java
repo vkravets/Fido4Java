@@ -34,6 +34,8 @@ import org.fidonet.jftn.plugins.PluginManager;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -49,7 +51,7 @@ public class SchedulerPluginTest {
         PluginManager manager = PluginManager.getInstance();
         manager.loadPlugins();
         boolean exception = false;
-        Scheduler schedule = null;
+        WeakReference<Scheduler> schedule = null;
         try {
             schedule = manager.getContext("schedule");
         } catch (PluginException ex) {
@@ -60,11 +62,10 @@ public class SchedulerPluginTest {
             ex.printStackTrace();
         }
         TestCase.assertEquals(false, exception);
-        TestCase.assertNotNull(schedule);
-
-        schedule.start();
+        TestCase.assertNotNull(schedule.get());
+        schedule.get().start();
         final Boolean[] taskExecute = {false};
-        schedule.schedule("* * * * *", new Runnable() {
+        schedule.get().schedule("* * * * *", new Runnable() {
             @Override
             public void run() {
                 taskExecute[0] = true;
@@ -75,9 +76,9 @@ public class SchedulerPluginTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
-            schedule.stop();
             PluginManager.getInstance().unloadPlugins();
         }
         TestCase.assertEquals(Boolean.TRUE, taskExecute[0]);
+        TestCase.assertNull(schedule);
     }
 }

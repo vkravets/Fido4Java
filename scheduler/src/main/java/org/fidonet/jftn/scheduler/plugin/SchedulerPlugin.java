@@ -35,6 +35,8 @@ import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.scheduler.Scheduler;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -45,6 +47,7 @@ import org.fidonet.jftn.scheduler.Scheduler;
 public class SchedulerPlugin implements Plugin {
 
     private Scheduler scheduler;
+    private WeakReference<Object> context;
 
     public static final String SCHEDULER_PLUGIN_ID = "schedule";
 
@@ -60,16 +63,20 @@ public class SchedulerPlugin implements Plugin {
     @Override
     public void load() throws PluginException {
         scheduler = new Scheduler();
+        context = new WeakReference<Object>(scheduler);
     }
 
     @Override
     public void unload() throws PluginException {
-        scheduler.stop();
+        if (scheduler != null) {
+            scheduler.stop();
+        }
         scheduler = null;
+        context.clear();
     }
 
     @Override
-    public Object getContext() {
-        return scheduler;
+    public WeakReference<Object> getContext() {
+        return context;
     }
 }

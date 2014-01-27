@@ -43,6 +43,7 @@ import org.fidonet.types.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public class JFtnRunner {
@@ -72,25 +73,25 @@ public class JFtnRunner {
         final PluginManager pluginManager = PluginManager.getInstance();
         pluginManager.loadPlugins();
 
-        final Runner binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
+        final WeakReference<Runner> binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
         final SessionContext binkpSession = new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), new LinksInfo(new ArrayList<Link>()));
-        binkpRunner.bindServer(binkpSession, Connector.BINK_PORT);
+        binkpRunner.get().bindServer(binkpSession, Connector.BINK_PORT);
 
-        Scheduler scheduler = pluginManager.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID);
-        scheduler.schedule("* */10 * * *", new Runnable() {
+        WeakReference<Scheduler> scheduler = pluginManager.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID);
+        scheduler.get().schedule("* */10 * * *", new Runnable() {
             @Override
             public void run() {
                 logger.info("Polling all uplinks");
                 for (Link link : binkpSession.getLinksInfo().getLinks()) {
                     try {
-                        binkpRunner.poll(link, binkpSession);
+                        binkpRunner.get().poll(link, binkpSession);
                     } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                     }
                 }
             }
         });
-        scheduler.start();
+        scheduler.get().start();
 
         final Thread mainThread = Thread.currentThread();
 

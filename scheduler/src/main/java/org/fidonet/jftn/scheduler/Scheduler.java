@@ -51,7 +51,9 @@ public class Scheduler {
     }
 
     public void stop() {
-        scheduler.stop();
+        if (scheduler.isStarted()) {
+            scheduler.stop();
+        }
     }
 
     public String schedule(String cronSchedule, Runnable task) {

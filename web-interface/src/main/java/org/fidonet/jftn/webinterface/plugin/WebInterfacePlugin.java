@@ -37,6 +37,8 @@ import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -47,6 +49,7 @@ import org.fidonet.jftn.plugins.PluginManager;
 public class WebInterfacePlugin implements Plugin {
 
     private Server server;
+    private WeakReference<Object> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -69,21 +72,25 @@ public class WebInterfacePlugin implements Plugin {
         } catch (Exception e) {
             throw new PluginException(e);
         }
+        context = new WeakReference<Object>(server);
     }
 
     @Override
     public void unload() throws PluginException {
         try {
-            server.stop();
+            if (server != null) {
+                server.stop();
+            }
         } catch (Exception e) {
             throw new PluginException(e);
         } finally {
             server = null;
+            context.clear();
         }
     }
 
     @Override
-    public Object getContext() {
-        return server;
+    public WeakReference<Object> getContext() {
+        return context;
     }
 }

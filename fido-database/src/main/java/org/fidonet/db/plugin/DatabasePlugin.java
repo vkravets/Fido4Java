@@ -36,6 +36,7 @@ import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
 
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 
 /**
@@ -49,6 +50,7 @@ public class DatabasePlugin implements Plugin {
 
     private DatabaseManager manager;
     private String databaseUrl;
+    private WeakReference<Object> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -74,16 +76,20 @@ public class DatabasePlugin implements Plugin {
         }
 
         manager = new DatabaseManager(ormManager);
+        context = new WeakReference<Object>(manager);
     }
 
     @Override
     public void unload() throws PluginException {
-        manager.close();
-
+        if (manager != null) {
+            manager.close();
+            manager = null;
+        }
+        context.clear();
     }
 
     @Override
-    public Object getContext() {
-        return manager;
+    public WeakReference<Object> getContext() {
+        return context;
     }
 }

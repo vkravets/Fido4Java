@@ -33,6 +33,7 @@ import org.openide.util.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 /**
@@ -136,6 +137,7 @@ public class PluginManager extends HasEventBus {
         for (Plugin plugin : getPlugins().values()) {
             try {
                 plugin.unload();
+                logger.debug("Plugin {} was successfully unloaded", plugin.getPluginInfo().getId());
             } catch (PluginException e) {
                 logger.error("Unable to unload {} plugin", plugin.getPluginInfo().getId(), e);
             }
@@ -155,9 +157,10 @@ public class PluginManager extends HasEventBus {
         return plugins;
     }
 
-    public <T> T getContext(String id) throws PluginException {
+    public <T> WeakReference<T> getContext(String id) throws PluginException {
         Plugin plugin = plugins.get(id);
         if (plugin == null) throw new PluginException("Plugin \"" + id + "\" is not found or is not loaded");
-        return (T) plugin.getContext();
+        WeakReference<Object> context = plugin.getContext();
+        return (WeakReference<T>) context;
     }
 }

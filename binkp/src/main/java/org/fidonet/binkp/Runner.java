@@ -108,7 +108,9 @@ public class Runner {
     }
 
     public void shutdown() {
-        server.stop();
+        if (server != null) {
+            server.stop();
+        }
         threadPoolExecutor.shutdown();
     }
 

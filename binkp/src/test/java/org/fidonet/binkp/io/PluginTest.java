@@ -34,6 +34,8 @@ import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.junit.Test;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -44,13 +46,14 @@ import org.junit.Test;
 public class PluginTest {
 
     @Test
-    public void pluginTest() {
+    public void pluginTest() throws InterruptedException {
         PluginManager manager = PluginManager.getInstance();
         manager.loadPlugins();
         boolean exception = false;
-        Runner binkp = null;
+        WeakReference<Runner> binkp = null;
         try {
             binkp = manager.getContext("binkp");
+            TestCase.assertNotNull(binkp.get());
         } catch (PluginException ex) {
             exception = true;
             ex.printStackTrace();
@@ -61,6 +64,6 @@ public class PluginTest {
             PluginManager.getInstance().unloadPlugins();
         }
         TestCase.assertEquals(false, exception);
-        TestCase.assertNotNull(binkp);
+        TestCase.assertNull(binkp.get());
     }
 }

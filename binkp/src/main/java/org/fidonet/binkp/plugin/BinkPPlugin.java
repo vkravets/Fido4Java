@@ -35,6 +35,8 @@ import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -45,6 +47,7 @@ import org.fidonet.jftn.plugins.PluginManager;
 public class BinkPPlugin implements Plugin {
 
     private Runner ranner;
+    private WeakReference<Object> context;
 
     public static final String BINKP_PLUGIN_ID = "binkp";
 
@@ -62,16 +65,18 @@ public class BinkPPlugin implements Plugin {
     public void load() throws PluginException {
 //        System.out.println("Load Binp0");
         ranner = new Runner();
+        context = new WeakReference<Object>(ranner);
     }
 
     @Override
     public void unload() throws PluginException {
         ranner.shutdown();
         ranner = null;
+        context.clear();
     }
 
     @Override
-    public Object getContext() {
-        return ranner;
+    public WeakReference<Object> getContext() {
+        return context;
     }
 }

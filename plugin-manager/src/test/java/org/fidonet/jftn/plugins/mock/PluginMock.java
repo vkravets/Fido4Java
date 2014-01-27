@@ -34,6 +34,8 @@ import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -61,7 +63,7 @@ public abstract class PluginMock implements Plugin {
     }
 
     @Override
-    public Object getContext() {
+    public WeakReference<Object> getContext() {
         return null;
     }
 }
