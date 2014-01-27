@@ -59,7 +59,7 @@ public class GETCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        final FilesSender filesSender = (FilesSender) session.setAttribute(FilesSender.FILESENDER_KEY);
+        final FilesSender filesSender = (FilesSender) session.getAttribute(FilesSender.FILESENDER_KEY);
         if (filesSender != null) {
             final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
             if (sessionContext.getState().equals(SessionState.STATE_WAITGET)) {
