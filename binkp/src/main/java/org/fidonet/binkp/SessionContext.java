@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp;
 
+import org.apache.mina.core.session.AttributeKey;
 import org.fidonet.binkp.config.Password;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
@@ -53,7 +54,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class SessionContext extends HasEventBus {
 
-    public static final String SESSION_CONTEXT_KEY = SessionContext.class.getName() + ".CONTEXT";
+    public static final AttributeKey SESSION_CONTEXT_KEY = new AttributeKey(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
 
     // send size
     private long sendMailSize;
