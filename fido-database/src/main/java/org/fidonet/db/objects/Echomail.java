@@ -54,8 +54,8 @@ public class Echomail {
     @DatabaseField(columnName = "msgId", canBeNull = false, unique = true, uniqueIndex = true)
     private String msgId;
 
-    @DatabaseField(columnName = "id_echoarea", foreign = true, foreignAutoRefresh = false)
-    private Echoarea area;
+    @DatabaseField(columnName = "id_echoarea", canBeNull = false)
+    private Long areaId;
 
     @DatabaseField(columnName = "from_name", canBeNull = false)
     private String fromName;
@@ -94,12 +94,12 @@ public class Echomail {
         return id;
     }
 
-    public Echoarea getArea() {
-        return area;
+    public Long getAreaId() {
+        return areaId;
     }
 
-    public void setArea(Echoarea area) {
-        this.area = area;
+    public void setAreaId(Long areaId) {
+        this.areaId = areaId;
     }
 
     public String getFromName() {
@@ -212,7 +212,7 @@ public class Echomail {
 
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
-        msg.setArea(area);
+        msg.setAreaId(area.getId());
         SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss");
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);

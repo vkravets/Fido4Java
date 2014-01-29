@@ -41,7 +41,7 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 
 @DatabaseTable(tableName = "links")
-public class Link {
+public class ConfigurationLink {
 
     @DatabaseField(generatedId = true, columnName = "id", canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
@@ -64,7 +64,7 @@ public class Link {
     @DatabaseField(columnName = "flags", defaultValue = "")
     private String flags;
 
-    public Link() {
+    public ConfigurationLink() {
     }
 
     public Long getId() {

@@ -48,11 +48,15 @@ public interface IBase {
     public boolean createArea(String areaName, String description);
     public void addMessage(Message message, String areaname);
     public Iterator<Message> getMessages(String areaname);
-    public Iterator<Message> getMessages(String areaname, int bundleSize);
+
+    public Iterator<Message> getMessages(String areaname, long startMessage, long bundleSize);
+
     public Iterator<Message> getMessages(Link link);
-    public Iterator<Message> getMessages(Link link, int bundleSize);
-    public Iterator<Message> getMessages(Link link, String areaname, int bundleSize);
-    public Iterator<Message> getMessages(Link link, String areaname, long startMessage, int bundleSize);
+
+    public Iterator<Message> getMessages(Link link, String areaname);
+
+    public Iterator<Message> getMessages(Link link, String areaname, long startMessage, long bundleSize);
+
     public Message getMessage(String area, int id);
     public Message getMessage(int id);
     public long getMessageSize(String areaname);
@@ -60,6 +64,8 @@ public interface IBase {
     public List<String> getAreas();
 
     public boolean isAreaExists(String name);
+
+    public void setLinkLastMessage(Link link, String areaname, Long id);
 
     public void close();
 }

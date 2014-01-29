@@ -106,6 +106,7 @@ public class TestTosser {
             TestCase.assertEquals(8, list.size());
             TestCase.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
             TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
+            TestCase.assertEquals(4, databaseManager.getMessageSize("ru.anime"));
             Iterator<Message> messages = databaseManager.getMessages("ru.anime");
             while (messages.hasNext()) {
                 Message message = messages.next();

@@ -49,16 +49,47 @@ public class Subscription {
     }
 
 
-    @DatabaseField(columnName = "id_link", foreign = true, foreignAutoRefresh = false, uniqueIndex = true)
-    private Link link;
+    @DatabaseField(columnName = "id_link", foreign = true, foreignAutoRefresh = true, uniqueIndex = true)
+    private ConfigurationLink configurationLink;
 
-    @DatabaseField(columnName = "id_area", foreign = true, foreignAutoRefresh = false, uniqueIndex = true)
+    @DatabaseField(columnName = "id_area", foreign = true, foreignAutoRefresh = true, uniqueIndex = true)
     private Echoarea echoarea;
 
-    @DatabaseField(columnName = "lastmessage_id", foreign = true, foreignAutoRefresh = false)
-    private Echomail lastMessage;
+    @DatabaseField(columnName = "lastmessage_id")
+    private Long lastMessage;
 
     @DatabaseField(columnName = "access_level", dataType = DataType.ENUM_STRING)
     private AccessLevel accessLevel;
 
+    public ConfigurationLink getConfigurationLink() {
+        return configurationLink;
+    }
+
+    public void setConfigurationLink(ConfigurationLink configurationLink) {
+        this.configurationLink = configurationLink;
+    }
+
+    public Echoarea getEchoarea() {
+        return echoarea;
+    }
+
+    public void setEchoarea(Echoarea echoarea) {
+        this.echoarea = echoarea;
+    }
+
+    public Long getLastMessage() {
+        return lastMessage;
+    }
+
+    public void setLastMessage(Long lastMessage) {
+        this.lastMessage = lastMessage;
+    }
+
+    public AccessLevel getAccessLevel() {
+        return accessLevel;
+    }
+
+    public void setAccessLevel(AccessLevel accessLevel) {
+        this.accessLevel = accessLevel;
+    }
 }

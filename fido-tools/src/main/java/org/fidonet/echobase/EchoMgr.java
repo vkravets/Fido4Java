@@ -43,9 +43,6 @@ public class EchoMgr {
     }
 
     public void addMessage(Message msg) throws IOException, EchoBaseException {
-        if (isEchoExists(msg.getArea().toLowerCase())) {
-            echosbase.createArea(msg.getArea().toLowerCase());
-        }
         echosbase.addMessage(msg, msg.getArea().toLowerCase());
     }
 

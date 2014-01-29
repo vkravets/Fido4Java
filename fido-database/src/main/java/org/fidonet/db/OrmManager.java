@@ -64,7 +64,7 @@ public class OrmManager {
         daoClasses = new HashSet<Class<?>>();
         daoClasses.add(Echoarea.class);
         daoClasses.add(Echomail.class);
-        daoClasses.add(Link.class);
+        daoClasses.add(ConfigurationLink.class);
         daoClasses.add(Netmail.class);
         daoClasses.add(Subscription.class);
     }

@@ -46,6 +46,7 @@ public class Zipper {
 
     public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: {}", bound);
+        long startTime = System.currentTimeMillis();
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
         ZipFile zip = new ZipFile(bound);
@@ -78,6 +79,7 @@ public class Zipper {
         }
         zip.close();
         logger.info("Unpacking was finished");
+        logger.debug("Unpacking takes {}ms", System.currentTimeMillis() - startTime);
         return res;
     }
 

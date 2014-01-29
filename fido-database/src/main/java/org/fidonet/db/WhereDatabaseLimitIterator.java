@@ -28,13 +28,13 @@
 
 package org.fidonet.db;
 
+import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.Where;
 
 import java.sql.SQLException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -49,21 +49,31 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
     private Where<T, Object> echomailObjectWhere;
     private long limit;
     private long offset;
-    private Iterator<T> curlist;
+    private CloseableIterator<T> curlist;
     private QueryBuilder<T, Object> objectQueryBuilder;
+    private boolean continueQuery;
 
-    public WhereDatabaseLimitIterator(Dao<T, Object> echomails, Where<T, Object> echomainWhere, long i) {
+    public WhereDatabaseLimitIterator(Dao<T, Object> echomails, Where<T, Object> echomainWhere, long offset, long limit) {
+        this(echomails, echomainWhere, offset, limit, false);
+    }
+
+    public WhereDatabaseLimitIterator(Dao<T, Object> echomails, Where<T, Object> echomainWhere, long offset, long limit, boolean continueQuery) {
         this.echomailObjectWhere = echomainWhere;
-        this.limit = i;
-        this.offset = 0;
+        this.limit = limit;
+        this.offset = offset;
         objectQueryBuilder = echomails.queryBuilder();
+        this.continueQuery = continueQuery;
     }
 
     @Override
     public boolean hasNext() {
         if (curlist != null && curlist.hasNext()) return true;
         try {
-            queryDb();
+            if (curlist == null || continueQuery && offset >= limit) {
+                queryDb();
+            } else {
+                return false;
+            }
         } catch (SQLException e) {
             // todo logger
             return false;
@@ -72,11 +82,22 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
     }
 
     private void queryDb() throws SQLException {
-        objectQueryBuilder = objectQueryBuilder.limit(limit).offset(offset);
-        objectQueryBuilder.setWhere(echomailObjectWhere);
-        // todo: change directly to get iterator?
-        List<T> query = objectQueryBuilder.query();
-        curlist = query.iterator();
+        if (curlist != null) curlist.close();
+        if (limit > -1) {
+            objectQueryBuilder = objectQueryBuilder.limit(limit);
+        }
+        if (offset > -1) {
+            objectQueryBuilder = objectQueryBuilder.offset(offset);
+        }
+        if (echomailObjectWhere != null) {
+            objectQueryBuilder.setWhere(echomailObjectWhere);
+            curlist = objectQueryBuilder.iterator();
+        } else {
+            curlist = objectQueryBuilder.iterator();
+        }
+        if (!curlist.hasNext()) {
+            curlist.close();
+        }
     }
 
     @Override
@@ -96,4 +117,5 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
     public void remove() {
         curlist.remove();
     }
+
 }

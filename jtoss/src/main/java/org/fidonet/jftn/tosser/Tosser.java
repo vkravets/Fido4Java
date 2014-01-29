@@ -78,6 +78,7 @@ public class Tosser extends HasEventBus {
             throw new TosserException("Directory " + dirname + " not found!");
         }
         //TODO: We should make some checks!
+        long startTime = System.currentTimeMillis();
         if (files.length != 0) {
             for (File file : files) {
                 if (file.isFile() && isBunldeName(file.getName())) {
@@ -103,6 +104,7 @@ public class Tosser extends HasEventBus {
                 }
             }
         }
+        logger.debug("Tossing process takes {}ms", System.currentTimeMillis() - startTime);
     }
 
     private void saveBad(PktTemp pkt) throws IOException, TosserException {
@@ -179,6 +181,7 @@ public class Tosser extends HasEventBus {
         }
 
         final FtsPackMsg[] msgs = q.getMsgs();
+        logger.debug("Find {} messages in the bundle", msgs.length);
         for (FtsPackMsg msg1 : msgs) {
             final Message msg = new Message(msg1);
             if (msg.isEchomail()) {

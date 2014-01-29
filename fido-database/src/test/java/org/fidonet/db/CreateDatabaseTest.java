@@ -32,7 +32,7 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 import junit.framework.TestCase;
-import org.fidonet.db.objects.Link;
+import org.fidonet.db.objects.ConfigurationLink;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +52,7 @@ public class CreateDatabaseTest {
 
     private OrmManager ormManager;
     private DatabaseManager databaseManager;
-    private Dao<Link, Long> daoLinks;
+    private Dao<ConfigurationLink, Long> daoLinks;
 
     @Before
     public void setUp() throws SQLException {
@@ -61,7 +61,7 @@ public class CreateDatabaseTest {
         ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();
-        daoLinks = ormManager.getDao(Link.class);
+        daoLinks = ormManager.getDao(ConfigurationLink.class);
     }
 
     @After
@@ -72,20 +72,20 @@ public class CreateDatabaseTest {
     @Test
     public void testDatabaseCreation() {
         try {
-            Link link = new Link();
-            link.setAddress("2:467/110.1@fidonet.org");
-            link.setPassword("P@ssw0rd");
-            link.setPacket_password("P@ssw0rd");
-            link.setFlags("BINKD");
-            daoLinks.create(link);
+            ConfigurationLink configurationLink = new ConfigurationLink();
+            configurationLink.setAddress("2:467/110.1@fidonet.org");
+            configurationLink.setPassword("P@ssw0rd");
+            configurationLink.setPacket_password("P@ssw0rd");
+            configurationLink.setFlags("BINKD");
+            daoLinks.create(configurationLink);
 
-            QueryBuilder<Link, Long> linkQueryBuilder = daoLinks.queryBuilder();
+            QueryBuilder<ConfigurationLink, Long> linkQueryBuilder = daoLinks.queryBuilder();
 
-            List<Link> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
+            List<ConfigurationLink> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
             TestCase.assertEquals(1, address.size());
-            TestCase.assertTrue(daoLinks.objectsEqual(link, address.get(0)));
-            DeleteBuilder<Link, Long> deleteBuilder = daoLinks.deleteBuilder();
-            deleteBuilder.where().eq("id", link.getId());
+            TestCase.assertTrue(daoLinks.objectsEqual(configurationLink, address.get(0)));
+            DeleteBuilder<ConfigurationLink, Long> deleteBuilder = daoLinks.deleteBuilder();
+            deleteBuilder.where().eq("id", configurationLink.getId());
             deleteBuilder.delete();
         } catch (SQLException e) {
             e.printStackTrace();
