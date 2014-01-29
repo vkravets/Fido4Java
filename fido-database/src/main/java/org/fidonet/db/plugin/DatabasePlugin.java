@@ -60,13 +60,12 @@ public class DatabasePlugin implements Plugin {
     @Override
     public void init(PluginManager manager, EventBus eventBus) {
         // TODO: Load configuration from file
-        databaseUrl = "jdbc:derby:./database/TestDerby;create=true";
+        databaseUrl = "jdbc:h2:./database/jftn10;TRACE_LEVEL_FILE=4";
 
     }
 
     @Override
     public void load() throws PluginException {
-        System.setProperty("derby.stream.error.file", "./database/derby.log");
         OrmManager ormManager = new OrmManager(databaseUrl);
         try {
             ormManager.connect();

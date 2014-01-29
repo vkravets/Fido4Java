@@ -74,8 +74,9 @@ public class TestTosser {
     @Before
     public void setUp() throws SQLException {
         File pathDb = computeTestDataRoot(TestTosser.class);
-        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+//        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
+//        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();
     }

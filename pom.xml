@@ -45,7 +45,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <derby.version>10.9.1.0</derby.version>
+        <h2.version>1.3.171</h2.version>
     </properties>
 
     <distributionManagement>
