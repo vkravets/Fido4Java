@@ -74,6 +74,7 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
     private void queryDb() throws SQLException {
         objectQueryBuilder = objectQueryBuilder.limit(limit).offset(offset);
         objectQueryBuilder.setWhere(echomailObjectWhere);
+        // todo: change directly to get iterator?
         List<T> query = objectQueryBuilder.query();
         curlist = query.iterator();
     }
