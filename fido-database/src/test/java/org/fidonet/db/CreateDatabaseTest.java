@@ -59,6 +59,7 @@ public class CreateDatabaseTest {
         File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
 //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
 //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+//        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
         ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();

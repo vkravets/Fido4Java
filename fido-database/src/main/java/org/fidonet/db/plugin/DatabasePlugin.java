@@ -60,8 +60,8 @@ public class DatabasePlugin implements Plugin {
     @Override
     public void init(PluginManager manager, EventBus eventBus) {
         // TODO: Load configuration from file
-        databaseUrl = "jdbc:h2:./database/jftn10;TRACE_LEVEL_FILE=4";
-
+//        databaseUrl = "jdbc:h2:./database/jftn10;TRACE_LEVEL_FILE=4";
+        databaseUrl = "jdbc:h2:./database/jftn10";
     }
 
     @Override
