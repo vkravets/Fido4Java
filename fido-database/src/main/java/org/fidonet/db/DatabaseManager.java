@@ -30,6 +30,7 @@ package org.fidonet.db;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.Where;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
 import org.fidonet.echobase.IBase;
@@ -39,6 +40,7 @@ import org.fidonet.types.Message;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -52,6 +54,7 @@ import java.util.List;
 public class DatabaseManager implements IBase {
 
     private final OrmManager dbManager;
+    private static final Long MESSAGE_LIMIT_QUERY = 500L;
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;
@@ -98,20 +101,23 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
-        final List<Message> result = new ArrayList<Message>();
         try {
+            // TODO: change to one join query
             List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
             if (echoareaList.size() == 0) {
-                return result.iterator();
+                return Collections.EMPTY_LIST.iterator();
             }
-            List<Echomail> query = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId()).query();
-            for (Echomail echomail : query) {
-                result.add(echomail.toMessage());
-            }
+            Where<Echomail, Object> echomainWhere = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId());
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomails, echomainWhere, MESSAGE_LIMIT_QUERY) {
+                @Override
+                public Message convert(Echomail echomail) {
+                    return echomail.toMessage();
+                }
+            };
         } catch (SQLException e) {
             e.printStackTrace();  //todo: logger
         }
-        return result.iterator();
+        return null;
     }
 
     @Override
