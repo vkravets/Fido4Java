@@ -161,7 +161,6 @@ public class Message {
         final String fmpt = getSingleKludge("MSGID: ");
         Pattern p = Pattern.compile("[\\s@]");
         if (fmpt != null) {
-            // todo: error handling
             String[] tokens = p.split(fmpt);
             fAddr = new FTNAddr(tokens[0].trim());
             msgId = fmpt.trim();

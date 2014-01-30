@@ -32,6 +32,8 @@ import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.Where;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -45,6 +47,8 @@ import java.util.NoSuchElementException;
  * Time: 2:54 PM
  */
 public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
+
+    public static final Logger logger = LoggerFactory.getLogger(WhereDatabaseLimitIterator.class);
 
     private Where<T, Object> echomailObjectWhere;
     private long limit;
@@ -75,7 +79,7 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
                 return false;
             }
         } catch (SQLException e) {
-            // todo logger
+            logger.error(e.getMessage(), e);
             return false;
         }
         return curlist != null && curlist.hasNext();

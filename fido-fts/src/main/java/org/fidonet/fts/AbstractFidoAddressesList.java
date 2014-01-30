@@ -41,15 +41,15 @@ import java.util.*;
  * Time: 11:50 AM
  */
 
-public abstract class AbstractFidoAddresses {
+public abstract class AbstractFidoAddressesList {
 
     protected Set<FTNAddr> addresses;
     protected static final int WRAP_LENGTH = 72;
 
-    public AbstractFidoAddresses() {
+    public AbstractFidoAddressesList() {
     }
 
-    public AbstractFidoAddresses(Set<FTNAddr> path) {
+    public AbstractFidoAddressesList(Set<FTNAddr> path) {
         this.addresses = path;
     }
 
@@ -102,7 +102,7 @@ public abstract class AbstractFidoAddresses {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        AbstractFidoAddresses that = (AbstractFidoAddresses) o;
+        AbstractFidoAddressesList that = (AbstractFidoAddressesList) o;
         return addresses.equals(that.addresses);
 
     }

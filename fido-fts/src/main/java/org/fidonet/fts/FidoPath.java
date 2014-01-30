@@ -42,7 +42,7 @@ import java.util.Set;
  * Date: 8/5/13
  * Time: 11:59 AM
  */
-public class FidoPath extends AbstractFidoAddresses {
+public class FidoPath extends AbstractFidoAddressesList {
 
     public static final String PATH_LINE_PREFIX = "\001PATH: ";
 
@@ -65,7 +65,7 @@ public class FidoPath extends AbstractFidoAddresses {
     }
 
     public String[] toPathStrings() {
-        // FIXME: possible performance issue
-        return toPathString().split("\\n");
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - PATH_LINE_PREFIX.length());
+        return wrapLines.toArray(new String[wrapLines.size()]);
     }
 }

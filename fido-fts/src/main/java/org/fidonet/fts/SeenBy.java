@@ -43,7 +43,7 @@ import java.util.TreeSet;
  * Date: 8/5/13
  * Time: 11:58 AM
  */
-public class SeenBy extends AbstractFidoAddresses {
+public class SeenBy extends AbstractFidoAddressesList {
 
     private static final String SEEN_BY_LINE_PREFIX = "SEEN-BY: ";
 
@@ -80,7 +80,7 @@ public class SeenBy extends AbstractFidoAddresses {
     }
 
     public String[] toSeenByStrings() {
-        // FIXME: possible performance issue
-        return toSeenByString().split("\\n");
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - SEEN_BY_LINE_PREFIX.length());
+        return wrapLines.toArray(new String[wrapLines.size()]);
     }
 }

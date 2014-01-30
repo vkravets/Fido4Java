@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class StringTools {
 
-    public static final String NEW_LINE = "\n";
+    public static final String NEW_LINE = "\r";
 
     public static List<String> wrap(String str, int wrapLength) {
         if (str == null) return null;
