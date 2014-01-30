@@ -28,17 +28,19 @@
 
 package org.fidonet.tests.toss;
 
+import com.j256.ormlite.dao.Dao;
 import junit.framework.TestCase;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -59,8 +61,8 @@ import java.util.List;
  */
 public class TestTosser {
 
-    private OrmManager ormManager;
-    private DatabaseManager databaseManager;
+    private static OrmManager ormManager;
+    private static DatabaseManager databaseManager;
 
     private static File computeTestDataRoot(Class anyTestClass) {
         final String clsUri = anyTestClass.getName().replace('.', '/') + ".class";
@@ -71,8 +73,8 @@ public class TestTosser {
     }
 
 
-    @Before
-    public void setUp() throws SQLException {
+    @BeforeClass
+    public static void setUp() throws SQLException {
         File pathDb = computeTestDataRoot(TestTosser.class);
 //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
 //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
@@ -82,8 +84,8 @@ public class TestTosser {
         databaseManager.open();
     }
 
-    @After
-    public void tearDown() throws SQLException {
+    @AfterClass
+    public static void tearDown() throws SQLException {
         ormManager.dropTables();
         databaseManager.close();
     }
@@ -105,6 +107,7 @@ public class TestTosser {
             tosser.runFast(config.getValue("Inbound"));
             EchoMgr echoMgr = tosser.getAreamgr();
             List<String> list = echoMgr.getEchos();
+            System.out.println(list);
             TestCase.assertEquals(8, list.size());
             TestCase.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
             TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
@@ -126,6 +129,51 @@ public class TestTosser {
             e.printStackTrace(System.out);
             TestCase.fail();
         }
+    }
 
+    @Test
+    public void testGenerationMessagesToLink() throws SQLException {
+        ConfigurationLink link = new ConfigurationLink();
+        link.setAddress("2:467/1313.0@fidonet.org");
+        link.setHost("localhost");
+        link.setPassword("pass");
+        link.setPacket_password("pass");
+        link.setFlags("BINKP");
+        Dao<ConfigurationLink, Object> linksDao = ormManager.getDao(ConfigurationLink.class);
+        linksDao.create(link);
+
+        databaseManager.addSubscription(link.toLink(), "ru.anime");
+
+        Iterator<Message> messages = databaseManager.getMessages(link.toLink());
+        int num = 0;
+        while (messages.hasNext()) {
+            messages.next();
+            num++;
+        }
+        long messageSize = databaseManager.getMessageSize("ru.anime");
+        long messageSize1 = databaseManager.getMessageSize("ru.golded");
+        long messageSize2 = databaseManager.getMessageSize("ru.computerra");
+        System.out.println(messageSize);
+        System.out.println(messageSize1);
+        System.out.println(messageSize2);
+        TestCase.assertEquals(4, num);
+
+        databaseManager.addSubscription(link.toLink(), "ru.golded");
+        num = 0;
+        messages = databaseManager.getMessages(link.toLink());
+        while (messages.hasNext()) {
+            messages.next();
+            num++;
+        }
+        TestCase.assertEquals(5, num);
+
+        databaseManager.addSubscription(link.toLink(), "ru.computerra");
+        num = 0;
+        messages = databaseManager.getMessages(link.toLink());
+        while (messages.hasNext()) {
+            messages.next();
+            num++;
+        }
+        TestCase.assertEquals(43, num);
     }
 }
