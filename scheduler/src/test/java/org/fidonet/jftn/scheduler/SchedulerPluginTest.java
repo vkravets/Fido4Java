@@ -72,13 +72,13 @@ public class SchedulerPluginTest {
             }
         });
         try {
-            Thread.sleep(1000 * 61);
+            Thread.sleep(1000 * 60 + 200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             PluginManager.getInstance().unloadPlugins();
         }
         TestCase.assertEquals(Boolean.TRUE, taskExecute[0]);
-        TestCase.assertNull(schedule);
+        TestCase.assertNull(schedule.get());
     }
 }
