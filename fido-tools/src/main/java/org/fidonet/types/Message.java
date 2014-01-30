@@ -69,6 +69,13 @@ public class Message {
         this.body = message;
         this.msgDate = date.toString();
         this.isValid = true;
+
+        updateKludges();
+
+        if (echomail) {
+            tryDetectAddressesAndId();
+        }
+
     }
 
     public Message(FtsPackMsg src) {
@@ -141,11 +148,11 @@ public class Message {
 
     public String getSingleKludge(String kl) {
         StringBuilder result = new StringBuilder();
-        for (String Kludge : kludges) {
-            if (Kludge.startsWith(kl)) {
+        for (String kludge : kludges) {
+            if (kludge.startsWith(kl)) {
                 String kkk;
                 try {
-                    kkk = collonorwhitespace.split(Kludge)[1];
+                    kkk = collonorwhitespace.split(kludge)[1];
                 } catch (ArrayIndexOutOfBoundsException e) {
                     kkk = "";
                 }
@@ -170,13 +177,12 @@ public class Message {
         }
 
         if (!fAddr.isValid()) {
-
             String[] splittedleeter = body.split("\\r");
             for (int i = 0; i < splittedleeter.length; i++) {
                 if (splittedleeter[i].indexOf("SEEN-BY:") == 0) {
                     if (splittedleeter[i - 1].contains("Origin:")) {
                         final String origin = splittedleeter[i - 1];
-                        fAddr = new FTNAddr(origin.substring(origin.indexOf('(') + 1, origin.indexOf(')')));
+                        fAddr = new FTNAddr(origin.substring(origin.lastIndexOf('(') + 1, origin.lastIndexOf(')')));
                     }
                 }
             }
@@ -252,11 +258,11 @@ public class Message {
     public String toString() {
         return "Message{\n" +
                 "from='" + from + '\'' +
-                ", \nto='" + to + '\'' +
-                ", \narea='" + area + '\'' +
-                ", \nsubject='" + subject + '\'' +
-                ", \nmsgDate='" + msgDate + '\'' +
-                ", \nmsgId='" + msgId + '\'' +
+                ", \n\tto='" + to + '\'' +
+                ", \n\tarea='" + area + '\'' +
+                ", \n\tsubject='" + subject + '\'' +
+                ", \n\tmsgDate='" + msgDate + '\'' +
+                ", \n\tmsgId='" + msgId + '\'' +
                 "\n}";
     }
 
