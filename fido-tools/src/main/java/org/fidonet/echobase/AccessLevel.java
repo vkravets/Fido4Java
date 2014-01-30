@@ -26,54 +26,17 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.db.objects;
-
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
+package org.fidonet.echobase;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 10/3/12
- * Time: 9:32 AM
+ * Date: 1/31/14
+ * Time: 12:18 AM
  */
-@DatabaseTable(tableName = "echoarea")
-public class Echoarea {
-
-    public static final String ID_COLUMN = "id";
-    public static final String NAME_COLUMN = "name";
-    public static final String DESCRIPTION_COLUMN = "description";
-
-    @DatabaseField(columnName = ID_COLUMN, generatedId = true, canBeNull = false, unique = true, uniqueIndex = true)
-    private Long id;
-
-    @DatabaseField(columnName = NAME_COLUMN, canBeNull = false, uniqueIndex = true)
-    private String name;
-
-    @DatabaseField(columnName = DESCRIPTION_COLUMN, canBeNull = true)
-    private String description;
-
-    public Echoarea() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+public enum AccessLevel {
+    READ,
+    WRITE,
+    BOTH
 }

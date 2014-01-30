@@ -31,6 +31,7 @@ package org.fidonet.db.objects;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import org.fidonet.echobase.AccessLevel;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,23 +43,21 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "subscription")
 public class Subscription {
 
-    public static enum AccessLevel {
-        READ,
-        WRITE,
-        BOTH
-    }
+    public static final String ID_LINK_COLUMN = "id_link";
+    public static final String ID_AREA_COLUMN = "id_area";
+    public static final String LASTMESSAGE_ID_COLUMN = "lastmessage_id";
+    public static final String ACCESS_LEVEL_COLUMN = "access_level";
 
-
-    @DatabaseField(columnName = "id_link", foreign = true, foreignAutoRefresh = true)
+    @DatabaseField(columnName = ID_LINK_COLUMN, foreign = true, foreignAutoRefresh = true)
     private ConfigurationLink configurationLink;
 
-    @DatabaseField(columnName = "id_area", foreign = true, foreignAutoRefresh = true)
+    @DatabaseField(columnName = ID_AREA_COLUMN, foreign = true, foreignAutoRefresh = true)
     private Echoarea echoarea;
 
-    @DatabaseField(columnName = "lastmessage_id")
+    @DatabaseField(columnName = LASTMESSAGE_ID_COLUMN)
     private Long lastMessage;
 
-    @DatabaseField(columnName = "access_level", dataType = DataType.ENUM_STRING, defaultValue = "BOTH")
+    @DatabaseField(columnName = ACCESS_LEVEL_COLUMN, dataType = DataType.ENUM_STRING, defaultValue = "BOTH")
     private AccessLevel accessLevel;
 
     public ConfigurationLink getConfigurationLink() {

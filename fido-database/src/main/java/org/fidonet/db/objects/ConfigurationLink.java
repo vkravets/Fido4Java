@@ -45,25 +45,33 @@ import org.fidonet.types.Link;
 @DatabaseTable(tableName = "links")
 public class ConfigurationLink {
 
-    @DatabaseField(generatedId = true, columnName = "id", canBeNull = false, unique = true, uniqueIndex = true)
+    public static final String ID_COLUMN = "id";
+    public static final String ADDRESS_COLUMN = "address";
+    public static final String PASSWORD_COLUMN = "password";
+    public static final String PACKET_PASSWORD_COLUMN = "packet_password";
+    public static final String HOST_COLUMN = "host";
+    public static final String PORT_COLUMN = "port";
+    public static final String FLAGS_COLUMN = "flags";
+
+    @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
-    @DatabaseField(columnName = "address", canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(columnName = ADDRESS_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private String address;
 
-    @DatabaseField(columnName = "password", canBeNull = false)
+    @DatabaseField(columnName = PASSWORD_COLUMN, canBeNull = false)
     private String password;
 
-    @DatabaseField(columnName = "packet_password", canBeNull = false)
+    @DatabaseField(columnName = PACKET_PASSWORD_COLUMN, canBeNull = false)
     private String packet_password;
 
-    @DatabaseField(columnName = "host", defaultValue = "")
+    @DatabaseField(columnName = HOST_COLUMN, defaultValue = "")
     private String host;
 
-    @DatabaseField(columnName = "port", dataType = DataType.INTEGER, defaultValue = "0")
+    @DatabaseField(columnName = PORT_COLUMN, dataType = DataType.INTEGER, defaultValue = "0")
     private int port;
 
-    @DatabaseField(columnName = "flags", defaultValue = "")
+    @DatabaseField(columnName = FLAGS_COLUMN, defaultValue = "")
     private String flags;
 
     public ConfigurationLink() {

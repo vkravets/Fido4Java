@@ -36,6 +36,7 @@ import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
 import org.fidonet.db.objects.Subscription;
+import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.IBase;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -109,11 +110,15 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
         try {
-            List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
+            List<Echoarea> echoareaList = echoareaQueryBuilder.
+                    selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN).
+                    where().eq(Echoarea.NAME_COLUMN, areaname).
+                    query();
             if (echoareaList.size() == 0) {
                 return Collections.emptyIterator();
             }
-            echomailQueryBuilder.orderBy("id", true).where().eq("id_echoarea", echoareaList.get(0).getId());
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
+                    where().eq(Echomail.ID_AREA_COLUMN, echoareaList.get(0).getId());
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, -1, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail echomail) {
@@ -133,11 +138,15 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
         try {
-            List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
+            List<Echoarea> echoareaList = echoareaQueryBuilder.
+                    selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN).
+                    where().eq(Echoarea.NAME_COLUMN, areaname).
+                    query();
             if (echoareaList.size() == 0) {
                 return Collections.emptyIterator();
             }
-            echomailQueryBuilder.orderBy("id", true).where().eq("id_echoarea", echoareaList.get(0).getId());
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
+                    where().eq(Echomail.ID_AREA_COLUMN, echoareaList.get(0).getId());
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, false) {
                 @Override
                 public Message convert(Echomail echomail) {
@@ -160,12 +169,18 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomailsDao.queryBuilder();
 
         try {
-            List<ConfigurationLink> linkList = linksQueryBuilder.selectColumns("id", "address").where().eq("address", link.getAddr().as5D()).query();
+            List<ConfigurationLink> linkList = linksQueryBuilder.
+                    selectColumns(ConfigurationLink.ID_COLUMN, ConfigurationLink.ADDRESS_COLUMN).
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D()).
+                    query();
             if (linkList.size() == 0) {
                 return Collections.emptyIterator();
             }
 
-            List<Subscription> subscriptionList = subscriptionsQueryBuilder.where().eq("id_link", linkList.get(0).getId()).query();
+            List<Subscription> subscriptionList = subscriptionsQueryBuilder.
+                    selectColumns(Subscription.ID_AREA_COLUMN, Subscription.ID_LINK_COLUMN, Subscription.LASTMESSAGE_ID_COLUMN).
+                    where().eq(Subscription.ID_LINK_COLUMN, linkList.get(0).getId()).
+                    query();
             if (subscriptionList.size() == 0) {
                 return Collections.emptyIterator();
             }
@@ -179,7 +194,11 @@ public class DatabaseManager implements IBase {
                 areas_ids.add(subscription.getEchoarea().getId());
             }
 
-            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
+                    where().
+                    in(Echomail.ID_AREA_COLUMN, areas_ids).
+                    and().
+                    gt(Echomail.ID_COLUMN, minLastMessage);
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, -1, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail object) {
@@ -204,12 +223,18 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomailsDao.queryBuilder();
 
         try {
-            List<ConfigurationLink> linkList = linksQueryBuilder.selectColumns("id", "address").where().eq("address", link.getAddr().as5D()).query();
+            List<ConfigurationLink> linkList = linksQueryBuilder.
+                    selectColumns(ConfigurationLink.ID_COLUMN, ConfigurationLink.ADDRESS_COLUMN).
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D()).
+                    query();
             if (linkList.size() == 0) {
                 return Collections.emptyIterator();
             }
 
-            List<Subscription> subscriptionList = subscriptionsQueryBuilder.where().eq("id_link", linkList.get(0).getId()).query();
+            List<Subscription> subscriptionList = subscriptionsQueryBuilder.
+                    selectColumns(Subscription.ID_AREA_COLUMN, Subscription.ID_LINK_COLUMN, Subscription.LASTMESSAGE_ID_COLUMN).
+                    where().eq(Subscription.ID_LINK_COLUMN, linkList.get(0).getId()).
+                    query();
             if (subscriptionList.size() == 0) {
                 return Collections.emptyIterator();
             }
@@ -225,7 +250,11 @@ public class DatabaseManager implements IBase {
                 }
             }
 
-            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
+                    where().
+                    in(Echomail.ID_AREA_COLUMN, areas_ids).
+                    and().
+                    gt(Echomail.ID_COLUMN, minLastMessage);
 
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, 0, MESSAGE_LIMIT_QUERY, true) {
                 @Override
@@ -250,12 +279,18 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomailsDao.queryBuilder();
 
         try {
-            List<ConfigurationLink> linkList = linksQueryBuilder.selectColumns("id", "address").where().eq("address", link.getAddr().as5D()).query();
+            List<ConfigurationLink> linkList = linksQueryBuilder.
+                    selectColumns(ConfigurationLink.ID_COLUMN, ConfigurationLink.ADDRESS_COLUMN).
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D()).
+                    query();
             if (linkList.size() == 0) {
                 return Collections.emptyIterator();
             }
 
-            List<Subscription> subscriptionList = subscriptionsQueryBuilder.where().eq("id_link", linkList.get(0).getId()).query();
+            List<Subscription> subscriptionList = subscriptionsQueryBuilder.
+                    selectColumns(Subscription.ID_AREA_COLUMN, Subscription.ID_LINK_COLUMN, Subscription.LASTMESSAGE_ID_COLUMN).
+                    where().eq(Subscription.ID_LINK_COLUMN, linkList.get(0).getId()).
+                    query();
             if (subscriptionList.size() == 0) {
                 return Collections.emptyIterator();
             }
@@ -271,7 +306,11 @@ public class DatabaseManager implements IBase {
                 }
             }
 
-            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
+                    where().
+                    in(Echomail.ID_AREA_COLUMN, areas_ids).
+                    and().
+                    gt(Echomail.ID_COLUMN, minLastMessage);
 
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, false) {
                 @Override
@@ -293,11 +332,19 @@ public class DatabaseManager implements IBase {
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
         try {
-            List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", area).query();
+            List<Echoarea> echoareaList = echoareaQueryBuilder.
+                    selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN).
+                    where().eq(Echoarea.NAME_COLUMN, area).
+                    query();
             if (echoareaList.size() == 0) {
                 return null;
             }
-            List<Echomail> query = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId()).and().eq("id", id).query();
+            List<Echomail> query = echomailQueryBuilder.
+                    where().
+                    eq(Echomail.ID_AREA_COLUMN, echoareaList.get(0).getId()).
+                    and().
+                    eq(Echomail.ID_COLUMN, id).
+                    query();
             if (query.size() > 0)
                 return query.get(0).toMessage();
         } catch (SQLException e) {
@@ -311,7 +358,7 @@ public class DatabaseManager implements IBase {
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         try {
-            List<Echomail> query = echomailQueryBuilder.where().eq("id", id).query();
+            List<Echomail> query = echomailQueryBuilder.where().eq(Echomail.ID_COLUMN, id).query();
             if (query.size() > 0)
                 return query.get(0).toMessage();
         } catch (SQLException e) {
@@ -326,11 +373,18 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
         QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
         try {
-            List<Echoarea> echoareaList = echoareaQueryBuilder.selectColumns("id", "name").where().eq("name", areaname).query();
+            List<Echoarea> echoareaList = echoareaQueryBuilder.
+                    selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN).
+                    where().eq(Echoarea.NAME_COLUMN, areaname).
+                    query();
             if (echoareaList.size() == 0) {
                 return 0;
             }
-            return echomails.countOf(echomails.queryBuilder().setCountOf(true).where().eq("id_echoarea", echoareaList.get(0).getId()).prepare());
+            QueryBuilder<Echomail, Object> queryBuilder = echomails.queryBuilder();
+            queryBuilder.setCountOf(true).
+                    where().
+                    eq(Echomail.ID_AREA_COLUMN, echoareaList.get(0).getId());
+            return echomails.countOf(queryBuilder.prepare());
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
         }
@@ -342,7 +396,10 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
         Dao<Echomail, Object> echomailDao = dbManager.getDao(Echomail.class);
         try {
-            List<Echoarea> echoareas = echoareasDao.queryBuilder().selectColumns("id", "name").where().eq("name", areaname).query();
+            List<Echoarea> echoareas = echoareasDao.queryBuilder().
+                    selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN).
+                    where().eq(Echoarea.NAME_COLUMN, areaname).
+                    query();
             Echoarea area;
             if (echoareas.size() > 0) {
                 area = echoareas.get(0);
@@ -353,6 +410,7 @@ public class DatabaseManager implements IBase {
                 echoareasDao.create(area);
             }
             Echomail echomail = Echomail.fromMessage(message, area);
+            // TODO: if my point - check access level, if it's not allow to post - sent to him netmail with such info
             echomailDao.create(echomail);
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
@@ -365,7 +423,7 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
         List<String> result = new ArrayList<String>();
         try {
-            List<Echoarea> echoareaList = echoareasDao.queryBuilder().selectColumns("name").query();
+            List<Echoarea> echoareaList = echoareasDao.queryBuilder().selectColumns(Echoarea.NAME_COLUMN).query();
             for (Echoarea echo : echoareaList) {
                 result.add(echo.getName());
             }
@@ -378,7 +436,11 @@ public class DatabaseManager implements IBase {
     public boolean isAreaExists(String name) {
         Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
         try {
-            return echoareasDao.countOf(echoareasDao.queryBuilder().setCountOf(true).where().eq("name", name).prepare()) == 1;
+            QueryBuilder<Echoarea, Long> echoareaQueryBuilder = echoareasDao.queryBuilder();
+            echoareaQueryBuilder.
+                    setCountOf(true).
+                    where().eq(Echoarea.NAME_COLUMN, name);
+            return echoareasDao.countOf(echoareaQueryBuilder.prepare()) == 1;
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
         }
@@ -390,22 +452,32 @@ public class DatabaseManager implements IBase {
         Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
         Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
         Dao<Echoarea, Object> echoareasDao = dbManager.getDao(Echoarea.class);
+
         QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder();
         QueryBuilder<Subscription, Object> subscriptionsQueryBuilder = subscriptionsDao.queryBuilder();
         QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder();
+
         try {
-            List<ConfigurationLink> links = linksQueryBuilder.where().eq("address", link.getAddr().as5D()).query();
+            List<ConfigurationLink> links = linksQueryBuilder.
+                    selectColumns(ConfigurationLink.ADDRESS_COLUMN, ConfigurationLink.ID_COLUMN).
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D()).
+                    query();
+
             if (links.size() != 0) {
-                List<Echoarea> echomailList = echoareasQueryBuilder.where().eq("name", areaname).query();
-                if (echomailList.size() > 0) {
-                    Where<Subscription, Object> subscriptionObjectWhere = subscriptionsQueryBuilder.where().
-                            eq("id_area", echomailList.get(0).getId()).
+                List<Echoarea> echoareaList = echoareasQueryBuilder.
+                        where().eq(Echoarea.NAME_COLUMN, areaname).
+                        query();
+
+                if (echoareaList.size() > 0) {
+                    Where<Subscription, Object> subscriptionObjectWhere = subscriptionsQueryBuilder.
+                            where().
+                            eq(Subscription.ID_AREA_COLUMN, echoareaList.get(0).getId()).
                             and().
-                            eq("id_link", links.get(0).getId());
+                            eq(Subscription.ID_LINK_COLUMN, links.get(0).getId());
                     List<Subscription> subscriptionList = subscriptionObjectWhere.query();
                     if (subscriptionList.size() > 0) {
                         UpdateBuilder<Subscription, Object> subscriptionUpdateBuilder = subscriptionsDao.updateBuilder();
-                        subscriptionUpdateBuilder.updateColumnValue("lastmessage_id", id);
+                        subscriptionUpdateBuilder.updateColumnValue(Subscription.LASTMESSAGE_ID_COLUMN, id);
                         subscriptionUpdateBuilder.setWhere(subscriptionObjectWhere);
                         subscriptionsDao.update(subscriptionUpdateBuilder.prepare());
                     }
@@ -424,9 +496,14 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Object> daoEchoarea = dbManager.getDao(Echoarea.class);
         try {
             QueryBuilder<Echoarea, Object> echoareaQueryBuilder = daoEchoarea.queryBuilder();
-            echoareaQueryBuilder.where().eq("name", message.getArea().toLowerCase());
-            Where<Echomail, Object> msgid = daoEchomail.queryBuilder().join(echoareaQueryBuilder).setCountOf(true).where().eq("msgId", message.getMsgId());
-            return daoEchomail.countOf(msgid.prepare()) != 0;
+            echoareaQueryBuilder.where().eq(Echoarea.NAME_COLUMN, message.getArea().toLowerCase());
+
+            QueryBuilder<Echomail, Object> echomailObjectQueryBuilder = daoEchomail.queryBuilder();
+            echomailObjectQueryBuilder.
+                    join(echoareaQueryBuilder).
+                    setCountOf(true).
+                    where().eq(Echomail.MSGID_COLUMN, message.getMsgId());
+            return daoEchomail.countOf(echomailObjectQueryBuilder.prepare()) != 0;
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
         }
@@ -438,17 +515,25 @@ public class DatabaseManager implements IBase {
         Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
         Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
         Dao<Echoarea, Object> echoareasDao = dbManager.getDao(Echoarea.class);
-        QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder().selectColumns("id", "address");
-        QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder().selectColumns("id", "name");
+
+        QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder().
+                selectColumns(ConfigurationLink.ID_COLUMN, ConfigurationLink.ADDRESS_COLUMN);
+        QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder().
+                selectColumns(Echoarea.ID_COLUMN, Echoarea.NAME_COLUMN);
+
         try {
-            linksQueryBuilder.selectColumns("id").where().eq("address", link.getAddr().as5D());
+            linksQueryBuilder.selectColumns(ConfigurationLink.ID_COLUMN).
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D());
+
             QueryBuilder<Subscription, Object> joinLinks = subscriptionsDao.queryBuilder().join(linksQueryBuilder);
             QueryBuilder<Echoarea, Object> joinArea = echoareasQueryBuilder.join(joinLinks);
+
             List<Echoarea> subscriptionList = joinArea.query();
             List<String> arrayList = new ArrayList<String>();
             for (Echoarea subscription : subscriptionList) {
                 arrayList.add(subscription.getName());
             }
+
             return arrayList;
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
@@ -464,19 +549,25 @@ public class DatabaseManager implements IBase {
         Dao<Echoarea, Object> echosDao = dbManager.getDao(Echoarea.class);
         Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
         try {
-            List<ConfigurationLink> addressList = linksDao.queryBuilder().where().eq("address", link.getAddr().as5D()).query();
+            List<ConfigurationLink> addressList = linksDao.queryBuilder().
+                    where().eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D()).
+                    query();
+
             if (addressList.size() == 0) return;
+
             ConfigurationLink configurationLink = addressList.get(0);
 
-            List<Echoarea> names = echosDao.queryBuilder().where().eq("name", area.toLowerCase()).query();
+            List<Echoarea> names = echosDao.queryBuilder().where().eq(Echoarea.NAME_COLUMN, area.toLowerCase()).query();
+
             if (names.size() == 0) return;
+
             Echoarea echoarea = names.get(0);
 
             Subscription subscription = new Subscription();
             subscription.setConfigurationLink(configurationLink);
             subscription.setEchoarea(echoarea);
             subscription.setLastMessage(0L);
-            subscription.setAccessLevel(Subscription.AccessLevel.BOTH);
+            subscription.setAccessLevel(AccessLevel.BOTH);
             subscriptionsDao.create(subscription);
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);

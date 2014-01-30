@@ -48,43 +48,58 @@ import java.util.Date;
 @DatabaseTable(tableName = "echomail")
 public class Echomail {
 
-    @DatabaseField(generatedId = true, columnName = "id", canBeNull = false, unique = true, uniqueIndex = true)
+    public static final String ID_COLUMN = "id";
+    public static final String MSGID_COLUMN = "msgId";
+    public static final String ID_AREA_COLUMN = "id_echoarea";
+    public static final String FROM_NAME_COLUMN = "from_name";
+    public static final String TO_NAME_COLUMN = "to_name";
+    public static final String FROM_ADDR_COLUMN = "from_addr";
+    public static final String TO_ADDR_COLUMN = "to_addr";
+    public static final String DATE_COLUMN = "message_date";
+    public static final String SUBJECT_COLUMN = "subject";
+    public static final String TEXT_COLUMN = "text";
+    public static final String SEENBY_COLUMN = "seen_by";
+    public static final String PATH_COLUMN = "path";
+    public static final String ATTR_COLUMN = "attr";
+
+
+    @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
-    @DatabaseField(columnName = "msgId", canBeNull = false, index = true)
+    @DatabaseField(columnName = MSGID_COLUMN, canBeNull = false, index = true)
     private String msgId;
 
-    @DatabaseField(columnName = "id_echoarea", canBeNull = false, foreign = true, foreignAutoRefresh = false, foreignAutoCreate = false, index = true)
+    @DatabaseField(columnName = ID_AREA_COLUMN, canBeNull = false, foreign = true, foreignAutoRefresh = false, foreignAutoCreate = false, index = true)
     private Echoarea area;
 
-    @DatabaseField(columnName = "from_name", canBeNull = false)
+    @DatabaseField(columnName = FROM_NAME_COLUMN, canBeNull = false)
     private String fromName;
 
-    @DatabaseField(columnName = "to_name", canBeNull = false)
+    @DatabaseField(columnName = TO_NAME_COLUMN, canBeNull = false)
     private String toName;
 
-    @DatabaseField(columnName = "from_addr", canBeNull = false)
+    @DatabaseField(columnName = FROM_ADDR_COLUMN, canBeNull = false)
     private String fromAddr;
 
-    @DatabaseField(columnName = "to_addr", canBeNull = true)
+    @DatabaseField(columnName = TO_ADDR_COLUMN, canBeNull = true)
     private String toAddr;
 
-    @DatabaseField(columnName = "message_date", canBeNull = false, dataType = DataType.DATE_LONG)
+    @DatabaseField(columnName = DATE_COLUMN, canBeNull = false, dataType = DataType.DATE_LONG)
     private Date date;
 
-    @DatabaseField(columnName = "subject", dataType = DataType.LONG_STRING)
+    @DatabaseField(columnName = SUBJECT_COLUMN, dataType = DataType.LONG_STRING)
     private String subject;
 
-    @DatabaseField(columnName = "text", dataType = DataType.LONG_STRING)
+    @DatabaseField(columnName = TEXT_COLUMN, dataType = DataType.LONG_STRING)
     private String text;
 
-    @DatabaseField(columnName = "seen_by", dataType = DataType.LONG_STRING)
+    @DatabaseField(columnName = SEENBY_COLUMN, dataType = DataType.LONG_STRING)
     private String seenBy;
 
-    @DatabaseField(columnName = "path", dataType = DataType.LONG_STRING)
+    @DatabaseField(columnName = PATH_COLUMN, dataType = DataType.LONG_STRING)
     private String path;
 
-    @DatabaseField(columnName = "attr", dataType = DataType.INTEGER)
+    @DatabaseField(columnName = ATTR_COLUMN, dataType = DataType.INTEGER)
     private int attr;
 
     public Echomail() {
