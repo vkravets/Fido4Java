@@ -113,8 +113,8 @@ public class DatabaseManager implements IBase {
             if (echoareaList.size() == 0) {
                 return Collections.emptyIterator();
             }
-            Where<Echomail, Object> echomainWhere = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId());
-            return new WhereDatabaseLimitIterator<Echomail, Message>(echomails, echomainWhere, -1, MESSAGE_LIMIT_QUERY, true) {
+            echomailQueryBuilder.orderBy("id", true).where().eq("id_echoarea", echoareaList.get(0).getId());
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, -1, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail echomail) {
                     return echomail.toMessage();
@@ -137,8 +137,8 @@ public class DatabaseManager implements IBase {
             if (echoareaList.size() == 0) {
                 return Collections.emptyIterator();
             }
-            Where<Echomail, Object> echomainWhere = echomailQueryBuilder.where().eq("id_echoarea", echoareaList.get(0).getId());
-            return new WhereDatabaseLimitIterator<Echomail, Message>(echomails, echomainWhere, startMessage, bundleSize, false) {
+            echomailQueryBuilder.orderBy("id", true).where().eq("id_echoarea", echoareaList.get(0).getId());
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, false) {
                 @Override
                 public Message convert(Echomail echomail) {
                     return echomail.toMessage();
@@ -179,11 +179,11 @@ public class DatabaseManager implements IBase {
                 areas_ids.add(subscription.getEchoarea().getId());
             }
 
-            Where<Echomail, Object> ge = echomailQueryBuilder.where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
-            System.out.println(ge.prepare().getStatement());
-            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailsDao, ge, -1, MESSAGE_LIMIT_QUERY, true) {
+            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, -1, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail object) {
+                    System.out.println(object.getId());
                     return object.toMessage();
                 }
             };
@@ -225,9 +225,9 @@ public class DatabaseManager implements IBase {
                 }
             }
 
-            Where<Echomail, Object> ge = echomailQueryBuilder.where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
 
-            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailsDao, ge, 0, MESSAGE_LIMIT_QUERY, true) {
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, 0, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail object) {
                     return object.toMessage();
@@ -271,9 +271,9 @@ public class DatabaseManager implements IBase {
                 }
             }
 
-            Where<Echomail, Object> ge = echomailQueryBuilder.where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
+            echomailQueryBuilder.orderBy("id", true).where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
 
-            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailsDao, ge, startMessage, bundleSize, false) {
+            return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, false) {
                 @Override
                 public Message convert(Echomail object) {
                     return object.toMessage();

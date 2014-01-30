@@ -29,9 +29,7 @@
 package org.fidonet.db;
 
 import com.j256.ormlite.dao.CloseableIterator;
-import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
-import com.j256.ormlite.stmt.Where;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,22 +48,20 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
 
     public static final Logger logger = LoggerFactory.getLogger(WhereDatabaseLimitIterator.class);
 
-    private Where<T, Object> echomailObjectWhere;
     private long limit;
     private long offset;
     private CloseableIterator<T> curlist;
     private QueryBuilder<T, Object> objectQueryBuilder;
     private boolean continueQuery;
 
-    public WhereDatabaseLimitIterator(Dao<T, Object> echomails, Where<T, Object> echomainWhere, long offset, long limit) {
-        this(echomails, echomainWhere, offset, limit, false);
+    public WhereDatabaseLimitIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit) {
+        this(queryBuilder, offset, limit, false);
     }
 
-    public WhereDatabaseLimitIterator(Dao<T, Object> echomails, Where<T, Object> echomainWhere, long offset, long limit, boolean continueQuery) {
-        this.echomailObjectWhere = echomainWhere;
+    public WhereDatabaseLimitIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit, boolean continueQuery) {
         this.limit = limit;
         this.offset = offset;
-        objectQueryBuilder = echomails.queryBuilder();
+        objectQueryBuilder = queryBuilder;
         this.continueQuery = continueQuery;
     }
 
@@ -93,12 +89,7 @@ public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
         if (offset > -1) {
             objectQueryBuilder = objectQueryBuilder.offset(offset);
         }
-        if (echomailObjectWhere != null) {
-            objectQueryBuilder.setWhere(echomailObjectWhere);
-            curlist = objectQueryBuilder.iterator();
-        } else {
-            curlist = objectQueryBuilder.iterator();
-        }
+        curlist = objectQueryBuilder.iterator();
         if (!curlist.hasNext()) {
             curlist.close();
         }
