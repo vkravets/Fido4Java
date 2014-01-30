@@ -73,7 +73,12 @@ public interface IBase {
 
     public void setLinkLastMessage(Link link, String areaname, Long id);
 
+    public boolean isDupe(Message message);
+
+    public List<String> getSubscriptions(Link link);
+
+    public void addSubscription(Link link, String area);
+
     public void close();
 
-    public boolean isDupe(Message message);
 }

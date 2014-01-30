@@ -49,16 +49,16 @@ public class Subscription {
     }
 
 
-    @DatabaseField(columnName = "id_link", foreign = true, foreignAutoRefresh = true, uniqueIndex = true)
+    @DatabaseField(columnName = "id_link", foreign = true, foreignAutoRefresh = true)
     private ConfigurationLink configurationLink;
 
-    @DatabaseField(columnName = "id_area", foreign = true, foreignAutoRefresh = true, uniqueIndex = true)
+    @DatabaseField(columnName = "id_area", foreign = true, foreignAutoRefresh = true)
     private Echoarea echoarea;
 
     @DatabaseField(columnName = "lastmessage_id")
     private Long lastMessage;
 
-    @DatabaseField(columnName = "access_level", dataType = DataType.ENUM_STRING)
+    @DatabaseField(columnName = "access_level", dataType = DataType.ENUM_STRING, defaultValue = "BOTH")
     private AccessLevel accessLevel;
 
     public ConfigurationLink getConfigurationLink() {

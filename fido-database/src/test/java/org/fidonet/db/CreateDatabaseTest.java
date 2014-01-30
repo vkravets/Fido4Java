@@ -29,16 +29,18 @@
 package org.fidonet.db;
 
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 import junit.framework.TestCase;
 import org.fidonet.db.objects.ConfigurationLink;
-import org.junit.After;
-import org.junit.Before;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,13 +52,14 @@ import java.util.List;
  */
 public class CreateDatabaseTest {
 
-    private OrmManager ormManager;
-    private DatabaseManager databaseManager;
-    private Dao<ConfigurationLink, Long> daoLinks;
+    private static final File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
+    private static OrmManager ormManager;
+    private static DatabaseManager databaseManager;
+    private static Dao<ConfigurationLink, Long> daoLinks;
+    private static ConfigurationLink configurationLink;
 
-    @Before
-    public void setUp() throws SQLException {
-        File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
+    @BeforeClass
+    public static void setUp() throws SQLException {
 //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
 //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
 //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
@@ -64,31 +67,29 @@ public class CreateDatabaseTest {
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();
         daoLinks = ormManager.getDao(ConfigurationLink.class);
+
+        configurationLink = new ConfigurationLink();
+        configurationLink.setAddress("2:467/110.1@fidonet.org");
+        configurationLink.setPassword("P@ssw0rd");
+        configurationLink.setPacket_password("P@ssw0rd");
+        configurationLink.setFlags("BINKD");
+        daoLinks.create(configurationLink);
     }
 
-    @After
-    public void tearDown() throws SQLException {
+    @AfterClass
+    public static void tearDown() throws SQLException {
+        ormManager.dropTables();
         databaseManager.close();
     }
 
     @Test
     public void testDatabaseCreation() {
         try {
-            ConfigurationLink configurationLink = new ConfigurationLink();
-            configurationLink.setAddress("2:467/110.1@fidonet.org");
-            configurationLink.setPassword("P@ssw0rd");
-            configurationLink.setPacket_password("P@ssw0rd");
-            configurationLink.setFlags("BINKD");
-            daoLinks.create(configurationLink);
 
             QueryBuilder<ConfigurationLink, Long> linkQueryBuilder = daoLinks.queryBuilder();
 
             List<ConfigurationLink> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
             TestCase.assertEquals(1, address.size());
-            TestCase.assertTrue(daoLinks.objectsEqual(configurationLink, address.get(0)));
-            DeleteBuilder<ConfigurationLink, Long> deleteBuilder = daoLinks.deleteBuilder();
-            deleteBuilder.where().eq("id", configurationLink.getId());
-            deleteBuilder.delete();
         } catch (SQLException e) {
             e.printStackTrace();
             TestCase.fail();
@@ -98,6 +99,49 @@ public class CreateDatabaseTest {
     @Test
     public void testMessagesSelection() {
         databaseManager.getMessages("test");
+    }
+
+    private void addArea(String area) {
+        databaseManager.createArea(area);
+    }
+
+    private void addTestSubscription(Link link, String area) {
+        databaseManager.addSubscription(link, area);
+    }
+
+    @Test
+    public void testSubscriptionAdding() {
+        addArea("test1");
+        addArea("test2");
+        addArea("test3");
+        addArea("test111");
+        addArea("test4");
+        addTestSubscription(configurationLink.toLink(), "test1");
+        addTestSubscription(configurationLink.toLink(), "test111");
+
+        Link link2 = new Link(new FTNAddr("2:467/110.23@fidonet.org"), null, "pass", "localhost", 1010);
+        ConfigurationLink configurationLink2 = new ConfigurationLink();
+        configurationLink2.setAddress(link2.getAddr().as5D());
+        configurationLink2.setPacket_password(link2.getPass());
+        configurationLink2.setPassword(link2.getPass());
+        configurationLink2.setHost(link2.getHostAddress());
+        configurationLink2.setPort(link2.getPort());
+        try {
+            daoLinks.create(configurationLink2);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            TestCase.fail("Error during creating link: " + e.getMessage());
+        }
+        addTestSubscription(link2, "test4");
+
+        List<String> subscriptions1 = databaseManager.getSubscriptions(configurationLink.toLink());
+        TestCase.assertEquals(2, subscriptions1.size());
+        TestCase.assertEquals(Arrays.asList("test1", "test111"), subscriptions1);
+
+        List<String> subscriptions2 = databaseManager.getSubscriptions(link2);
+        TestCase.assertEquals(1, subscriptions2.size());
+        TestCase.assertEquals(Arrays.asList("test4"), subscriptions2);
+
     }
 
 

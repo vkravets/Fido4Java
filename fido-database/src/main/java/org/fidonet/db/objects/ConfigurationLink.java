@@ -31,6 +31,8 @@ package org.fidonet.db.objects;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
 
 /**
  * Created by IntelliJ IDEA.
@@ -117,6 +119,10 @@ public class ConfigurationLink {
 
     public void setFlags(String flags) {
         this.flags = flags;
+    }
+
+    public Link toLink() {
+        return new Link(new FTNAddr(getAddress()), null, getPassword(), getHost(), getPort());
     }
 
 }

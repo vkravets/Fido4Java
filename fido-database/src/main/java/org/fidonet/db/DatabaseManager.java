@@ -421,6 +421,56 @@ public class DatabaseManager implements IBase {
     }
 
     @Override
+    public List<String> getSubscriptions(Link link) {
+        Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
+        Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
+        Dao<Echoarea, Object> echoareasDao = dbManager.getDao(Echoarea.class);
+        QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder().selectColumns("id", "address");
+        QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder().selectColumns("id", "name");
+        try {
+            linksQueryBuilder.selectColumns("id").where().eq("address", link.getAddr().as5D());
+            QueryBuilder<Subscription, Object> joinLinks = subscriptionsDao.queryBuilder().join(linksQueryBuilder);
+            QueryBuilder<Echoarea, Object> joinArea = echoareasQueryBuilder.join(joinLinks);
+            List<Echoarea> subscriptionList = joinArea.query();
+            List<String> arrayList = new ArrayList<String>();
+            for (Echoarea subscription : subscriptionList) {
+                arrayList.add(subscription.getName());
+            }
+            return arrayList;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public void addSubscription(Link link, String area) {
+        List<String> subscriptions = getSubscriptions(link);
+        if (subscriptions.contains(area.toLowerCase())) return;
+        Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
+        Dao<Echoarea, Object> echosDao = dbManager.getDao(Echoarea.class);
+        Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
+        try {
+            List<ConfigurationLink> addressList = linksDao.queryBuilder().where().eq("address", link.getAddr().as5D()).query();
+            if (addressList.size() == 0) return;
+            ConfigurationLink configurationLink = addressList.get(0);
+
+            List<Echoarea> names = echosDao.queryBuilder().where().eq("name", area.toLowerCase()).query();
+            if (names.size() == 0) return;
+            Echoarea echoarea = names.get(0);
+
+            Subscription subscription = new Subscription();
+            subscription.setConfigurationLink(configurationLink);
+            subscription.setEchoarea(echoarea);
+            subscription.setLastMessage(0L);
+            subscription.setAccessLevel(Subscription.AccessLevel.BOTH);
+            subscriptionsDao.create(subscription);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public void close() {
         dbManager.disconnect();
     }
