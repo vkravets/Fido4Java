@@ -38,6 +38,8 @@ import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.IBase;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -55,7 +57,9 @@ import java.util.List;
  */
 public class DatabaseManager implements IBase {
 
-    private final OrmManager dbManager;
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
+
+    private OrmManager dbManager;
     private static final Long MESSAGE_LIMIT_QUERY = 500L;
 
     public DatabaseManager(OrmManager manager) {
@@ -70,7 +74,7 @@ public class DatabaseManager implements IBase {
             }
             dbManager.createTables();
         } catch (SQLException e) {
-            // TODO: logger
+            logger.error(e.getMessage(), e);
             return false;
         }
         return true;
@@ -91,7 +95,7 @@ public class DatabaseManager implements IBase {
         try {
             echoareas.create(echoarea);
         } catch (SQLException e) {
-            // TODO: logger
+            logger.error(e.getMessage(), e);
             return false;
         }
         return true;
@@ -116,7 +120,7 @@ public class DatabaseManager implements IBase {
                 }
             };
         } catch (SQLException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyIterator();
     }
@@ -140,7 +144,7 @@ public class DatabaseManager implements IBase {
                 }
             };
         } catch (SQLException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyIterator();
     }
@@ -184,7 +188,7 @@ public class DatabaseManager implements IBase {
             };
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyIterator();
     }
@@ -230,7 +234,7 @@ public class DatabaseManager implements IBase {
             };
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyIterator();
     }
@@ -276,7 +280,7 @@ public class DatabaseManager implements IBase {
             };
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyIterator();
     }
@@ -296,7 +300,7 @@ public class DatabaseManager implements IBase {
             if (query.size() > 0)
                 return query.get(0).toMessage();
         } catch (SQLException e) {
-            e.printStackTrace(); // TODO: logger
+            logger.error(e.getMessage(), e);
         }
         return null;
     }
@@ -310,7 +314,7 @@ public class DatabaseManager implements IBase {
             if (query.size() > 0)
                 return query.get(0).toMessage();
         } catch (SQLException e) {
-            e.printStackTrace();  // TODO: logger
+            logger.error(e.getMessage(), e);
         }
         return null;
     }
@@ -327,7 +331,7 @@ public class DatabaseManager implements IBase {
             }
             return echomails.countOf(echomails.queryBuilder().setCountOf(true).where().eq("id_echoarea", echoareaList.get(0).getId()).prepare());
         } catch (SQLException e) {
-            e.printStackTrace(); // TODO: logger
+            logger.error(e.getMessage(), e);
         }
         return 0;
     }
@@ -350,9 +354,9 @@ public class DatabaseManager implements IBase {
             Echomail echomail = Echomail.fromMessage(message, area);
             echomailDao.create(echomail);
         } catch (SQLException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         } catch (ParseException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -365,7 +369,7 @@ public class DatabaseManager implements IBase {
                 result.add(echo.getName());
             }
         } catch (SQLException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         }
         return result;
     }
@@ -375,7 +379,7 @@ public class DatabaseManager implements IBase {
         try {
             return echoareasDao.countOf(echoareasDao.queryBuilder().setCountOf(true).where().eq("name", name).prepare()) == 1;
         } catch (SQLException e) {
-            e.printStackTrace();  //todo: logger
+            logger.error(e.getMessage(), e);
         }
         return false;
     }
@@ -398,7 +402,7 @@ public class DatabaseManager implements IBase {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
     }
@@ -414,10 +418,9 @@ public class DatabaseManager implements IBase {
             Where<Echomail, Object> msgid = daoEchomail.queryBuilder().join(echoareaQueryBuilder).setCountOf(true).where().eq("msgId", message.getMsgId());
             return daoEchomail.countOf(msgid.prepare()) != 0;
         } catch (SQLException e) {
-            // TODO: logger
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -438,7 +441,7 @@ public class DatabaseManager implements IBase {
             }
             return arrayList;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.EMPTY_LIST;
     }
@@ -466,7 +469,7 @@ public class DatabaseManager implements IBase {
             subscription.setAccessLevel(Subscription.AccessLevel.BOTH);
             subscriptionsDao.create(subscription);
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 

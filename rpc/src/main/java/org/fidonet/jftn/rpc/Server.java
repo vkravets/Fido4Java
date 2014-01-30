@@ -36,6 +36,8 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TNonblockingServerTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
@@ -47,6 +49,8 @@ import java.net.InetSocketAddress;
  * Time: 11:29 AM
  */
 public class Server {
+
+    public static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     private int port;
     private TServer server;
@@ -89,7 +93,7 @@ public class Server {
             TProtocolFactory factory = new TBinaryProtocol.Factory();
             server = new TNonblockingServer(new TNonblockingServer.Args(transport).processor(multiplexedProcessor).protocolFactory(factory));
         } catch (TTransportException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 

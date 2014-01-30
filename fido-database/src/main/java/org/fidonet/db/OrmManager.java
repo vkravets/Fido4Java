@@ -34,6 +34,8 @@ import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import org.fidonet.db.objects.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -49,6 +51,8 @@ import java.util.Set;
  * Time: 7:59 AM
  */
 public class OrmManager {
+
+    public static final Logger logger = LoggerFactory.getLogger(OrmManager.class);
 
     private String jdbcUrl;
     private String user = null;
@@ -139,7 +143,7 @@ public class OrmManager {
             try {
                 connectionSource.close();
             } catch (SQLException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                logger.error(e.getMessage(), e);
             }
     }
 

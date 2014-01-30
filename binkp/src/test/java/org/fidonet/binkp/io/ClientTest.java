@@ -124,13 +124,13 @@ public class ClientTest {
                                 try {
                                     session.getHandler().messageReceived(session, msg);
                                 } catch (Exception e) {
-                                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                    e.printStackTrace();
                                 }
                             }
                             try {
                                 Thread.sleep(100);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                e.printStackTrace();
                             }
                         }
                     }
@@ -139,7 +139,7 @@ public class ClientTest {
                 recvMessageThread.start();
                 ClientMock.this.writeStreamToSession(recvRawData);
             } catch (Exception e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
             }
         }
 
