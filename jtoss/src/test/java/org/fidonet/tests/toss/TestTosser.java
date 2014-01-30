@@ -175,5 +175,18 @@ public class TestTosser {
             num++;
         }
         TestCase.assertEquals(43, num);
+
+        databaseManager.setLinkLastMessage(link.toLink(), "ru.anime", 10L);
+        databaseManager.setLinkLastMessage(link.toLink(), "ru.computerra", 9L);
+        databaseManager.setLinkLastMessage(link.toLink(), "ru.golded", 14L);
+
+        num = 0;
+        messages = databaseManager.getMessages(link.toLink());
+        while (messages.hasNext()) {
+            messages.next();
+            num++;
+        }
+        TestCase.assertEquals(36, num);
+
     }
 }

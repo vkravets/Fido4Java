@@ -30,6 +30,7 @@ package org.fidonet.db;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.UpdateBuilder;
 import com.j256.ormlite.stmt.Where;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
@@ -179,7 +180,7 @@ public class DatabaseManager implements IBase {
             }
 
             Where<Echomail, Object> ge = echomailQueryBuilder.where().in("id_echoarea", areas_ids).and().gt("id", minLastMessage);
-
+            System.out.println(ge.prepare().getStatement());
             return new WhereDatabaseLimitIterator<Echomail, Message>(echomailsDao, ge, -1, MESSAGE_LIMIT_QUERY, true) {
                 @Override
                 public Message convert(Echomail object) {
@@ -388,17 +389,26 @@ public class DatabaseManager implements IBase {
     public void setLinkLastMessage(Link link, String areaname, Long id) {
         Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
         Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
-        Dao<Echomail, Object> echomailsDao = dbManager.getDao(Echomail.class);
+        Dao<Echoarea, Object> echoareasDao = dbManager.getDao(Echoarea.class);
         QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder();
         QueryBuilder<Subscription, Object> subscriptionsQueryBuilder = subscriptionsDao.queryBuilder();
-        QueryBuilder<Echomail, Object> echomailsQueryBuilder = echomailsDao.queryBuilder();
+        QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder();
         try {
             List<ConfigurationLink> links = linksQueryBuilder.where().eq("address", link.getAddr().as5D()).query();
             if (links.size() != 0) {
-                List<Echomail> echomailList = echomailsQueryBuilder.where().eq("name", areaname).query();
+                List<Echoarea> echomailList = echoareasQueryBuilder.where().eq("name", areaname).query();
                 if (echomailList.size() > 0) {
-                    List<Subscription> subscriptionList = subscriptionsQueryBuilder.where().eq("id_echoarea", echomailList.get(0).getId()).query();
-                    if (subscriptionList.size() > 0) subscriptionList.get(0).setLastMessage(id);
+                    Where<Subscription, Object> subscriptionObjectWhere = subscriptionsQueryBuilder.where().
+                            eq("id_area", echomailList.get(0).getId()).
+                            and().
+                            eq("id_link", links.get(0).getId());
+                    List<Subscription> subscriptionList = subscriptionObjectWhere.query();
+                    if (subscriptionList.size() > 0) {
+                        UpdateBuilder<Subscription, Object> subscriptionUpdateBuilder = subscriptionsDao.updateBuilder();
+                        subscriptionUpdateBuilder.updateColumnValue("lastmessage_id", id);
+                        subscriptionUpdateBuilder.setWhere(subscriptionObjectWhere);
+                        subscriptionsDao.update(subscriptionUpdateBuilder.prepare());
+                    }
                 }
             }
         } catch (SQLException e) {
