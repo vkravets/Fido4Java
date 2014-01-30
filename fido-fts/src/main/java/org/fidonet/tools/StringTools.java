@@ -44,6 +44,19 @@ public class StringTools {
     public static final String NEW_LINE = "\r";
 
     public static List<String> wrap(String str, int wrapLength) {
+        return wrap(str, wrapLength);
+    }
+
+    private static void addWithPrefix(List<String> result, String str, String prefix) {
+        if (prefix == null || prefix.isEmpty()) {
+            result.add(str);
+            return;
+        }
+        result.add(prefix + str);
+    }
+
+
+    public static List<String> wrap(String str, int wrapLength, String prefix) {
         if (str == null) return null;
         if (wrapLength < 1) wrapLength = 1;
         List<String> result = new ArrayList<String>();
@@ -56,20 +69,20 @@ public class StringTools {
             }
             int spaceToWrapAt = str.lastIndexOf(' ', wrapLength + offset);
             if (spaceToWrapAt >= offset) {
-                result.add(str.substring(offset, spaceToWrapAt));
+                addWithPrefix(result, str.substring(offset, spaceToWrapAt), prefix);
                 offset = spaceToWrapAt + 1;
             } else {
                 spaceToWrapAt = str.indexOf(' ', wrapLength + offset);
                 if (spaceToWrapAt >= 0) {
-                    result.add(str.substring(offset, spaceToWrapAt));
+                    addWithPrefix(result, str.substring(offset, spaceToWrapAt), prefix);
                     offset = spaceToWrapAt + 1;
                 } else {
-                    result.add(str.substring(offset));
+                    addWithPrefix(result, str.substring(offset), prefix);
                     offset = inputLineLength;
                 }
             }
         }
-        result.add(str.substring(offset));
+        addWithPrefix(result, str.substring(offset), prefix);
         return result;
     }
 

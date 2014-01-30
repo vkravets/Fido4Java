@@ -77,8 +77,8 @@ public class FidoPathTest {
 
     @Test
     public void testPathToMessageString() {
-        String pathString = "\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5\n" +
-                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070\n";
+        String pathString = "\001PATH: 5020/545 4441 1042 5030/100 102 5040/102 5050/103 90 100 130 5\r" +
+                "\001PATH: 462/100 68768 7657324 53824823 467/1313 7070\r";
         FidoPath actualPath = new FidoPath();
         actualPath.add(FTNAddr.valueOf("2:5020/545"));
         actualPath.add(FTNAddr.valueOf("2:5020/4441"));

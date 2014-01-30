@@ -134,8 +134,12 @@ public abstract class AbstractFidoAddressesList {
     }
 
     protected List<String> getWrapStrings(int wrapLength) {
+        return getWrapStrings(wrapLength, null);
+    }
+
+    protected List<String> getWrapStrings(int wrapLength, String prefix) {
         String original = toString();
-        return StringTools.wrap(original, wrapLength);
+        return StringTools.wrap(original, wrapLength, prefix);
     }
 
 }

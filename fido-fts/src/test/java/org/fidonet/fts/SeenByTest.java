@@ -68,8 +68,8 @@ public class SeenByTest {
 
     @Test
     public void testSortedSeenByToMessageString() {
-        String pathString = "SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102\n" +
-                "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042\n";
+        String pathString = "SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102\r" +
+                "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042\r";
         SeenBy actualPath = new SeenBy();
         actualPath.add(FTNAddr.valueOf("2:5060/545"));
         actualPath.add(FTNAddr.valueOf("2:5060/580"));

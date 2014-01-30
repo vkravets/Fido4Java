@@ -80,7 +80,7 @@ public class SeenBy extends AbstractFidoAddressesList {
     }
 
     public String[] toSeenByStrings() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - SEEN_BY_LINE_PREFIX.length());
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - SEEN_BY_LINE_PREFIX.length(), SEEN_BY_LINE_PREFIX);
         return wrapLines.toArray(new String[wrapLines.size()]);
     }
 }
