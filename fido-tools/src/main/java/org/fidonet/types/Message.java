@@ -58,6 +58,7 @@ public class Message {
     private Attribute attrs;
     private FTNAddr upLink;
     private String msgId;
+    private boolean isValid;
 
     public Message(String from, String to, FTNAddr fromAddr, FTNAddr toAddr, String subj, String message, Date date) {
         this.from = from;
@@ -67,6 +68,7 @@ public class Message {
         this.subject = subj;
         this.body = message;
         this.msgDate = date.toString();
+        this.isValid = true;
     }
 
     public Message(FtsPackMsg src) {
@@ -95,7 +97,7 @@ public class Message {
         if (echomail) {
             tryDetectAddressesAndId();
         }
-
+        isValid = true;
     }
 
     public String[] getKludgesFromBody(byte[] body) {
@@ -162,7 +164,8 @@ public class Message {
             // todo: error handling
             String[] tokens = p.split(fmpt);
             fAddr = new FTNAddr(tokens[0].trim());
-            msgId = tokens[1].trim();
+            msgId = fmpt.trim();
+            logger.debug("{} {} {} {}", msgId, subject, from, area);
         } else {
             fAddr = new FTNAddr(-1, -1, -1, -1);
         }
@@ -248,13 +251,21 @@ public class Message {
 
     @Override
     public String toString() {
-        return "Message{" +
+        return "Message{\n" +
                 "from='" + from + '\'' +
-                ", to='" + to + '\'' +
-                ", area='" + area + '\'' +
-                ", subject='" + subject + '\'' +
-                ", msgDate='" + msgDate + '\'' +
-                ", msgId='" + msgId + '\'' +
-                '}';
+                ", \nto='" + to + '\'' +
+                ", \narea='" + area + '\'' +
+                ", \nsubject='" + subject + '\'' +
+                ", \nmsgDate='" + msgDate + '\'' +
+                ", \nmsgId='" + msgId + '\'' +
+                "\n}";
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public void setValid(boolean isValid) {
+        this.isValid = isValid;
     }
 }

@@ -69,4 +69,8 @@ public class EchoMgr {
     public void close() {
         echosbase.close();
     }
+
+    public boolean isDupe(Message message) {
+        return echosbase.isDupe(message);
+    }
 }

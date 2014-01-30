@@ -28,6 +28,7 @@
 
 package org.fidonet.jftn.tosser;
 
+import org.fidonet.echobase.EchoMgr;
 import org.fidonet.types.Message;
 
 /**
@@ -38,7 +39,14 @@ import org.fidonet.types.Message;
  */
 public class TossEchoMailEvent extends TossNetmailEvent {
 
-    public TossEchoMailEvent(Message message) {
+    private EchoMgr echoMgr;
+
+    public TossEchoMailEvent(Message message, EchoMgr echoMgr) {
         super(message);
+        this.echoMgr = echoMgr;
+    }
+
+    public EchoMgr getEchoMgr() {
+        return echoMgr;
     }
 }

@@ -57,11 +57,14 @@ public class Tosser extends HasEventBus {
     private EchoMgr areamgr;
     private Pattern bunlderegex;
     private JFtnConfig config;
+    private DupeDetector dupeDetector;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
         this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
+        dupeDetector = new DupeDetector();
+        getEventBus().subscribe(dupeDetector);
     }
 
     private boolean isBunldeName(String str) {
@@ -185,9 +188,9 @@ public class Tosser extends HasEventBus {
         for (FtsPackMsg msg1 : msgs) {
             final Message msg = new Message(msg1);
             if (msg.isEchomail()) {
-                processEchoMail(msg);
                 // Call onTossEchoMsg hook
-                getEventBus().publish(new TossEchoMailEvent(msg));
+                getEventBus().publish(new TossEchoMailEvent(msg, areamgr));
+                if (msg.isValid()) processEchoMail(msg);
             } else {
                 // Call onTossNetMail hook
                 getEventBus().publish(new TossNetmailEvent(msg));
@@ -199,8 +202,6 @@ public class Tosser extends HasEventBus {
 
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg);
-//        msg.dumpHead();
-        //return;
     }
 
     public EchoMgr getAreamgr() {

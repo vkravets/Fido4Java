@@ -40,7 +40,7 @@ import org.fidonet.events.AbstractEventHandler;
  */
 public abstract class TossNetmailEventHandler extends AbstractEventHandler<TossNetmailEvent> {
 
-    @Handler(rejectSubtypes = true, delivery = Invoke.Asynchronously)
+    @Handler(rejectSubtypes = true, delivery = Invoke.Synchronously)
     public void handle(TossNetmailEvent event) {
         onEventHandle(event);
     }

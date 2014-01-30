@@ -405,6 +405,22 @@ public class DatabaseManager implements IBase {
 
 
     @Override
+    public boolean isDupe(Message message) {
+        Dao<Echomail, Object> daoEchomail = dbManager.getDao(Echomail.class);
+        Dao<Echoarea, Object> daoEchoarea = dbManager.getDao(Echoarea.class);
+        try {
+            QueryBuilder<Echoarea, Object> echoareaQueryBuilder = daoEchoarea.queryBuilder();
+            echoareaQueryBuilder.where().eq("name", message.getArea().toLowerCase());
+            Where<Echomail, Object> msgid = daoEchomail.queryBuilder().join(echoareaQueryBuilder).setCountOf(true).where().eq("msgId", message.getMsgId());
+            return daoEchomail.countOf(msgid.prepare()) != 0;
+        } catch (SQLException e) {
+            // TODO: logger
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    @Override
     public void close() {
         dbManager.disconnect();
     }

@@ -26,54 +26,36 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.echobase;
+package org.fidonet.jftn.tosser;
 
-import org.fidonet.types.Link;
+import org.fidonet.echobase.EchoMgr;
 import org.fidonet.types.Message;
-
-import java.util.Iterator;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 10/3/12
- * Time: 7:24 AM
+ * Date: 1/30/14
+ * Time: 12:47 PM
  */
-public interface IBase {
+public class DupeDetector extends TossEchoMailEventHandler {
 
-    public boolean open();
+    public static final Logger logger = LoggerFactory.getLogger(DupeDetector.class);
 
-    public boolean createArea(String areaName);
+    @Override
+    public void onEventHandle(TossEchoMailEvent event) {
+        Message message = event.getMessage();
+        EchoMgr echoMgr = event.getEchoMgr();
 
-    public boolean createArea(String areaName, String description);
-
-    public void addMessage(Message message, String areaname);
-
-    public Iterator<Message> getMessages(String areaname);
-
-    public Iterator<Message> getMessages(String areaname, long startMessage, long bundleSize);
-
-    public Iterator<Message> getMessages(Link link);
-
-    public Iterator<Message> getMessages(Link link, String areaname);
-
-    public Iterator<Message> getMessages(Link link, String areaname, long startMessage, long bundleSize);
-
-    public Message getMessage(String area, int id);
-
-    public Message getMessage(int id);
-
-    public long getMessageSize(String areaname);
-
-    public List<String> getAreas();
-
-    public boolean isAreaExists(String name);
-
-    public void setLinkLastMessage(Link link, String areaname, Long id);
-
-    public void close();
-
-    public boolean isDupe(Message message);
+        long startTime = System.currentTimeMillis();
+        boolean isDupe = echoMgr.isDupe(message);
+        logger.debug("Dupe calculation check {}ms", System.currentTimeMillis() - startTime);
+        if (isDupe) {
+            logger.warn("Dupe detected in the area {}. Skip message!", event.getMessage().getArea());
+            logger.debug("Dupe details:\n{}\nKludges:\n{}\n", event.getMessage(), event.getMessage().getKludges());
+            message.setValid(false);
+        }
+    }
 }
