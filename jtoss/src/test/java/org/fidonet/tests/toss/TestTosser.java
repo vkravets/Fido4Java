@@ -41,7 +41,9 @@ import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.io.InputStream;
@@ -59,6 +61,7 @@ import java.util.List;
  * Date: 9/2/11
  * Time: 5:42 PM
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestTosser {
 
     private static OrmManager ormManager;
@@ -92,7 +95,7 @@ public class TestTosser {
 
 
     @Test
-    public void testToss() {
+    public void testFlowToss() {
         JFtnConfig config = new JFtnConfig();
         InputStream configStream = TestTosser.class.getClassLoader().getResourceAsStream("jftn.conf");
 
@@ -142,7 +145,12 @@ public class TestTosser {
         Dao<ConfigurationLink, Object> linksDao = ormManager.getDao(ConfigurationLink.class);
         linksDao.create(link);
 
-        databaseManager.addSubscription(link.toLink(), "ru.anime");
+        long messageSize = databaseManager.getMessageSize("ru.anime");
+        long messageSize1 = databaseManager.getMessageSize("ru.golded");
+        long messageSize2 = databaseManager.getMessageSize("ru.computerra");
+        System.out.println(String.format("ru.anime: %d", messageSize));
+        System.out.println(String.format("ru.golded: %d", messageSize1));
+        System.out.println(String.format("ru.computerra: %d", messageSize2));
 
         Iterator<Message> messages = databaseManager.getMessages(link.toLink());
         int num = 0;
@@ -150,32 +158,49 @@ public class TestTosser {
             messages.next();
             num++;
         }
-        long messageSize = databaseManager.getMessageSize("ru.anime");
-        long messageSize1 = databaseManager.getMessageSize("ru.golded");
-        long messageSize2 = databaseManager.getMessageSize("ru.computerra");
-        System.out.println(messageSize);
-        System.out.println(messageSize1);
-        System.out.println(messageSize2);
+
+        System.out.println("Link don't have any subscription");
+        System.out.println("Checking that there no any messages for link.");
+        TestCase.assertEquals(0, num);
+
+        databaseManager.addSubscription(link.toLink(), "ru.anime");
+        System.out.println("Subscribed to ru.anime successfully.");
+
+        messages = databaseManager.getMessages(link.toLink());
+        num = 0;
+        while (messages.hasNext()) {
+            messages.next();
+            num++;
+        }
+        System.out.println("Checking correctness of messages number...");
+
         TestCase.assertEquals(4, num);
 
         databaseManager.addSubscription(link.toLink(), "ru.golded");
+        System.out.println("Subscribed to ru.golded successfully.");
+
         num = 0;
         messages = databaseManager.getMessages(link.toLink());
         while (messages.hasNext()) {
             messages.next();
             num++;
         }
+        System.out.println("Checking correctness of messages number...");
         TestCase.assertEquals(5, num);
 
         databaseManager.addSubscription(link.toLink(), "ru.computerra");
+        System.out.println("Subscribed to ru.computerra successfully.");
+
         num = 0;
         messages = databaseManager.getMessages(link.toLink());
         while (messages.hasNext()) {
             messages.next();
             num++;
         }
+        System.out.println("Checking correctness of messages number...");
         TestCase.assertEquals(43, num);
 
+        System.out.println("Checking behavior with last message id algorithm...");
         databaseManager.setLinkLastMessage(link.toLink(), "ru.anime", 10L);
         databaseManager.setLinkLastMessage(link.toLink(), "ru.computerra", 9L);
         databaseManager.setLinkLastMessage(link.toLink(), "ru.golded", 14L);
@@ -186,7 +211,9 @@ public class TestTosser {
             messages.next();
             num++;
         }
+        System.out.println("Checking correctness of messages number...");
         TestCase.assertEquals(36, num);
 
+        System.out.println("SUCCESS");
     }
 }
