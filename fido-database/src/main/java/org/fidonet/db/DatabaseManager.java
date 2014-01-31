@@ -129,7 +129,7 @@ public class DatabaseManager implements IBase {
     }
 
     @Override
-    public Message getMessage(String area, int id) {
+    public Message getMessage(String area, String id) {
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         try {
@@ -141,7 +141,7 @@ public class DatabaseManager implements IBase {
                     where().
                     eq(Echomail.ID_AREA_COLUMN, echoarea.getId()).
                     and().
-                    eq(Echomail.ID_COLUMN, id).
+                    eq(Echomail.MSGID_COLUMN, id).
                     query();
             if (query.size() > 0)
                 return query.get(0).toMessage();
@@ -152,13 +152,16 @@ public class DatabaseManager implements IBase {
     }
 
     @Override
-    public Message getMessage(int id) {
+    public List<Message> getMessage(String id) {
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         try {
-            List<Echomail> query = echomailQueryBuilder.where().eq(Echomail.ID_COLUMN, id).query();
-            if (query.size() > 0)
-                return query.get(0).toMessage();
+            List<Echomail> query = echomailQueryBuilder.where().eq(Echomail.MSGID_COLUMN, id).query();
+            List<Message> result = new ArrayList<Message>(query.size());
+            for (Echomail echomail : query) {
+                result.add(echomail.toMessage());
+            }
+            return result;
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
         }

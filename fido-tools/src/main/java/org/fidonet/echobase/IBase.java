@@ -61,9 +61,9 @@ public interface IBase {
 
     public Iterator<Message> getMessages(Link link, String areaname, long startMessage, long bundleSize);
 
-    public Message getMessage(String area, int id);
+    public Message getMessage(String area, String id);
 
-    public Message getMessage(int id);
+    public List<Message> getMessage(String id);
 
     public long getMessageSize(String areaname);
 
