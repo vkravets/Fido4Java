@@ -46,11 +46,11 @@ public class EchoMgr {
         echosbase.addMessage(msg, msg.getArea().toLowerCase());
     }
 
-    public Message getMessage(String area, int id) throws EchoBaseException {
+    public Message getMessage(String area, String id) throws EchoBaseException {
         return echosbase.getMessage(area, id);
     }
 
-    public Message getMessage(int id) throws EchoBaseException {
+    public List<Message> getMessage(String id) throws EchoBaseException {
         return echosbase.getMessage(id);
     }
 
