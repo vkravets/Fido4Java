@@ -29,6 +29,7 @@
 package org.fidonet.db.upgrade.version0;
 
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.objects.Version;
 import org.fidonet.db.upgrade.Upgrader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,28 @@ public class UpgraderV0 implements Upgrader {
         logger.info("Upgrade Netmail information....");
         if (!upgradeNetmails(oldManager, newManager)) return false;
         logger.info("Upgrade Echomail information....");
-        return upgradeEchomails(oldManager, newManager);
+        if (!upgradeEchomails(oldManager, newManager)) return false;
+        logger.info("Save upgrade path...");
+        if (!upgradeVersion(oldManager, newManager)) return false;
+        Version version = new Version();
+        version.setVersion(Version.CURRENT_VERSION);
+        newManager.setCurrentVersion(version);
+        return true;
+    }
+
+    private boolean upgradeVersion(OrmManager oldManager, OrmManager newManager) {
+        return Helper.upgradeObjects(Version.class, oldManager, Version.class, newManager, new ObjectUpgrader<Version, Version>() {
+            @Override
+            public void upgrade(Version oldObject, Version newObject) {
+                oldObject.setVersion(newObject.getVersion());
+            }
+
+            @Override
+            public void onException(Version oldObject, Exception ex) {
+                logger.error("Error add new version. Details {}", oldObject, ex);
+            }
+        }, true);
+
     }
 
     @Override

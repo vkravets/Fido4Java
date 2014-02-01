@@ -52,6 +52,7 @@ public class UpgraderTool {
 
     public UpgraderTool() {
         upgradersMap = new HashMap<Long, Upgrader>();
+        // TODO: scan to all Upgrader and using for fill this map
         upgradersMap.put(0L, new UpgraderV0());
     }
 
