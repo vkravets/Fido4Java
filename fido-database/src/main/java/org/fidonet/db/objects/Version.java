@@ -46,7 +46,7 @@ public class Version {
     public static final String ID_COLUMN = "id";
     public static final String VERSION_ID_COLUMN = "version_id";
 
-    @DatabaseField(columnName = VERSION_ID_COLUMN, generatedId = true)
+    @DatabaseField(columnName = ID_COLUMN, generatedId = true)
     private Long id;
 
     @DatabaseField(columnName = VERSION_ID_COLUMN)
