@@ -57,7 +57,8 @@ public class UpgraderTool {
     }
 
     public boolean isNeedToUpgrade(OrmManager dbManager) {
-        return dbManager.getCurrentVersion() < Version.CURRENT_VERSION;
+        Long currentVersion = dbManager.getCurrentVersion();
+        return currentVersion != -1 && currentVersion < Version.CURRENT_VERSION;
     }
 
     public boolean upgrade(OrmManager oldManager, OrmManager newManager) {

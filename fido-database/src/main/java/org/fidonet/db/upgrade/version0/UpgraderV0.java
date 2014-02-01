@@ -61,8 +61,7 @@ public class UpgraderV0 implements Upgrader {
         if (!upgradeVersion(oldManager, newManager)) return false;
         Version version = new Version();
         version.setVersion(Version.CURRENT_VERSION);
-        newManager.setCurrentVersion(version);
-        return true;
+        return newManager.setCurrentVersion(version);
     }
 
     private boolean upgradeVersion(OrmManager oldManager, OrmManager newManager) {

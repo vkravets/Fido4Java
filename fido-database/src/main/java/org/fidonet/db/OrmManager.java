@@ -38,7 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -151,13 +154,12 @@ public class OrmManager {
     public Long getCurrentVersion() {
         Dao<Version, Object> dao = getDao(Version.class);
         try {
-            List<Version> query = dao.queryBuilder().query();
-            if (query.size() == 0) {
-                logger.error("Version table cannot be found. Cannot continue");
+            Version curVersion = dao.queryBuilder().orderBy(Version.ID_COLUMN, false).limit(1L).queryForFirst();
+            if (curVersion == null) {
+                logger.error("Any version cannot be found, cannot continue", new Throwable("Version table is corrupted"));
                 return UNKNOWN_VERSION;
             }
-            Version version = query.get(0);
-            return version.getVersion();
+            return curVersion.getVersion();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -167,11 +169,13 @@ public class OrmManager {
     public boolean setCurrentVersion(Version version) {
         Dao<Version, Object> dao = getDao(Version.class);
         try {
-            dao.update(version);
+            // TODO: Maybe change to create only?
+            // because there is a little chance that we need to update version... (???)
+            Dao.CreateOrUpdateStatus status = dao.createOrUpdate(version);
+            return status.isCreated() || status.isUpdated();
         } catch (SQLException e) {
             logger.error("Cannot set new version {}", version.getVersion(), e);
             return false;
         }
-        return true;
     }
 }
