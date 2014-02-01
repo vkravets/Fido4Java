@@ -26,91 +26,42 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.db;
+package org.fidonet.db.upgrade.tools;
 
-import com.j256.ormlite.dao.CloseableIterator;
-import com.j256.ormlite.stmt.QueryBuilder;
+import org.fidonet.db.OrmManager;
+import org.fidonet.db.objects.Version;
+import org.fidonet.db.upgrade.Upgrader;
+import org.fidonet.db.upgrade.version0.UpgraderV0;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 1/29/14
- * Time: 2:54 PM
+ * Date: 2/1/14
+ * Time: 2:13 PM
  */
-public class WhereDatabaseLimitIterator<T, K> implements Iterator<K> {
+public class UpgraderTool {
 
-    public static final Logger logger = LoggerFactory.getLogger(WhereDatabaseLimitIterator.class);
+    public static final Logger logger = LoggerFactory.getLogger(UpgraderTool.class);
+    private Map<Long, Upgrader> upgradersMap;
 
-    private long limit;
-    private long offset;
-    private CloseableIterator<T> curlist;
-    private QueryBuilder<T, Object> objectQueryBuilder;
-    private boolean continueQuery;
-
-    public WhereDatabaseLimitIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit) {
-        this(queryBuilder, offset, limit, false);
+    public UpgraderTool() {
+        upgradersMap = new HashMap<Long, Upgrader>();
+        upgradersMap.put(0L, new UpgraderV0());
     }
 
-    public WhereDatabaseLimitIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit, boolean continueQuery) {
-        this.limit = limit;
-        this.offset = offset;
-        objectQueryBuilder = queryBuilder;
-        this.continueQuery = continueQuery;
+    public boolean isNeedToUpgrade(OrmManager dbManager) {
+        return dbManager.getCurrentVersion() < Version.CURRENT_VERSION;
     }
 
-    @Override
-    public boolean hasNext() {
-        if (curlist != null && curlist.hasNext()) return true;
-        try {
-            if (curlist == null || continueQuery && offset >= limit) {
-                queryDb();
-            } else {
-                return false;
-            }
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-            return false;
-        }
-        return curlist != null && curlist.hasNext();
+    public boolean upgrade(OrmManager oldManager, OrmManager newManager) {
+        Long currentVersion = oldManager.getCurrentVersion();
+        Upgrader upgrader = upgradersMap.get(currentVersion);
+        return upgrader.upgrade(oldManager, newManager);
     }
-
-    private void queryDb() throws SQLException {
-        if (curlist != null) curlist.close();
-        if (limit > -1) {
-            objectQueryBuilder = objectQueryBuilder.limit(limit);
-        }
-        if (offset > -1) {
-            objectQueryBuilder = objectQueryBuilder.offset(offset);
-        }
-        curlist = objectQueryBuilder.iterator();
-        if (!curlist.hasNext()) {
-            curlist.close();
-        }
-    }
-
-    @Override
-    public K next() {
-        if (hasNext()) {
-            offset++;
-            return convert(curlist.next());
-        }
-        throw new NoSuchElementException();
-    }
-
-    public K convert(T object) {
-        return (K) object;
-    }
-
-    @Override
-    public void remove() {
-        curlist.remove();
-    }
-
 }

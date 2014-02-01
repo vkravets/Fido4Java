@@ -62,7 +62,6 @@ public class DatabaseManager implements IBase {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
     private OrmManager dbManager;
-    private static final Long MESSAGE_LIMIT_QUERY = 500L;
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;
@@ -105,7 +104,7 @@ public class DatabaseManager implements IBase {
 
     @Override
     public Iterator<Message> getMessages(String areaname) {
-        return getMessages(areaname, -1, MESSAGE_LIMIT_QUERY, true);
+        return getMessages(areaname, -1, DatabasePagingIterator.MESSAGE_LIMIT_QUERY, true);
     }
 
     @Override
@@ -115,12 +114,12 @@ public class DatabaseManager implements IBase {
 
     @Override
     public Iterator<Message> getMessages(Link link) {
-        return getMessages(link, null, -1, MESSAGE_LIMIT_QUERY, true);
+        return getMessages(link, null, -1, DatabasePagingIterator.MESSAGE_LIMIT_QUERY, true);
     }
 
     @Override
     public Iterator<Message> getMessages(Link link, String areaname) {
-        return getMessages(link, areaname, -1, MESSAGE_LIMIT_QUERY, true);
+        return getMessages(link, areaname, -1, DatabasePagingIterator.MESSAGE_LIMIT_QUERY, true);
     }
 
     @Override
@@ -367,11 +366,11 @@ public class DatabaseManager implements IBase {
      */
 
     private Iterator<Message> createEchomailIterator(final QueryBuilder<Echomail, Object> echomailQueryBuilder, long startMessage, long bundleSize, boolean continueQuery) {
-        if (bundleSize > MESSAGE_LIMIT_QUERY) {
-            logger.warn("Bundle size for getting messages cannot be greater then {}. Using this value.", MESSAGE_LIMIT_QUERY);
-            bundleSize = MESSAGE_LIMIT_QUERY;
+        if (bundleSize > DatabasePagingIterator.MESSAGE_LIMIT_QUERY) {
+            logger.warn("Bundle size for getting messages cannot be greater then {}. Using this value.", DatabasePagingIterator.MESSAGE_LIMIT_QUERY);
+            bundleSize = DatabasePagingIterator.MESSAGE_LIMIT_QUERY;
         }
-        return new WhereDatabaseLimitIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, continueQuery) {
+        return new DatabasePagingIterator<Echomail, Message>(echomailQueryBuilder, startMessage, bundleSize, continueQuery) {
             @Override
             public Message convert(Echomail echomail) {
                 return echomail.toMessage();

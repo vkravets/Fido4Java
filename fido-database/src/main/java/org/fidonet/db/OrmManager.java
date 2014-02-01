@@ -38,10 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,6 +50,7 @@ import java.util.Set;
 public class OrmManager {
 
     public static final Logger logger = LoggerFactory.getLogger(OrmManager.class);
+    public static final long UNKNOWN_VERSION = -1;
 
     private String jdbcUrl;
     private String user = null;
@@ -62,19 +60,21 @@ public class OrmManager {
 
     private Map<Class<?>, Dao<?, ?>> daoMap;
 
-    private static Set<Class<?>> daoClasses;
+    protected Set<Class<?>> daoClasses;
 
-    static {
+    protected void setDaoClassesList() {
         daoClasses = new HashSet<Class<?>>();
         daoClasses.add(Echoarea.class);
         daoClasses.add(Echomail.class);
         daoClasses.add(ConfigurationLink.class);
         daoClasses.add(Netmail.class);
         daoClasses.add(Subscription.class);
+        daoClasses.add(Version.class);
     }
 
     public OrmManager(String jdbcUrl) {
         this.jdbcUrl = jdbcUrl;
+        setDaoClassesList();
     }
 
     public OrmManager(String jdbcUrl, String user, String password) {
@@ -148,4 +148,30 @@ public class OrmManager {
     }
 
 
+    public Long getCurrentVersion() {
+        Dao<Version, Object> dao = getDao(Version.class);
+        try {
+            List<Version> query = dao.queryBuilder().query();
+            if (query.size() == 0) {
+                logger.error("Version table cannot be found. Cannot continue");
+                return UNKNOWN_VERSION;
+            }
+            Version version = query.get(0);
+            return version.getVersion();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return UNKNOWN_VERSION;
+    }
+
+    public boolean setCurrentVersion(Version version) {
+        Dao<Version, Object> dao = getDao(Version.class);
+        try {
+            dao.update(version);
+        } catch (SQLException e) {
+            logger.error("Cannot set new version {}", version.getVersion(), e);
+            return false;
+        }
+        return true;
+    }
 }
