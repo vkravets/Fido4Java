@@ -42,6 +42,7 @@ import com.j256.ormlite.table.DatabaseTable;
 public class Version {
 
     public static final Long CURRENT_VERSION = 0L;
+    public static final long UNKNOWN_VERSION = -1;
 
     public static final String ID_COLUMN = "id";
     public static final String VERSION_ID_COLUMN = "version_id";

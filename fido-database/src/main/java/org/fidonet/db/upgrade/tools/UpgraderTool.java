@@ -52,13 +52,13 @@ public class UpgraderTool {
 
     public UpgraderTool() {
         upgradersMap = new HashMap<Long, Upgrader>();
-        // TODO: scan to all Upgrader and using for fill this map
+        // TODO: scan all Upgrader and fill this map
         upgradersMap.put(0L, new UpgraderV0());
     }
 
     public boolean isNeedToUpgrade(OrmManager dbManager) {
         Long currentVersion = dbManager.getCurrentVersion();
-        return currentVersion != -1 && currentVersion < Version.CURRENT_VERSION;
+        return currentVersion != Version.UNKNOWN_VERSION && currentVersion < Version.CURRENT_VERSION;
     }
 
     public boolean upgrade(OrmManager oldManager, OrmManager newManager) {

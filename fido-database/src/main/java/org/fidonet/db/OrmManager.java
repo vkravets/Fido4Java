@@ -53,7 +53,6 @@ import java.util.Set;
 public class OrmManager {
 
     public static final Logger logger = LoggerFactory.getLogger(OrmManager.class);
-    public static final long UNKNOWN_VERSION = -1;
 
     private String jdbcUrl;
     private String user = null;
@@ -157,20 +156,20 @@ public class OrmManager {
             Version curVersion = dao.queryBuilder().orderBy(Version.ID_COLUMN, false).limit(1L).queryForFirst();
             if (curVersion == null) {
                 logger.error("Any version cannot be found, cannot continue", new Throwable("Version table is corrupted"));
-                return UNKNOWN_VERSION;
+                return Version.UNKNOWN_VERSION;
             }
             return curVersion.getVersion();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return UNKNOWN_VERSION;
+        return Version.UNKNOWN_VERSION;
     }
 
     public boolean setCurrentVersion(Version version) {
         Dao<Version, Object> dao = getDao(Version.class);
         try {
             // TODO: Maybe change to create only?
-            // because there is a little chance that we need to update version... (???)
+            // because there is a small chance that we will need to update version... (???)
             Dao.CreateOrUpdateStatus status = dao.createOrUpdate(version);
             return status.isCreated() || status.isUpdated();
         } catch (SQLException e) {
