@@ -76,12 +76,16 @@ public class DatabasePagingIterator<T, K> implements Iterator<K> {
     public boolean hasNext() {
         if (curlist != null && curlist.hasNext()) return true;
         try {
-            if (curlist == null || continueQuery && offset >= limit) {
+            if (curlist == null || continueQuery && (offset % limit == 0)) {
                 queryDb();
             } else {
+                // need to close iterator, since amount of queried message are less then limit
+                if (curlist != null) curlist.close();
                 return false;
             }
         } catch (SQLException e) {
+            // There no need to close iterator here, since old one will be closed in queryDb()
+            // and SQLException could be appeared only during curlist.close() in the above expression.
             logger.error(e.getMessage(), e);
             return false;
         }
