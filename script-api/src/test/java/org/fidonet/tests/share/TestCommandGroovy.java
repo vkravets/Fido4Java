@@ -36,6 +36,7 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.tools.FileUtils;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -57,9 +58,11 @@ public class TestCommandGroovy {
         CommandCollection commands = new CommandCollection();
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
-        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream("testCommand.groovy");
+        String fileName = "testCommand.groovy";
+        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream(fileName);
         try {
-            scriptManager.registerScript(inputStream, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            String fileContent = FileUtils.getFileContent(inputStream);
+            scriptManager.registerScript(fileName, fileContent, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }

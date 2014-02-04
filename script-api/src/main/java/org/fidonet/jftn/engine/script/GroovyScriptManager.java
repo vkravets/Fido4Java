@@ -28,7 +28,10 @@
 
 package org.fidonet.jftn.engine.script;
 
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
+
+import javax.script.ScriptContext;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,15 +43,15 @@ public class GroovyScriptManager extends AbstractScriptManager {
 
     public GroovyScriptManager() throws EngineNotFoundException {
         super();
-    }
-
-    public GroovyScriptManager(String scriptFolder) throws EngineNotFoundException {
-        super(scriptFolder);
+        // prevent memory leaks during reloading scripts
+        GroovyScriptEngineImpl engine = (GroovyScriptEngineImpl) super.getEngine();
+        ScriptContext context = engine.getContext();
+        context.setAttribute("#jsr223.groovy.engine.keep.globals", "weak", ScriptContext.ENGINE_SCOPE);
+        engine.setContext(context);
     }
 
     @Override
     protected String getFileExtension() {
         return "groovy";
     }
-
 }

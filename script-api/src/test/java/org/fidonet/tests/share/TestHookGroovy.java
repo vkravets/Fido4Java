@@ -36,12 +36,12 @@ import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.tools.FileUtils;
 import org.fidonet.tests.tools.ConsoleOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.io.PrintStream;
 
 /**
@@ -52,12 +52,16 @@ import java.io.PrintStream;
  */
 public class TestHookGroovy extends HasEventBus {
 
-    private InputStream hookScript = TestHookGroovy.class.getClassLoader().getResourceAsStream("testHook.groovy");
+    private static final String FILE_HOOK_NAME = "testHook.groovy";
+
     private ScriptEngine scriptManager;
     private JFtnScriptService serviceAPI;
 
     @Before
     public void setupEnv() throws Exception {
+
+        String hookScriptContent = FileUtils.getFileContent(TestHookGroovy.class.getClassLoader().getResourceAsStream(FILE_HOOK_NAME));
+
         // Init hook and command classes
         scriptManager = new GroovyScriptManager();
         HookInterpreter hookInterpreter = new HookInterpreter();
@@ -65,13 +69,12 @@ public class TestHookGroovy extends HasEventBus {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
         serviceAPI = new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter);
-        scriptManager.registerScript(hookScript, serviceAPI);
+        scriptManager.registerScript(FILE_HOOK_NAME, hookScriptContent.intern(), serviceAPI);
     }
 
     @After
     public void tearDown() throws Exception {
-        scriptManager.unregisterScript(hookScript, serviceAPI);
-//        hookScript.reset();
+        scriptManager.unregisterScript(FILE_HOOK_NAME, serviceAPI);
     }
 
     @Test

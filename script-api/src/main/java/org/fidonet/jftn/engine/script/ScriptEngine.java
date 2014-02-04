@@ -28,7 +28,7 @@
 
 package org.fidonet.jftn.engine.script;
 
-import java.io.InputStream;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,13 +38,13 @@ import java.io.InputStream;
  */
 public interface ScriptEngine {
 
-    public void registerScript(InputStream script, Object... params) throws Exception;
+    public void registerScript(String name, String content, Object... params) throws Exception;
 
-    public void unregisterScript(InputStream script, Object... params) throws Exception;
+    public void unregisterScript(String name, Object... params) throws Exception;
 
-    public void reloadScripts(Object... params);
+    public void reloadScripts(Map<String, String> scriptsContent, Object... params);
 
-    public void reloadScripts(Boolean forceUnload, Object... params);
+    public void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params);
 
     public javax.script.ScriptEngine getEngine();
 }

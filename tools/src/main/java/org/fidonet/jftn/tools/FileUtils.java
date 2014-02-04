@@ -26,24 +26,30 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.jftn.engine.script;
+package org.fidonet.jftn.tools;
 
-import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Vladimir Kravets
- * Date: 8/29/11
- * Time: 11:40 AM
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 2/4/14
+ * Time: 2:15 PM
  */
-public class JythonScriptManager extends AbstractScriptManager {
+public class FileUtils {
 
-    public JythonScriptManager() throws EngineNotFoundException {
-        super();
-    }
+    public static String getFileContent(InputStream stream) throws IOException {
+        InputStreamReader reader = new InputStreamReader(stream);
 
-    @Override
-    protected String getFileExtension() {
-        return "py";
+        char[] arr = new char[8 * 1024]; // 8K at a time
+        StringBuilder buf = new StringBuilder();
+        int numChars;
+        while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
+            buf.append(arr, 0, numChars);
+        }
+        return buf.toString().intern(); // if file already read return java cached string
     }
 }

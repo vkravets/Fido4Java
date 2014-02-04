@@ -30,16 +30,18 @@ package org.fidonet.jftn.engine.script;
 
 import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
 import org.fidonet.jftn.engine.script.exception.NotSupportedScriptEngine;
+import org.fidonet.jftn.tools.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,7 +55,8 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     private static final String REGISTER_FUNC_NAME = "register";
     private static final String UNREGISTER_FUNC_NAME = "unload";
 
-    private String scriptFolder = "";
+    private static final HashMap<String, String> loadedScripts = new HashMap<String, String>();
+
     private javax.script.ScriptEngine engine;
 
     public AbstractScriptManager() throws EngineNotFoundException {
@@ -63,16 +66,6 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         if (scriptEngine == null)
             throw new EngineNotFoundException(String.format("Engine for \"%s\" file extension was not found", fileExtension));
         setScriptEngine(scriptEngine);
-    }
-
-    public AbstractScriptManager(String scriptFolder) throws EngineNotFoundException {
-        this();
-        setScriptFolder(scriptFolder);
-    }
-
-
-    protected void setScriptFolder(String scriptFolder) {
-        this.scriptFolder = scriptFolder;
     }
 
     protected javax.script.ScriptEngine getScripEngine() {
@@ -86,17 +79,23 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         this.engine = engine;
     }
 
-    public void registerScript(InputStream stream, Object... params) throws Exception {
-        scriptCallFunctions(stream, REGISTER_FUNC_NAME, params);
+    public void registerScript(String name, String script, Object... params) throws Exception {
+        updateCache(name, script);
+        scriptCallFunctions(name, script, REGISTER_FUNC_NAME, params);
     }
 
-    public void unregisterScript(InputStream stream, Object... params) throws Exception {
-        scriptCallFunctions(stream, UNREGISTER_FUNC_NAME, params);
+    public void unregisterScript(String name, Object... params) throws Exception {
+        String cache = getFromCache(name);
+        if (cache == null || cache.isEmpty()) {
+            logger.warn("Something wrong. {} script is empty", name);
+            return;
+        }
+        scriptCallFunctions(name, cache, UNREGISTER_FUNC_NAME, params);
     }
 
-    private void scriptCallFunctions(InputStream stream, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
-        InputStreamReader reader = new InputStreamReader(stream);
-        engine.eval(reader);
+    private void scriptCallFunctions(String name, String script, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
+
+        engine.eval(script);
 
         try {
             Invocable invocableEngine = (Invocable) engine;
@@ -108,28 +107,38 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         }
     }
 
-    public void reloadScripts(Object... params) {
-        reloadScripts(false, params);
+    public void reloadScripts(Map<String, String> scriptsContent, Object... params) {
+        reloadScripts(scriptsContent, false, params);
     }
 
-    public void reloadScripts(Boolean forceUnload, Object... params) {
-        File scriptFolderFile = new File(scriptFolder);
-        File[] fileList = scriptFolderFile.listFiles();
-        if (fileList != null) {
-            for (File file : fileList) {
-                String fileName = file.getName();
+    public void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params) {
+        if (scriptsContent.size() > 0) {
+            for (Map.Entry<String, String> script : scriptsContent.entrySet()) {
+                String fileName = script.getKey();
                 if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
                     try {
-                        logger.debug("Loading ", file.getName());
-                        if (forceUnload) unregisterScript(new FileInputStream(file), params);
-                        registerScript(new FileInputStream(file), params);
+                        logger.debug("Loading ", fileName);
+                        String cacheContent = getFromCache(fileName);
+                        String content = loadScriptContent(new FileInputStream(fileName));
+                        if (cacheContent != null && (forceReload || !cacheContent.equals(content)))
+                            unregisterScript(fileName);
+                        registerScript(fileName, content, params);
                     } catch (Exception e) {
-                        logger.error("Error during loading {} script. Details: {}", file.getName(), e.getMessage(), e);
+                        logger.error("Error during loading {} script. Details: {}", fileName, e.getMessage(), e);
                     }
                 }
             }
         }
     }
+
+    private String getFromCache(String name) {
+        return loadedScripts.get(name);
+    }
+
+    private void updateCache(String name, String scriptContent) {
+        loadedScripts.put(name, scriptContent);
+    }
+
 
     @Override
     public javax.script.ScriptEngine getEngine() {
@@ -137,5 +146,13 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     }
 
     protected abstract String getFileExtension();
+
+    private String loadScriptContent(InputStream stream) throws ScriptException {
+        try {
+            return FileUtils.getFileContent(stream);
+        } catch (IOException exp) {
+            throw new ScriptException(exp);
+        }
+    }
 
 }
