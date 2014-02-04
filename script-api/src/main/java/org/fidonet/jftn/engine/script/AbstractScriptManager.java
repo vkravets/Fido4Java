@@ -117,12 +117,22 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                 String fileName = script.getKey();
                 if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
                     try {
-                        logger.debug("Loading ", fileName);
+                        logger.debug("Loading {}", fileName);
                         String cacheContent = getFromCache(fileName);
                         String content = loadScriptContent(new FileInputStream(fileName));
-                        if (cacheContent != null && (forceReload || !cacheContent.equals(content)))
-                            unregisterScript(fileName);
-                        registerScript(fileName, content, params);
+                        boolean isCached = cacheContent != null && cacheContent.equals(content);
+                        // if script was read before, need to call unregister on it, to unload old one.
+                        if (isCached) {
+                            logger.debug("Unloading old one");
+                            unregisterScript(fileName, params);
+                        }
+                        // if force reload set to true or file was not read - try to register it.
+                        if (forceReload || !isCached) {
+                            logger.debug("Registering {} script", fileName);
+                            registerScript(fileName, content);
+                        }
+                        logger.debug("{} successfully registered", fileName);
+
                     } catch (Exception e) {
                         logger.error("Error during loading {} script. Details: {}", fileName, e.getMessage(), e);
                     }
