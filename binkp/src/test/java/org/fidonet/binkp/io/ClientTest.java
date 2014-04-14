@@ -33,13 +33,12 @@ import org.apache.mina.core.service.DefaultTransportMetadata;
 import org.apache.mina.core.session.IoSessionConfig;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.ProtocolCodecSession;
-import org.apache.mina.filter.codec.ProtocolDecoder;
 import org.fidonet.binkp.Connector;
 import org.fidonet.binkp.LinksInfo;
 import org.fidonet.binkp.SessionContext;
 import org.fidonet.binkp.SessionState;
 import org.fidonet.binkp.codec.BinkDataCodecFactory;
-import org.fidonet.binkp.codec.BinkDataDecoder;
+import org.fidonet.binkp.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.config.StationConfig;
 import org.fidonet.binkp.events.*;
@@ -75,7 +74,8 @@ public class ClientTest {
         @Override
         public void run(SessionContext sessionContext) throws Exception {
             session = new ProtocolCodecSession();
-            session.getFilterChain().addFirst("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
+            session.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
+            session.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
             session.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
             session.setTransportMetadata(new DefaultTransportMetadata(
                     "mina", "dummy", false, true,
@@ -98,12 +98,13 @@ public class ClientTest {
             int bufSize = 10;
             int size = 0;
             byte[] bytes = new byte[bufSize];
-            ProtocolDecoder decoder = new BinkDataDecoder();
+//            ProtocolDecoder decoder = new BinkDataDecoder();
             while ((size = stream.read(bytes)) != -1) {
                 IoBuffer buf = IoBuffer.allocate(size);
                 buf.put(bytes, 0, size);
                 buf.flip();
-                decoder.decode(session, buf, session.getDecoderOutput());
+                //decoder.decode(session, buf, session.getDecoderOutput());
+                session.getFilterChain().fireMessageReceived(buf);
                 Thread.sleep(100);
             }
             Thread.sleep(1000);
@@ -115,28 +116,6 @@ public class ClientTest {
             try {
                 run(sessionContext);
                 InputStream recvRawData = ClientMock.class.getClassLoader().getResourceAsStream("recv_stream.bin");
-                Runnable recvMessage = new Runnable() {
-                    @Override
-                    public void run() {
-                        while (!sessionContext.getState().equals(SessionState.STATE_END)) {
-                            while (!session.getDecoderOutputQueue().isEmpty()) {
-                                Object msg = session.getDecoderOutputQueue().poll();
-                                try {
-                                    session.getHandler().messageReceived(session, msg);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                };
-                Thread recvMessageThread = new Thread(recvMessage);
-                recvMessageThread.start();
                 ClientMock.this.writeStreamToSession(recvRawData);
             } catch (Exception e) {
                 e.printStackTrace();

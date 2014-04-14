@@ -33,6 +33,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.fidonet.binkp.codec.BinkDataCodecFactory;
+import org.fidonet.binkp.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.config.ServerRole;
 import org.fidonet.binkp.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
@@ -68,6 +69,7 @@ public class Client extends Connector {
         sessionContext.setServerRole(ServerRole.CLIENT);
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
+        connector.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
         connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         connector.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
         String hostname = link.getHostAddress();
