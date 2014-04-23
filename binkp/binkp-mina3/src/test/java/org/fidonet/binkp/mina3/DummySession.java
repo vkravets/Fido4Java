@@ -26,7 +26,7 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.binkp.io;
+package org.fidonet.binkp.mina3;
 
 import org.apache.mina.api.IoFuture;
 import org.apache.mina.api.IoService;

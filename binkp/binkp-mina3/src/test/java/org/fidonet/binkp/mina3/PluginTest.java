@@ -26,10 +26,9 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.binkp.io;
+package org.fidonet.binkp.mina3;
 
 import junit.framework.TestCase;
-import org.fidonet.binkp.mina2.Runner;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.junit.Test;

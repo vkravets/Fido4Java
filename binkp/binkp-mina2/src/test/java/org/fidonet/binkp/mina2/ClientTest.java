@@ -26,7 +26,7 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.binkp.io;
+package org.fidonet.binkp.mina2;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.DefaultTransportMetadata;
