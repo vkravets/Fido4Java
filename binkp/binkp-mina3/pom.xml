@@ -38,8 +38,8 @@
     <name>binkp-mina3</name>
 
     <parent>
-        <artifactId>jftn</artifactId>
-        <groupId>org.fidonet</groupId>
+        <artifactId>binkp-root</artifactId>
+        <groupId>org.fidonet.binkp</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
@@ -47,7 +47,6 @@
         <dependency>
             <groupId>org.fidonet</groupId>
             <artifactId>fido-config</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -58,12 +57,10 @@
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
             <artifactId>tools</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.events</groupId>
             <artifactId>event-bus</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -80,8 +77,6 @@
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
             <artifactId>plugin-manager</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
