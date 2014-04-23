@@ -51,7 +51,7 @@ public class PluginTest {
         boolean exception = false;
         WeakReference<Runner> binkp = null;
         try {
-            binkp = manager.getContext("binkp");
+            binkp = manager.getContext("binkp_mina3");
             TestCase.assertNotNull(binkp.get());
         } catch (PluginException ex) {
             exception = true;

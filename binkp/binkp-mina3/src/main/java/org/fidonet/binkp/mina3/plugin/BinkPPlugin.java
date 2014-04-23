@@ -49,7 +49,7 @@ public class BinkPPlugin implements Plugin {
     private Runner ranner;
     private WeakReference<Object> context;
 
-    public static final String BINKP_PLUGIN_ID = "binkp";
+    public static final String BINKP_PLUGIN_ID = "binkp_mina3";
 
     @Override
     public PluginInformation getPluginInfo() {
