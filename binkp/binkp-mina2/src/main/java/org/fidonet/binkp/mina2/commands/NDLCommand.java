@@ -28,7 +28,7 @@
 
 package org.fidonet.binkp.mina2.commands;
 
-import org.fidonet.binkp.mina2.SessionContext;
+import org.fidonet.binkp.common.SessionContext;
 
 /**
  * Created by IntelliJ IDEA.

@@ -29,12 +29,12 @@
 package org.fidonet.binkp.mina3.commands;
 
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.SessionState;
-import org.fidonet.binkp.mina3.commands.share.BinkCommand;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina3.commands.share.Command;
-import org.fidonet.binkp.mina3.io.FileData;
-import org.fidonet.binkp.mina3.io.FileInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;

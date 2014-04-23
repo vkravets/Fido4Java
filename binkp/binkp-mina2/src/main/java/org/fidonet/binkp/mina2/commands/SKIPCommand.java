@@ -29,10 +29,11 @@
 package org.fidonet.binkp.mina2.commands;
 
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.mina2.SessionContext;
-import org.fidonet.binkp.mina2.commands.share.BinkCommand;
-import org.fidonet.binkp.mina2.io.FileData;
-import org.fidonet.binkp.mina2.io.FileInfo;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.binkp.mina2.io.FilesSender;
 
 import java.io.OutputStream;
@@ -57,7 +58,7 @@ public class SKIPCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        FilesSender filesSender = (FilesSender) session.getAttribute(FilesSender.FILESENDER_KEY);
+        FilesSender filesSender = (FilesSender) session.getAttribute(SessionKeys.FILESENDER_KEY);
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
         filesSender.skip(info, false);
     }

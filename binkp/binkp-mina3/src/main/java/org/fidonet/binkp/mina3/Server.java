@@ -30,11 +30,13 @@ package org.fidonet.binkp.mina3;
 
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.nio.NioTcpServer;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
 import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
 import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina3.handler.BinkSessionHandler;
-import org.fidonet.binkp.mina3.io.BinkFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

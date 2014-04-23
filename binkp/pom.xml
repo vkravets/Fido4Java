@@ -38,6 +38,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>binkp-common</module>
         <module>binkp-mina2</module>
         <module>binkp-mina3</module>
     </modules>
@@ -47,6 +48,11 @@
             <dependency>
                 <groupId>org.fidonet</groupId>
                 <artifactId>fido-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.fidonet</groupId>
+                <artifactId>fido-fts</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

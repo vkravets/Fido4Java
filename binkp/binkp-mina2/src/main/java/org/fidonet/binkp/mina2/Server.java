@@ -34,8 +34,13 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
-import org.fidonet.binkp.mina2.config.ServerRole;
+import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +76,7 @@ public class Server extends Connector {
     @Override
     public void run(final SessionContext context) throws Exception {
         acceptor = new NioSocketAcceptor();
+        acceptor.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         acceptor.setHandler(new BinkSessionHandler(getEventBus()));
         acceptor.addListener(new IoServiceListener() {
@@ -93,7 +99,7 @@ public class Server extends Connector {
                 SessionContext sessionContext = new SessionContext(context);
                 sessionContext.setBusy(context.isBusy());
                 sessionContext.setServerRole(ServerRole.SERVER);
-                session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
+                session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
                 //session.getRemoteAddress()
                 synchronized (userConnected) {
                     userConnected.set(userConnected.incrementAndGet());
@@ -107,12 +113,12 @@ public class Server extends Connector {
 
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
-                SessionContext sessionContext = (SessionContext) session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+                SessionContext sessionContext = (SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
                 if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                         sessionContext.getState().equals(SessionState.STATE_BSY)) {
                     logger.warn("Client close with error: {}", sessionContext.getLastErrorMessage());
                 }
-                session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
+                session.removeAttribute(SessionKeys.SESSION_CONTEXT_KEY);
                 synchronized (userConnected) {
                     userConnected.set(userConnected.decrementAndGet());
                 }

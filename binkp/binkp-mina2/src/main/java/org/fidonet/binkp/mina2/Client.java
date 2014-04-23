@@ -32,9 +32,11 @@ import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
-import org.fidonet.binkp.mina2.config.ServerRole;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
 

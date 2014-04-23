@@ -33,6 +33,8 @@ import org.apache.mina.api.IoSession;
 import org.apache.mina.filterchain.ReadFilterChainController;
 import org.apache.mina.filterchain.WriteFilterChainController;
 import org.apache.mina.session.WriteRequest;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.mina3.commons.SessionKeys;
 
 import java.nio.ByteBuffer;
 
@@ -53,7 +55,7 @@ public class TrafficCrypterCodecFilter extends AbstractIoFilter {
     @Override
     public void messageReceived(IoSession session, Object message, ReadFilterChainController controller) {
         ByteBuffer in = (ByteBuffer) message;
-        TrafficCrypter trafficCrypter = session.getAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY);
+        TrafficCrypter trafficCrypter = session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
         byte[] array = new byte[in.array().length];
         ByteBuffer buf = ByteBuffer.allocate(array.length);
         in.get(array);
@@ -67,7 +69,7 @@ public class TrafficCrypterCodecFilter extends AbstractIoFilter {
     public void messageWriting(IoSession session, WriteRequest message, WriteFilterChainController controller) {
         ByteBuffer in = (ByteBuffer) message.getMessage();
         if (in.array().length > 0) {
-            TrafficCrypter trafficCrypter = session.getAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY);
+            TrafficCrypter trafficCrypter = session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
             byte[] array = new byte[in.array().length];
             ByteBuffer buf = ByteBuffer.allocate(array.length);
             in.get(array);

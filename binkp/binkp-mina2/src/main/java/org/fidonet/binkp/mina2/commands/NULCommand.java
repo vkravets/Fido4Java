@@ -29,8 +29,8 @@
 package org.fidonet.binkp.mina2.commands;
 
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.mina2.SessionContext;
-import org.fidonet.binkp.mina2.commands.share.BinkCommand;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.commands.BinkCommand;
 
 import java.util.regex.Pattern;
 

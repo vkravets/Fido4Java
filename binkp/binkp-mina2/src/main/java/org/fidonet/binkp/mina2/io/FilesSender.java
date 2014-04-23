@@ -28,11 +28,12 @@
 
 package org.fidonet.binkp.mina2.io;
 
-import org.apache.mina.core.session.AttributeKey;
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.mina2.SessionContext;
-import org.fidonet.binkp.mina2.SessionState;
-import org.fidonet.binkp.mina2.codec.DataBulk;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.codec.DataBulk;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina2.commands.EOBCommand;
 import org.fidonet.binkp.mina2.commands.FILECommand;
 import org.fidonet.binkp.mina2.commands.share.Command;
@@ -54,7 +55,6 @@ import java.util.concurrent.Exchanger;
  */
 public class FilesSender implements Runnable {
 
-    public static final AttributeKey FILESENDER_KEY = new AttributeKey(FilesSender.class, FilesSender.class.getName() + ".KEY");
     public static final Logger logger = LoggerFactory.getLogger(FilesSender.class);
 
     private Deque<FileData<InputStream>> files;

@@ -28,7 +28,7 @@
 
 package org.fidonet.binkp.mina3.commands;
 
-import org.fidonet.binkp.mina3.SessionContext;
+import org.fidonet.binkp.common.SessionContext;
 
 import java.security.MessageDigest;
 

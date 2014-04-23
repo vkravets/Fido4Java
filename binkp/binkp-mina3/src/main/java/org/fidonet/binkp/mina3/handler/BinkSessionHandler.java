@@ -30,22 +30,23 @@ package org.fidonet.binkp.mina3.handler;
 
 import org.apache.mina.api.AbstractIoHandler;
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.SessionState;
-import org.fidonet.binkp.mina3.codec.DataBulk;
-import org.fidonet.binkp.mina3.codec.TrafficCrypter;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.codec.DataBulk;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.events.FileReceivedEvent;
+import org.fidonet.binkp.common.io.BinkData;
+import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina3.commands.*;
-import org.fidonet.binkp.mina3.commands.share.BinkCommand;
 import org.fidonet.binkp.mina3.commands.share.Command;
 import org.fidonet.binkp.mina3.commands.share.CommandFactory;
 import org.fidonet.binkp.mina3.commands.share.CompositeMessage;
-import org.fidonet.binkp.mina3.config.ServerRole;
-import org.fidonet.binkp.mina3.events.DisconnectedEvent;
-import org.fidonet.binkp.mina3.events.FileReceivedEvent;
-import org.fidonet.binkp.mina3.io.BinkData;
-import org.fidonet.binkp.mina3.io.BinkFrame;
-import org.fidonet.binkp.mina3.io.FileData;
-import org.fidonet.binkp.mina3.io.FileInfo;
+import org.fidonet.binkp.mina3.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +87,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
         if (sessionContext != null) {
             return sessionContext;
         } else {
-            return session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+            return session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
         }
     }
 
@@ -95,8 +96,8 @@ public class BinkSessionHandler extends AbstractIoHandler {
         SessionContext sessionContext = getSessionContext(session);
         log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
 
-        session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
-        session.setAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
+        session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
+        session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 

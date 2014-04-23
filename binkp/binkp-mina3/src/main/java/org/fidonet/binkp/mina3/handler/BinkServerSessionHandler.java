@@ -29,9 +29,10 @@
 package org.fidonet.binkp.mina3.handler;
 
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.SessionState;
-import org.fidonet.binkp.mina3.config.ServerRole;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.mina3.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,7 +64,7 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
         SessionContext sessionContext = new SessionContext(this.sessionContext);
         sessionContext.setBusy(this.sessionContext.isBusy());
         sessionContext.setServerRole(ServerRole.SERVER);
-        session.setAttribute(SessionContext.SESSION_CONTEXT_KEY, sessionContext);
+        session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
         //session.getRemoteAddress()
         synchronized (userConnected) {
             userConnected.set(userConnected.incrementAndGet());
@@ -77,12 +78,12 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     @Override
     public void sessionClosed(IoSession session) {
         super.sessionClosed(session);
-        SessionContext sessionContext = session.getAttribute(SessionContext.SESSION_CONTEXT_KEY);
+        SessionContext sessionContext = session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
         if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                 sessionContext.getState().equals(SessionState.STATE_BSY)) {
             log.warn("Client close with error: {}", sessionContext.getLastErrorMessage());
         }
-        session.removeAttribute(SessionContext.SESSION_CONTEXT_KEY);
+        session.removeAttribute(SessionKeys.SESSION_CONTEXT_KEY);
         synchronized (userConnected) {
             userConnected.set(userConnected.decrementAndGet());
         }

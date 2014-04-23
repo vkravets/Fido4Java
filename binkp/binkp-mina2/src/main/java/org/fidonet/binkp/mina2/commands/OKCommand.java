@@ -29,12 +29,13 @@
 package org.fidonet.binkp.mina2.commands;
 
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.mina2.SessionContext;
-import org.fidonet.binkp.mina2.SessionState;
-import org.fidonet.binkp.mina2.commands.share.BinkCommand;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.events.ConnectedEvent;
+import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.mina2.commands.share.Command;
-import org.fidonet.binkp.mina2.events.ConnectedEvent;
-import org.fidonet.binkp.mina2.io.FileData;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.binkp.mina2.io.FilesSender;
 
 import java.io.InputStream;
@@ -76,7 +77,7 @@ public class OKCommand extends MessageCommand {
         Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
         // Run thread to sending files in client mode
         FilesSender filesSender = new FilesSender(session, files, sessionContext);
-        session.setAttribute(FilesSender.FILESENDER_KEY, filesSender);
+        session.setAttribute(SessionKeys.FILESENDER_KEY, filesSender);
         Thread sendFiles = new Thread(filesSender);
         sendFiles.start();
     }

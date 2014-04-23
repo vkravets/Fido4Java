@@ -29,7 +29,7 @@
 package org.fidonet.binkp.mina3.codec;
 
 import org.apache.mina.codec.StatelessProtocolEncoder;
-import org.fidonet.binkp.mina3.io.BinkFrame;
+import org.fidonet.binkp.common.io.BinkFrame;
 
 import java.nio.ByteBuffer;
 

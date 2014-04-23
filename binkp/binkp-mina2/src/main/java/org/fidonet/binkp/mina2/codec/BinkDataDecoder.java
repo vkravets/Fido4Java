@@ -32,7 +32,9 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-import org.fidonet.binkp.mina2.io.BinkFrame;
+import org.fidonet.binkp.common.codec.DataInfo;
+import org.fidonet.binkp.common.codec.DataReader;
+import org.fidonet.binkp.common.io.BinkFrame;
 
 /**
  * Created by IntelliJ IDEA.

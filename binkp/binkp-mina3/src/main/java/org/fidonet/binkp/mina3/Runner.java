@@ -28,6 +28,8 @@
 
 package org.fidonet.binkp.mina3;
 
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
 import org.fidonet.types.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

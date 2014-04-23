@@ -29,10 +29,10 @@
 package org.fidonet.binkp.mina3.commands;
 
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.commands.share.BinkCommand;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina3.commands.share.Command;
-import org.fidonet.binkp.mina3.io.BinkFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

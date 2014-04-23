@@ -30,7 +30,9 @@ package org.fidonet.binkp.mina3.codec;
 
 import org.apache.mina.codec.IoBuffer;
 import org.apache.mina.codec.ProtocolDecoder;
-import org.fidonet.binkp.mina3.io.BinkFrame;
+import org.fidonet.binkp.common.codec.DataInfo;
+import org.fidonet.binkp.common.codec.DataReader;
+import org.fidonet.binkp.common.io.BinkFrame;
 
 import java.nio.ByteBuffer;
 

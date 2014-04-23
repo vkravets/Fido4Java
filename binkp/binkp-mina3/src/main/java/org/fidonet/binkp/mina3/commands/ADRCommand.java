@@ -29,13 +29,13 @@
 package org.fidonet.binkp.mina3.commands;
 
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.LinksInfo;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.SessionState;
-import org.fidonet.binkp.mina3.commands.share.BinkCommand;
+import org.fidonet.binkp.common.LinksInfo;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.mina3.commands.share.Command;
-import org.fidonet.binkp.mina3.config.ServerRole;
-import org.fidonet.binkp.mina3.events.DisconnectedEvent;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 

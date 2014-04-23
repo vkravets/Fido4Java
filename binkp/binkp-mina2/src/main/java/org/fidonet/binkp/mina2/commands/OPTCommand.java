@@ -29,13 +29,14 @@
 package org.fidonet.binkp.mina2.commands;
 
 import org.apache.mina.core.session.IoSession;
-import org.fidonet.binkp.mina2.SessionContext;
-import org.fidonet.binkp.mina2.codec.TrafficCrypter;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.config.Password;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.crypt.StandardDecrypt;
+import org.fidonet.binkp.common.crypt.StandardEncrypt;
 import org.fidonet.binkp.mina2.commands.share.Command;
-import org.fidonet.binkp.mina2.config.Password;
-import org.fidonet.binkp.mina2.config.ServerRole;
-import org.fidonet.binkp.mina2.crypt.StandardDecrypt;
-import org.fidonet.binkp.mina2.crypt.StandardEncrypt;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
 
 import java.security.MessageDigest;
 
@@ -83,7 +84,7 @@ public class OPTCommand extends NULCommand {
                 Password password = sessionContext.getPassword();
                 boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
                 if (isMD5) {
-                    TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(TrafficCrypter.TRAFFIC_CRYPTER_KEY);
+                    TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
                     char[] pass = password.getPassword().toCharArray();
                     boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
                     trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));

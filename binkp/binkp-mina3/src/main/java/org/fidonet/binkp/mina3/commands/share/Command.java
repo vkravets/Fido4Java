@@ -29,8 +29,9 @@
 package org.fidonet.binkp.mina3.commands.share;
 
 import org.apache.mina.api.IoSession;
-import org.fidonet.binkp.mina3.SessionContext;
-import org.fidonet.binkp.mina3.codec.Data;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.codec.Data;
+import org.fidonet.binkp.common.commands.BinkCommand;
 
 /**
  * Created by IntelliJ IDEA.

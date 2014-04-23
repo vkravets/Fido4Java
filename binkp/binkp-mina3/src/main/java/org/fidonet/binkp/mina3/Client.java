@@ -32,12 +32,14 @@ import org.apache.mina.api.IoFuture;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.nio.NioTcpClient;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
 import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
 import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
-import org.fidonet.binkp.mina3.config.ServerRole;
 import org.fidonet.binkp.mina3.handler.BinkSessionHandler;
-import org.fidonet.binkp.mina3.io.BinkFrame;
 import org.fidonet.types.Link;
 
 import java.io.IOException;

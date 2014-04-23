@@ -78,6 +78,11 @@
             <groupId>org.fidonet.jftn</groupId>
             <artifactId>plugin-manager</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.fidonet.binkp</groupId>
+            <artifactId>binkp-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 

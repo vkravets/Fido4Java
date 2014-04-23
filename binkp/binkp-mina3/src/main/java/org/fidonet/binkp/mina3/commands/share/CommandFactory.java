@@ -28,9 +28,10 @@
 
 package org.fidonet.binkp.mina3.commands.share;
 
-import org.fidonet.binkp.mina3.SessionContext;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.mina3.commands.*;
-import org.fidonet.binkp.mina3.io.BinkData;
 
 import java.io.IOException;
 import java.util.ArrayList;

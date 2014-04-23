@@ -32,7 +32,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.fidonet.protocol</groupId>
+    <groupId>org.fidonet.binkp</groupId>
     <artifactId>binkp-mina3</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>binkp-mina3</name>
@@ -48,9 +48,12 @@
             <groupId>org.fidonet</groupId>
             <artifactId>fido-config</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.mina</groupId>
+            <groupId>org.fidonet</groupId>
+            <artifactId>fido-fts</artifactId>
+        </dependency>
+        <dependency>
+        <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
             <version>3.0.0-M2</version>
         </dependency>
@@ -77,6 +80,11 @@
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
             <artifactId>plugin-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.fidonet.binkp</groupId>
+            <artifactId>binkp-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
