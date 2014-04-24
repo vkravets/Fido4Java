@@ -28,12 +28,12 @@
 
 package org.fidonet.jftn;
 
-import org.fidonet.binkp.Connector;
-import org.fidonet.binkp.LinksInfo;
-import org.fidonet.binkp.Runner;
-import org.fidonet.binkp.SessionContext;
-import org.fidonet.binkp.config.StationConfig;
-import org.fidonet.binkp.plugin.BinkPPlugin;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.LinksInfo;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.config.StationConfig;
+import org.fidonet.binkp.mina2.Runner;
+import org.fidonet.binkp.mina2.plugin.BinkPPlugin;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.plugins.PluginManager;
