@@ -61,5 +61,9 @@
             <groupId>org.fidonet</groupId>
             <artifactId>fido-fts</artifactId>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
     </dependencies>
 </project>
