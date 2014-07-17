@@ -71,8 +71,17 @@ public abstract class AbstractFidoAddressesList {
         addresses.add(addr);
     }
 
-    public void addAll(Collection<? extends FTNAddr> addresses) {
+    public void add(FidoPath addr) {
+        addresses.addAll(addr.getAddresses());
+    }
+
+
+    public void addAll(Set<? extends FTNAddr> addresses) {
         this.addresses.addAll(addresses);
+    }
+
+    public Set<? extends FTNAddr> getAddresses() {
+        return Collections.unmodifiableSet(addresses);
     }
 
     public void remove(FTNAddr addr) {

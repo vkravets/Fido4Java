@@ -122,7 +122,7 @@ public class TestTosser {
                 System.out.println(message.toString());
                 System.out.println(message.getMessageCharset());
                 Charset charset = CharsetTools.charsetDetect(message.getMessageCharset());
-                CharBuffer b = charset.decode(ByteBuffer.wrap(message.getBody().getBytes(charset)));
+                CharBuffer b = charset.decode(ByteBuffer.wrap(message.getBody().toString().getBytes(charset)));
                 String body = new String(b.array());
                 System.out.println(body.replaceAll("\\u0001", "@").replaceAll("\\r", "\r\n"));
                 System.out.println("++++++++++++++++++++++++++++++++++++++");

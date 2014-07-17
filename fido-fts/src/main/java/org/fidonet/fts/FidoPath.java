@@ -56,7 +56,7 @@ public class FidoPath extends AbstractFidoAddressesList {
 
     public static FidoPath valueOf(String addressesString, int defaultZone) {
         Set<FTNAddr> addresses = new LinkedHashSet<FTNAddr>();
-        return new FidoPath(parseAddresses(addressesString, defaultZone, addresses));
+        return new FidoPath(parseAddresses(addressesString.trim(), defaultZone, addresses));
     }
 
     public String toPathString() {

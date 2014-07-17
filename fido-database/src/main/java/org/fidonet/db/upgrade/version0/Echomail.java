@@ -37,6 +37,7 @@ import org.fidonet.types.Message;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -58,6 +59,8 @@ public class Echomail {
     public static final String DATE_COLUMN = "message_date";
     public static final String SUBJECT_COLUMN = "subject";
     public static final String TEXT_COLUMN = "text";
+    public static final String ORIGIN_COLUMN = "origin";
+    public static final String KLUDGES_COLUMN = "kludges";
     public static final String SEENBY_COLUMN = "seen_by";
     public static final String PATH_COLUMN = "path";
     public static final String ATTR_COLUMN = "attr";
@@ -90,8 +93,14 @@ public class Echomail {
     @DatabaseField(columnName = SUBJECT_COLUMN, dataType = DataType.LONG_STRING)
     private String subject;
 
+    @DatabaseField(columnName = KLUDGES_COLUMN, dataType = DataType.SERIALIZABLE)
+    private Map<String, String> kludges;
+
     @DatabaseField(columnName = TEXT_COLUMN, dataType = DataType.LONG_STRING)
     private String text;
+
+    @DatabaseField(columnName = ORIGIN_COLUMN, dataType = DataType.LONG_STRING)
+    private String origin;
 
     @DatabaseField(columnName = SEENBY_COLUMN, dataType = DataType.LONG_STRING)
     private String seenBy;
@@ -221,7 +230,6 @@ public class Echomail {
                 echomail.getSubject(),
                 echomail.getText(),
                 echomail.getDate());
-        message.updateKludges();
         return message;
     }
 
@@ -237,9 +245,9 @@ public class Echomail {
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(message.getSubject());
-        msg.setText(message.getBody());
-        msg.setPath(message.getSingleKludge("PATH"));
-        msg.setSeenBy(message.getSingleKludge("SEEN-BY"));
+        msg.setText(message.getBody().getBody());
+        msg.setPath(message.getBody().getPath().toPathString());
+        msg.setSeenBy(message.getBody().getSeenBy().toSeenByString());
         msg.setMsgId(message.getMsgId());
         return msg;
     }

@@ -31,10 +31,7 @@ package org.fidonet.fts;
 import org.fidonet.tools.StringTools;
 import org.fidonet.types.FTNAddr;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,7 +42,7 @@ import java.util.TreeSet;
  */
 public class SeenBy extends AbstractFidoAddressesList {
 
-    private static final String SEEN_BY_LINE_PREFIX = "SEEN-BY: ";
+    public static final String SEEN_BY_LINE_PREFIX = "SEEN-BY: ";
 
     public SeenBy() {
         addresses = new TreeSet<FTNAddr>(new Comparator<FTNAddr>() {
@@ -71,7 +68,19 @@ public class SeenBy extends AbstractFidoAddressesList {
                 return o2.compareTo(o1);
             }
         });
-        return new SeenBy(parseAddresses(addressesString, defaultZone, path));
+        return new SeenBy(parseAddresses(addressesString.trim(), defaultZone, path));
+    }
+
+    public void add(SeenBy seenBy) {
+        addresses.addAll(seenBy.getAddresses());
+    }
+
+    public void add(Set<FTNAddr> addresses) {
+        this.addresses.addAll(addresses);
+    }
+
+    public Set<FTNAddr> getAddresses() {
+        return Collections.unmodifiableSet(addresses);
     }
 
     public String toSeenByString() {

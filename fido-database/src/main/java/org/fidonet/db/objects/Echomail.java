@@ -31,6 +31,8 @@ package org.fidonet.db.objects;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import org.fidonet.fts.FidoPath;
+import org.fidonet.fts.SeenBy;
 import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -61,6 +63,7 @@ public class Echomail {
     public static final String SEENBY_COLUMN = "seen_by";
     public static final String PATH_COLUMN = "path";
     public static final String ATTR_COLUMN = "attr";
+    public static final String ORIGIN_COLUMN = "origin";
 
 
     @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
@@ -92,6 +95,9 @@ public class Echomail {
 
     @DatabaseField(columnName = TEXT_COLUMN, dataType = DataType.LONG_STRING)
     private String text;
+
+    @DatabaseField(columnName = ORIGIN_COLUMN, dataType = DataType.LONG_STRING)
+    private String origin;
 
     @DatabaseField(columnName = SEENBY_COLUMN, dataType = DataType.LONG_STRING)
     private String seenBy;
@@ -173,6 +179,14 @@ public class Echomail {
         this.text = text;
     }
 
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
     public String getSeenBy() {
         return seenBy;
     }
@@ -221,7 +235,10 @@ public class Echomail {
                 echomail.getSubject(),
                 echomail.getText(),
                 echomail.getDate());
-        message.updateKludges();
+        message.getBody().setOrigin(echomail.getOrigin());
+        // FIXME: default zone
+        message.getBody().setSeenBy(SeenBy.valueOf(echomail.getSeenBy(), 2));
+        message.getBody().setPath(FidoPath.valueOf(echomail.getPath(), 2));
         return message;
     }
 
@@ -234,13 +251,14 @@ public class Echomail {
         msg.setFromAddr(message.getFAddr().as5D());
         if (message.getTAddr() != null)
             msg.setToAddr(message.getTAddr().as5D());
+        msg.setMsgId(message.getMsgId());
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(message.getSubject());
-        msg.setText(message.getBody());
-        msg.setPath(message.getSingleKludge("PATH"));
-        msg.setSeenBy(message.getSingleKludge("SEEN-BY"));
-        msg.setMsgId(message.getMsgId());
+        msg.setText(message.getBody().getBody());
+        msg.setOrigin(message.getBody().getOrigin());
+        msg.setSeenBy(message.getBody().getSeenBy().toString());
+        msg.setPath(message.getBody().getPath().toString());
         return msg;
     }
 

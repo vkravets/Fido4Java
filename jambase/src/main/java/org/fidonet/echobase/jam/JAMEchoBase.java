@@ -50,6 +50,7 @@ import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class JAMEchoBase implements EchoBase {
@@ -185,10 +186,10 @@ public class JAMEchoBase implements EchoBase {
         } catch (IOException e) {
             throw new EchoBaseException(e.getMessage());
         }
-        String MSGID = msg.getSingleKludge("MSGID");
+        String MSGID = msg.getMsgId();
         newmsg.MSGIDcrc = MyCRC.CRC(MSGID.getBytes());
 
-        String REPLY = msg.getSingleKludge("REPLY");
+        String REPLY = msg.getBody().getKludges().get("REPLY");
         if (REPLY != null) newmsg.REPLYcrc = MyCRC.CRC(REPLY.getBytes());
 
         newmsg.Attribute |= 0x01000000; // MSG_TYPEECHO
@@ -242,45 +243,31 @@ public class JAMEchoBase implements EchoBase {
 
         Pattern collon = Pattern.compile("[:][:\\s]");
 
-        String[] kludges = msg.getKludges();
-        for (String kludge : kludges) {
-            if (kludge.startsWith("MSGID:")) {
-                SubField msgid = new SubField();
-                msgid.loID = 4;
-                msgid.buffer = collon.split(kludge)[1].getBytes();
-                msgid.datalen = msgid.buffer.length;
-                newmsg.SubFieldList.add(msgid);
-            } else if (kludge.startsWith("REPLY:")) {
+        SubField msgid = new SubField();
+        msgid.loID = 4;
+        msgid.buffer = msg.getMsgId().getBytes();
+        msgid.datalen = msgid.buffer.length;
+        newmsg.SubFieldList.add(msgid);
+
+        Map<String, String> kludges = msg.getBody().getKludges();
+        for (String kludgeName : kludges.keySet()) {
+            if (kludgeName.equals("REPLY")) {
                 SubField reply = new SubField();
                 reply.loID = 5;
-                reply.buffer = collon.split(kludge)[1].getBytes();
+                reply.buffer = kludges.get("REPLY").getBytes();
                 reply.datalen = reply.buffer.length;
                 newmsg.SubFieldList.add(reply);
-            } else if (kludge.startsWith("PATH:")) {
-                SubField path = new SubField();
-                path.loID = 2002;
-                path.buffer = collon.split(kludge)[1].getBytes();
-                path.datalen = path.buffer.length;
-                newmsg.SubFieldList.add(path);
-                newmsg.SubfieldLen = newmsg.getSubLen();
-            } else if (kludge.startsWith("TZUTC:")) {
+            } else if (kludgeName.equals("TZUTC")) {
                 SubField tz = new SubField();
                 tz.loID = 2004;
-                tz.buffer = collon.split(kludge)[1].getBytes();
+                tz.buffer = kludges.get("TZUTC").getBytes();
                 tz.datalen = tz.buffer.length;
                 newmsg.SubFieldList.add(tz);
-                newmsg.SubfieldLen = newmsg.getSubLen();
-            } else if (kludge.startsWith("SEEN-BY:")) {
-                SubField seen = new SubField();
-                seen.loID = 2001;
-                seen.buffer = collon.split(kludge)[1].getBytes();
-                seen.datalen = seen.buffer.length;
-                newmsg.SubFieldList.add(seen);
                 newmsg.SubfieldLen = newmsg.getSubLen();
             } else {
                 SubField tid = new SubField();
                 tid.loID = 2000;
-                tid.buffer = kludge.getBytes();
+                tid.buffer = (kludgeName + ": " + kludges.get(kludgeName)).getBytes();
                 tid.datalen = tid.buffer.length;
                 newmsg.SubFieldList.add(tid);
             }
@@ -288,7 +275,22 @@ public class JAMEchoBase implements EchoBase {
         }
 
 
-        byte[] msgtext = msg.getBody().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
+        SubField path = new SubField();
+        path.loID = 2002;
+        path.buffer = msg.getBody().getPath().toPathString().getBytes();
+        path.datalen = path.buffer.length;
+        newmsg.SubFieldList.add(path);
+        newmsg.SubfieldLen = newmsg.getSubLen();
+
+        SubField seen = new SubField();
+        seen.loID = 2001;
+        seen.buffer = msg.getBody().getSeenBy().toSeenByString().getBytes();
+        ;
+        seen.datalen = seen.buffer.length;
+        newmsg.SubFieldList.add(seen);
+        newmsg.SubfieldLen = newmsg.getSubLen();
+
+        byte[] msgtext = msg.getBody().toString().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         newmsg.TxtLen = msgtext.length;
         int headeroffset = 0;

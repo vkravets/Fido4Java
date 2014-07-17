@@ -26,36 +26,91 @@
  *  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        *
  ******************************************************************************/
 
-package org.fidonet.jftn.tosser;
+package org.fidonet;
 
-import org.fidonet.echobase.EchoMgr;
-import org.fidonet.types.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.fidonet.fts.FidoPath;
+import org.fidonet.fts.SeenBy;
+
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 1/30/14
- * Time: 12:47 PM
+ * Date: 7/15/14
+ * Time: 10:05 AM
  */
-public class DupeDetector extends TossEchoMailEventHandler {
+public class Body {
 
-    public static final Logger logger = LoggerFactory.getLogger(DupeDetector.class);
+    private Map<String, String> kludges;
+    private String origin;
+    private SeenBy seenBy;
+    private FidoPath path;
+    private String body;
+
+    public Body(String body, Map<String, String> kludges, String origin, SeenBy seenBy, FidoPath path) {
+        this.kludges = kludges;
+        this.origin = origin;
+        this.seenBy = seenBy;
+        this.path = path;
+        this.body = body;
+    }
+
+    public Map<String, String> getKludges() {
+        return kludges;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public SeenBy getSeenBy() {
+        return seenBy;
+    }
+
+    public FidoPath getPath() {
+        return path;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setKludges(Map<String, String> kludges) {
+        this.kludges = kludges;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public void setSeenBy(SeenBy seenBy) {
+        this.seenBy = seenBy;
+    }
+
+    public void setPath(FidoPath path) {
+        this.path = path;
+    }
 
     @Override
-    public void onEventHandle(TossEchoMailEvent event) {
-        Message message = event.getMessage();
-        EchoMgr echoMgr = event.getEchoMgr();
-
-        long startTime = System.currentTimeMillis();
-        boolean isDupe = echoMgr.isDupe(message);
-        logger.debug("Dupe calculation check {}ms", System.currentTimeMillis() - startTime);
-        if (isDupe) {
-            logger.warn("Dupe detected in the area {}. Skip message!", event.getMessage().getArea());
-            logger.debug("Dupe details:\n{}\nKludges:\n{}\n", event.getMessage(), event.getMessage().getBody().getKludges());
-            message.setValid(false);
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        // insert kludges
+        for (Map.Entry<String, String> kludge : kludges.entrySet()) {
+            sb.append(kludge.getKey()).append(":").append(kludge.getValue()).append("\r");
         }
+        // insert text
+        sb.append(body);
+        // insert origin
+        sb.append(origin).append("\r");
+        // insert seen
+        for (String s : seenBy.toSeenByStrings()) {
+            sb.append(s).append("\r");
+        }
+        // insert path
+        for (String p : path.toPathStrings()) {
+            sb.append(p).append("\r");
+        }
+        return sb.toString();
     }
 }
