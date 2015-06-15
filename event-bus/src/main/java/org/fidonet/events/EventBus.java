@@ -39,7 +39,7 @@ import net.engio.mbassy.bus.config.BusConfiguration;
  */
 public class EventBus extends MBassador<Event> {
     public EventBus() {
-        super(BusConfiguration.Default());
+        super();
     }
 
 }
