@@ -59,6 +59,7 @@
                 <version>0.1.12</version>
                 <configuration>
                     <thriftExecutable>/usr/bin/thrift</thriftExecutable>
+                    <outputDirectory>${project.basedir}/generated-sources/thrift</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
