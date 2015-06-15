@@ -70,6 +70,11 @@ public class TestServer {
     @After
     public void tearDown() {
         server.stop();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         System.out.println("Server Stopped");
     }
 
@@ -95,6 +100,7 @@ public class TestServer {
 
         } catch (TException e) {
             e.printStackTrace();
+            TestCase.fail(e.getMessage());
         }
     }
 
@@ -102,7 +108,7 @@ public class TestServer {
     public void testASyncClient() {
         try {
 
-            for (int k = 0; k < 50; k++) {
+            for (int k = 0; k < 200; k++) {
                 final int i = k;
                 TNonblockingSocket transportApi = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
                 Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
@@ -158,10 +164,12 @@ public class TestServer {
                         TestCase.fail(e.getMessage());
                     }
                 });
+
+                Thread.sleep(10);
             }
-            Thread.sleep(6000);
-            TestCase.assertEquals(loginCurIndex.get(), 50);
-            TestCase.assertEquals(pingCurIndex.get(), 50);
+            Thread.sleep(1000);
+            TestCase.assertEquals(loginCurIndex.get(), 200);
+            TestCase.assertEquals(pingCurIndex.get(), 200);
         } catch (TException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
