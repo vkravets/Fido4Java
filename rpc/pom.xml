@@ -52,13 +52,13 @@
     <build>
 
         <plugins>
-            <!-- Turn off thrift compile since on Jenkins there no Thrift
+            <!-- Turn off thrift compile since on Jenkins there no Thrift -->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>thrift-maven-plugin</artifactId>
                 <version>0.1.12</version>
                 <configuration>
-                    <thriftExecutable>/usr/bin/thrift</thriftExecutable>
+                    <thriftExecutable>${env.THRIFT_HOME}/bin/thrift</thriftExecutable>
                     <outputDirectory>${project.basedir}/generated-sources/thrift</outputDirectory>
                 </configuration>
                 <executions>
@@ -71,7 +71,7 @@
                     </execution>
                 </executions>
             </plugin>
-            -->
+            <!-- -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
