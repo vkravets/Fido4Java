@@ -58,7 +58,7 @@
                 <artifactId>thrift-maven-plugin</artifactId>
                 <version>0.1.12</version>
                 <configuration>
-                    <!--<thriftExecutable>${env.THRIFT_HOME}/bin/thrift</thriftExecutable>-->
+                    <thriftExecutable>thrift</thriftExecutable>
                     <outputDirectory>${project.basedir}/generated-sources/thrift</outputDirectory>
                 </configuration>
                 <executions>
