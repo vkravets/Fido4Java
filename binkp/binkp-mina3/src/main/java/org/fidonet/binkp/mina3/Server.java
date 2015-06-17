@@ -36,6 +36,7 @@ import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
 import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
 import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
+import org.fidonet.binkp.mina3.handler.BinkServerSessionHandler;
 import org.fidonet.binkp.mina3.handler.BinkSessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ public class Server extends Connector {
         TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
         ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter = new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
         acceptor.setFilters(crypterFilter, bikpProtocolFilter);
-        acceptor.setIoHandler(new BinkSessionHandler(context, getEventBus()));
+        acceptor.setIoHandler(new BinkServerSessionHandler(context, getEventBus()));
         SocketAddress address = new InetSocketAddress(port);
         acceptor.bind(address);
     }

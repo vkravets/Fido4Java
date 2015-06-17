@@ -49,51 +49,6 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <build>
-
-        <plugins>
-            <!-- Turn off thrift compile since on Jenkins there no Thrift -->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.thrift.tools</groupId>-->
-                <!--<artifactId>thrift-maven-plugin</artifactId>-->
-                <!--<version>0.1.12</version>-->
-                <!--<configuration>-->
-                    <!--<thriftExecutable>thrift</thriftExecutable>-->
-                    <!--<outputDirectory>${project.basedir}/generated-sources/thrift</outputDirectory>-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>thrift-sources</id>-->
-                        <!--<phase>generate-sources</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>compile</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>add-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <!-- Workaround till thrift compiler will not be implemented on pure Java =) -->
-                                <source>${project.basedir}/generated-sources/thrift</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.thrift</groupId>
@@ -113,4 +68,63 @@
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>thrift-manual-gen</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>add-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <!-- Workaround till thrift compiler will not be implemented on pure Java =) -->
+                                        <source>${project.basedir}/generated-sources/thrift</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>thrift-auto-gen</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.thrift.tools</groupId>
+                        <artifactId>thrift-maven-plugin</artifactId>
+                        <version>0.1.12</version>
+                        <configuration>
+                            <thriftExecutable>${env.THRIFT_HOME}/bin/thrift</thriftExecutable>
+                            <outputDirectory>${project.basedir}/generated-sources/thrift</outputDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>thrift-sources</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

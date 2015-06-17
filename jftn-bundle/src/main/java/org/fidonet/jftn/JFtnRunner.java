@@ -32,8 +32,8 @@ import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.mina2.Runner;
-import org.fidonet.binkp.mina2.plugin.BinkPPlugin;
+import org.fidonet.binkp.mina3.Runner;
+import org.fidonet.binkp.mina3.plugin.BinkPPlugin;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.plugins.PluginManager;
@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-public class JFtnRunner {
+public class   JFtnRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
     private static Boolean keepRun = true;
@@ -78,7 +78,7 @@ public class JFtnRunner {
         binkpRunner.get().bindServer(binkpSession, Connector.BINK_PORT);
 
         WeakReference<Scheduler> scheduler = pluginManager.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID);
-        scheduler.get().schedule("* */10 * * *", new Runnable() {
+        scheduler.get().schedule("*/10 * * * *", new Runnable() {
             @Override
             public void run() {
                 logger.info("Polling all uplinks");

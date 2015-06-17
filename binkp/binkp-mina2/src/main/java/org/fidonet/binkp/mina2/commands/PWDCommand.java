@@ -59,7 +59,7 @@ public class PWDCommand extends MessageCommand {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
             Password remotePassword = new Password(commandArgs.trim(), password.isCrypt(), password.getMessageDigest(), password.getKey());
-            if (password.getText() == remotePassword.getText()) {
+            if (password.getText().equals(remotePassword.getText())) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
                 sessionContext.sendEvent(new ConnectedEvent(sessionContext));

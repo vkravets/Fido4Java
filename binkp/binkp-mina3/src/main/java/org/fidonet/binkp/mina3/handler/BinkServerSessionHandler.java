@@ -34,6 +34,8 @@ import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.mina3.commons.SessionKeys;
 import org.fidonet.events.EventBus;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -62,9 +64,11 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     public void sessionOpened(IoSession session) {
 
         SessionContext sessionContext = new SessionContext(this.sessionContext);
+        sessionContext.getLinksInfo().setCurLink(new Link(null, new FTNAddr(sessionContext.getStationConfig().getAddress()), null, session.getRemoteAddress().toString(), 0));
         sessionContext.setBusy(this.sessionContext.isBusy());
         sessionContext.setServerRole(ServerRole.SERVER);
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
+        this.sessionContext = sessionContext;
         //session.getRemoteAddress()
         synchronized (userConnected) {
             userConnected.set(userConnected.incrementAndGet());

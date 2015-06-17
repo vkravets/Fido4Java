@@ -101,8 +101,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.fidonet.protocol</groupId>
-            <artifactId>binkp-mina2</artifactId>
+            <groupId>org.fidonet.binkp</groupId>
+            <artifactId>binkp-mina3</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

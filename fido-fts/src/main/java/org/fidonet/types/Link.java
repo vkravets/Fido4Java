@@ -81,7 +81,11 @@ public class Link {
 
     @Override
     public String toString() {
-        return myaddr + " -> " + getAddr().toString();
+        if (myaddr != null && getAddr() != null) {
+            return myaddr + " -> " + getAddr().toString();
+        } else {
+            return hostAddress;
+        }
     }
 
     public String getHostAddress() {
