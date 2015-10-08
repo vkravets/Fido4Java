@@ -55,7 +55,7 @@ public class ERRCommand extends MessageCommand {
 
     @Override
     public void handle(IoSession session, SessionContext sessionContext, String commandArgs) throws Exception {
-        System.out.println("ERROR: " + commandArgs);
+        log.error("Got error from server:" + commandArgs);
         sessionContext.setLastErrorMessage(commandArgs);
         sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
         if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {

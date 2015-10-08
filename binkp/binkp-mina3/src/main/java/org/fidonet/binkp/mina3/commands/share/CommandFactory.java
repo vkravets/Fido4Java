@@ -35,6 +35,7 @@ import org.fidonet.binkp.mina3.commands.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public class CommandFactory {
     private static List<Command> commands;
 
     static {
-        commands = new ArrayList<Command>();
+        commands = new LinkedList<Command>();
         commands.add(new ADRCommand());
         commands.add(new BSYCommand());
         commands.add(new EOBCommand());
