@@ -37,7 +37,7 @@ public class MyCRC {
     static public int CRC(byte[] bb) {
         crc32.reset();
         crc32.update(bb);
-        return (int) crc32.getValue() ^ 0xFFFFFFFF;
+        return ~(int) crc32.getValue();
     }
 
 }

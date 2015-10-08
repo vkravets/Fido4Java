@@ -45,17 +45,17 @@ import java.util.Iterator;
  */
 public interface Upgrader {
 
-    public boolean upgrade(OrmManager oldManager, OrmManager newManager);
+    boolean upgrade(OrmManager oldManager, OrmManager newManager);
 
-    public long getVersion();
+    long getVersion();
 
-    public interface ObjectUpgrader<OLD, NEW> {
-        public void upgrade(OLD oldObject, NEW newObject);
+    interface ObjectUpgrader<OLD, NEW> {
+        void upgrade(OLD oldObject, NEW newObject);
 
-        public void onException(OLD oldObject, Exception ex);
+        void onException(OLD oldObject, Exception ex);
     }
 
-    public static class Helper {
+    class Helper {
         public static <OLD, NEW> boolean upgradeObjects(Class<OLD> oldClazz, OrmManager oldManager,
                                                         Class<NEW> newClazz, OrmManager newManager,
                                                         ObjectUpgrader<OLD, NEW> objectUpgrader, boolean failOnError) {

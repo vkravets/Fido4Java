@@ -37,5 +37,5 @@ import org.fidonet.config.IConfig;
  * Time: 2:41 AM
  */
 public interface ConfigValidator<T extends IConfig> {
-    public boolean isValidate(T config);
+    boolean isValidate(T config);
 }

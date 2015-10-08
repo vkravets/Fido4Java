@@ -52,7 +52,7 @@ public enum BinkCommand {
 
     private byte cmd;
 
-    private BinkCommand(byte cmd) {
+    BinkCommand(byte cmd) {
         this.cmd = cmd;
     }
 

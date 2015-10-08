@@ -33,16 +33,16 @@ import org.fidonet.types.Message;
 
 public interface EchoBase {
 
-    public void createArea(String name) throws EchoBaseException;
+    void createArea(String name) throws EchoBaseException;
 
-    public void openArea(String name) throws EchoBaseException;
+    void openArea(String name) throws EchoBaseException;
 
-    public void closeArea() throws EchoBaseException;
+    void closeArea() throws EchoBaseException;
 
-    public void addMessage(Message msg) throws EchoBaseException;
+    void addMessage(Message msg) throws EchoBaseException;
 
-    public void delMessage(int id) throws EchoBaseException;
+    void delMessage(int id) throws EchoBaseException;
 
-    public void getMessage(int id) throws EchoBaseException;
+    void getMessage(int id) throws EchoBaseException;
 
 }

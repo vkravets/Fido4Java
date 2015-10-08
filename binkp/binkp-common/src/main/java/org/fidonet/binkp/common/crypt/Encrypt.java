@@ -36,7 +36,7 @@ package org.fidonet.binkp.common.crypt;
  * Time: 3:59 PM
  */
 public interface Encrypt {
-    public int encryptData(byte[] buff);
+    int encryptData(byte[] buff);
 
-    public int encryptData(byte[] buff, int bufSize);
+    int encryptData(byte[] buff, int bufSize);
 }

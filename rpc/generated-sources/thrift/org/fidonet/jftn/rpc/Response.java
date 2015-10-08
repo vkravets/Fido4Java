@@ -19,7 +19,7 @@ public enum Response implements org.apache.thrift.TEnum {
 
   private final int value;
 
-  private Response(int value) {
+  Response(int value) {
     this.value = value;
   }
 

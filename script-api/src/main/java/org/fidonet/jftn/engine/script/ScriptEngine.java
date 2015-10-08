@@ -38,13 +38,13 @@ import java.util.Map;
  */
 public interface ScriptEngine {
 
-    public void registerScript(String name, String content, Object... params) throws Exception;
+    void registerScript(String name, String content, Object... params) throws Exception;
 
-    public void unregisterScript(String name, Object... params) throws Exception;
+    void unregisterScript(String name, Object... params) throws Exception;
 
-    public void reloadScripts(Map<String, String> scriptsContent, Object... params);
+    void reloadScripts(Map<String, String> scriptsContent, Object... params);
 
-    public void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params);
+    void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params);
 
-    public javax.script.ScriptEngine getEngine();
+    javax.script.ScriptEngine getEngine();
 }

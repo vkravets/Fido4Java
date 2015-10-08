@@ -36,11 +36,11 @@ package org.fidonet.binkp.common.crypt;
  * Time: 3:59 PM
  */
 public interface Decrypt {
-    public int decryptData(byte[] buff);
+    int decryptData(byte[] buff);
 
-    public int decryptData(byte[] buff, int bufSize);
+    int decryptData(byte[] buff, int bufSize);
 
-    public void save();
+    void save();
 
-    public void restore();
+    void restore();
 }

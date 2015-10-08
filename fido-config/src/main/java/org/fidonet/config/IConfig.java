@@ -39,16 +39,16 @@ import java.util.List;
  */
 public interface IConfig {
 
-    public void load(String fileName) throws ParseConfigException;
+    void load(String fileName) throws ParseConfigException;
 
-    public void load(InputStream stream) throws ParseConfigException;
+    void load(InputStream stream) throws ParseConfigException;
 
-    public String getValue(String key);
+    String getValue(String key);
 
-    public String getValue(String key, String defaultValue);
+    String getValue(String key, String defaultValue);
 
-    public List<String> getValuesAsList(String key);
+    List<String> getValuesAsList(String key);
 
-    public boolean isValidate();
+    boolean isValidate();
 
 }

@@ -44,6 +44,10 @@ import org.fidonet.binkp.common.io.BinkFrame;
 public class BinkDataEncoder<T extends BinkFrame> extends ProtocolEncoderAdapter {
     @Override
     public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception {
+        if (!(message instanceof BinkFrame)) {
+            throw new Exception("Incorrect class passed");
+        }
+        //noinspection unchecked
         BinkFrame msg = (T) message;
         IoBuffer buf = IoBuffer.allocate(msg.getData().length + 2);
         buf.setAutoExpand(false);

@@ -35,5 +35,5 @@ package org.fidonet.events;
  * Time: 4:49 PM
  */
 public interface EventHandler<T extends Event> {
-    public void onEventHandle(T event);
+    void onEventHandle(T event);
 }

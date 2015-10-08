@@ -285,7 +285,7 @@ public class JAMEchoBase implements EchoBase {
         SubField seen = new SubField();
         seen.loID = 2001;
         seen.buffer = msg.getBody().getSeenBy().toSeenByString().getBytes();
-        ;
+        
         seen.datalen = seen.buffer.length;
         newmsg.SubFieldList.add(seen);
         newmsg.SubfieldLen = newmsg.getSubLen();

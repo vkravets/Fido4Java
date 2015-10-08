@@ -36,11 +36,11 @@ package org.fidonet.jftn.rpc;
  * Time: 3:27 PM
  */
 public interface ServerHandler {
-    public Api.Iface getApiHandler();
+    Api.Iface getApiHandler();
 
-    public LoginService.Iface getLoginHandler();
+    LoginService.Iface getLoginHandler();
 
-    public MessageService.Iface getMessageHandler();
+    MessageService.Iface getMessageHandler();
 
-    public StatisticService.Iface getStatisticsHandler();
+    StatisticService.Iface getStatisticsHandler();
 }

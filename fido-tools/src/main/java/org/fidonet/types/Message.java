@@ -120,7 +120,7 @@ public class Message {
         final Map<String, String> kltmp = new LinkedHashMap<String, String>();
         SeenBy seenBy = new SeenBy();
         FidoPath path = new FidoPath();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String origin = null;
         if (lines[0].startsWith("AREA:")) {
             area = collon.split(lines[0])[1];

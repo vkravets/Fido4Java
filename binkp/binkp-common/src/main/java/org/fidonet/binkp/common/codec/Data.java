@@ -38,7 +38,7 @@ import org.fidonet.binkp.common.io.BinkFrame;
  * Time: 7:11 PM
  */
 public interface Data {
-    public BinkFrame getRawData();
+    BinkFrame getRawData();
 
-    public boolean isCommand();
+    boolean isCommand();
 }
