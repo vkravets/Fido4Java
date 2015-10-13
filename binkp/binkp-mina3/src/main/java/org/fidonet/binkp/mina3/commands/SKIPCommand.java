@@ -36,6 +36,7 @@ import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina3.io.FilesSender;
 
 import java.io.OutputStream;
+import java.net.ProtocolException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,6 +70,6 @@ public class SKIPCommand extends MessageCommand {
             FileInfo info = fileData.getInfo();
             return String.format("%s %s %s", info.getName(), info.getSize(), info.getTimestamp());
         }
-        return null;
+        throw new RuntimeException(new ProtocolException("Cannot send SKIP command without metadata"));
     }
 }

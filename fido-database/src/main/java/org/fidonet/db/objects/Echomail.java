@@ -39,6 +39,7 @@ import org.fidonet.types.Message;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by IntelliJ IDEA.
@@ -245,7 +246,7 @@ public class Echomail {
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss");
+        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss", new Locale("en", "US"));
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);
         msg.setFromAddr(message.getFAddr().as5D());

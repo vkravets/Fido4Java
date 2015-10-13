@@ -72,6 +72,8 @@ public class FILECommand extends MessageCommand {
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
         FileData<OutputStream> fileData = sessionContext.getNotFinishedFileData(fileInfo);
         if (fileData == null) {
+            // TODO: Out file to FS (tmp folder - sessionContext.getTmpFolder())
+            // TODO: if file exist (send skip or create file with diff name with fido-style)
             fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
             receivedFiles.addFirst(fileData);
             Command get = new GETCommand();

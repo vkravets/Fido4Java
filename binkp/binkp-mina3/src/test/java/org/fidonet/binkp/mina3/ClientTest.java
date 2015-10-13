@@ -56,6 +56,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -81,7 +82,23 @@ public class ClientTest extends HasEventBus {
         service = mock(IoService.class);
 
         StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
-        LinksInfo linksInfo = new LinksInfo(new Link(new FTNAddr("2:467/110.113"), new FTNAddr("2:467/110"), "pass_i_f", "localhost", 24554));
+        final FTNAddr node = new FTNAddr("2:467/110");
+        LinksInfo linksInfo = new LinksInfo(
+                new LinkedList<Link>() {
+                    {
+                        add(new Link(node,
+                                        new LinkedList<FTNAddr>() {
+                                            {
+                                                add(new FTNAddr("2:467/110.113"));
+                                            }
+                                        },
+                                        "pass_i_f", "localhost", 24554
+                                )
+                        );
+                    }
+                }
+        );
+        linksInfo.setCurLink(node);
         sessionContext = new SessionContext(config, linksInfo);
 
         when(service.getFilters()).thenReturn(new IoFilter[]{filter1, filter2});

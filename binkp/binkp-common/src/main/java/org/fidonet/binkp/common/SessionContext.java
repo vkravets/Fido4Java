@@ -74,6 +74,7 @@ public class SessionContext extends HasEventBus {
     // queue received files
     private Deque<FileData<OutputStream>> recvFiles;
     private List<FileData<OutputStream>> notFinishedFiles;
+    private String tmpFolder = null;
 
     // send files number
     // queue send files

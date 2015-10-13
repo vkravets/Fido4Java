@@ -86,7 +86,7 @@ public class Client extends Connector {
         IoFuture<IoSession> connection = connector.connect(new InetSocketAddress(hostname, port));
         try {
             session = connection.get();
-            sessionContext.getLinksInfo().setCurLink(link);
+            sessionContext.getLinksInfo().setCurLink(link.getAddr());
             sessionContext.setState(SessionState.STATE_IDLE);
             connected = true;
         } catch (Exception ex) {

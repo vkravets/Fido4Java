@@ -82,7 +82,7 @@ public class Client extends Connector {
         connected = connection.isConnected();
         if (connected) {
             session = connection.getSession();
-            sessionContext.getLinksInfo().setCurLink(link);
+            sessionContext.getLinksInfo().setCurLink(link.getAddr());
             sessionContext.setState(SessionState.STATE_IDLE);
         } else {
             connected = false;

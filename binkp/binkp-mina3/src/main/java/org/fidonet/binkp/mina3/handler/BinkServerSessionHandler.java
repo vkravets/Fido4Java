@@ -64,7 +64,7 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     public void sessionOpened(IoSession session) {
 
         SessionContext sessionContext = new SessionContext(this.sessionContext);
-        sessionContext.getLinksInfo().setCurLink(new Link(null, new FTNAddr(sessionContext.getStationConfig().getAddress()), null, session.getRemoteAddress().toString(), 0));
+        sessionContext.getLinksInfo().setCurLink(new FTNAddr(sessionContext.getStationConfig().getAddress()));
         sessionContext.setBusy(this.sessionContext.isBusy());
         sessionContext.setServerRole(ServerRole.SERVER);
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);

@@ -74,16 +74,16 @@ public class ADRCommand extends MessageCommand {
             } else {
                 commandArgs = commandArgs.trim();
                 String[] tokens = commandArgs.split(" ");
-                Link curLink = null;
+                boolean wait_pwd = false;
                 for (String token : tokens) {
                     FTNAddr linkAddr = new FTNAddr(token);
-                    curLink = findLink(linkAddr, sessionContext.getLinksInfo().getLinks());
-                    if (curLink != null) break;
+                    if (linksInfo.setCurLink(linkAddr)) {
+                        sessionContext.setState(SessionState.STATE_WAITPWD);
+                        wait_pwd = true;
+                        break;
+                    }
                 }
-                if (curLink != null) {
-                    linksInfo.setCurLink(curLink);
-                    sessionContext.setState(SessionState.STATE_WAITPWD);
-                } else {
+                if (!wait_pwd) {
                     sessionContext.setState(SessionState.STATE_ERR);
                     Command error = new ERRCommand();
                     String msg = "Link with address [%s] is not register on the node";
@@ -110,6 +110,10 @@ public class ADRCommand extends MessageCommand {
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        return sessionContext.getLinksInfo().getCurLink().getMyaddr().as5D();
+        StringBuilder sb = new StringBuilder();
+        for (FTNAddr addr : sessionContext.getLinksInfo().getCurLink().getMyaddr()) {
+            sb.append(addr.as5D()).append(" ");
+        }
+        return sb.toString().trim();
     }
 }

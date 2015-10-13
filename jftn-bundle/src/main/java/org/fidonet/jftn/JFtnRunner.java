@@ -46,8 +46,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
-public class   JFtnRunner {
+public class JFtnRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
     private static Boolean keepRun = true;
@@ -77,10 +78,15 @@ public class   JFtnRunner {
         final WeakReference<Runner> binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
         LinksInfo linksInfo = new LinksInfo(new ArrayList<Link>());
         linksInfo.getLinks().add(new Link(FTNAddr.valueOf("2:467/70.0"),
-                                            FTNAddr.valueOf("2:467/1313.0"),
-                                            "myspassword",
-                                            "f70n467.asuscomm.com",
-                                            24554));
+                new LinkedList<FTNAddr>() {
+                    {
+                        add(FTNAddr.valueOf("2:467/1313.0"));
+                        add(FTNAddr.valueOf("2:467/70.113"));
+                    }
+                },
+                "mypassword",
+                "f70n467.asuscomm.com",
+                24554));
         final SessionContext binkpSession = new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), linksInfo);
         final Runner runner = binkpRunner.get();
         if (runner == null) {
@@ -99,14 +105,7 @@ public class   JFtnRunner {
         schedulerObject.schedule("*/10 * * * *", new Runnable() {
             @Override
             public void run() {
-                logger.info("Polling all uplinks");
-                for (Link link : binkpSession.getLinksInfo().getLinks()) {
-                    try {
-                        runner.poll(link, binkpSession);
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
+                poolLinks(binkpSession, runner);
             }
         }, true);
 
@@ -146,5 +145,16 @@ public class   JFtnRunner {
 
 
         lockThread.join();
+    }
+
+    public static void poolLinks(SessionContext binkpSession, Runner runner) {
+        logger.info("Pooling all uplinks");
+        for (Link link : binkpSession.getLinksInfo().getLinks()) {
+            try {
+                runner.poll(link, binkpSession);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
     }
 }

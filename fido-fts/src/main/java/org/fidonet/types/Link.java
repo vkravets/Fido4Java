@@ -28,17 +28,26 @@
 
 package org.fidonet.types;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.LinkedList;
+import java.util.List;
+
 public class Link {
+
+    private static final Logger logger = LoggerFactory.getLogger(Link.class.getName());
+
     private FTNAddr addr;
-    private FTNAddr myaddr;
+    private List<FTNAddr> myaddr;
     private String pass;
     private String hostAddress;
     private int port;
     private String boxPath;
 
-    public Link(FTNAddr addr, FTNAddr myaddr, String pass, String hostAddress, int port) {
+    public Link(FTNAddr addr, List<FTNAddr> myaddrs, String pass, String hostAddress, int port) {
         this.addr = addr;
-        this.myaddr = myaddr;
+        this.myaddr = myaddrs;
         this.pass = pass;
         this.hostAddress = hostAddress;
         this.port = port;
@@ -51,7 +60,8 @@ public class Link {
             throw new IllegalArgumentException("Invalid link configuration");
         }
         addr = new FTNAddr(linkToken[0].trim());
-        myaddr = new FTNAddr(linkToken[1].trim());
+        String addresses = linkToken[1].trim();
+        myaddr = convertAddressesToList(addresses);
         if (linkToken.length > 3)
             pass = linkToken[2].trim();
         if (linkToken.length >= 4) {
@@ -67,6 +77,20 @@ public class Link {
         }
     }
 
+    private List<FTNAddr> convertAddressesToList(String addresses) {
+        List<FTNAddr> result = new LinkedList<FTNAddr>();
+        for (String addr : addresses.split(" ")) {
+            FTNAddr ftnAddr = FTNAddr.valueOf(addr);
+            if (ftnAddr.isValid()) {
+                result.add(ftnAddr);
+            } else {
+                logger.warn("FTN address \"{}\" cannot be parsed. Skipped!", addr);
+            }
+
+        }
+        return result;
+    }
+
     public FTNAddr getAddr() {
         return addr;
     }
@@ -75,14 +99,14 @@ public class Link {
         return (pass != null && pass.equals("-")) ? "" : pass;
     }
 
-    public FTNAddr getMyaddr() {
+    public List<FTNAddr> getMyaddr() {
         return myaddr;
     }
 
     @Override
     public String toString() {
         if (myaddr != null && getAddr() != null) {
-            return myaddr + " -> " + getAddr().toString();
+            return myaddr.listIterator().next() + " -> " + getAddr().toString();
         } else {
             return hostAddress;
         }

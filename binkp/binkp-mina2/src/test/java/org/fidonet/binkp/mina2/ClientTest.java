@@ -53,6 +53,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.LinkedList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -138,7 +139,23 @@ public class ClientTest {
     @Test
     public void testBaseFlow() throws InterruptedException {
         StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
-        LinksInfo linksInfo = new LinksInfo(new Link(new FTNAddr("2:467/110.113"), new FTNAddr("2:467/110"), "pass_i_f", "localhost", 24554));
+        final FTNAddr node = new FTNAddr("2:467/110");
+        LinksInfo linksInfo = new LinksInfo(
+                new LinkedList<Link>() {
+                    {
+                        add(new Link(node,
+                                        new LinkedList<FTNAddr>() {
+                                            {
+                                                add(new FTNAddr("2:467/110.113"));
+                                            }
+                                        },
+                                        "pass_i_f", "localhost", 24554
+                                )
+                        );
+                    }
+                }
+        );
+        linksInfo.setCurLink(node);
         SessionContext sessionContext = new SessionContext(config, linksInfo);
         sessionContext.getStationConfig().setCryptMode(true);
         ClientMock clientMock = new ClientMock(sessionContext);

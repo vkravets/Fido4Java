@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp.common;
 
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
 import java.util.ArrayList;
@@ -47,16 +48,7 @@ public class LinksInfo {
     public LinksInfo() {
     }
 
-    public LinksInfo(Link curLink) {
-        setCurLink(curLink);
-    }
-
     public LinksInfo(List<Link> links) {
-        setLinks(links);
-    }
-
-    public LinksInfo(Link curLink, List<Link> links) {
-        setCurLink(curLink);
         setLinks(links);
     }
 
@@ -64,8 +56,14 @@ public class LinksInfo {
         return curLink;
     }
 
-    public void setCurLink(Link curLink) {
-        this.curLink = curLink;
+    public boolean setCurLink(FTNAddr addr) {
+        for (Link link : links) {
+            if (link.getAddr().equals(addr)) {
+                this.curLink = link;
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<Link> getLinks() {
