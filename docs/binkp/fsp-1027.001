@@ -1,0 +1,348 @@
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FSP-1027
+Revision:       Draft-1
+Title:          Binkp extensions: No Dupes mode and No Dupes
+                Asymmetric mode (russian text)
+Author:         Stas Degteff
+Revision Date:  2003-10-20
+Expiry Date:
+----------------------------------------------------------------------
+Contents:
+                1. Introduction
+                2. Determinations
+                3. No Dupes mode
+                4. No Dupes Asymmetric mode
+                5. Glossary
+                6. Acknowledgements
+                7. References
+                A. Contact information
+                B. History
+----------------------------------------------------------------------
+
+Abstract
+--------
+This document describes two expansions of protocol binkp: "No dupes mode" and "No dupes asymmetric mode". 
+
+----------------------------------------------------------------------
+
+
+1. Introduction 
+---------------
+
+Protocol binkp was developed for the use on the reliable communication channels, protected from the interferences. In practice it was inculcated for transfer FTN- traffic on the networks with the transport protocol TCP (Internet and Intranet). In this case the communication channel can prove to be insufficient to reliable, for example with seansovom access (dial-up) connection at the physical level breaks itself at the unpredictable moments of time, in this case in the following period of communication excess traffic appeared. 
+
+Subsequently, for increasing the productivity on the anisotropic communication channels (for example, the outgoing flow on the modem, and entering - along the satellite channel), and for convenience in the system operators was also developed the expansion of protocol "No dupes Asymmetric mode", in which each side can assign regime for the method it is file to its side. 
+
+ND mode is for the first time realized in meylere binkd of version 0.9.3, NDA mode - in meylere binkd of version 0.9.5
+
+
+2. Determination 
+---------------- 
+
+The meeting in the text keywords "CAN" ("MAY"), "CAN NOT" ("MAY NOT"), "IT MUST" ("SHOULD"), "IT MUST" ("SHOULD NOT"), "IS REQUIRED" ("REQUIRED"), "IT IS COMPULSORILY MUST" ("MUST"), "IT IS COMPULSORILY MUST NOT" ("MUST NOT"), "IS NOT RECOMMENDED" ("NOT RECOMMENDED"), "IS RECOMMENDED" ("RECOMMENDED") they must be interpreted in the manner that they are described in the document [ Fta-1006 ]. In the text the keywords are isolated with the upper register of letters. Remaining terms are enumerated in the glossary.
+
+
+3. No Dupes mode 
+---------------- 
+
+General information 
+------------------- 
+
+The expansion of protocol binkp "No dupes mode" prevents the repeated transfer of file after the break of period of communication. This is reached due to an increase in the duration of session and retention of status of last session on the transmitting side. Further for "No dupes mode" is abbreviated "ND mode" or "regime ND". ND mode implies NR mode (see [ NR ]). Developers strictly RECOMMEND the using of ND mode only together with protocol binkp 1.1 (see [ BINKP 1.1 ]) to avoid the errors (ND mode use an additional frame "M_EOB ' of protocol binkp 1.1 for the final confirmation).
+
+
+Indication of support ND mode to remote system ---------------------------------------------- 
+
+System indicates support of ND mode by sending frame "M_NUL" OPT ND" at the stage of handshake binkp.  ND mode is permitted only if both sides indicate support. Otherwise system MUST consider that remote system does not support regime ND and MUST not use this expansion of protocol. 
+
+The calling system MUST send frame "M_NUL OPT NR ND" (option NR is sent since ND mode implies NR mode). The answering system can not send option "NR , to it it suffices to send only "M_NUL OPT ND" (it MUST send frame "M_NUL OPT ND"). 
+
+
+Changes in protocol and acting meylera in regime ND -------------------------------------------------- 
+
+Changes in the exchange of files relative to NR mode: 
+
+1. transmitter expects frame M_GOT (or M_SKIP), which corresponds to the recently transmitted file before beginning the transfer of the following file from the turn. 
+
+2. recipient preserves the obtained file in the temporary depository and awaits frame M_FILE or frame M_EOB. After which it considers file as that finally accepted and moves it into basic inbound- catalog (it re-names). (temporary depository depends on the realization: this can be special catalog, either the incompletely taken file can have special attribute if this makes it possible file system or something another.) 
+
+3. sender preserves information about the file, for which is not obtained the confirmation from the assuming side, in status of the session (usually this is the file, whose size depends on realization). This information COMPULSORILY MUST contain the address of the remote system, the name of file, its size and time of modification. In status of session other information also can remain. 
+
+
+
+Sequence of the transfer of file in ND mode ------------------------------------------- 
+
+Let us name one side "dark-blue", the second of "green". We will consider that temporary depository for those taken is file - the various catalog and that status of session is stored in the file on the disk. 
+
+1. "dark-blue" system is ready to transfer files, "green" system is ready to receive files. 
+
+1a. In status of the session of "dark-blue" is stored the information about file file1 by size of size1 and by time of modification time1, confirmation about method of which it did not obtain from the "green". This file is located in the turn to the sending (in spule on the disk) with the same parameters (i.e. file it is not changed, for example, shityu tosserom). 
+
+1b In spule for the "green" "dark-blue" sees file file1 by size size1 and with the time of modification time1. 
+
+2. "dark-blue sends the frame "M_FILE file1 size1 time1 -1"
+
+3a. "green" recieves the frame "M_FILE file1 size1 -1" and sends frame "M_GET file1 size1 offset1", where offset1 is equal to zero in such a case, when file does not exist and is equal to the size of the previously part of the file accepted if file there exists. 
+
+3b. "green" receives the frame "M_FILE file1 size1 -1" and sends frame "M_SKIP file1 size". 
+
+4a. "dark-blue" receives frame "M_GET" file1 size1 time1 offset1" and cleans in status of session record about the transfer of file file1 to "green". (we pass to step 5.) 
+
+4b. "dark-blue" receives frame "M_SKIP file1 size1 time1" and leaves record about file file1 in status of session. (we pass to step 10.) 
+
+4c. "dark-blue" receives frame "M_GOT" file1 size1 time1" and cleans in status of session record about the transfer of file file1 to "green". (we pass to step 9.) 
+
+5. "dark-blue" sends frame "M_FILE" file1 size1 time1 offset1" and is written in status of session information about the transfer of file file1 to "green". 
+
+6. "dark-blue" sends frames with the data of file file1. 
+
+7. "green" writes the data into the temporary file received thus far their size it will not reach zayavennogo in frame M_FILE. 
+
+8. "green" sends frame "M_GOT" file1 size1 time1"
+
+9. (after the method of frame "M_GOT "file1 size1 time1") "dark-blue" saves status of session to the disk and is moved away the transmitted file file1. 
+
+10. "dark-blue" sends the frame "M_FILE" file2 size2 time2 -1" or frame M_EOB 
+
+11. "green" receives frame M_FILE or M_EOB and moves file file1 from the temporary depository into a constant place. 
+
+... 
+
+If period of communication is interrupted between steps 8 and 11, "green" does not move file "file1" until it receives from "dark-blue" frame "M_FILE file1 size1 time1 size1" or frame M_FILE for a new file. 
+
+
+
+Details of implementation 
+-------------------------
+
+If remote system presented several AKAs, the local system MUST verify status for all those AKAs, including for those AKAs, work with which was blocked by tosser or another program. This is necessary for averting the loss of status of session and as consequences, duplicating or the loss of the file of dlya/ot of those occupied to the moment of this session AKA of the remote side. 
+
+If remote system already moved the received file into inbound from the temporary directory, but this file is present in status of the session of local system, local system sends command to the transfer this file (frame M_FILE with offset of -1). Remote system receives this file as new and answers frame M_GET with offset of 0. In order to avoid the repeated transfer of file, local system MUST answer by frame M_FILE with displacement by 0, but it MUST NOT transmit data. In the following frame it MUST transmit demand to the sending of the following file from the turn (frame M_FILE "newfile size time -1") or signal about the empty turn (frame M_EOB). Remote system in this case CAN sgenerirovat diagnostics "file transfer interrupted" and COMPULSORILY it MUST continue the work: if was received frame M_FILE - to send frame M_GET "newfile size time offset", if was received frame M_GOT - to act in zavismosti from the state of turn on the sending. 
+
+The dual frames M_EOB at the end of the session, implemented in binkp 1.1 (see [ BINKP 1.1 ]), guarantee to sender the confirmation of renaming file on the receiving side. 
+
+IT IS RECOMMENDED so that system would preserve for each file received information about the sender and was checked status only those it was file, which were accepted from the current link in order to avoid confusion with the files from the different links, which have identical names. 
+
+The phase of transfer it is file IS COMPULSORILY MUST it begins from the transfer of status of session, regardless of the fact, are included regimes ND or NR, for the purpose to avoid the loss of taken and preserved in the temporary depository, but not moved into inbound file directory. 
+
+IT IS RECOMMENDED so that system would make the nondestructive skip of file (using binkp frame M_SKIP) when the address, from which this file was partially accepted in the previous period of communication, it was busy with another process (for example, with use BSO in autbaunda it was discovered the file *.BSY, which corresponds to the produced from the opposite side address). 
+
+For averting the loss of information about status of session with the failure (emergency termination of program, power outage and the like.) developers recommend the writing the status of session to the disk with each of its changes, but not only on the completion of session. 
+
+From the considerations of compatability with use BSO, ASO and the like it is specific autbaunda developers recommends to preserve status of session in the form of line in the size of the parameter of expected for this file command M_GOT in the file with the name of the form of .stch, where it corresponds to the address of the remote side in the size of utilized autbaunda. 
+
+Example binkp- sessions in regime ND 
+------------------------------------
+
+The following simple example demonstrates transfer it is file on protocol binkp 1.1 (see [ BINKP 1.1 ]) with the switch oned expansion "ND mode". In an example the files are transferred only from one side (on other side turn it is empty). 
+"Master" it transfers files, "slave" receives files. ">>" designates sending, "<<" designates receiving. 
+
+
+  -------------------------------------------------------------------
+    master                           slave
+  -------------------------------------------------------------------
+
+     when, in preserved status, information is present, about that transmitted
+     of the file "X" (file of status of link "slave" u "master" it contains line
+     "X sizeX timeX") 
+
+
+  M_FILE X <sizeX> <timeX> -1
+                                      M_GET X <sizeX> <timeX> <sizeX>
+
+  M_FILE X <sizeX> <timeX> <sizeX>
+                                   
+                                      receive of file "X" is complete
+                                      M_GOT X <sizeX> <timeX>
+
+  M_FILE A <sizeA> <timeA> -1
+                                   
+                                     if X exists in the temporary directory
+                                     it is moved it in a constant place (into
+                                     inbound) 
+
+                                     M_GET A <sizeA> <timeA> <offsetA>
+
+  set link status = "" 
+  M_FILE A <sizeA> <timeA> <offsetA>
+  DATA
+                                     M_GOT A <sizeA> <timeA>
+  
+  set link status = "A sizeA timeA"
+  we move away A from the turn
+  M_FILE B <sizeB> <timeB> -1
+                                     move A into inbound directory
+                                     M_GET B <sizeB> <timeB> <offsetB>
+
+  set link status = "" 
+  M_FILE B <sizeB> <timeB> <offsetB>
+  DATA
+                                     M_GOT B <sizeB> <timeB>
+
+  set link status = "B sizeB timeB" 
+  we move away B 
+  EOB
+                                     move B into inbound directory
+                                     EOB
+
+
+  ...
+
+  EOB                                
+                                     EOB
+
+  set link status = ""
+  we complete session                we complete the session 
+
+
+
+
+
+4. No Dupes Asymmetric mode
+---------------------------
+
+General information 
+-------------------
+
+The expansion of protocol binkp "No dupes Asymmetric mode" is the development of expansion "No dupes mode". It bladayet with the improved productivity on the asymmetric channels, when the speed in one direction is high, and in the opposite - low, or in other cases. 
+
+Further for "No dupes Asymmetric mode" is abbreviated "NDA mode" or "regime NDA". 
+
+NDA mode it makes it possible to use ND mode in one or both directions. 
+
+NDA mode are implied ND mode (see the previous chapter) and NR mode (see [ NR ]). 
+
+For work NDA mode IS RECOMMENDED protocol binkp of version not lower than 1.1 to avoid errors (as for ND mode). 
+
+
+Indication of support NDA mode to remote system ----------------------------------------------- 
+
+System indicates support of NDA mode, by sending frame "M_NUL OPT NDA" at the stage of handshake binkp. NDA mode is permitted only if both sides indicate support. Otherwise system MUST consider that remote system does not support regime ND and MUST not use this expansion of protocol. 
+
+In tuning of meylera can be permitted regime NDA for the method it is file and assigned the wish to work in ND mode on the transfer. In order to report this to the remote side, system MUST send binkp frame with the indication of options ND and NDA: "M_NUL OPT ND NDA" (sequence of options it is not essential). 
+
+In tuning of meylera can be indicated the prohibition to the use of regime NDA with method it is file and indicated the wish to use regime NDA with the sending file. About this of system reports by frame "M_NUL OPT ND" as with the support only TO ND mode and otsutsvii of support NDA mode. 
+
+
+Phase of handshake taking into account NDA mode 
+----------------------------------------------- 
+
+The following table contains all versions of handshake and state of regimes ND and NDA from both sides. 
+
+
+  ----------+-----------+--------------+-------------+--------------
+  Call side | Call side | Answer side  | Answer side | ND/NDA state
+  want/allow| transmits | want/allow   | transmits   |
+  ----------+-----------+--------------+-------------+--------------
+   none     |     -     | don't care   |  don't care |  -
+   ND only  |     ND    | not support  |     -       |  -
+   ND allow |    NDA    | not support  |     -       |  -
+   ND/NDA   |  NDA ND   | not support  |     -       |  -
+   ND only  |     ND    | ND allow     |     ND      | Bi-directional
+   NDA allow|    NDA    | ND allow     |     ND      |  -
+   ND/NDA   |  NDA ND   | ND allow     |     ND      | Bi-directional
+   ND only  |     ND    | NDA allow    |     ND      | Bi-directional
+   ND only  |     ND    | want NDA     |     ND      | Bi-directional
+   NDA allow|    NDA    | want NDA     |    NDA ND   | Call to answer
+   NDA allow|    NDA    | not want NDA |     -       |  -
+   ND/NDA   |  NDA ND   | want NDA     |    NDA ND   | Bi-directional
+   ND/NDA   |  NDA ND   | not want NDA |     NDA     | Answer to call
+
+"Not support" designates, that regimes ND and NDA are not supported. 
+
+"ND allow" designates, that ND mode is supported and is permitted for this link.
+
+"NDA allow" designates, that regime NDA is supported by meylerom, in this case it is unessential, is permitted NDA for this link. 
+
+"Want NDA" designates, that regime NDA is supported and is permitted for the link. 
+
+"Not want NDA" designates, that regime NDA is supported and it is not permitted for the link, but regime ND is permitted. 
+
+"Don't care" designates any version in koloke 
+
+"want/allow" and transfer of any combination of options in the column "transmits". 
+
+
+5. Glossary
+-----------
+
+AKA
+Additional address FTN- system. Interpretation of abbreviation AKA: "Also Knowwn As".
+
+
+FTN
+FTN compatible network
+Transmission network of data, built on the standards and the technology, developed for Fidonet. Interpretation of abbreviation FTN: "Fidonet Technology Network". 
+
+system 
+Post program Fidonet and other FTN- compatible networks. Are accomplished reception and transfer it is file between FTN- systems. 
+
+Nadezhny communication channel 
+reliable connection 
+Communication channel and connection, of ensuring the integrity data. In this case control of transfer and correction of the errors are used 
+
+Session 
+Period of communication 
+the temporary connection between two points, produced during three phases: establishing connection, the exchange of data, the completion of connection. 
+
+Transport protocol 
+Protocol of the transport level 
+Protocol of the fourth level according to the classification of the seven-level model OSI. 
+
+TCP 
+Transport protocol of the family of protocols TCP/IP, utilized in Internet. Is established virtual communication channel for the exchange of the flows of the data between tvumya by points. The checking of the integrity of data ensures. Interpretation of abbreviation TCP: "Transmittion Control Protocol". See also [RFC 793 ]. 
+
+
+
+6. Acknowledgements
+-------------------
+
+This document is based on the author's description ND mode in the Russian language. 
+
+Author ND mode: Paul Gulchouck. 
+
+Authors NDA mode: Paul Gulchouck And Stas Degteff. 
+
+Author binkp: Dmitry Maloff. 
+
+
+
+7. References
+-------------
+
+[NR]
+       Description of the expansion of protocol binkp "Non-Reliable mode".
+       At the moment of writing this document it is Fsp-1023 
+
+[BINKP 1.1]
+       Description of protocol binkp 1.1. At the moment of writing this 
+       document it is Fsp-102? 
+
+[FTA-1006]
+       FTSC Administrative document "Key words to indicate requirement
+       levels".
+
+[RFC 793]
+       Transmission Control Protocol. Darpa Internet Program. Protocol
+       Specification. September 1981.
+
+
+
+A. Contact information
+----------------------
+
+  Paul Gulchouck: 2:463/68@fidonet, gul@gul.kiev.ua
+  Stas Degteff: 2:5080/102@fidonet, g@grumbler.org
+
+
+B. History
+----------
+
+   Rev. Draft-1, 20031020:
+           First public draft
+
+
+Translated from http://binkd.grumbler.org/binkp/FSP-1027_draft1.txt.koi.ru

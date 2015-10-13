@@ -1,0 +1,1916 @@
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright (c) 2012-2015, Vladimir Kravets                                 ~
+  ~ All rights reserved.                                                      ~
+  ~                                                                           ~
+  ~ Redistribution and use in source and binary forms, with or without        ~
+  ~ modification, are permitted provided that the following conditions are    ~
+  ~ met: Redistributions of source code must retain the above copyright notice,
+  ~ this list of conditions and the following disclaimer.                     ~
+  ~ Redistributions in binary form must reproduce the above copyright notice, ~
+  ~ this list of conditions and the following disclaimer in the documentation ~
+  ~ and/or other materials provided with the distribution.                    ~
+  ~ Neither the name of the Fido4Java nor the names of its contributors       ~
+  ~ may be used to endorse or promote products derived from this software     ~
+  ~ without specific prior written permission.                                ~
+  ~                                                                           ~
+  ~ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  ~ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,     ~
+  ~ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR    ~
+  ~ PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR         ~
+  ~ CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     ~
+  ~ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,       ~
+  ~ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+  ~ OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,  ~
+  ~ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR   ~
+  ~ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,            ~
+  ~ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                        ~
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+
+<meta name="keywords" content="fido, fidonet, tcp/ip, binkd, binkp, fido over ip, ftn, protocol description, technical reference">
+<meta name="description" content="This specification defines binkp - a protocol for transferring FidoNet mail over reliable connections">
+
+<title>Binkp Specification</title>
+
+<!-- **************************************************************
+
+To convert this document to FTSC-compiant plain ASCII form:
+1. use links/0.9.2 or higher (http://links.browser.org)
+2. set window width to 70 characters
+3. open this HTML document
+4. select Setup -> Terminal options -> No frames
+5. select File -> Save as formatted document
+*************************************************************** -->
+
+</head>
+
+<body>
+
+<pre>
+********************************************************************
+FTSC                           FIDONET TECHNICAL STANDARDS COMMITTEE
+********************************************************************
+
+Publication:    FSP-1011
+Revision:       3
+Title:          Binkp - a protocol for transferring FidoNet mail over
+                reliable connections
+Authors:        <a href="http://www.corbina.ru/~maloff/">Dima Maloff</a>
+                <a href="http://www.doe.carleton.ca/~nsoveiko/">Nick Soveiko</a> 
+                <a href="http://www.ritlabs.com/">Maxim Masiutin</a>
+Revision Date:  31 July 2000
+Expiry Date:    31 July 2002
+
+--------------------------------------------------------------------
+</pre>
+
+<H2><tt>
+Abstract<br>
+--------</tt></H2>
+
+<P>This specification defines binkp - a 
+protocol to handle a session between two Fidonet Technology 
+systems over a reliable connection. Assumption that the connection
+is reliable makes possible to eliminate error-checking and 
+unnecessary synchronization steps, achieving both ease of implementation
+and major performance improvement over connections with large unpredictable 
+delays (e.g. Internet).</P>
+
+
+<H2><tt>
+Status of this document<br>
+-----------------------</tt></H2>
+
+<P>This document is a Fidonet Standards Proposal (FSP).
+
+<P>This document specifies an optional Fidonet standard protocol for
+the Fidonet community, and requests discussion and suggestions for
+improvements.
+
+<P>This document is released to the public domain, and may be used,
+copied or modified for any purpose whatever.
+
+<H2><tt>
+Available formats<br>
+-----------------</tt></H2>
+
+Binkp Specification is also available in HTML format at <A HREF="http://www.ritlabs.com/binkp/">http://www.ritlabs.com/binkp/</A>
+
+<H2 align=left><a name="toc"><tt>
+Table of contents<br>
+-----------------</tt></a></H2>
+
+<ol>
+<li><a href="#background">Background</a>
+<ol>
+<li><a href="#background.objectives">Objectives</a>
+<li><a href="#background.motivation">Motivation for a New Protocol</a>
+</ol>
+<li><a href="#definitions">Definitions</a>
+<li><a href="#protocol.overview">Protocol Overview</a>
+<li><a href="#protocol.frames">Frame Format</a>
+<ol>
+<li><a href="#protocol.frames.notation">Notation</a>
+<li><a href="#protocol.frames.examples">Examples</a>
+</ol>
+<li><a href="#protocol.commands">Protocol Commands and Their Arguments</a>
+<ol>
+<li><A href="#protocol.commands.classification">Classification</A>
+<li><A href="#protocol.commands.fname">File Name Issues</A>
+<li><A href="#protocol.commands.nonascii">Non-ASCII Characters in Command Argument symbol string</A>
+<li><A href="#protocol.commands.commands">Binkp Commands</A>
+<li><A href="#protocol.commands.example">Example of Frame Exchange in a Simple binkp Session</A>
+</ol>
+<li><a href="#protocol.states">Protocol States</a>
+<ol>
+<li><a href="#protocol.states.setup">Session Setup Stage</a>
+<ol>
+<li><a href="#protocol.states.setup.orig">Originating Side</a>
+<li><a href="#protocol.states.setup.answ">Answering Side</a>
+</ol>
+<li><a href="#protocol.states.transfer">File Transfer Stage</a>
+<li><a href="#protocol.termination">Session Termination</a>
+</ol>
+<li><a href="#extensions">Recommended Protocol Extensions</a>
+<ol>
+<li><a href="#extensions.nr">Non-Reliable Mode</a>
+<li><a href="#extensions.mbatch">Multiple Batch Mode</a>
+<li><a href="#extensions.mpwd">Multiple Passwords Mode</a>
+<li><a href="#extensions.cram">Keyed Hashing Challenge-Response Authentication Mechanism</a>
+<ol>
+<li><a href="#extensions.cram.overview">Overview</A>
+<li><a href="#extensions.cram.steps">Sequence of Steps</A>
+<li><a href="#extensions.cram.cdata">Generating and Transmitting Challenge Data</A>
+<li><a href="#extensions.cram.digest">Producing and Transmitting a Digest</A>
+<li><a href="#extensions.cram.cap">Indicating CRAM Capabilities</A>
+<li><a href="#extensions.cram.example">Example of Frame Exchange During CRAM Authentication</A>
+<li><a href="#extensions.cram.notes">Notes on Hash Function Algorithms</A>
+</ol>
+</ol>
+<li><a href="#license">License</a>
+<li><a href="#glossary">Glossary</a>
+<li><a href="#ref">References</a>
+<li><a href="#acknowledgements">Acknowledgements</a>
+</ol>
+<ol type=A>
+<li><a href="#authors">Author Contact Data</a>
+<li><a href="#history">History</a>
+</ol>
+
+<p><hr noshade>
+
+<H2><a name="background"><tt>
+1. Background<br>
+-------------</tt></a></H2>
+
+<H3><a name="background.objectives"><tt>
+1.1 Objectives<br>
+--------------</tt></a></H3>
+
+<p>It's been a long time since a new Fidonet protocol has been developed, <a
+href="#ref.emsi">[EMSI]</a> definitions being published last time in 1991,
+not speaking about basic standards, <a href="#ref.fts-0001">[FTS-0001]</a> 
+and <a href="#ref.fts-0006">[FTS-0006]</a>.
+Fidonet is evolving everyday and new 
+<a href="#glossary.transport-layer">transport layers</a> are being introduced
+into practice. This led to a situation when in certain Fidonet Regions
+a visible portion of
+traffic, especially long distance traffic generating high toll, is being
+carried by means of protocols that formally are not Fidonet standards. This
+creates an ambiguity for such systems in indicating their additional
+capabilities in Fidonet nodelist and in some instances, from being listed
+in the nodelist at all.
+
+<p>This document attempts to document the current practice for communication 
+between two
+Fidonet systems via a <a href="#glossary.reliable">reliable</a> channel,
+provide technical reference for Fidonet software developers
+and eventually improve Fidonet connectivity.</p>
+
+
+<H3><a name="background.motivation"><tt>
+1.2 Motivation for a new protocol<br>
+---------------------------------</tt></a></H3>
+
+<p>Existing <a href="http://www.ftsc.org/archive/standard.htm">Fidonet 
+Technical
+Standards</a> and <a href="http://www.ftsc.org/archive/referenc.htm">Fidonet
+Reference Library</a> documents <a
+href="#ref.fts-0001">[FTS-0001]</a>, <a href="#ref.fts-0006">[FTS-0006]</a>,
+<a href="#ref.emsi">[EMSI]</a> specify both session handshake procedures
+and transmission capabilities that imply:
+<ul>
+<li>non-reliable communication channel between mailers
+<li>low round-trip times in the communication channel between mailers.
+</ul>
+
+<p>This was commonplace a few years ago, when Fidonet systems were not
+using transport other than direct dial-up on a visible basis. Things have
+changed today, when other communication media becomes widely available on a
+day-to-day basis. This communication media typically provides implementation
+of <a href="#glossary.physical-layer">Physical</a>,
+<a href="#glossary.datalink-layer">Data Link</a>, <a
+href="#glossary.network-layer">Network</a> and <a
+href="#glossary.transport-layer">Transport</a> layers of the <a
+href="#glossary.OSI-RM">ISO/OSI
+Reference Model</a> and facilitates relieving <a
+href="#glossary.session-layer">Session layer</a> of inappropriate
+functions, such as error control, flow control, call management and data
+transparency <a href="#ref.halsall">[Halsall95]</a>. Examples of such
+communication media are <a href="#glossary.TCP-IP">TCP/IP</a> <a
+href="#glossary.socket">socket</a> connection and <a
+href="#glossary.HDLC">HDLC</a> family protocol connection.
+
+<p>New communication media can be generally characterized by the 
+<strong>reliable transmission</strong> service offered by it to the Session
+layer protocol. Reliable transmission implies that:
+<ul>
+<li>Data link and/or Transport layer protocols are responsible for error
+control and delivery of frames in correct sequence
+<li>Session layer and higher layer protocols are operating on top of
+connection-oriented mode
+<li><a href="#glossary.QoS">Quality of Service</a> provisions (if any) result
+in unspecified delays between transmitter and receiver
+<li>connections are rarely aborted.
+</ul> 
+
+<p>Combination of these factors imposed the following requirements for
+the new Fidonet protocol:
+<ul>
+<li>error control can be eliminated throughout the session layer protocol
+for both handshake and default file transfer method
+<li>session setup procedure should minimize number of synchronization
+points for fast handshake
+<li>protocol should be insensitive to delays and robust with respect to
+timeouts
+<li>application flow control should be moved to file level; individual data
+frames do not need to be error checked nor acknowledged
+<li>protocol should be independent from both higher and lower layer
+protocols
+<li>protocol should be reasonably easy to implement and allow future extensions.
+</ul>
+
+<H2><a name="definitions"><tt>
+2. Definitions<br>
+--------------</tt></a></H2>
+
+<p>The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT" and "MAY"
+in this document are to be interpreted as specified in <a href="#ref.fta-1006">[FTA-0006]</A>. However, for readability, these 
+words may sometimes not appear in all uppercase letters in this specification.
+Although it should not impact minimal realization of binkp protocol, it must be 
+noted that Protocol Extensions may override, update or obsolete requirement levels
+indicated by the above keywords in chapters from 3 to 6 inclusive.
+</P>
+
+<p>Calling party in this document is referred to as the <dfn>Originating side</dfn> and called
+party is referred to as the <dfn>Answering side</dfn>. Originating side here 
+is the party that initiates the connection between two systems.</p>
+
+<p><dfn>Mailer</dfn> in this document is a software that implements the protocol.</p>
+
+<p>Words "frame", "packet", and "block" when used in this document
+refer to binkp's <a href="#protocol.frames">Frames</a>, unless explicitly
+stated otherwise.
+
+<p>Other definitions that are not local to this 
+document can be found in the <a href="#glossary">Glossary</a>.
+
+<p>This document is organized as following:
+
+<p><a href="#protocol.frames">Frames</a> section defines binkp's frames.
+
+<a href="#protocol.commands">Binkp/1.0
+commands and their arguments</a> section provides detailed description of
+all defined protocol commands together with recommendations for their
+usage. Actual binkp implementation may match it's own
+diagrams provided that such implementation remains fully compatible with
+current
+specification.
+
+<a href="#protocol.states">Protocol states</a> section gives rigorous state
+diagrams for the minimum realization of binkp. All mailers MUST
+support this minimum realization.
+
+<a href="#extensions">Recommended Protocol Extensions</a> section documents
+most important extensions to the basic protocol that are in use as of the
+time of this writing. The <a href="#license">License</a>, <a
+href="#glossary">Glossary</a> and <a href="#ref">References</a> sections can be
+found at the end of this document.
+
+
+<H2><a name="protocol.overview"><tt>
+3. Protocol Overview<br>
+--------------------</tt></a></H2>
+
+<p><dfn>Binkp</dfn> is a Fidonet session layer protocol intended for use over
+data transparent bi-directional channels with reliable transmission. 
+There are no other requirements for the service provided by the underlying 
+protocol suite. Presentation and application layer protocols are not discussed
+here. Whenever TCP/IP socket is used, IANA registered port number for binkp 
+24554 SHOULD be used (as registered with the <a
+href="http://www.isi.edu/in-notes/iana/assignments/port-numbers">Internet
+Assigned Numbers Authority</a>).
+
+<p>Functionality of the minimum protocol realization makes provision for:
+<ul>
+<li>password protected sessions
+<li>4D/5D addressing for Fidonet and technology compatible networks
+<li>exchange of Type 2 <a href="#ref.fts-0001">[FTS-0001]</a>, 
+Type 2.2 <a href="#ref.fsc-0045">[FSC-0045]</A>, 
+Type 2+ <a href="#ref.fsc-0039">[FSC-0039]</A> and 
+<a href="#ref.fsc-0048">[FSC-0048]</A>, 
+Type 3 <a href="#ref.fsc-0081">[FSC-0081]</A> packets and
+<a href="#ref.fts-0006">[FTS-0006]</A> arcmail in both directions, 
+including poll and mail pickup, as well as transfer of any binary or ASCII files
+<li>handling WaZOO <a href="#ref.fts-0006">[FTS-0006]</a> file requests
+<li>ensuring integrity of transmitted mail and files
+<li>simultaneous bi-directional transmission
+<li>maximizing performance over packet switched data networks
+</ul>
+
+<p>Binkp uses only one synchronization point during session startup, that
+is password exchange. This feature facilitates fast session startup for high
+latency links. <a href="#glossary.sliding-window">Sliding window</a> flow 
+control is incorporated on the file level. This ensures that a batch of
+small files is transmitted with the same efficiency as a one large file.
+
+
+<H2><a name="protocol.frames"><tt>
+4. Frame Format<br>
+---------------</tt></a></H2>
+
+<p>Binkp is defined in terms of sending and receiving specifically
+formatted data blocks. We call them <i>frames</i>.
+
+<p><i>Command frames</i> carry protocol commands and may change
+protocol state. <i>Data frames</i> are usually appended to files 
+being received by mailers or may be discarded,
+depending on the protocol state.
+
+<p>
+The particular way of mapping an octet stream or a datagram stream of the
+transport layer into binkp frames may depend on the underlying protocol
+suite. At this time, we define such mapping for TCP/IP socket connection
+which can also be used for similar transports as well.
+
+<p>The socket stream is being split into binkp frames in the following manner:
+
+<pre>
+    7 6543210 76543210
+   +-+-------+--------+--- ................ ---+
+   |T|      SIZE      |          DATA          | 
+   +-+-------+--------+--- ................ ---+
+   |&lt;-   2 octets   -&gt;|&lt;- up to 32767 octets -&gt;|
+      (frame header)          (frame data)
+</pre>
+
+<p>If T bit is 0, this is a data frame.
+
+<p>If T bit is 1, this is a command frame.
+
+<p>15 bits marked SIZE carry the size of the 
+DATA part of the frame in octets (with the bit marked 0 being 
+the least significant). That is, the actual length of a binkp frame
+is SIZE+2.
+
+<p>The size of the DATA part may vary between 1 and 32767 octets.
+A correct realization should never set SIZE to 0.
+Upon receiving of a packet header with the SIZE field set to 0,
+the total length of the incoming packet must be treated as 2,
+this packet must be dropped, and the event should be logged.
+
+<p>The first octet of a command frame data is the command ID. 
+The ID must be between 0 and 127 inclusive.
+
+<p>Other octets carry command arguments. 
+Command arguments are an arbitrary symbol string that may be
+null-terminated. Treating of a null character in the middle 
+of a command depends on realization (with the options being
+"treat as whitespace" or "treat as end-of-line").
+The terminating null character (if any) is either stripped or used
+by mailers internally as an end-of-line marker.
+
+<h3><a name="protocol.frames.notation"><tt>
+4.1 Notation<br>
+------------</tt></a></h3>
+
+<p>As stated before, command ID is a small number between 0 and 127.
+Every binkp command 
+defined in this document has a symbolic name in the form <samp>M_XXX</samp>.
+Symbolic names are defined in <a href="#protocol.commands.commands"> 
+binkp commands</a> section.
+We will use symbolic names and not numeric command IDs to refer to commands
+everywhere in this document. 
+
+<p>The following notation is used to describe 
+binkp's command frames:
+
+<pre>
+	M_XXX "Data string"
+</pre>
+
+<p>
+The actual numeric command ID for the command with 
+the symbolic name of <samp>M_XXX</samp> should be written into
+the first octet of the DATA area of a binkp frame.
+"Data string" is a string to be copied into DATA area starting
+at second octet.
+SIZE should be set to the total length of "Data string" plus one for
+the octet to store the command number.
+T bit should be set to 1.
+
+
+<h3><a name="protocol.frames.examples"><tt>
+4.2 Examples<br>
+------------</tt></a></h3>
+
+<p><a href="#command.M_OK">M_OK</a> "":
+
+<pre>
+    7 6543210 76543210 76543210
+   +-+-------+--------+--------+
+   |1|      0        1|       4|
+   +-+-------+--------+--------+
+    |                |        +----- command ID (no arguments)
+    |                +-------- frame length 
+    +- command frame flag
+</pre>
+
+<p><a href="#command.M_NUL">M_NUL</a> "TEST":
+
+<pre>
+   +-+-------+--------+--------+-------+--------+--------+--------+
+   |1|      0        5|       0|   T        E        S       T    |
+   +-+-------+--------+--------+-------+--------+--------+--------+
+</pre>
+
+
+<H2><a name="protocol.commands"><tt>
+5. Protocol Commands and Their Arguments<br>
+----------------------------------------</tt></a></H2>
+
+<H3><A NAME="protocol.commands.classification"><tt>
+5.1 Classification<br>
+------------------</tt></A></H3>
+
+<p>Protocol commands may be classified the following way:</p>
+
+<ul>
+<li>By argument type:
+<ol>
+<li><STRONG>Mailer-parseable</STRONG>: M_ADR, M_PWD, M_FILE, M_GOT, M_GET,
+M_SKIP. Mailer MUST parse these commands and it is not recommended to log
+arguments of these commands as they are. Mailer-parseable commands can be
+further subdivided by containment of a file name in the argument. 
+
+<ol>
+<li><STRONG>Contain a file name</STRONG>: M_FILE, M_GOT, M_GET, M_SKIP commands contain a file name in their arguments.
+<li><STRONG>Do not contain a file name</STRONG>: M_ADR, M_PWD
+</ol>
+
+<li><STRONG>Human-readable</STRONG>: M_NUL, M_OK, M_EOB, M_ERR, M_BSY. Mailer MAY ignore and/or log arguments of these commands.
+</ol>
+<li>By protocol stage:
+<ol>
+<li><STRONG>Session setup stage</STRONG>: M_ADR (must be sent by both
+sides), M_PWD (must not be sent by the Answering side), M_OK (must not be
+sent by the Originating side). These commands MUST never be sent during the file
+transfer stage.
+<li><STRONG>File transfer stage</STRONG>: M_FILE, M_GOT, M_GET, M_SKIP, M_EOB.
+These commands MUST NOT be sent session setup stage.
+<li><STRONG>Any stage</STRONG>: M_NUL, M_ERR, M_BSY. These commands MAY be
+sent any time during the session.
+</ol>
+</ul>
+
+<H3><A NAME="protocol.commands.fname"><tt>
+5.2 File Name Issues<br>
+--------------------</tt></A></H3>
+
+<p>In Mailer-parseable commands that contain a file name, the file name MUST NOT
+include a whitespace (ASCII value 20 hex). The file name SHOULD NOT
+include symbols other than alphanumeric (A-Z,a-z,0-9) and safe characters as
+defined below in BNF. All other symbols are to be considered unsafe and
+SHOULD be escaped in the form of two hexadecimal digits preceded by a
+backslash (e.g. a whitespace must be transmitted as "\20").
+
+<PRE>
+  filename        = *pchar
+  pchar           = unreserved | escape
+  unreserved      = ALPHA | DIGIT | safe
+  safe            = "@" | "&" | "=" | "+" | "%" | "$" | "-" | "_" |
+                    "." | "!" | "(" | ")" | "#" | "|" 
+  escape          = "\" HEX HEX 
+</PRE>
+
+<p>National characters should not be escaped, but rather transmitted
+using <A HREF="#ref.UTF8">[UTF8]</A>
+encoding (see <a href="#protocol.commands.nonascii">section</a> discussing 
+non-ASCII characters below).
+
+<p>The best current practice is that Mailer does not alter a file name without
+sysop's intention. If the mailer does provide
+such a mechanism, it MUST BE optional and it SHOULD BE off by default. 
+
+<p>The protocol does not impose limitations on the file name length other than those
+arising from the finite length of the binkp frame itself.
+
+
+<H3><A NAME="protocol.commands.nonascii"><tt>
+5.3 Non-ASCII Characters in Command Argument Symbol String<br>
+----------------------------------------------------------</tt></A></H3>
+
+<p>Generally, mailer SHOULD use only characters from the ASCII range
+[32...126] in the symbol strings for command arguments. In case when there is a
+necessity to use non-ASCII characters, mailer SHOULD use the <A HREF="#ref.UTF8">[UTF8]</A> format
+of the multioctet Universal Character Set <A HREF="#ref.ISO10646">[ISO10646]</A>. Mailer SHOULD
+use non-ASCII characters only if the other side have indicated it's support by
+transmitting M_NUL "OPT UTF8" frame during the session setup stage.
+Otherwise, mailer SHOULD assume that the remote does not support non-ASCII
+characters and SHOULD NOT use them in command arguments.
+
+
+<H3><A NAME="protocol.commands.commands"><tt>
+5.4 Binkp Commands<br>
+------------------</tt></A></H3>
+
+<p>Format: <samp>symbolic_command_name</samp> <var>command_ID</var></p>
+
+<p><dl>
+
+<dt><a name="command.M_NUL"><samp>M_NUL</samp></a>  0</dt>
+<dd><p>Command arguments contain human-readable information, such as
+nodelist info, sysop name, etc. 
+This frame can also be used by some Mailers to exchange protocol options. 
+Mailer MAY ignore and/or log arguments of 
+<samp>M_NUL</samp>. 
+<p>e.g. <samp>"ZYZ Dima Maloff"</samp>
+<p>The following format of <samp>M_NUL</samp> argument is recommended for
+compatibility purposes:
+
+<p><ul>
+<li><samp>M_NUL "SYS <var>system_name</var>"</samp>
+<li><samp>M_NUL "ZYZ <var>sysop's_name</var>"</samp>
+<li><samp>M_NUL "LOC <var>system_location</var>"</samp>
+<li><samp>M_NUL "NDL <var>system_capabilities</var>"</samp>
+<li><samp>M_NUL "TIME <var>remote_date_time</var>"</samp>
+<br><samp><var>remote_date_time</var></samp> format is described in [RFC822]. Example of valid <samp><var>remote_date_time</var></samp> is 
+<SAMP>Sun,&nbsp;06&nbsp;Nov&nbsp;1994&nbsp;08:49:37&nbsp;GMT</SAMP>
+<li><samp>M_NUL "VER <var>mailer_version protocol_version</var>"</samp>
+<br>note: binkp/1.0 mailers should send "<samp>binkp/1.0</samp>" string for <var>protocol_version</var>.
+<li><samp>M_NUL "TRF <var>netmail_bytes arcmail_bytes</var>"</samp><br>
+traffic prognosis (in bytes) for the netmail (<var>netmail_bytes</var>) 
+and arcmail and files (<var>arcmail_bytes</var>), both are decimal ASCII
+strings
+<li><samp>M_NUL "OPT <var>protocol options</var>"</samp>
+<br>here <var>protocol options</var> is a space separated list of binkp
+options and <A HREF="#extensions">extensions</A> supported by the mailer.
+<li><samp>M_NUL "PHN <var>string</var>"</samp><br>
+phone number, ip address or other network layer addressing ID
+<li><samp>M_NUL "OPM <var>string</var>"</samp><br>
+<var>string</var> is a message for the system
+operator that may require manual attention
+</ul>
+
+<p><dt><a name="command.M_ADR"><samp>M_ADR</samp></a>  1</dt>
+
+<dd><p>List of 4D/5D addresses (space separated).
+<p>e.g. <samp>"2:5047/13@fidonet 2:5047/0@fidonet"</samp>
+</p>
+
+<dt><a name="command.M_PWD"><samp>M_PWD</samp></a>  2</dt>
+<dd><p>Session password, case sensitive. After successful password authentication
+of the remote, originating side proceeds to the file transfer stage. This
+command MUST never be sent by the Answering side.
+<p>e.g. <samp>"pAsSwOrD"</samp>
+</p>
+
+<dt><a name="command.M_OK"><samp>M_OK</samp></a>   4</dt>
+<dd><p>Acknowledgement for a correct password. Upon receiving of this command, originating side 
+goes to file transfer stage. This command MUST never be sent by the Originating side.
+Arguments may be ignored.
+<p>e.g. <samp>""</samp>
+</p>
+
+<dt><a name="command.M_FILE"><samp>M_FILE</samp></a> 3</dt>
+<dd><p>Space separated list of parameters for the next file to be transmitted:
+filename; 
+size in bytes; <A HREF="#glossary.unixtime">unixtime</A>; file transmission offset. 
+<p>In protocol extensions, negative values for the offset may have special meaning (see <a
+href="#extensions.nr">non-reliable mode</a> for an example of such usage),
+basic implementation may treat negative values as an error.
+<p>Size, time and offset parameters are decimal. Until the next <samp>M_FILE</samp> command is received, all data frames
+must carry data from this file in consecutive manner.
+There is no end of file identifier as the
+file size is known beforehand. If there are "extra" data frames, Mailer may 
+append this data to the file. 
+By default, transmission of each file should be started
+from offset 0. <a href="#command.M_GET"><samp>M_GET</samp></a> command sent by the
+remote MUST force the mailer to start transmission from the specified
+offset.
+<p>e.g. <samp>"config.sys 125 2476327846 0"</samp>
+<p>or, answering to <a href="#command.M_GET"><samp>M_GET</samp></a> with offset 100:
+<p><samp>"config.sys 125 2476327846 100"</samp>
+</p>
+
+<dt><a name="command.M_EOB"><samp>M_EOB</samp></a>  5</dt>
+<dd><p>End-of-Batch. <samp>M_EOB</samp> command must be transmitted after all
+the files have been sent. 
+
+<p>Arguments of the command may be ignored.
+<p>e.g. <samp>""</samp>
+</p>
+  
+<dt><a name="command.M_GOT"><samp>M_GOT</samp></a>  6</dt>
+<dd><p>File acknowledgement, that must be transmitted upon receiving of the
+last data frame for current file. Arguments for this command shall be the same
+as for the <a href="#command.M_FILE"><samp>M_FILE</samp></a> sent by remote, excluding the last
+argument, file offset, which is not transmitted back to the system which
+have sent <a href="#command.M_FILE"><samp>M_FILE</samp></a>. <samp>M_GOT</samp> can also be transmitted
+while receiving a file, in which case transmitting party may interpret it
+as a destructive skip.
+<p>e.g. <samp>"config.sys 125 2476327846"</samp>
+</p>
+
+<dt><a name="command.M_ERR"><samp>M_ERR</samp></a>  7</dt>
+<dd><p>This command indicates a fatal error. A party sending <samp>M_ERR</samp>
+should
+abort the session. Argument should contain an error explanation and may be
+logged. Mailer sends <samp>M_ERR</samp> in response for an incorrect password.
+Mailer NUST NOT abort a session without sending a
+<samp>M_ERR</samp> or a <a href="#command.M_BSY"><samp>M_BSY</samp></A> frame 
+(though state machine tables, for simplicity, may not include "transmit <samp>M_ERR</samp>" instructions).
+<p>e.g. <samp>"Incorrect password"</samp>
+</p>
+
+<dt><a name="command.M_BSY"><samp>M_BSY</samp></a>  8</dt>
+<dd><p><samp>M_BSY</samp> command is transmitted when the system encounters a
+non-fatal error typically due to temporary lack of resources to proceed
+with the session. The argument should contain an
+explanation of the situation and may be logged by remote.
+<samp>M_BSY</samp> may be sent at any time during the session (including
+session setup stage), not only the stages explicitly indicated in the
+finite state machine. The side, which have sent <samp>M_BSY</samp>, is in
+legal position to abort the session. Mailer MUST be able to accept
+<samp>M_BSY</samp> at any time. Though state machine tables, for simplicity, 
+may not include handling of <samp>M_BSY</samp> command, Mailer MUST NOT be confused by reception of M_BSY command.
+<p>e.g. <samp>"Too many servers are running already" </samp>
+<p>If a mailer wishes to suggest the remote a time interval before the next
+session attempt, it may choose to transmit it in the following format:
+<p><samp>M_BSY "RETRY <var>NNNN</var>: <var>explanation</var>"</samp>
+<p>where <var>NNNN</var> is interval in seconds (decimal string) and
+<var>explanation</var> is an arbitrary string containing explanation of the
+matter (optional).
+</p>
+
+<dt><a name="command.M_GET"><samp>M_GET</samp></a>  9</dt>
+
+<dd><P>M_GET command is a request to (re)send files. Arguments of the command
+are the same as for the M_FILE
+command and refer to a file which we'd like to receive from the
+remote.</P>
+
+<P>Mailer may send M_GET when it doesn't like transmission file offset
+(e.g. file was partially received during one of the previous sessions). </P>
+
+<p>e.g. "config.sys 125 2476327846 100"
+
+<P>Mailer reacts to this command as follows: according to the first three
+arguments (filename/size/unixtime), it
+determines whether the M_GET argument is the current file being
+transmitted to the remote (or a file that have
+been transmitted, but we are still waiting an M_GOT ack for it). If
+this is the case, it should</P>
+<UL>
+<LI>discard transmission in progress as soon as possible 
+<LI>perform seek() to the specified offset 
+<LI>proceed with transmission of the file requested starting with an
+appropriate M_FILE.
+</UL>
+<P>For the example above, corresponding M_FILE will have the following arguments: "config.sys 125 2476327846 100"</P>
+<P>When the mailer is finished with transmitting data of the requested file it may proceed with transmission of other files it has for the remote.</P>
+
+<dt><a name="command.M_SKIP"><samp>M_SKIP</samp></a> 10</dt>
+<dd><p>Non destructive skip. Parameter is a space separated list of filename,
+size and <A HREF="#glossary.unixtime">unixtime</A>. This command indicates that
+the remote should postpone sending the file until next session. 
+<p>e.g. <samp>"config.sys 125 2476327846"</samp>
+</dl>
+
+
+<H3><A NAME="#protocol.commands.example"><tt>
+5.5 Example of Frame Exchange in a Simple Binkp Session<br>
+-------------------------------------------------------</tt></a></H3>
+
+<p>
+<table border=1 width="100%">
+<tr>
+<th valign=top align="left">Originating side
+<th valign=top align="left">Answering side
+</tr>
+<tr><td valign=top><a href="#command.M_NUL"><samp>M_NUL</samp></a> "SYS ..." 
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "ZYZ ..."
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "LOC ..."
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "VER ..."
+<br><a href="#command.M_ADR"><samp>M_ADR</samp></a> "2:2/2.2@fidonet"
+<br><a href="#command.M_PWD"><samp>M_PWD</samp></a> "password"
+</td>
+<td valign=top>
+<a href="#command.M_NUL"><samp>M_NUL</samp></a> "SYS ..."
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "ZYZ ..."
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "LOC ..."
+<br><a href="#command.M_NUL"><samp>M_NUL</samp></a> "VER ..."
+<br><a href="#command.M_ADR"><samp>M_ADR</samp></a> "3:3/3.3@fidonet"
+<br>(waiting for a password from remote)
+</td>
+</tr>
+
+<tr><td valign=top>(waiting for password acknowledgement)<td valign=top><a href="#command.M_OK"><samp>M_OK</samp></a> "" (or <a href="#command.M_ERR"><samp>M_ERR</samp></a> "Bad password")</tr>
+<tr><td valign=top>(got <a href="#command.M_OK"><samp>M_OK</samp></a>)       <td valign=top><a href="#command.M_FILE"><samp>M_FILE</samp></a> "file2 200 42342434 0"</tr>
+<tr><td valign=top><a href="#command.M_FILE"><samp>M_FILE</samp></a> "file1 100 423424244 0"<td valign=top>data</tr>
+<tr><td valign=top>data                          <td valign=top>data</tr>
+<tr><td valign=top>data                          <td valign=top>data</tr>
+<tr><td valign=top><a href="#command.M_EOB"><samp>M_EOB</samp></a>                         <td valign=top>(got file1, acknowledging it)</tr>
+<tr><td valign=top>(got file2, acknowledging it) <td valign=top><a href="#command.M_GOT"><samp>M_GOT</samp></a> "file1 100 423424244"</tr>
+<tr><td valign=top><a href="#command.M_GOT"><samp>M_GOT</samp></a> "file2 200 42342434"    <td valign=top>data </tr>
+<tr><td valign=top>                         <td valign=top>  <a href="#command.M_EOB"><samp>M_EOB</samp></a></tr>
+</table>
+
+<H2><a name="protocol.states"><tt>
+6. Protocol States<br>
+------------------</tt></a></H2>
+
+<p>The protocol has two major stages: <STRONG>session setup</STRONG> 
+(different for originating side and answering side) and <STRONG>file transfer</STRONG> (where state machined for both sides are the same).
+Methods for initiating connection as well as numerical
+values for particular timeouts are dependent on the
+underlying layer's protocol suite and are not considered here. Mailer
+MAY allow configuration of timeouts in reasonably wide
+range to cover all supported transport protocols.
+
+<p>The <em>Finite State Machine</em> notation is used throughout this
+section as defined by <a href="#ref.fts-0001">[FTS-0001]</a>.</p>
+
+
+<H3><a name="protocol.states.setup"><tt>
+6.1 Session Setup Stage<br>
+-----------------------</tt></a></H3>
+
+<p>Originating side should initiate a binkp session according to Table 1. 
+Answering side should be able to act according to Table 2. Any optional
+extensions of the handshake procedure MUST NOT confuse the other side, which
+may choose at it's discretion to follow this minimal implementation.
+Upon successful handshake, both sides follow Table 3 (file transfer stage). 
+That's why terms 
+<dfn>Answering side</dfn> and <dfn>Originating side</dfn> were chosen for
+this specification instead of <dfn>Client</dfn> and <dfn>Server</dfn> - both
+sides play the same roles, and their state machines differ in session setup
+stage only. </p>
+
+<p>Session setup stage has the following roles
+
+<p><ul>
+<li><STRONG>Authentication</STRONG> (REQUIRED). Answering side, 
+upon reception of a password (common secret word) from Originating side, decides whether 
+the password really matches the list of presented addresses, and either acknowledges it 
+by sending <a href="#command.M_OK"><samp>M_OK</samp></a> frame or rejects by
+sending <a href="#command.M_ERR"><samp>M_ERR</samp></a> frame. 
+This mechanism is called <dfn>Basic Authentication Scheme</dfn> and MUST be supported
+by all Mailers. Basic Authentication Scheme has the following limitations:
+<ul>
+<li>If Originating side presented multiple addresses, the password for 
+all of the addresses must be the same 
+(may be solved by <a href="#extensions.mpwd">Multiple passwords extension</A>).
+<li>Cleartext reusable passwords are passed over a network (may be solved by <a href="#extensions.CRAM">CRAM extension</A>).
+<li>Verification is made on Answering side only, thus Originating side has no way to verify Answering side (may be solved by dual CRAM or public-key cryptography, not discussed in this document).
+</ul>
+
+<li><STRONG>Indicating protocol options</STRONG> (OPTIONAL). 
+Sides may exchange specially formatted
+<a href="#command.M_NUL"><samp>M_NUL</samp></a> 
+messages to indicate supported <A HREF="#extensions">extensions</A>. 
+Sides MAY use another technique to indicate extensions.
+</ul>
+
+<H4><a name="protocol.states.setup.orig"><tt>
+6.1.1 Originating Side<br>
+----------------------</tt></a></H4>
+
+<p>Originating side sends <a href="#command.M_ADR"><samp>M_ADR</samp></a> and 
+<a href="#command.M_PWD"><samp>M_PWD</samp></a> frames, waits for successful authentication 
+acknowledgement from the Answering side (<a href="#command.M_OK"><samp>M_OK</samp></a> frame) and 
+goes to file transfer stage. Originating side MUST NOT <STRONG>wait</STRONG>
+before sending <a href="#command.M_ADR"><samp>M_ADR</samp></a> frame, i.e. this frame should be send just after setting up a connection on underlying layer.
+Originating side MUST NOT <STRONG>wait</STRONG> before sending <a href="#command.M_PWD"><samp>M_PWD</samp></a> except after reception of <a href="#command.M_ADR"><samp>M_ADR</samp></a> frame. 
+The term <STRONG>wait</STRONG> in this paragraph means do not send anything while expecting data from remote.
+
+<!-- Table 1 starts here ****************************************** -->
+
+<p><table border=1 width="100%">
+<caption><a name="protocol.states.setup.calling.regular">Table 1: Session
+setup, originating side</a></caption>
+
+<tr>
+<th valign=top align=left>#</th>
+<th valign=top align=left>Name</th>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Action(s)</th>
+<th valign=top align=left>Next</th>
+</tr>
+
+<tr>
+<td valign=top>S0</td>
+<td valign=top>ConnInit</td>
+<td valign=top> </td>
+<td valign=top>Attempt to establish connection</td>
+<td valign=top>S1</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=2>S1</td>
+<td rowspan=2>WaitConn</td>
+<td valign=top>Connection established</td>
+<td valign=top>Send <a href="#command.M_NUL"><samp>M_NUL</samp></a> frames with system
+info (at least one <samp><a href="#command.M_NUL"><samp>M_NUL</samp></a> "SYS ..."</samp> frame should be
+sent before <samp>M_ADR</samp>)<br>
+Send <a href="#command.M_ADR"><samp>M_ADR</samp></a> frame with system
+addresses<br>
+Set Timer<br>
+See if we have password for the remote 
+</td>
+<td valign=top>S2</td>
+</tr>
+<tr>
+<td valign=top>Connection refused</td>
+<td valign=top>Report no connection</td>
+<td valign=top>exit</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=2>S2</td>
+<td rowspan=2>SendPasswd</td>
+<td valign=top>Yes, we have a password</td>
+<td valign=top>Send <samp><a href="#command.M_PWD">M_PWD</a> "password"</samp> frame<br>
+Reset Timer</td>
+<td valign=top>S3</td>
+</tr>
+<tr>
+<td valign=top>No, there's no password</td>
+<td valign=top>Send <samp><a href="#command.M_PWD">M_PWD</a> "-"</samp> frame</td>
+<td valign=top>S3</td>
+
+<tr valign=top>
+<td rowspan=8>S3</td>
+<td rowspan=8>WaitAddr</td>
+<td valign=top><a href="#command.M_ADR"><samp>M_ADR</samp></a> frame received
+<td valign=top>See if answering side presented the address we've called</td>
+<td valign=top>S4</td>
+</tr>
+<tr>
+<td valign=top><a href="#command.M_BSY"><samp>M_BSY</samp></a> frame received
+<td valign=top>Report remote is busy<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top><a href="#command.M_ERR"><samp>M_ERR</samp></a> frame received
+<td valign=top>Report error<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top><a href="#command.M_NUL"><samp>M_NUL</samp></a> frame received
+<td valign=top>Ignore (optionally, log frame argument)<td valign=top>S3
+</tr>
+
+<tr>
+<td valign=top>Other known frame received
+<td valign=top>Report unexpected frame<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top>Unknown frame received
+<td valign=top>Ignore<td valign=top>S3
+</tr>
+
+<tr><td valign=top>Nothing happens</td><td valign=top>Wait</td><td valign=top>S3</td>
+</tr>
+<tr><td valign=top>Timer Expired</td><td valign=top>Report timeout</td><td valign=top>exit</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=2>S4</td>
+<td rowspan=2>AuthRemote</td>
+<td valign=top>Yes, <strong>the</strong> address was presented</td>
+<td valign=top>See if we've sent a password for this address</td>
+<td valign=top>S5</td>
+</tr>
+<tr>
+<td valign=top>No, <strong>the</strong> address was not presented</td>
+<td valign=top>Report we called the wrong system</td>
+<td valign=top>exit</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=2>S5</td>
+<td rowspan=2>IfSecure</td>
+<td valign=top>Yes, we've sent a password</td>
+<td valign=top>Wait for <a href="#command.M_OK"><samp>M_OK</samp></a> frame</td>
+<td valign=top>S6</td>
+</tr>
+<tr>
+<td valign=top>No, there was no password</td>
+<td valign=top>Report non-secure session</td>
+<td valign=top>T0</td>
+
+<tr valign=top>
+<td rowspan=8>S6</td><td rowspan=8>WaitOk</td>
+<td valign=top><a href="#command.M_OK"><samp>M_OK</samp></a> frame received
+<td valign=top>report secure session</td><td valign=top>T0</td>
+</tr>
+<tr><td valign=top><a href="#command.M_BSY"><samp>M_BSY</samp></a> frame received
+<td valign=top>Report remote is busy (Answering size MAY report busy after reception of caller's address)<td valign=top>exit
+</tr>
+<tr><td valign=top><a href="#command.M_ERR"><samp>M_ERR</samp></a> frame received
+<td valign=top>Report error<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top><a href="#command.M_NUL"><samp>M_NUL</samp></a> frame received
+<td valign=top>Ignore (optionally, log arguments)<td valign=top>S6
+</tr>
+
+<tr>
+<td valign=top>Other known frame received
+<td valign=top>Report unexpected frame<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top>Unknown frame received
+<td valign=top>Ignore<td valign=top>S6
+</tr>
+
+<tr><td valign=top>Nothing happens</td><td valign=top>Wait</td><td valign=top>S6</td>
+</tr>
+<tr><td valign=top>Timer Expired</td><td valign=top>Report timeout</td><td valign=top>exit</td>
+</tr>
+
+</table>
+
+<!-- Table 1 ends here ******************************************* -->
+
+<H4><a name="protocol.states.setup.answ"><tt>
+6.1.2 Answering Side<br>
+--------------------</tt></A></H4>
+
+<p>Originating side sends <a href="#command.M_ADR"><samp>M_ADR</samp></a> and 
+waits for <a href="#command.M_ADR"><samp>M_ADR</samp></a> and <a href="#command.M_PWD"><samp>M_PWD</samp></a> 
+frames from remote. Upon receptions of these frames, 
+it decides whether the password really matches the list of presented addresses, and either acknowledges it 
+by sending <a href="#command.M_OK"><samp>M_OK</samp></a> frame (and goes to file transfer stage) or rejects by
+sending <a href="#command.M_ERR"><samp>M_ERR</samp></a> frame (and disconnects). 
+The term <STRONG>wait</STRONG> in this paragraph means do not send anything while expecting data from remote.
+
+
+<!-- Table 2 starts here ***************************************** -->
+ 
+<p><table border=1 width="100%">
+<caption><a name="protocol.states.setup.called">Table 2: Session setup, 
+answering side</a></caption>
+ 
+<tr>
+<th valign=top align=left>#</th>
+<th valign=top align=left>Name</th>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Action(s)</th>
+<th valign=top align=left>Next</th>
+</tr>
+
+<tr valign=top><td rowspan=2>R0</td><td rowspan=2>WaitConn</td>
+<td valign=top>Incoming connection established</td>
+<td valign=top>Send <a href="#command.M_NUL"><samp>M_NUL</samp></a> frames with system
+info (at least one <samp><a href="#command.M_NUL"><samp>M_NUL</samp></a> "SYS ..."</samp> frame should be 
+sent before <samp>M_ADR</samp>)<br>
+Send <a href="#command.M_ADR"><samp>M_ADR</samp></a> frame with system
+addresses<br>
+Set Timer</td><td valign=top>R1</td>
+</tr>
+<tr><td valign=top>Nothing happens</td><td valign=top>Wait</td><td valign=top>R0</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=7>R1</td>
+<td rowspan=7>WaitAddr</td>
+<td valign=top><a href="#command.M_ADR"><samp>M_ADR</samp></a> frame received
+<td valign=top>See if we have a password for any of the remote addresses</td>
+<td valign=top>R2</td>
+</tr>
+<tr>
+<td valign=top><a href="#command.M_ERR"><samp>M_ERR</samp></a> frame received
+<td valign=top>Report error
+<td valign=top>exit
+</tr>
+
+
+<tr>
+<td valign=top><a href="#command.M_NUL"><samp>M_NUL</samp></a> frame received
+<td valign=top>Log<td valign=top>R1
+</tr>
+
+<tr>
+<td valign=top>Other known frame received
+<td valign=top>Report unexpected frame<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top>Unknown frame received
+<td valign=top>Ignore<td valign=top>R1
+</tr>
+
+<tr><td valign=top>Nothing happens</td><td valign=top>Wait</td><td valign=top>R1</td>
+</tr>
+<tr><td valign=top>Timer expired</td><td valign=top>Report timeout</td><td valign=top>exit</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=3>R2</td><td rowspan=3>IsPasswd</td>
+<td valign=top>Yes, we have a password</td><td valign=top>Set Timer</td><td valign=top>R3</td>
+</tr>
+<tr valign=top><td valign=top>Yes, but we have several different passwords for different addresses
+of the remote</td><td valign=top>Send <a href="#command.M_ERR"><samp>M_ERR</samp></a>
+frame<br>Report inconsistent password settings<td valign=top>exit</tr>
+<tr><td valign=top>No, there's no password</td><td valign=top>Report non-secure session</td><td valign=top>T0</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=7>R3</td>
+<td rowspan=7>WaitPwd</td>
+<td valign=top><a href="#command.M_PWD"><samp>M_PWD</samp></a> frame received
+<td valign=top>See if the password matches</td>
+<td valign=top>R4</td>
+</tr>
+<tr>
+<td valign=top><a href="#command.M_ERR"><samp>M_ERR</samp></a> frame received
+<td valign=top>Report error<td valign=top>exit
+</tr>
+
+
+<tr>
+<td valign=top><a href="#command.M_NUL"><samp>M_NUL</samp></a> frame received
+<td valign=top>Log<td valign=top>R4
+</tr>
+
+<tr>
+<td valign=top>Other known frame received
+<td valign=top>Report unexpected frame
+<td valign=top>exit
+</tr>
+
+<tr>
+<td valign=top>Unknown frame received
+<td valign=top>Ignore<td valign=top>R4
+</tr>
+
+
+<tr><td valign=top>Nothing happens</td><td valign=top>Wait</td><td valign=top>R3</td>
+</tr>
+<tr><td valign=top>Timer Expired</td><td valign=top>Report timeout</td><td valign=top>exit</td>
+</tr>
+
+<tr valign=top>
+<td rowspan=2>R4</td>
+<td rowspan=2>PwdAck</td>
+<td valign=top>Yes, the password matches</td>
+<td valign=top>Send <a href="#command.M_OK"><samp>M_OK</samp></a> frame<br>
+Report secure session<td valign=top>T0</td>
+</tr>
+<tr><td valign=top>No, password does not match</td><td valign=top>Report password error</td>
+<td valign=top>exit</td>
+</tr>
+</table>
+
+<!-- Table 2 ends here ********************************************** -->
+
+
+<H3><a name="protocol.states.transfer"><tt>
+6.2 File Transfer Stage<br>
+-----------------------</tt></a></H3>
+
+<P>File transfer stage is based on two major routines. We call them Receive Routine and Transmit Routine. 
+These routines perform some actions depending on their state variables. State variables are RxState for 
+Receive Routine and TxState for Transmit Routine.</P>
+
+<p><samp>RxState := { RxWaitF | RxAccF | RxReceD | RxWriteD | RxEOB | RxDone }</samp>
+
+<p><samp>TxState := { TxGNF | TxTryR | TxReadS | TxWLA | TxDone }</samp>
+
+<!-- Table 3 starts here ******************************************* -->
+
+<P><table border=1 width="100%">
+<caption><a name="protocol.states.transmission">Table 3: File Transfer</a></caption> 
+
+<tr>
+<th valign=top align=left>#</th>
+<th valign=top align=left>Name</th>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Action(s)</th>
+<th valign=top align=left>Next</th>
+
+<tr><td valign=top>T0<td valign=top>InitTransfer<td valign=top>none<td valign=top>Set Timer<BR>Set RxState to RxWaitF<BR>Set TxState to TxGNF<td valign=top>T1</tr>
+
+<tr><td rowspan=5 valign=top>T1<td rowspan=5 valign=top>Switch<td valign=top>RxState is RxDone and TxState is TxDone<td valign=top>Report session complete<td valign=top>exit</tr>
+<tr><td valign=top>Data Available in Input Buffer<td valign=top>call Receive routine<td valign=top>T2</tr>
+<tr><td valign=top>Free space exists in output buffer<td valign=top>call Transmit routine<td valign=top>T3</tr>
+<tr><td valign=top>Nothing happens<td valign=top>Wait<td valign=top>T1</tr>
+<tr><td valign=top>Timer Expired<td valign=top>Report Timeout<td valign=top>exit</tr>
+
+<tr><td rowspan=3 valign=top>T2<td rowspan=3 valign=top>Receive<td valign=top>Receive routine returned OK<td valign=top>Set Timer<td valign=top>T1</tr>
+<tr><td valign=top>Receive routine returned Failure<td valign=top>Close all opened files<td valign=top>exit</tr>
+<tr><td valign=top>Receive routine returned Continue<td valign=top>Call Receive routine again<td valign=top>T2</tr>
+
+
+<tr><td rowspan=3 valign=top>T3<td rowspan=3 valign=top>Transmit<td valign=top>Transmit routine returned OK<td valign=top>Set Timer<td valign=top>T1</tr>
+<tr><td valign=top>Transmit routine returned Failure<td valign=top>Close all opened files<td valign=top>exit</tr>
+<tr><td valign=top>Transmit routine returned Continue<td valign=top>Call Transmit routine again<td valign=top>T3</tr>
+
+</table>
+
+<!-- Table 3 ends here ********************************************** -->
+
+<P>Tables 4-6 are not actually state machines, but routines called during file transfer stage</P>
+
+<P>We define here a FIFO queue called "TheQueue", which is used to pass incoming
+<a href="#command.M_GET"><samp>M_GET</samp></a> / <a href="#command.M_GOT"><samp>M_GOT</samp></a> / <a href="#command.M_SKIP"><samp>M_SKIP</samp></a> frames from Receive Routine to Transmit Routine. Receive routine itself does not
+react to these frames. </P>
+
+<!-- Table 4 starts here ******************************************** -->
+
+<P><table border=1 width="100%">
+<caption><a name="protocol.states.rx">Table 4: Receive Routine</a></caption> 
+
+<tr>
+<th valign=top align=left>RxState</th>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Condition(s)</th>
+<th valign=top align=left>Actions(s)</th>
+<th valign=top align=left>Next</th>
+<th valign=top align=left>Return</th>
+</tr>
+
+<tr><td rowspan=9 valign=top>RxWaitF<td rowspan=9 valign=top>Get a frame from Input Buffer<td valign=top>Haven't got a complete frame yet<td valign=top>none<td valign=top>RxWaitF<td valign=top>OK</tr>
+<tr><td valign=top>Got Data frame<td valign=top>ignore<td valign=top>RxWaitF<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_ERR"><samp>M_ERR</samp></a><td valign=top>Report Error<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got <a href="#command.M_GET"><samp>M_GET</samp></a> / <a href="#command.M_GOT"><samp>M_GOT</samp></a> / <a href="#command.M_SKIP"><samp>M_SKIP</samp></a><td valign=top>Add frame to The Queue<td valign=top>RxWaitF<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_NUL"><samp>M_NUL</samp></a><td valign=top>Log<td valign=top>RxWaitF<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_EOB"><samp>M_EOB</samp></a><td valign=top>Report End of Batch<td valign=top>RxEOB<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_FILE"><samp>M_FILE</samp></a><td valign=top>none<td valign=top>RxAccF<td valign=top>continue</tr>
+<tr><td valign=top>Got other known frame<td valign=top>Report unexpected frame<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got unknown frame<td valign=top>ignore<td valign=top>RxWaitF<td valign=top>OK</tr>
+
+<tr><td rowspan=4 valign=top>RxAccF<td rowspan=4 valign=top>Decide how to accept Incoming File<td valign=top>Accept from beginning<td valign=top>Report receiving file<td valign=top>RxReceD<td valign=top>OK</tr>
+<tr><td valign=top>Accept from offset (we do already have a part of file) <td valign=top>Send <a href="#command.M_GET"><samp>M_GET</samp></a><BR>Report receiving file, requested offest<td valign=top>RxReceD<td valign=top>OK</tr>
+<tr><td valign=top>Accept later (or failed to create file)<td valign=top>Send <a href="#command.M_SKIP"><samp>M_SKIP</samp></a><BR>Report we will accept file later, not in current session<BR><td  valign=top>RxWaitF<td  valign=top>OK</tr>
+<tr><td valign=top>Refuse (delete on remote)<td valign=top>Send <a href="#command.M_GOT"><samp>M_GOT</samp></a><BR>Report we do not accept file<BR><td valign=top>RxWaitF<td valign=top>OK</tr>
+
+<tr><td rowspan=8 valign=top>RxReceD<td rowspan=8 valign=top>Get a frame from Input Buffer<td valign=top>Didn't got a complete frame yet<td valign=top>none<td valign=top>RxReceD<td valign=top>OK</tr>
+<tr><td valign=top>Got Data frame<td valign=top>none<td valign=top>RxWriteD<td valign=top>continue</tr>
+<tr><td valign=top>Got <a href="#command.M_ERR"><samp>M_ERR</samp></a><td valign=top>Report Error<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got <a href="#command.M_GET"><samp>M_GET</samp></a> / <a href="#command.M_GOT"><samp>M_GOT</samp></a> / <a href="#command.M_SKIP"><samp>M_SKIP</samp></a><td valign=top>Add frame to The Queue<td valign=top>RxReceD<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_NUL"><samp>M_NUL</samp></a><td valign=top>Log<td valign=top>RxReceD<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_FILE"><samp>M_FILE</samp></a><td valign=top>Report partially received file<td valign=top>RxAccF<td valign=top>Continue</tr>
+<tr><td valign=top>Got other known frame<td valign=top>Report unexpected frame<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got unknown frame<td valign=top>ignore<td valign=top>RxReceD<td valign=top>OK</tr>
+
+<tr><td rowspan=4 valign=top>RxWriteD<td rowspan=4 valign=top>Write data to file<td valign=top>Write Failed<td valign=top>Report error<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>File Pos &gt; Reported<td valign=top>Report write beyond EOF<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>File Pos = Reported<td valign=top>Close File<BR>Send <a href="#command.M_GOT"><samp>M_GOT</samp></a><BR>Report File Received<td valign=top>RxWaitF<td valign=top>OK</tr>
+<tr><td valign=top>File Pos &lt; Reported<td valign=top>none<td valign=top>RxReceD<td valign=top>OK</tr>
+
+
+<tr><td rowspan=6 valign=top>RxEOB<td rowspan=6 valign=top>Get a frame from Input Buffer<td valign=top>Didn't get a complete frame yet or TxState is not TxDone<td valign=top>none<td valign=top>RxEOB<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_ERR"><samp>M_ERR</samp></a><td valign=top>Report Error<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got <a href="#command.M_GET"><samp>M_GET</samp></a> / <a href="#command.M_GOT"><samp>M_GOT</samp></a> / <a href="#command.M_SKIP"><samp>M_SKIP</samp></a><td valign=top>Add frame to The Queue<td valign=top>RxEOB<td valign=top>OK</tr>
+<tr><td valign=top>Got <a href="#command.M_NUL"><samp>M_NUL</samp></a><td valign=top>Log<td valign=top>RxEOB<td valign=top>OK</tr>
+<tr><td valign=top>Got other known frame or data frame<td valign=top>Report unexpected frame<td valign=top>RxDone<td valign=top>Failure</tr>
+<tr><td valign=top>Got unknown frame<td valign=top>ignore<td valign=top>RxEOB<td valign=top>OK</tr>
+
+<tr><td valign=top>RxDone<td valign=top>none<td valign=top>none<td valign=top>none<td valign=top>RxDone<td valign=top>OK</tr>
+
+</table>
+
+<!-- Table 4 ends here ********************************************** -->
+
+<P>We define the list called "PendingFiles". After we put the last byte of file into output buffer, 
+we cannot yet consider the file as being successfully transmitted, thus we
+have to add the file to this list and then look for corresponding 
+incoming <a href="#command.M_GET"><samp>M_GET</samp></a> / <a href="#command.M_GOT"><samp>M_GOT</samp></a> / <a href="#command.M_SKIP"><samp>M_SKIP</samp></a> frames to remove the file from the list and decide whether the file was indeed 
+received by remote or remote will accept this file later, or something else. After we have sent <a href="#command.M_EOB"><samp>M_EOB</samp></a> frame, 
+we must wait until PendingFiles list gets empty before disconnecting.
+
+<P>If the connection accidentally breaks, all the files left in PendingFiles are considered unsent and will be re-transmitted in the next session. 
+If the connection breaks when the remote did actually receive the file (but the corresponded confirmation frame (<a href="#command.M_GOT"><samp>M_GOT</samp></a>)
+didn't came back to us) and we are resending this file again in the next session, remote may get two copies
+of the same file (file dupe). Binkp allows to reduce or totally suppress such dupes (at a cost of performance, of course),
+see <a href="#extensions.nr">Non-Reliable mode</a> and "No Dupes" protocol extension (to be found in a separate document at a later date).</P>
+
+<!-- Table 5 starts here ******************************************** -->
+
+<p><table border=1 width="100%">
+<caption><a name="protocol.states.tx">Table 5: Transmit Routine</a></caption> 
+
+<tr>
+<th valign=top align=left>TxState</th>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Condition(s)</th>
+<th valign=top align=left>Actions(s)</th>
+<th valign=top align=left>Next</th>
+<th valign=top align=left>Return</th>
+</tr>
+
+<tr><td rowspan=3 valign=top>TxGNF<td rowspan=3 valign=top>Open next file from outgoing queue<td valign=top>File opened OK<td valign=top>Send <a href="#command.M_FILE"><samp>M_FILE</samp></a><br>Report sending file<td valign=top>TxTryR<td valign=top>continue</tr>
+<tr><td valign=top>Failed to open file<td valign=top>Report failure<td valign=top>TxDone<td valign=top>Failure</tr>
+<tr><td valign=top>No more files<td valign=top>Send <a href="#command.M_EOB"><samp>M_EOB</samp></a><BR>Report end of batch<td valign=top>TxWLA<td valign=top>continue</tr>
+
+<tr><td rowspan=2 valign=top>TxTryR<td rowspan=2 valign=top>Check TheQueue<td valign=top>TheQueue is empty<td valign=top>none<td valign=top>TxReadS<td valign=top>continue</tr>
+<tr><td valign=top>TheQueue is not empty<td colspan=2 align=center>call ProcessTheQueue<td valign=top>continue</tr>
+
+<tr><td rowspan=3 valign=top>TxReadS<td rowspan=3 valign=top>Read data block from file<td valign=top>Read failed<td valign=top>Report Error<td valign=top>TxDone<td valign=top>Failure</td>
+<tr><td valign=top>Read OK, Reached EOF<td valign=top>Send data block frame<BR>Close current file<BR>Add current file to PendingFiles<td valign=top>TxGNF<td valign=top>OK</tr>
+<tr><td valign=top>Read OK, not reached EOF<td valign=top>Send data block frame<td valign=top>TxTryR<td valign=top>OK</tr>
+
+<tr><td rowspan=3 valign=top>TxWLA<td rowspan=3 valign=top>Check TheQueue<td valign=top>TheQueue is empty and RxState &gt;= RxEOB<td valign=top>none<td valign=top>TxDone<td valign=top>OK
+<tr><td valign=top>TheQueue is empty and RxState &lt; RxEOB<td valign=top>none<td valign=top>TxWLA<td valign=top>OK
+<tr><td valign=top>TheQueue is not empty<td colspan=2 align=center>call ProcessTheQueue<td valign=top>continue</tr>
+<tr><td valign=top>TxDone<td valign=top>none<td valign=top>none<td valign=top>none<td valign=top>TxDone<td valign=top>OK</tr>
+
+</table>
+
+<!-- Table 5 ends here ********************************************** -->
+
+<p>We define a list called KnownFiles. This list contains files that can be
+requested by the remote using <a href="#command.M_GET"><samp>M_GET</samp></a>
+command. This list shall at least contain all the files that are part of
+the PendingFiles list.
+
+<!-- Table 6 starts here ******************************************** -->
+
+<p>
+<table border=1 width="100%">
+<caption><a name="protocol.states.processqueue">Table 6: ProcessTheQueue routine</a></caption> 
+
+<tr>
+<th valign=top align=left>Predicate(s)</th>
+<th valign=top align=left>Condition(s)</th>
+<th valign=top align=left>Actions(s)</th>
+</tr>
+
+<tr valign=top><td valign=top><a href="#command.M_GET"><samp>M_GET</samp></a>
+received</td>
+<td valign=top>requested file is not in the KnownFiles list</td>
+<td valign=top>Report unknown file</td>
+</tr>
+
+<tr valign=top><td rowspan=3 valign=top><a href="#command.M_GET"><samp>M_GET</samp></a> received for a known file</td>
+<td valign=top>Requested pos is FileSize</td>
+<td valign=top>Close and finalize file.<br> Report that remote refused
+file being transmitted.<br> Set TxState to TxGetNextFile.</td>
+</tr>
+
+<tr valign=top><td valign=top>Requested pos is less than FileSize</td>
+<td valign=top>Set file pointer to requested pos.<br> Report that remote
+requested offset.<br> Set TxState to TxReadSend.</td>
+</tr>
+
+<tr valign=top><td valign=top>Requested pos is greater than FileSize</td>
+<td valign=top>Ignore frame</td>
+</tr>
+
+<tr><td valign=top><a href="#command.M_GOT"><samp>M_GOT</samp></a> file that is currently transmitting
+<td valign=top>none
+<td valign=top>Close and finalize file<br>Report Remote refused file being transmitted<br>Set TxState to TxGNF</tr>
+
+<tr><td rowspan=2 valign=top><a href="#command.M_GOT"><samp>M_GOT</samp></a> file that is not currently transmitting
+<td valign=top>File is in PendingFiles list
+<td valign=top>Finalize file<br>Report file has been sent<br>Remove file from the PendingFiles list</tr>
+
+<tr><td valign=top>File is not in PendingFiles
+<td valign=top>Ignore frame</tr>
+
+<tr><td valign=top><a href="#command.M_SKIP"><samp>M_SKIP</samp></a> file that is currently transmitting
+<td valign=top>none
+<td valign=top>Close file (do not finalize, we will send it later, not in current session)<br>Report remote will accept this file later<br>Set TxState to TxGNF</tr>
+
+<tr><td valign=top><a href="#command.M_SKIP"><samp>M_SKIP</samp></a> file that is not currently transmitting
+<td valign=top>none<td valign=top>Report remote will accept this file later<br>Remove file from PendingPiles, if exists there</tr>
+</table>
+
+<!-- Table 6 ends here ********************************************** -->
+
+<H3><a name="protocol.termination"><tt>
+6.3 Session Termination<br>
+-----------------------</tt></a></H3>
+
+<p>A session may be terminated in any of the following cases:
+
+<p><ol>
+<li>If transmitted or received M_ERR. In this case, the session should be deemed aborted due to a fatal error.
+<li>If transmitted or received M_BSY. In this case, the session should be deemed aborted due to non-fatal error typically because of temporary lack of resources to proceed
+with the session. 
+<li>If all of the following applies:
+<ul>
+<li>all the files have been sent
+<li>we have received <samp>M_EOB</samp> from the remote side (there are
+no more files for us),
+<li>we have received acknowledgements for all the files sent, 
+<li>we have received all the files re-requested by <a href="#command.M_GET"><samp>M_GET</samp></a>,
+</ul>
+In this case, the session should be deemed successfully completed.
+</ol>
+<p> A session termination itself is not a protocol stage. Mailer may
+terminate a session at any time simply by issuing disconnect (shutdown)
+command to the underlying transport layer, provided any of the three conditions
+above are met.
+Mailer MUST take all proper steps to provide a graceful shutdown of the transport layer,
+as it is the transport layer that is responsible for all the data transmitted by one side to be
+received by another before disconnection, provided that shutdown of the transport layer protocol was successful.
+
+ 
+<H2><a name="extensions"><tt>
+7. Recommended Protocol Extensions<br>
+----------------------------------</tt></a></H2>
+
+<p>This section documents already implemented and proposed extensions for
+the binkp/1.0. These extensions are purely optional and are included here
+for the sake of compatibility with future implementations. 
+
+<p>Sides indicate supported protocol extensions by sending 
+M_NUL frame(s) with <samp>"OPT <var>list_of_extensions</var>"</samp> string,
+where <var>list_of_extensions</var> is a space separated list of supported
+protocol extensions. Whenever multiple <samp>M_NUL "OPT ..."</samp> frames
+are received during the session, they SHOULD augment the current list of
+extensions rather than replace it, unless specifically stated otherwise for
+a particular option.
+
+<p>Mailer SHOULD NOT
+use any extension unless exactly sure that this extension is supported by
+the remote. Mailer SHOULD use <samp><a href="#command.M_NUL">M_NUL</a>
+"OPT ..."</samp> to indicate supported options. Other methods for indicating
+supported extensions are allowed as long as the provide full backwards
+compatibility.
+
+
+<H3><a name="extensions.nr"><tt>
+7.1 Non-reliable Mode<br>
+---------------------</tt></a></H3>
+
+<p>Non-reliable mode solves the problem with frequently aborted connections
+when the sides can not successfully complete file transfer before
+connection is broken. In this case, if the transmitting side starts
+retransmission from offset 0, performance degrades as by the time it
+receives <a href="#command.M_GET"><samp>M_GET</samp></a> from the remote,
+network buffers are
+already full and by the time they are freed for retransmission from
+requested offset, the connection might go down again.
+
+<p>In order to circumvent this problem, a mailer can request the remote
+to enter <dfn>non-reliable mode</dfn> by sending a <samp><a href="#command.M_NUL">M_NUL</a> "OPT NR"</samp> frame
+at any time during the session. After the remote acknowledges it by sending
+an <samp><a href="#command.M_NUL"><samp>M_NUL</samp></a> "OPT NR"</samp> frame indicating that the option is
+supported, both sides can assume that they are in non-reliable mode.
+
+<p>When session is in non-reliable mode, the transmitting side may send -1
+for the offset value in <samp><a href="#command.M_FILE">M_FILE</a></samp>
+command. If it does so,
+it should wait for the <samp>M_GET</samp> frame from the
+receiving side that explicitly specifies file offset and start transmitting
+file data from this offset. If the receiving side has indicated that it
+supports non-reliable mode by sending <samp><a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT NR"</samp> frame, it
+must recognize -1 as the file offset in <samp>M_FILE</samp> command as an
+explicit request for the file offset and transmit an appropriate
+<samp>M_GET</samp> frame as soon as possible.
+
+<p>It should be understood that this option degrades performance over
+regular quality connections and it should be used only if absolutely
+necessary.
+
+<H3><a name="extensions.mbatch"><tt>
+7.2 Multiple Batch Mode<br>
+-----------------------</tt></a></H3>
+
+<p>The session is in MB mode if both sides set "MB" flag in any of 
+M_NUL "OPT" packets exchanged before sending of M_OK/M_PWD packets.
+
+<p>In MB mode both sides restart session from RxDone into InitTransfer 
+state if there were any command packets sent or received by any side between 
+starting at InitTransfer and exchanging of M_EOB by the sides (RxDone state).
+Otherwise, the session terminates as usual.
+
+<p>Multiple batches mode is intended to handle WaZOO [FTS-0006] file requests.
+If there were any WaZOO request files transferred in a batch, sides MAY
+process them and send resulting files in the next batch. Mailers MAY
+also generate list of files to send in additional batches by other
+techniques -- including rescanning of their spools or processing of
+other magic files transferred before in the same session.
+
+
+<H3><a name="extensions.mpwd"><tt>
+7.3 Multiple Passwords Mode<br>
+---------------------------</tt></a></H3>
+
+<p>Multiple password mode allows to specify different passwords for the
+different addresses of the remote.
+
+<p>Originating side identifies it's multipassword capabilities by sending
+<samp><a href="#command.M_NUL">M_NUL</a> "OPT MPWD"</samp> during
+session setup stage before sending any
+<samp>M_ADR</samp> commands and waits for response from the answering
+side.
+
+<p>If answering side responds with the <samp><a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT MPWD"</samp>, then it
+supports multiply passwords too. Answering side also always responds with
+it's own address list: <samp><a href="#command.M_ADR">M_ADR</a> "<var>adr1 adr2 adr3 ...</var>"</samp>.
+If <samp><a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT
+MPWD"</samp> was not received prior to the first <samp>M_ADR</samp>
+command, originating side should assume that the remote does not support
+multiple password mode and send a single password (if any) for one of the
+addresses of the remote.
+
+<p>If the MPWD option was indicated by the answering side, originating side
+now may send <samp><a href="#command.M_PWD">M_PWD</a> "<var>pwd1 pwd2 pwd3 ...</var>"</samp> with the number of
+entries in space separated password list equivalent to the number of addresses presented by
+the answering side. If there is no password for a particular address, it must
+send '-' character as a placeholder.
+
+<p>If the passwords presented are consistent, answering side must
+acknowledge successful authentication by sending <samp><a
+href="#command.M_OK">M_OK</a></samp>
+command.
+
+
+<H3><a name="extensions.cram"><tt>
+7.4 Keyed Hashing Challenge-Response Authentication Mechanism<br>
+-------------------------------------------------------------</tt></a></H3>
+
+<H4><a name="extensions.cram.overview"><tt>
+7.4.1 Overview<br>
+--------------</tt></A></H4>
+
+<p>Challenge-Response Authentication Mechanism (CRAM)  allows to avoid passing cleartext, reusable passwords across the
+network.  Since it utilizes Keyed-Hashing digests <a href="#ref.KEYED">[Keyed]</a>, it does not require
+password  to be  stored  in  the clear on the Mailer's media, allowing
+storage of the intermediate results which are known as "contexts".
+
+<p>Providing  binkp-mailer  is  capable of <a href="#ref.KEYED">[Keyed]</a> digest calculation
+and  conversion  of a byte array to a hexadecimal string and back,
+implementation  of  CRAM  is  easily  achieved by slightly modifying the
+state machine.
+
+<H4><a name="extensions.cram.steps"><tt>
+7.4.2 Sequence of Steps<br>
+-----------------------</tt></A></H4>
+
+<p>CRAM  adds an additional synchronization step to binkp protocol. The
+description of this step follows:
+
+<p><ol>
+<li>Answering  side sends a unique set of data (challenge data) to the
+Originating side, encoded to a hexadecimal string.</li>
+
+<li>Originating  side  uses  challenge  data,  decoded  from  received
+hexadecimal  string,  and a password to produce a digest by applying the
+keyed Hashing algorithm from <a href="#ref.KEYED">[Keyed]</a> where the key is the password
+and the digested text is the challenge data.
+
+<li>When  the  answering  side receives this response, it verifies the
+digest  provided.  If the digest is correct, the answering side should
+consider the Originating side authenticated and responds appropriately.
+</ol>
+
+<p>Similar technique is used in <a href="#ref.IMAP-AUTH">[IMAP-AUTH]</a>.
+
+<H4><a name="extensions.cram.cdata"><tt>
+7.4.3 Generating and Transmitting Challenge Data<br>
+------------------------------------------------</tt></A></H4>
+
+<p>Size  and contents of challenge data are implementation-dependent, but
+it  SHOULD  be  no  smaller  than 8 bytes and no bigger than 64 bytes.
+Answering side SHOULD never generate the same challenge data.
+
+<p>Instead  of generating a long challenge data, answering side MAY use a
+hash  function  to  shorten  it.  In  calculation  of a challenge data
+answering  side  MAY  also  use  connection/line  number,  caller's IP
+address, current time, etc.
+
+<p>Answering  side  transmits  challenge  data  in  the  very first
+<a href="#command.M_NUL"><samp>M_NUL</samp></a> message, in the following way:
+
+<pre>  <a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT [othropt] CRAM-<var>lsthf</var>-<var>cde</var> [othropt]"</pre>
+
+<var>lsthf</var> is a list of aliases of supported hash functions, delimited
+by slash characters. The list begins with alias of the most preferred and
+ends with alias of the least preferred hash function. 
+
+<p>Currently defined aliases are:
+
+<samp>MD5</samp> for <a href="#ref.MD5">[MD5]</a> and <samp>SHA1</samp> for <a href="#ref.SHA-1">[SHA-1]</a>.
+
+<p><var>cde</var> is the challenge data encoded to hexadecimal string,
+Lower-case  ASCII  characters  MUST  be  used  for  encoding,  but  
+Mailer  SHOULD also accept upper-case characters. The length of
+the string MUST be even, and the leading zeros MUST NOT be trimmed.
+
+<H4><a name="extensions.cram.digest"><tt>
+7.4.4 Producing and Transmitting a Digest<br>
+-----------------------------------------</tt></A></H4>
+
+<p>Originating side responds with:
+
+<pre>  <a href="#command.M_PWD"><samp>M_PWD</samp></a> "CRAM-<var>chosenhf</var>-<var>khde</var> [othropt]"</pre>
+
+where <SAMP><var>chosenhf</var></SAMP> is the alias of the chosen hash function and <SAMP><var>khde</var></SAMP> is the keyed  hashed  digest, encoded to a hexadecimal string.
+
+<p>According   to   <a href="#ref.IMAP-AUTH">[IMAP-AUTH]</a>,  keyed  hashed  digest  is  produced  by
+calculating
+
+<pre>  HASH((secret XOR opad), HASH((secret XOR ipad), challengedata))</pre>
+
+where <samp>HASH</samp> is chosen hash function, <samp>ipad</samp>  and  <samp>opad</samp>  are 36 hex and 5C hex (as defined in <a href="#ref.KEYED">[Keyed]</a>) and secret is a
+password  null-padded  to  a  length  of  64 bytes. If the password is
+longer than 64 bytes, the hash-function digest of the password is used
+as an input (16-byte for <a href="#ref.MD5">[MD5]</a> and 20-byte for <a href="#ref.SHA1">[SHA-1]</a>) to the keyed hashed calculation.
+
+<H4><a name="extensions.cram.cap"><tt>
+7.4.6 Indicating CRAM Capabilities<br>
+----------------------------------</tt></A></H4>
+
+<p>Answering side MUST send
+
+<pre>  <a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT [othropt] CRAM-lsthf-cde [othropt]"</pre> as  a  very first <a href="#command.M_NUL"><samp>M_NUL</samp></a> message if it supports CRAM. 
+
+
+<p>It MAY send other
+non-<a href="#command.M_FILE"><samp>M_NUL</samp></a> messages before though. Current specification doesn't define
+any  such non-<a href="#command.M_FILE"><samp>M_NUL</samp></a> message, they are reserved for protocol extension. 
+
+<p>Originating side MUST be ready to receive non-<a href="#command.M_FILE"><samp>M_NUL</samp></a> before <a href="#command.M_NUL"><samp>M_NUL</samp></a> in a
+CRAM session. Binkp state machine MUST ignore any received message of
+unknown type in order to be compatible with future extensions.
+
+<p>If an originating side receives a first message that is a
+<a href="#command.M_ADR"><samp>M_ADR</samp></a> or
+a <a href="#command.M_NUL"><samp>M_NUL</samp></a> message that is not
+
+<pre>  <a href="#command.M_FILE"><samp>M_NUL</samp></a> "OPT [othropt] CRAM-lsthf-cde [othropt]"</pre>
+
+it  MUST  decide  that the answering side doesn't support CRAM and MAY
+either  disconnect  or use old password exchange. If the sides have no
+any compatible hash function, originator may also either disconnect or
+use   old  password  exchange.  If  an  originating  side  decides  to
+disconnect,  it  SHOULD  send  <a href="#command.M_ERR"><samp>M_ERR</samp></a>  frame  with a proper explanation
+before disconnecting.
+
+<p>When  parsing <samp><a href="#command.M_NUL">M_NUL</a> "OPT ..."</samp> string (coming from the answering side), originating side
+first  splits it by using space delimiter to get a list of options, and then if an option begins
+with  "CRAM-lsthf-",  takes  the  remaining  substring  as      a
+hexadecimal-encoded challenge data.
+
+
+<H4><a name="extensions.cram.example"><tt>
+7.4.7 Example of Frame Exchange During CRAM Authentication<br>
+----------------------------------------------------------</tt></A></H4>
+
+<DFN>(Password here is <samp>tanstaaftanstaaf</samp>)</DFN>
+
+<pre>
+  Originating : 
+    send <a href="#command.M_NUL"><samp>M_NUL</samp></a> messages 
+    and <a href="#command.M_ADR"><samp>M_ADR</samp></a>
+    wait for first <a href="#command.M_NUL"><samp>M_NUL</samp></a> message
+
+  Answering   : 
+    send <a href="#command.M_NUL"><samp>M_NUL</samp></a> "OPT ND CRAM-SHA1/MD5-f0315b074d728d483d6887d0182fc328"
+    and other messages
+    wait for <a href="#command.M_PWD"><samp>M_PWD</samp></a>
+
+  Originating : 
+    <a href="#command.M_PWD"><samp>M_PWD</samp></a> "CRAM-MD5-56be002162a4a15ba7a9064f0c93fd00"
+
+  Answering   : 
+    <a href="#command.M_OK"><samp>M_OK</samp></a> and continue session
+</pre>
+
+<H4><a name="extensions.cram.notes"><tt>
+7.4.8 Notes on Hash Function Algorithms<br>
+---------------------------------------</tt></A></H4>
+
+<p><a href="#ref.MD5">[MD5]</a>  and  <a href="#ref.SHA-1">[SHA-1]</a> are the most widely used cryptographic hash functions.
+<a href="#ref.MD5">[MD5]</a>  has  been  shown  to  be  vulnerable  to collision search attacks
+<a href="#ref.Dobb">[Dobb]</a>. This attack and other currently known weaknesses of <a href="#ref.MD5">[MD5]</a> do not
+compromise  the  use  of <a href="#ref.MD5">[MD5]</a> within CRAM as specified in this document
+(see  <a href="#ref.Dobb">[Dobb]</a>);  however,  <a href="#ref.SHA-1">[SHA-1]</a>  appears  to  be  a  cryptographically
+stronger function. To this date, <a href="#ref.MD5">[MD5]</a> can be considered for use in CRAM
+for applications where the superior performance of <a href="#ref.MD5">[MD5]</a> is critical. In
+any  case,  implementors  and  users  need  to  be  aware  of possible
+cryptanalytic  developments  regarding any of these cryptographic hash
+functions,  and  the  eventual  need  to  replace  the underlying hash
+function.
+
+
+<H2><a name="license"><tt>
+8. License<br>
+----------</tt></a></H2>
+
+<p>You can implement binkp protocol in your software as long as you agree
+to the following conditions:
+
+<p><ol>
+<li>The protocol shall be referenced to as <strong>binkp</strong> and not
+in any other way. You shall include the author(s) of the protocol in your
+copyright statement for the software.
+<li>Binkp shall always be backwards compatible with it's previous versions.
+Binkp allows development of the new capabilities without compromising
+interoperability with previous versions. Therefore, it is important that
+future developments of the protocol are not pursued in different directions
+by different people. If you have any suggestions regarding future
+developments of the protocol, make a reasonable effort to contact the
+author(s), so that the development
+efforts can coordinated in a way advantageous for everybody.
+<li>If your implementation is not compatible with past, present or future
+binkp specifications, you shall reference to it as a "binkp variation" or
+"binkp derived".
+</ol>
+
+<p>Remember that you may use, implement or utilize binkp, it's description
+or any other associated texts or documentations <strong>at your own risk,
+without any warranty, without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE</strong> 
+
+<p>Binkp author: Dima Maloff.
+
+
+<H2><a name="glossary"><tt>
+9. Glossary<br>
+-----------</tt></a></H2>
+
+<p>Many entries in this glossary are provided courtesy of <a
+href="http://www.rirr.cnuce.cnr.it/Glossario/glhpage.html">Butterfly
+Glossary</a> of Internet and Data Communication terms and <a
+href="http://www.cis.ohio-state.edu/htbin/rfc/rfc1983.html">RFC-1983</a>.
+
+<dl>
+
+<dt><b><a name="glossary.connection-oriented">connection-oriented</a></b>
+<dd>Data communication method in which communication
+proceeds through three well-defined phases: connection establishment, data
+transfer, connection release. TCP is a connection-oriented protocol.
+
+<dt><b><a name="glossary.datalink-layer">data link layer</a></b>
+<dd>The OSI layer that is responsible for data transfer across a single
+physical connection, or series of bridged connections, between two Network
+entities.
+
+<dt><b><a name="glossary.flow-control">flow control</a></b>
+<dd>A technique for ensuring that a transmitting entity does not overwhelm
+a receiving entity. 
+
+<dt><b><a name="glossary.HDLC">HDLC</a></b>
+<dd>(High level Data Link Control). Popular ISO standard bit-oriented,
+<a href="#glossary.datalink-layer">data link layer</a> protocol derived
+from SDLC. HDLC specifies an encapsulated method of data on
+synchronous serial data links. 
+
+<dt><b><a name="glossary.IP">IP</a></b>
+<dd>(Internet Protocol). The Internet Protocol, defined in STD 5, RFC 791,
+is the <a href="#glossary.network-layer">network layer</a> for the <a
+href="#glossary.TCP-IP">TCP/IP Protocol Suite</a>. It is a connectionless,
+best-effort packet switching protocol.
+
+<dt><b><a name="glossary.network-layer">network layer</a></b>
+<dd>Layer 3 of the <a href="#glossary.OSI-RM">OSI reference model</a>. Layer
+3 is the layer at which routing, addressing and connection management take
+place.
+
+<dt><b><a name="glossary.OSI-RM">OSI (Open Systems Interconnection) Reference Model</a></b>
+<dd>A seven-layer structure designed to describe computer network
+architectures and the way that data passes through them. This model was
+developed by the ISO (International Organization for Standardization)
+in 1978 to clearly define the interfaces in multivendor networks, and
+to provide users
+of those networks with conceptual guidelines in the construction of such
+networks.
+
+<dt><b><a name="glossary.port">port</a></b>
+<dd>A port is a transport layer demultiplexing value.  Each
+application has a unique port identifier associated with it.
+
+<dt><b><a name="glossary.physical-layer">physical layer</a></b>
+<dd>The OSI layer that provides the means to activate and use physical
+connections for bit transmission. In plain terms, the Physical Layer
+provides the procedures for transferring a single bit across a Physical Media.
+
+<dt><b><a name="glossary.QoS">Quality of Service</a></b>
+<dd>(Also QoS). A measure of performance for a transmission system that
+reflects its transmission quality and availability of service.
+
+<dt><b><a name="glossary.reliable">reliable transmission</a></b>
+<dd>a type of <a href="#glossary.transport-layer">transport</a> service that:
+<ul>
+<li>recovers from errors by retransmitting errored frames
+<li>delivers frames in correct sequence (also known as
+<em>stream-oriented</em>)
+<li>usually is used in <a href="#glossary.connection-oriented">connection-oriented</a> mode
+</ul>
+
+<dt><b><a name="glossary.session-layer">session layer</a></b>
+<dd>Layer 5 of the <a href="#glossary.OSI-RM">OSI reference model</a>.
+Coordinates session activity between applications, including application-layer
+error control, dialog control, and remote procedure calls. 
+
+<dt><b><a name="glossary.sliding-window">sliding window flow control</a></b>
+<dd>Method of <a href="#glossary.flow-control">flow control</a> in which a 
+receiver gives transmitter permission to transmit data until a window is full.
+When the window is full, the transmitter must stop transmitting until the
+receiver advertises a larger window.
+
+<dt><b><a name="glossary.socket">socket</a></b>
+<dd>Software structure operating as a communications and point within a
+network device.
+
+<dt><b><a name="glossary.TCP">TCP</a></b>
+<dd>Transmission Control Protocol. An Internet Standard <a href="#glossary.transport-layer">transport layer</a>
+<a href="#glossary.reliable">reliable protocol</a> defined in STD 7, RFC 793.
+It is <a href="#glossary.connection-oriented">connection-oriented</a> and
+stream-oriented.
+
+<dt><b><a name="glossary.TCP-IP">TCP/IP protocol suite</a></b>
+<dd>Transmission Control Protocol over Internet Protocol. This is a
+common shorthand which refers to the suite of transport and application
+protocols which runs over <a href="#glossary.IP">IP</a>.
+
+<dt><b><a name="glossary.transport-layer">transport layer</a></b>
+<dd>Layer 4 of the <a href="#glossary.OSI-RM">OSI reference model</a>.
+The transport layer is responsible
+for reliable network communication between end nodes. It implements flow and
+error control and often uses virtual circuits to ensure reliable data delivery. 
+
+<dt><b><A NAME="glossary.unixtime">unixtime</A></b>
+<dd>number of seconds elapsed since 00:00:00 UTC, Jan. 1, 1970.                 
+
+
+</dl>
+
+
+<H2><a name="ref"><tt>
+10. References<br>
+--------------</tt></a></H2>
+
+<dl>
+
+<dt><a name="ref.fts-0001">[FTS-0001]</a>
+<dd>A Basic FidoNet(r) Technical Standard, Revision 16. Randy Bush, Pacific
+Systems Group, September 30, 1995. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FTS1">FTS-0001</A>.
+
+<dt><a name="ref.fts-0006">[FTS-0006]</a>
+<dd>YOOHOO and YOOHOO/2U2. The netmail handshake used by Opus-CBCS and other intelligent Fidonet mail handling packages. Version 002, Vince Perriello. 30-Nov-1991. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FTS6">FTS-0006</A>.
+                             
+<dt><a name="ref.fsc-0039">[FSC-0039]</a>
+<dd>M.Howard, A type-2 packet extension proposal, FSC-0039 Version 4, 29-Sep-1990. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FSC39">FSC-0039</A>.
+                      
+
+<dt><a name="ref.fsc-0045">[FSC-0045]</a>
+<dd>T.Henderson, Proposed new packet header, Version 1, 17-Apr-1990. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FSC45">FSC-0045</A>.
+
+<dt><a name="ref.fsc-0048">[FSC-0048]</a>
+<dd>J.Vroonhof, Proposed type-2 packet extension, Version 2, 21-Oct-1990. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FSC48">FSC-0048</A>.
+
+<dt><a name="ref.fsc-0081">[FSC-0081]</a>
+<dd>M.Staldal, A type-3 packet proposal, Version 1, 01-Mar-1995. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FSC39">FSC-0081</A>.
+
+<dt><a name="ref.emsi">[EMSI]</a>
+<dd>Joaquim H. Homrighausen, EMSI/IEMSI protocol definition. May 3, 1991. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FSC56">FSC-0056</A>.
+
+<dt><a name="ref.fta-1006">[FTA-1006]</a>
+<dd>Key words to indicate requirement levels, Fidonet Technical
+Standards Committee administrative. <A HREF="http://www.piglets.com/cgi-bin/FTSCDoc?FTA1006">FTA-1006</A>.
+
+<dt><a name="ref.halsall">[Halsall95]</a>
+<dd>Data Communications, Computer Networks and Open Systems, F. Halsall,
+4th ed., Addison-Wesley, 1995, ISBN 0-201-42293-X.
+
+<dt><a name="ref.Dobb">[Dobb]</a>
+<dd>           H. Dobbertin, "The Status of MD5  After a Recent Attack",
+               RSA Labs' CryptoBytes, Vol. 2 No. 2, Summer 1996.
+
+<dt><a name="ref.MD5">[MD5]</a>
+<dd>           Rivest, R., "The MD5 Message-Digest Algorithm",
+               RFC 1321, April 1992.
+
+<dt><a name="ref.SHA-1">[SHA-1]</a>
+<dd>           NIST, FIPS PUB 180-1: Secure Hash Standard, April 1995.
+
+<dt><a name="ref.KEYED">[Keyed]</a>
+<dd>           Krawczyk, Bellare, Canetti, "HMAC: Keyed-Hashing for
+               Message Authentication", RFC 2104, February 1997.
+
+<dt><a name="ref.IMAP-AUTH">[IMAP-AUTH]</a>
+<dd>           Klensin,  "IMAP/POP AUTHorize Extension for Simple
+               Challenge/Response", RFC 2195, September, 1997
+
+<dt><a name="ref.RFC822">[RFC822]</a>
+<dd>Standard for the format of ARPA Internet text messages. D.
+     Crocker. Aug-13-1982. RFC 822, STD0011.
+
+<dt><a name="ref.UTF8">[UTF8]</a>
+<dd>           UTF-8, a transformation format of ISO 10646. F. Yergeau. January 1998, RFC 2279.
+
+<dt><a name="ref.ISO10646">[ISO10646]</a>
+<dd>           ISO/IEC 10646-1:1993. International Standard --
+                  Information technology -- Universal Multiple-Octet
+                  Coded Character Set (UCS) -- Part 1: Architecture and
+                  Basic Multilingual Plane.  Five amendments and a
+                  technical corrigendum have been published up to now.
+                  UTF-8 is described in Annex R, published as Amendment
+                  2.  
+</dl>
+
+
+<H2><a name="acknowledgements"><tt>
+11. Acknowledgements<br>
+--------------------</tt></a></H2>
+
+<p>This document is partially based on extracts from RFCs and FTSC
+publications too numerous to be acknowledged individually.
+
+<p>The authors would like to thank Joaquim Homrighausen, Kim 'B' Heino,
+Rune Johansen and many others for fruitful discussions and suggestions
+regarding protocol design and specifications.
+
+
+<H2><a name="authors"><tt>
+A. Author Contact Data<br>
+-----------------------</tt></a></H2>
+
+<p>Dima Maloff
+<br>Fidonet: 2:5020/128
+<br>E-mail: <a href="mailto:maloff@corbina.net">maloff@corbina.net</a>
+<br>WWW: <a
+href="http://www.corbina.net/~maloff/">http://www.corbina.net/~maloff/</a>
+
+<p>Maxim Masiutin
+<br>Fidonet: 2:469/84
+<br>E-mail: MAX <i>at</i> RITLABS <i>dot</i> COM
+<br>WWW: <a href="http://www.ritlabs.com/">http://www.ritlabs.com/</a>
+
+<p>Nick Soveiko
+<br>Fidonet: 2:5030/23.101
+<br>E-mail: <a href="mailto:nsoveiko@doe.carleton.ca">nsoveiko@doe.carleton.ca</a>
+<br>WWW: <a href="http://www.doe.carleton.ca/~nsoveiko/">http://www.doe.carleton.ca/~nsoveiko/</a>
+
+<h2><a name="history"><tt>
+B. History<br>
+----------</tt></a></h2>
+
+<dl>
+<dt>Rev.1, 19990611:</dt>
+<dd>First release
+
+<dt>Rev.2, 19991008:</dt>
+<dd>
+<ul>
+<li>Added new topic: "Definitions";
+<li>clarified the following topics: "Frame Format",
+                   "Protocol Commands and Their Arguments",
+                   "Keyed Hashing Challenge-Response
+                   Authentication Mechanism";
+<li>added "unixtime" item to Glossary topic;
+<li>corrected links in References topic.
+</ul>
+
+<dt>Rev.3, 20000731:</dt>
+<dd>
+<ul>
+<li><a href="#protocol.states.processqueue">Table 6</a> in section 6.2,
+File transfer stage has been rewritten:
+TheListOfSendFiles replaced by PendingFiles which was defined
+earlier. introduced definition of KnownFiles list. new
+ProcessTheQueue routine w/respect to handling M_GET command
+<li><a href="#protocol.commands.fname">Section 5.2, File Name Issues</a>
+was rewritten to clearly define safe and unsafe characters in filenames.
+<li><a href="#protocol.commands.nonascii">Section 5.3, Non-ASCII Characters</a>
+was rewritten to clarify Unicode usage.
+<li>Expanded descriptions for M_NUL "TIME ...", M_NUL "TRF ...", added
+description of M_NUL "PHN ..." and M_NUL "OPM ..."  frames in section
+<a href="#protocol.commands.commands">5.4 Binkp Commands</a>.
+<li>IANA port number added to <a href="#protocol.overview">section 3,
+Protocol Overview</a>.
+<li><a href="#command.M_GET">M_GET description</a> in section 5.4, Binkp
+Commands was rewritten for clarity.
+<li><a href="#command.M_BSY">M_BSY</a> "RETRY ..." option documented.
+<li>Minor edits throughout the document to improve readability.
+</ul>
+</dl>
+
+</body>
+</html>

@@ -1,0 +1,65 @@
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FTS-1029
+Revision:       1
+Title:          Binkp optional protocol extension Dataframe
+                Compression
+Authors:        Alex Shakhaylo
+Issue Date:     1 December 2005
+Review Date:    1 December 2007
+-+--------------------------------------------------------------------
+Contents:
+                1. Binkp Dataframe Compression
+                A. References
+                B. History
+-+--------------------------------------------------------------------
+
+Status of this document
+-+---------------------
+
+   This document is a Fidonet Technical Standard (FTS).
+
+   This document specifies an optional Fidonet standard protocol for
+   the Fidonet community.
+
+   This document is released to the public domain, and may be used,
+   copied or modified for any purpose whatever.
+
+
+1. Binkp Dataframe Compression
+-+----------------------------
+   A session is in PLZ mode in case the both sides set "PLZ" flag in
+   any of M_NUL "OPT" packets. This extension may be used in both
+   binkp/1.0 and binkp/1.1 protocol versions.
+
+   To compress dataframes in PLZ mode ZLib library (by Jean-loup
+   Gailly and Mark Adler) is used.
+
+   It is assumed that in PLZ mode any dataframe withing the regular
+   data exchange may be compressed with 'compress' or 'compress2'
+   methods of ZLib library. Compressed dataframes are indicated by
+   setting the second high bit of the high byte of the frame header.
+   Thus the biggest dataframe in PLZ mode cannot exceed
+   00111111 11111111 = 0x3FFF = 16383 bytes.
+
+   At any moment during a session any side may swith off PLZ mode by
+   sending M_GET command with additional parameter 'NZ' (for example:
+   M_GET "config.sys 125 2476327846 100 NZ", this command requests to
+   switch off PLZ mode and to resend "config.sys" file from offset
+   100). A position of 'NZ' additional parameter in M_GET command is
+   not fixed, because of other optional extensions which can also use
+   additional parameters.
+
+A. References
+-+-----------
+
+   [FSP-1018]
+           Binkp 1.0 Protocol specification.
+
+
+B. History
+-+--------
+
+   Rev.1, 20051201: Initial Release.

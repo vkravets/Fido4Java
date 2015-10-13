@@ -1,0 +1,201 @@
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FRL-1018
+Revision:       1
+Title:          Binkp/1.0 optional protocol extension Multiple Batch
+Authors:        Michiel Broek
+Issue Date:     1 December 2005
+Review Date:    N/A
+----------------------------------------------------------------------
+Contents:
+                1. Definitions
+                2. Binkp Multiple Batch mode
+                A. References
+                B. History
+----------------------------------------------------------------------
+
+Status of this document
+-----------------------
+
+   This document is a Fidonet Reference Library document (FRL).
+
+   This document preserves FSP-1021.001, which was not promoted to
+   Fidonet Technical Standard status for the reasons stated below.
+
+   This document is released to the public domain, and may be used,
+   copied or modified for any purpose whatever.
+
+
+Adjudication
+------------
+
+   FSP-1021 was not promoted to Fidonet Technical Standard status as
+   it describes an obsolete and accidental feature (ie. bug) in
+   certain implementations.
+
+
+1. Definitions
+--------------
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+   NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL"
+   in this document are to be interpreted as described in [FTA-1006].
+
+
+2. Binkp Multiple Batch Mode
+----------------------------
+
+   The session is in MB mode if both sides set "MB" flag in any of
+   M_NUL "OPT" packets exchanged before sending of M_OK/M_PWD packets.
+   This extension may only be used in protocol version binkp/1.0,
+   not in any later version. Since binkp/1.1 there is another method
+   to have multiple batches, this method is not compatible with the
+   MB protocol extension.
+
+   In MB mode both sides restart session from RxDone and TxDone into
+   InitTransfer state if there were any command frames sent or
+   received by any side between starting at InitTransfer and
+   exchanging of M_EOB by the sides (RxDone state). Otherwise, the
+   session terminates as usual. The new batch may not start before
+   both sides have send the M_EOB frame and have received the M_EOB
+   frame, in other words the mailer must be in the state RxDone and
+   TxDone.
+
+   Multiple batches mode is intended to handle WaZOO [FTS-0006] file
+   requests. If there were any WaZOO request files transferred in a
+   batch, sides MAY process them and send resulting files in the next
+   batch. Mailers MAY also generate list of files to send in
+   additional batches by other techniques -- including rescanning of
+   their spools or processing of other magic files transferred before
+   in the same session.
+
+
+2.1 Example of frame exchange in a simple binkp MB session
+----------------------------------------------------------
+
+   Originating side (1:1/1.1@fidonet) has file1 for answering side
+   (2:2/2.2@fidonet) and answering side has file2 for originating side
+
+   +----------------------------------------------------------------+
+   | Originating side               | Answering side                |
+   |--------------------------------+-------------------------------|
+   | M_NUL "SYS ..."                | M_NUL "SYS ..."               |
+   | M_NUL "ZYZ ..."                | M_NUL "ZYZ ..."               |
+   | M_NUL "LOC ..."                | M_NUL "LOC ..."               |
+   | M_NUL "VER ..."                | M_NUL "VER ..."               |
+   | M_NUL "OPT MB ..."             | M_NUL "OPT MB ..."            |
+   | M_ADR "1:1/1.1@fidonet"        | M_ADR "2:2/2.2@fidonet"       |
+   | M_PWD "password"               | (waiting for a password from  |
+   |                                | remote)                       |
+   |--------------------------------+-------------------------------|
+   | (waiting for password          | M_OK "secure"                 |
+   | acknowledgement)               |                               |
+   |--------------------------------+-------------------------------|
+   | (got M_OK)                     | M_FILE "file2 200 42342434 0" |
+   |--------------------------------+-------------------------------|
+   | M_FILE "file1 100 423424244 0" | data                          |
+   |--------------------------------+-------------------------------|
+   | data                           | data                          |
+   |--------------------------------+-------------------------------|
+   | data                           | data                          |
+   |--------------------------------+-------------------------------|
+   | M_EOB                          | (got file1, acknowledging it) |
+   |--------------------------------+-------------------------------|
+   | (got file2, acknowledging it)  | M_GOT "file1 100 423424244"   |
+   |--------------------------------+-------------------------------|
+   | M_GOT "file2 200 42342434"     | data                          |
+   |--------------------------------+-------------------------------|
+   |                                | M_EOB                         |
+   |--------------------------------+-------------------------------|
+   | Rescan spool                   | Rescan spool                  |
+   |--------------------------------+-------------------------------|
+   | M_EOB                          | M_EOB                         |
+   |--------------------------------+-------------------------------|
+   | Disconnect                     | Disconnet                     |
+   +----------------------------------------------------------------+
+
+
+2.2 Example of frame exchange with multiple batches
+---------------------------------------------------
+
+   Originating side (1:1/1.1@fidonet) has file request and file1 for
+   answering side (2:2/2.2@fidonet) and answering side has file2 for
+   originating side. File "freq" is a WaZoo file request. File "resp"
+   is the file that is send in response to the file request.
+
+   +----------------------------------------------------------------+
+   | Originating side               | Answering side                |
+   |--------------------------------+-------------------------------|
+   | M_NUL "SYS ..."                | M_NUL "SYS ..."               |
+   | M_NUL "ZYZ ..."                | M_NUL "ZYZ ..."               |
+   | M_NUL "LOC ..."                | M_NUL "LOC ..."               |
+   | M_NUL "VER ..."                | M_NUL "VER ..."               |
+   | M_NUL "OPT MB ..."             | M_NUL "OPT MB ..."            |
+   | M_ADR "1:1/1.1@fidonet"        | M_ADR "2:2/2.2@fidonet"       |
+   | M_PWD "password"               | (waiting for a password from  |
+   |                                | remote)                       |
+   |--------------------------------+-------------------------------|
+   | (waiting for password          | M_OK "secure"                 |
+   | acknowledgement)               |                               |
+   |--------------------------------+-------------------------------|
+   | (got M_OK)                     | M_FILE "file2 200 42342434 0" |
+   |--------------------------------+-------------------------------|
+   | M_FILE "freq 30 423424240 0"   | data                          |
+   |--------------------------------+-------------------------------|
+   | data                           | data                          |
+   |--------------------------------+-------------------------------|
+   | M_FILE "file1 100 423424244 0" | data                          |
+   |--------------------------------+-------------------------------|
+   | data                           | (got freq, acknowlediging it) |
+   |--------------------------------+-------------------------------|
+   | data                           | M_GOT "freq 30 423424240"     |
+   |--------------------------------+-------------------------------|
+   | M_EOB                          | (got file1, acknowledging it) |
+   |--------------------------------+-------------------------------|
+   | (got file2, acknowledging it)  | M_GOT "file1 100 423424244"   |
+   |--------------------------------+-------------------------------|
+   | M_GOT "file2 200 42342434"     | data                          |
+   |--------------------------------+-------------------------------|
+   |                                | M_EOB                         |
+   |--------------------------------+-------------------------------|
+   | Rescan spool                   | Respond freq, rescan spool    |
+   |--------------------------------+-------------------------------|
+   | M_EOB                          | M_FILE "resp 5000 423424248 0"|
+   |--------------------------------+-------------------------------|
+   |                                | data                          |
+   |--------------------------------+-------------------------------|
+   |                                | data                          |
+   |--------------------------------+-------------------------------|
+   | (got resp, acknowledging it)   | M_EOB                         |
+   |--------------------------------+-------------------------------|
+   | M_GOT "resp 5000 423424248"    |                               |
+   |--------------------------------+-------------------------------|
+   | Rescan spool                   | Rescan spool                  |
+   |--------------------------------+-------------------------------|
+   | M_EOB                          | M_EOB                         |
+   |--------------------------------+-------------------------------|
+   | Disconnect                     | Disconnet                     |
+   +----------------------------------------------------------------+
+
+
+A. References
+-------------
+   [FTS-0006]
+          YOOHOO and YOOHOO/2U2
+
+   [FSP-1018]
+           Binkp 1.0 Protocol specification.
+
+   [FTA-1006]
+           Key words to indicate requirement levels, Fidonet Technical
+           Standards Committee administrative. FTA-1006.
+
+B. History
+----------
+   Rev.1, 20031222:
+          First release, protocol extension separated from FSP-1011.
+
+   ------ 20051201:
+          Reassigned from FSP-1021 to FRL-1018

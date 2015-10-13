@@ -1,0 +1,100 @@
+ 
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FRL-1013
+Revision:       1
+Title:          Binkp optional protocol extension Multiple Password
+Authors:        Michiel Broek
+Issue Date:     04 Mar 2004
+Review Date:    N/A
+----------------------------------------------------------------------
+Contents:
+         1. Definitions
+         1. Binkp Multiple Passwords Mode
+         A. References
+         B. History
+----------------------------------------------------------------------
+
+Status of this document
+-----------------------
+
+   This document is a Fidonet Reference Library document (FRL).
+
+   This document arises from FSP-1011 which was rewritten and divided
+   in several documents.
+
+   The use of this extension is deprecated for the following reasons:
+
+   * This extension is not compatible with the normal way Fidonet
+     mailers do password authentication, that is use one common
+     password for all presented addresses.
+   * There are no known implementations of this extension.
+
+   This document is released to the public domain, and may be used,
+   copied or modified for any purpose whatever.
+
+
+1. Definitions
+--------------
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+   NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL"
+   in this document are to be interpreted as described in [FTA-1006].
+
+
+2. Binkp Multiple Passwords Mode
+--------------------------------
+
+   Multiple password mode allows to specify different passwords for
+   the different addresses of the remote.
+
+   Originating side identifies it's multipassword capabilities by
+   sending M_NUL "OPT MPWD" during session setup stage before sending
+   any M_ADR commands and waits for response from the answering side.
+
+   If answering side responds with the M_NUL "OPT MPWD", then it
+   supports multiply passwords too. Answering side also always
+   responds with it's own address list: M_ADR "adr1 adr2 adr3 ...". If
+   M_NUL "OPT MPWD" was not received prior to the first M_ADR command,
+   originating side should assume that the remote does not support
+   multiple password mode and send a single password (if any) for one
+   of the addresses of the remote.
+
+   If the MPWD option was indicated by the answering side, originating
+   side now may send M_PWD "pwd1 pwd2 pwd3 ..." with the number of
+   entries in space separated password list equivalent to the number
+   of addresses presented by the answering side. If there is no
+   password for a particular address, it must send '-' character as a
+   placeholder.
+
+   If the passwords presented are consistent, answering side must
+   acknowledge successful authentication by sending M_OK command.
+
+   Note.
+   -----
+   This extension cannot be used together with the optional CRAM
+   extension, that only allows one password for all aka's.
+
+
+A. References
+-------------
+
+   [FSP-1018]
+           Binkp 1.0 Protocol specification.
+
+   [FSP-1011]
+           Binkp - a protocol for transferring FidoNet mail over
+           reliable connections - D Maloff, N Soveiko, M Masiutin.
+
+   [FTA-1006]
+           Key words to indicate requirement levels, Fidonet Technical
+           Standards Committee administrative. FTA-1006.
+
+
+B. History
+----------
+
+   Rev.1, 20040304: Separated from FSP-1011 and drafted as FSP-1022,
+                    but never hatched.  Reassigned to FRL-1013.

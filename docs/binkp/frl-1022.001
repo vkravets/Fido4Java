@@ -1,0 +1,287 @@
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FRL-1022
+Revision:       1
+Title:          Binkp optional protocol extension CRC Checksum.
+Author(s):      Administrator
+Date:           2014-09-14
+
+----------------------------------------------------------------------
+
+Status of this document
+-----------------------
+
+   This document is a Fidonet Reference Library Document (FRL)
+   This document preserves FSP-1020. It is, after some minor modi-
+   fications, promoted to an FTSC standard and released as FTS-1030.
+   This document is released to the public domain, and may be used,
+   copied or modified for any purpose whatever.
+                                                                                  ====================== Original document =============================
+
+=========================== Original document ========================
+
+
+
+**********************************************************************
+FTSC                             FIDONET TECHNICAL STANDARDS COMMITTEE
+**********************************************************************
+
+Publication:    FSP-1020
+Revision:       1
+Tit1e:          Binkp optional protocol extension CRC Checksum.
+Authors:        Tobias Ernst (publisher of this protocol),
+                Michiel Broek (documentation for FTSC).
+Issue Date:     6 Jun 2005
+Review Date:    6 Jun 2007
+----------------------------------------------------------------------
+Contents:
+                1. Definitions
+                2. Binkp CRC Checksum Mode
+                   2.1 Introduction
+                   2.2 Protocol specification
+                   2.3 Further thoughts
+                   2.4 CRC-32 Algorithm
+                3. Compatibility issues
+                A. References
+                B. History
+----------------------------------------------------------------------
+
+Status of this document
+-----------------------
+
+   This document is a Fidonet Standard Proposal (FSP), issued by the
+   FTSC for the benefit of the Fidonet community.
+
+   This document specifies an optional Fidonet standard protocol for
+   the Fidonet community, and requests discussion and suggestions for
+   improvements.
+
+   This document is released to the public domain, and may be used,
+   copied or modified for any purpose whatever.
+
+   This document describes the binkp CRC option published by Tobias
+   Ernst on 12 januari 2000 (Paragraph 2). This paragraph has some
+   changes for use in ftsc documentation. 
+   The original document can be found at:
+   http://www.physcip.uni-stuttgart.de/tobi/binkd/BINKP_CRC_PROPOSAL
+
+
+1. Definitions
+--------------
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+   NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL"
+   in this document are to be interpreted as described in [FTA-1006].
+
+
+2. Binkp CRC Checksum Mode
+--------------------------
+
+2.1 Introduction
+----------------
+
+   Binkp originally was designed to work on top of a reliable
+   transmission layer, i.E. a transmission layer that has its own
+   checksums, like TCP. Therefore, the Binkp specification does not
+   provide a way for controlling correct data transfer, because
+   it is assumed that the underlying TCP transport layer does the
+   necessary data integrity checks.
+
+   However, I have seen TCP connections trashing data at random, and
+   actually have suffered from mail loss because a file received by
+   binkd was not identical with the file that the sender has
+   transmitted.
+
+   Therefore, this document specifies an extension to the Binkp
+   protocol which allows data integrity checks by means of CRC32
+   checksums. It is intended as an *optional* feature in Binkp for
+   those nodes that live in places with an unreliable TCP routing
+   structure (like I seem to do), and it is fully backwards
+   compatible.
+
+
+2.2 Protocol specification
+--------------------------
+
+   During session handshake, a mailer that knows the CRC protocol
+   extension MAY send an "M_NUL OPT CRC" message. This indicates
+   that the mailer is able to process the CRC-extended "M_FILE"
+   messages described below, nothing more.
+
+   The other end which receives the OPT CRC message will switch to
+   CRC-secure mode (probably only if CRC-secure mode has been
+   allowed by the sysop for the particluar other end). Note that
+   even if this end previously has sent a M_NUL OPT CRC on its own,
+   it is not forced to switch to CRC mode, it is just an option.
+
+   In the following, the "sending end" is the Binkp mailer which is
+   transmitting a file, and the "receiving end" is the mailer which
+   is receiving it. Of course, in a Binkp session, both sides can
+   become both sending and the receiving ends.
+
+   When the sending end is in CRC-secure mode, it will send an
+   extended M_FILE message with an additional fifth argument,
+   specifying a CCITT CRC32 checksum for the file that is following.
+   This means that the mailer has to calculate the checksum before
+   transmitting the file.
+
+   The checksum is pre-conditioned and postconditioned. This means
+   that the initial CRC-value is 0xFFFFFFFF (preconditioning), and
+   after the final value has been computed, all bits must be in-
+   verted (postconditioning).
+
+   The format of the fifth M_FILE argument is a sequence of up to
+   eight hexadecimal digits in ASCII. Leading digits may be omitted,
+   trailing digits must not be omitted.
+
+   The receiving end, if it has sent an "M_NUL OPT CRC", MUST be
+   able to process M_FILE messages with either four or five
+   arguments. If it receives a M_FILE message with five arguments,
+   it will treat the fifth argument as a checksum and, after
+   receiving the file, will compare this checksum with the checksum
+   it has computed from the data that has been received.
+
+   If the checksums disagree, the receiving end has two options. It
+   can either send a M_SKIP for this file. This will cause a
+   non-destructive reject of the file, so that the session goes on,
+   but the remote site will mark the file as not sent successfully
+   and retransmit it in the next session. Or it can send a M_ERR,
+   indicating a fatail failure, which will terminate the session,
+   and also cause a non-destructive reject of this and all following
+   files. It is suggested that on the first CRC failure, a M_SKIP
+   is sent, but if the next file also has an error, indicating that
+   the session is completely faulty, a M_ERR  could be transmitted
+   instead.
+
+
+2.3 Further thoughts
+--------------------
+
+   There are some disadvantages of this way of implementing CRC:
+
+   1. The CRC checksum must be computed before the file
+      transmission STARTS, instead of during the transmission.
+
+   2. The protocol will fail if errors don't occur spontaneous, but
+      regularly with an error rate  greater than 1 error per file. 
+      In this case, transmission will be impossible because all 
+      files will always be rejected.
+
+   Why then implement it this way? It is the easiest way to
+   implement CRC fully backwards compatible, and it is the way that
+   requries the least amount of changes in the code of existing
+   binkp mailers. Even given the mentioned disadvantages, the
+   extension is good enough for detecting spontaneous transmission
+   errors, so that sysops will not loose valuable data, and so that
+   they can see that there is a problem in the network infrastructure
+   and fix it. That is, this extension is intended as a safeguard 
+   against rare error conditions on a transport layer that still, 
+   basically, is reliable.
+
+   This extension, however, is not suitable for transmission over a
+   transport layer which is unreliable by definition, as a standard
+   modem connection. But that was not the goal of binkp from the
+   beginning.
+
+   In the future, it might be worth considering an extension to the
+   binkp protocol which goes furhter. For example, one CRC32
+   checksum could be transmitted at the end of each frame, and a
+   mechanism for directly resending frames
+
+
+2.4 CRC-32 Algorithm
+--------------------
+
+   The checksum algorithm that is used is CRC-32 following ITU-T's
+   specifications. For further information refer to the literature
+   list given below. The following pseudocode shows how to
+   calculate such a checksum for a file of N bytes indexed from 0 to
+   N-1 and stored in BUFFER. The XOR, AND and NOT logical
+   operations are to be executed bit-wise. In C, for instance, XOR
+   equals ^, AND equals &, and NOT equals ~.
+
+   // CRC, I, J, K are unsigned integers of at least 32 bits.
+   UNSIGNED LONG CRC, I, J, K
+
+   // Preconditioning
+   CRC = FFFFFFFF
+
+   // Loop through all bytes in the file
+   FOR J = 0 TO N-1
+      K = (CRC XOR BYTE#J) & 000000FF  // (*)
+      FOR I = 8 DOWNTO 1
+         IF K AND 1 <> 0
+           THEN K = (K SHR 1) XOR EDB88320
+         ELSE
+           K = K SHR 1
+         ENDIF
+      END FOR                          // (**)
+      CRC = ((CRC SHR 8) AND 00FFFFFF) XOR K
+   END FOR
+
+   // Postconditioning: Flip all bits
+   CRC = NOT CRC;
+
+   Note that as in the line marked as (*), K can initially only get
+   values in the range from 0 to 255. Therefore it is a good idea
+   to replace the inner loop over I with a lookup table routine,
+   i.E. generate a lookup table for the outcomes of K after the loop
+   with initial values of K from 0 to 255, and then replace lines
+   (*) up to and including (**) with something like
+
+    K = LOOKUPTABLE [ (CRC XOR BYTE#J) XOR 000000FF ]
+
+ Author: Tobias Ernst
+
+
+3. Compatibility issues
+-----------------------
+
+   The CRC option cannot be used together with some other options
+   which also use extra parameters with the M_FILE messages.
+
+
+A. References
+-------------
+
+   [FSP-1018]
+           Binkp 1.0 Protocol specification.
+
+   [FTA-1006]
+           Key words to indicate requirement levels, Fidonet Technical
+           Standards Committee administrative. FTA-1006.
+
+   [ITU-T V.42]
+           International Telecommunications Union, Error-correcting
+           Procedures for DCEs Using Asynchronous-to-Synchronous
+           Conversion, ITU-T Recommendation V.42, 1994, Rev. 1.
+ 
+   [ISO 3309]
+           International Organization for Standardization, 
+           "Information Processing Systems--Data Communication
+           High-Level Data Link Control Procedure--Frame Structure",
+           ISO 3309, October 1984, 3rd Edition.
+
+
+B. History
+----------
+   Rev.1, 200500606
+          First release, protocol extension published by Tobias Ernst
+          on 12 januari 2000 imported.
+
+================= End Original Document ==============================
+
+Contact Data
+------------
+
+FTSC Administrator
+Fidonet:  2:2/20
+E-mail:   administrator@ftsc.org
+
+History
+-------
+
+Rev.1,  2014-09-14: Initial release.
+
