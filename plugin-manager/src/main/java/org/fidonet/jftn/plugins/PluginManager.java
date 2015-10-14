@@ -160,7 +160,7 @@ public class PluginManager extends HasEventBus {
     public <T> WeakReference<T> getContext(String id) throws PluginException {
         Plugin plugin = plugins.get(id);
         if (plugin == null) throw new PluginException("Plugin \"" + id + "\" is not found or is not loaded");
-        WeakReference<Object> context = plugin.getContext();
-        return (WeakReference<T>) context;
+        WeakReference<T> context = (WeakReference<T>) plugin.getContext();
+        return context;
     }
 }

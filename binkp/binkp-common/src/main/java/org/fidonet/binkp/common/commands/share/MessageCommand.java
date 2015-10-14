@@ -26,22 +26,84 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands.share;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.common.protocol.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 2:27 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public abstract class MessageCommand implements Command {
+
+    protected static final Logger log = LoggerFactory.getLogger(MessageCommand.class);
+
+    protected BinkCommand commandType;
+
+    public MessageCommand(BinkCommand commandType) {
+        this.commandType = commandType;
+    }
+
+    public BinkCommand getCommandType() {
+        return commandType;
+    }
+
+    @Override
+    public abstract boolean isHandle(SessionContext sessionContext, BinkCommand command, String args);
+
+    @Override
+    public abstract void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception;
+
+    @Override
+    public void send(Session session, SessionContext sessionContext) throws Exception {
+        String cmdArgs = getCommandArguments(sessionContext);
+        log.debug("Sending message {} [{}]", BinkCommand.findCommand(commandType.getCmd()), cmdArgs);
+        session.write(getData(cmdArgs));
+    }
+
+    public abstract String getCommandArguments(SessionContext sessionContext);
+
+    public BinkFrame getData(String cmdArgs) {
+        ByteBuffer buf;
+        byte[] argsData = null;
+        if (cmdArgs != null) {
+            argsData = cmdArgs.getBytes();
+            buf = ByteBuffer.allocate(1 + argsData.length);
+        } else {
+            buf = ByteBuffer.allocate(1);
+        }
+        buf.put(commandType.getCmd());
+        if (argsData != null) {
+            buf.put(argsData);
+        }
+        int len = buf.capacity() | 0x8000;
+        return new BinkFrame((short) len, buf.array());
+    }
+
+    @Override
+    public BinkFrame getRawData() {
+        return null;
+    }
+
+    @Override
+    public boolean isCommand() {
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageCommand{" +
+                "commandType=" + commandType +
+                "isCommand=" + isCommand() +
+                '}';
+    }
 }

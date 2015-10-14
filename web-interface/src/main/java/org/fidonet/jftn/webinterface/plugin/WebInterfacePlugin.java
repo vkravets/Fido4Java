@@ -46,10 +46,10 @@ import java.lang.ref.WeakReference;
  * Date: 8/7/13
  * Time: 10:38 AM
  */
-public class WebInterfacePlugin implements Plugin {
+public class WebInterfacePlugin implements Plugin<Server> {
 
     private Server server;
-    private WeakReference<Object> context;
+    private WeakReference<Server> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -72,7 +72,7 @@ public class WebInterfacePlugin implements Plugin {
         } catch (Exception e) {
             throw new PluginException(e);
         }
-        context = new WeakReference<Object>(server);
+        context = new WeakReference<Server>(server);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class WebInterfacePlugin implements Plugin {
     }
 
     @Override
-    public WeakReference<Object> getContext() {
+    public WeakReference<Server> getContext() {
         return context;
     }
 }

@@ -35,7 +35,8 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.DataBulk;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.commands.*;
+import org.fidonet.binkp.common.commands.share.*;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
@@ -43,10 +44,7 @@ import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
-import org.fidonet.binkp.mina2.commands.*;
-import org.fidonet.binkp.mina2.commands.share.Command;
-import org.fidonet.binkp.mina2.commands.share.CommandFactory;
-import org.fidonet.binkp.mina2.commands.share.CompositeMessage;
+import org.fidonet.binkp.mina2.commons.Mina2Session;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 import org.slf4j.Logger;
@@ -103,11 +101,13 @@ public class BinkSessionHandler extends IoHandlerAdapter {
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
+        Mina2Session mina2Session = new Mina2Session(session);
+
         if (!isClient && sessionContext.isBusy()) {
             log.info("Server is busy. Sending BSY command...");
             Command bsy = new BSYCommand();
             sessionContext.setLastErrorMessage("To many connections");
-            bsy.send(session, sessionContext);
+            bsy.send(mina2Session, sessionContext);
             sessionContext.setState(SessionState.STATE_BSY);
             session.close(false);
         }
@@ -122,7 +122,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         commands.add(new ADRCommand());
 
         CompositeMessage greeting = new CompositeMessage(commands);
-        greeting.send(session, sessionContext);
+        greeting.send(mina2Session, sessionContext);
         if (!isClient) {
             log.debug("Greeting was sent. Waiting password...");
             sessionContext.setState(SessionState.STATE_WAITPWD);
@@ -141,6 +141,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         BinkFrame data = (BinkFrame) message;
         Command command = null;
         BinkData binkData = null;
+        Mina2Session mina2Session = new Mina2Session(session);
         try {
             binkData = BinkFrame.toBinkData(data);
             command = CommandFactory.createCommand(sessionContext, binkData);
@@ -149,7 +150,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             sessionContext.setState(SessionState.STATE_ERR);
             sessionContext.setLastErrorMessage(ex.getMessage());
             Command error = new ERRCommand();
-            error.send(session, sessionContext);
+            error.send(mina2Session, sessionContext);
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             session.close(false);
             throw ex;
@@ -157,7 +158,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
             log.debug("Command data: {}", new String(binkData.getData()));
-            command.handle(session, sessionContext, new String(binkData.getData()));
+            command.handle(mina2Session, sessionContext, new String(binkData.getData()));
         } else {
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
@@ -172,7 +173,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
                 info.setFinished(curSize == info.getSize());
                 if (info.isFinished()) {
                     GOTCommand confirmRecv = new GOTCommand();
-                    confirmRecv.send(session, sessionContext);
+                    confirmRecv.send(mina2Session, sessionContext);
                     eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
                     log.info("Got {} file with {} bytes file size", info.getName(), info.getSize());
                 }

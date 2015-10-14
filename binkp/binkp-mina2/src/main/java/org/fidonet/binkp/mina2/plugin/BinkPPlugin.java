@@ -44,10 +44,10 @@ import java.lang.ref.WeakReference;
  * Date: 8/6/13
  * Time: 10:44 AM
  */
-public class BinkPPlugin implements Plugin {
+public class BinkPPlugin implements Plugin<Runner> {
 
     private Runner runner;
-    private WeakReference<Object> context;
+    private WeakReference<Runner> context;
 
     public static final String BINKP_PLUGIN_ID = "binkp_mina2";
 
@@ -65,7 +65,7 @@ public class BinkPPlugin implements Plugin {
     public void load() throws PluginException {
 //        System.out.println("Load Binp0");
         runner = new Runner();
-        context = new WeakReference<Object>(runner);
+        context = new WeakReference<Runner>(runner);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class BinkPPlugin implements Plugin {
     }
 
     @Override
-    public WeakReference<Object> getContext() {
+    public WeakReference<Runner> getContext() {
         return context;
     }
 }

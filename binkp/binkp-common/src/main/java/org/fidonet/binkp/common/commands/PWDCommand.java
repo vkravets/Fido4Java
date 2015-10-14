@@ -26,22 +26,63 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.config.Password;
+import org.fidonet.binkp.common.events.ConnectedEvent;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 3:14 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class PWDCommand extends MessageCommand {
+
+    public PWDCommand() {
+        super(BinkCommand.M_PWD);
+    }
+
+    @Override
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return command.equals(BinkCommand.M_PWD);
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
+            Password password = sessionContext.getPassword();
+            Password remotePassword = new Password(commandArgs.trim(), password.isCrypt(), password.getMessageDigest(), password.getKey());
+            if (password.getText().equals(remotePassword.getText())) {
+                OKCommand ok = new OKCommand();
+                ok.send(session, sessionContext);
+                sessionContext.sendEvent(new ConnectedEvent(sessionContext));
+            } else {
+                ERRCommand error = new ERRCommand();
+                sessionContext.setState(SessionState.STATE_ERR);
+                sessionContext.setLastErrorMessage(String.format("Bad password \"%s\"", commandArgs));
+                error.send(session, sessionContext);
+                sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
+                session.close(false);
+            }
+        }
+    }
+
+    @Override
+    public String getCommandArguments(SessionContext sessionContext) {
+        return sessionContext.getPassword().getText();
+    }
+
+    @Override
+    public void send(Session session, SessionContext sessionContext) throws Exception {
+        super.send(session, sessionContext);
+        sessionContext.setState(SessionState.STATE_WAITOK);
+    }
 }

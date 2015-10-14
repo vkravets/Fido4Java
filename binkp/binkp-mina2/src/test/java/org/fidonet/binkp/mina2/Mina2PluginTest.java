@@ -26,14 +26,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.plugin;
+package org.fidonet.binkp.mina2;
 
-import org.fidonet.binkp.mina3.Runner;
-import org.fidonet.events.EventBus;
-import org.fidonet.jftn.plugins.Plugin;
+import junit.framework.TestCase;
 import org.fidonet.jftn.plugins.PluginException;
-import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.junit.Test;
 
 import java.lang.ref.WeakReference;
 
@@ -42,41 +40,29 @@ import java.lang.ref.WeakReference;
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 8/6/13
- * Time: 10:44 AM
+ * Time: 10:54 AM
  */
-public class BinkPPlugin implements Plugin<Runner> {
+public class Mina2PluginTest {
 
-    private Runner runner;
-    private WeakReference<Runner> context;
-
-    public static final String BINKP_PLUGIN_ID = "binkp_mina3";
-
-    @Override
-    public PluginInformation getPluginInfo() {
-        return new PluginInformation(BINKP_PLUGIN_ID, 1, 0, "Realization of BinkP protocol.");
-    }
-
-    @Override
-    public void init(PluginManager manager, EventBus eventBus) {
-        // Check if all plugins is exist
-    }
-
-    @Override
-    public void load() throws PluginException {
-//        System.out.println("Load Binp0");
-        runner = new Runner();
-        context = new WeakReference<Runner>(runner);
-    }
-
-    @Override
-    public void unload() throws PluginException {
-        runner.shutdown();
-        runner = null;
-        context.clear();
-    }
-
-    @Override
-    public WeakReference<Runner> getContext() {
-        return context;
+    @Test
+    public void pluginTest() throws InterruptedException {
+        PluginManager manager = PluginManager.getInstance();
+        manager.loadPlugins();
+        boolean exception = false;
+        WeakReference<Runner> binkp = null;
+        try {
+            binkp = manager.getContext("binkp_mina2");
+            TestCase.assertNotNull(binkp.get());
+        } catch (PluginException ex) {
+            exception = true;
+            ex.printStackTrace();
+        } catch (ClassCastException ex) {
+            exception = true;
+            ex.printStackTrace();
+        } finally {
+            PluginManager.getInstance().unloadPlugins();
+        }
+        TestCase.assertEquals(false, exception);
+        TestCase.assertNull(binkp.get());
     }
 }

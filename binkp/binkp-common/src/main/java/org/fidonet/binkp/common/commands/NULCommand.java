@@ -26,22 +26,56 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 5:15 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public abstract class NULCommand extends MessageCommand {
+
+    public NULCommand() {
+        super(BinkCommand.M_NUL);
+    }
+
+    protected abstract String getPrefix();
+
+    protected abstract String getArguments(SessionContext sessionContext);
+
+    protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    }
+
+    @Override
+    public String getCommandArguments(SessionContext sessionContext) {
+        String args = getArguments(sessionContext);
+        args = args == null ? "" : args;
+        if (getPrefix() != null) {
+            return String.format("%s %s", getPrefix(), args);
+        }
+        return args;
+    }
+
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return command.equals(BinkCommand.M_NUL) && args != null && args.startsWith(getPrefix());
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        String args = "";
+        if (getPrefix() != null) {
+            String safePrefix = Pattern.quote(getPrefix());
+            args = commandArgs.replaceFirst(safePrefix, "").trim();
+        }
+        handleCommand(session, sessionContext, args);
+    }
 }

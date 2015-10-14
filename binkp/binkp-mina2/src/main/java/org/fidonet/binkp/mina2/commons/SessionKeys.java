@@ -31,7 +31,7 @@ package org.fidonet.binkp.mina2.commons;
 import org.apache.mina.core.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.mina2.io.FilesSender;
+import org.fidonet.binkp.common.io.FilesSender;
 
 /**
  * Created by IntelliJ IDEA.

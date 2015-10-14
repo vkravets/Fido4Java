@@ -39,7 +39,7 @@ import java.lang.ref.WeakReference;
  * Date: 8/5/13
  * Time: 9:33 PM
  */
-public interface Plugin {
+public interface Plugin<T> {
 
      PluginInformation getPluginInfo();
 
@@ -49,5 +49,5 @@ public interface Plugin {
 
      void unload() throws PluginException;
 
-     WeakReference<Object> getContext();
+     WeakReference<T> getContext();
 }

@@ -34,7 +34,8 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.DataBulk;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.commands.BinkCommand;
+import org.fidonet.binkp.common.commands.*;
+import org.fidonet.binkp.common.commands.share.*;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
@@ -42,10 +43,7 @@ import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
-import org.fidonet.binkp.mina3.commands.*;
-import org.fidonet.binkp.mina3.commands.share.Command;
-import org.fidonet.binkp.mina3.commands.share.CommandFactory;
-import org.fidonet.binkp.mina3.commands.share.CompositeMessage;
+import org.fidonet.binkp.mina3.commons.Mina3Session;
 import org.fidonet.binkp.mina3.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 import org.slf4j.Logger;
@@ -101,12 +99,14 @@ public class BinkSessionHandler extends AbstractIoHandler {
 
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
+        Mina3Session mina3Session = new Mina3Session(session);
+
         if (!isClient && sessionContext.isBusy()) {
             log.info("Server is busy. Sending BSY command...");
             Command bsy = new BSYCommand();
             sessionContext.setLastErrorMessage("To many connections");
             try {
-                bsy.send(session, sessionContext);
+                bsy.send(mina3Session, sessionContext);
             } catch (Exception e) {
                 log.warn("Node is busy");
             }
@@ -124,7 +124,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
         commands.add(new ADRCommand());
 
         CompositeMessage greeting = new CompositeMessage(commands);
-        greeting.send(session, sessionContext);
+        greeting.send(mina3Session, sessionContext);
         if (!isClient) {
             log.debug("Greeting was sent. Waiting password...");
             sessionContext.setState(SessionState.STATE_WAITPWD);
@@ -143,6 +143,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
         BinkFrame data = (BinkFrame) message;
         Command command = null;
         BinkData binkData = null;
+        Mina3Session mina3Session = new Mina3Session(session);
         try {
             binkData = BinkFrame.toBinkData(data);
             command = CommandFactory.createCommand(sessionContext, binkData);
@@ -152,7 +153,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
             sessionContext.setLastErrorMessage(ex.getMessage());
             Command error = new ERRCommand();
             try {
-                error.send(session, sessionContext);
+                error.send(mina3Session, sessionContext);
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
             }
@@ -164,7 +165,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
             log.debug("Command data: {}", new String(binkData.getData()));
             try {
-                command.handle(session, sessionContext, new String(binkData.getData()));
+                command.handle(mina3Session, sessionContext, new String(binkData.getData()));
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
             }
@@ -187,7 +188,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
                 if (info.isFinished()) {
                     GOTCommand confirmRecv = new GOTCommand();
                     try {
-                        confirmRecv.send(session, sessionContext);
+                        confirmRecv.send(mina3Session, sessionContext);
                     } catch (Exception e) {
                         log.warn(e.getMessage(), e);
                     }

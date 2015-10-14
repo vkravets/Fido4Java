@@ -43,7 +43,7 @@ import java.lang.ref.WeakReference;
  * Date: 8/7/13
  * Time: 1:43 PM
  */
-public abstract class PluginMock implements Plugin {
+public abstract class PluginMock implements Plugin<Object> {
     @Override
     public abstract PluginInformation getPluginInfo();
 

@@ -26,22 +26,36 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 5:09 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class TRFCommand extends NULCommand {
+
+    @Override
+    public String getArguments(SessionContext sessionContext) {
+        return String.format("%s %s", sessionContext.getSendMailSize(), sessionContext.getSendFilesSize());
+    }
+
+    @Override
+    protected String getPrefix() {
+        return "TRF";
+    }
+
+    @Override
+    public void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        String[] token = commandArgs.split(" ");
+        if (token.length != 2)
+            throw new UnsupportedOperationException("Invalid TRF command arguments");
+        sessionContext.setRecvMailSize(Long.valueOf(token[0]));
+        sessionContext.setRecvFilesSize(Long.valueOf(token[1]));
+    }
 }

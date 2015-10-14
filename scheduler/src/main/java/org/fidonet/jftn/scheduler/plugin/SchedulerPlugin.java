@@ -44,10 +44,10 @@ import java.lang.ref.WeakReference;
  * Date: 8/6/13
  * Time: 2:46 PM
  */
-public class SchedulerPlugin implements Plugin {
+public class SchedulerPlugin implements Plugin<Scheduler> {
 
     private Scheduler scheduler;
-    private WeakReference<Object> context;
+    private WeakReference<Scheduler> context;
 
     public static final String SCHEDULER_PLUGIN_ID = "schedule";
 
@@ -63,7 +63,7 @@ public class SchedulerPlugin implements Plugin {
     @Override
     public void load() throws PluginException {
         scheduler = new Scheduler();
-        context = new WeakReference<Object>(scheduler);
+        context = new WeakReference<Scheduler>(scheduler);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class SchedulerPlugin implements Plugin {
     }
 
     @Override
-    public WeakReference<Object> getContext() {
+    public WeakReference<Scheduler> getContext() {
         return context;
     }
 }

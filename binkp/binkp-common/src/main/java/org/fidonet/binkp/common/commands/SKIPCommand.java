@@ -26,22 +26,51 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.io.OutputStream;
+import java.net.ProtocolException;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/25/12
+ * Time: 2:35 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class SKIPCommand extends MessageCommand {
+
+    public SKIPCommand() {
+        super(BinkCommand.M_SKIP);
+    }
+
+    @Override
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return command.equals(BinkCommand.M_SKIP) && args != null && args.length() > 0;
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        FilesSender filesSender = session.getFileSender();
+        FileInfo info = FileInfo.parseFileInfo(commandArgs);
+        filesSender.skip(info, false);
+    }
+
+    @Override
+    public String getCommandArguments(SessionContext sessionContext) {
+        FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
+        if (fileData != null) {
+            FileInfo info = fileData.getInfo();
+            return String.format("%s %s %s", info.getName(), info.getSize(), info.getTimestamp());
+        }
+        throw new RuntimeException(new ProtocolException("Cannot send SKIP command without metadata"));
+    }
 }

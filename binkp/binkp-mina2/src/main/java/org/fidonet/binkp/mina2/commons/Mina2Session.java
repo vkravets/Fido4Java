@@ -26,22 +26,57 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.mina2.commons;
 
-import org.apache.mina.session.AttributeKey;
-import org.fidonet.binkp.common.SessionContext;
+import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 10/14/15
+ * Time: 1:00 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+
+public class Mina2Session implements Session {
+
+    private IoSession session;
+
+
+    public Mina2Session(IoSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void write(Object message) {
+        session.write(message);
+    }
+
+    @Override
+    public void close(boolean close) {
+        session.close(close);
+    }
+
+    @Override
+    public FilesSender getFileSender() {
+        return (FilesSender) session.getAttribute(SessionKeys.FILESENDER_KEY);
+    }
+
+    @Override
+    public void setFileSender(FilesSender filesSender) {
+        session.setAttribute(SessionKeys.FILESENDER_KEY, filesSender);
+    }
+
+    @Override
+    public TrafficCrypter getTrafficCrypter() {
+        return (TrafficCrypter) session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
+    }
+
+    @Override
+    public void setTrafficCrypter(TrafficCrypter trafficCrypter) {
+        session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, trafficCrypter);
+    }
 }

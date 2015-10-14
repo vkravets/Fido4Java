@@ -95,7 +95,7 @@ public class TestReloadScript {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
         try {
-            scriptManager.registerScript("script1", script1.intern(), new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            scriptManager.registerScript("script1", script1, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -128,7 +128,7 @@ public class TestReloadScript {
 
 
         try {
-            scriptManager.registerScript("script1", script2.intern(), new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            scriptManager.registerScript("script1", script2, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }

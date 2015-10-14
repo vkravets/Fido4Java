@@ -28,20 +28,50 @@
 
 package org.fidonet.binkp.mina3.commons;
 
+import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
-import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
- * Created by IntelliJ IDEA.
- * Author: Vladimir Kravets
- * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Created by vkravets on 14.10.15.
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class Mina3Session implements Session {
+
+    private IoSession session;
+
+    public Mina3Session(IoSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void write(Object message) {
+        session.write(message);
+    }
+
+    @Override
+    public void close(boolean close) {
+        session.close(close);
+    }
+
+    @Override
+    public FilesSender getFileSender() {
+        return session.getAttribute(SessionKeys.FILESENDER_KEY);
+    }
+
+    @Override
+    public void setFileSender(FilesSender filesSender) {
+        session.setAttribute(SessionKeys.FILESENDER_KEY, filesSender);
+    }
+
+    @Override
+    public TrafficCrypter getTrafficCrypter() {
+        return session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
+    }
+
+    @Override
+    public void setTrafficCrypter(TrafficCrypter trafficCrypter) {
+        session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, trafficCrypter);
+    }
 }

@@ -26,22 +26,58 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands.share;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/20/12
+ * Time: 11:06 AM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class CompositeMessage implements Command {
+
+    private List<MessageCommand> commands;
+
+    public CompositeMessage(List<MessageCommand> commands) {
+        this.commands = commands;
+    }
+
+    @Override
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return false;
+    }
+
+    @Override
+    public void send(Session session, SessionContext sessionContext) {
+        List<BinkFrame> frames = new ArrayList<BinkFrame>();
+
+        for (MessageCommand command : commands) {
+            frames.add(command.getData(command.getCommandArguments(sessionContext)));
+        }
+        for (BinkFrame frame : frames) {
+            session.write(frame);
+        }
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) {
+    }
+
+    @Override
+    public BinkFrame getRawData() {
+        return null;
+    }
+
+    @Override
+    public boolean isCommand() {
+        return false;
+    }
 }

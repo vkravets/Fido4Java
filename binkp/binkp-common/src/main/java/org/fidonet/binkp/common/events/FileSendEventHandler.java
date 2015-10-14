@@ -39,7 +39,7 @@ import org.fidonet.events.AbstractEventHandler;
  * Date: 1/17/14
  * Time: 12:06 AM
  */
-public abstract class FileSendEventHandler extends AbstractEventHandler {
+public abstract class FileSendEventHandler extends AbstractEventHandler<FileSendEvent> {
 
     @Handler(rejectSubtypes = true, delivery = Invoke.Asynchronously)
     public void handle(FileSendEvent event) {

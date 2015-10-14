@@ -26,22 +26,51 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
-
-import org.apache.mina.session.AttributeKey;
-import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+package org.fidonet.binkp.common.commands.share;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/24/12
+ * Time: 11:10 AM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public enum BinkCommand {
+
+    M_NUL((byte) 0),
+    M_ADR((byte) 1),
+    M_PWD((byte) 2),
+    M_FILE((byte) 3),
+    M_OK((byte) 4),
+    M_EOB((byte) 5),
+    M_GOT((byte) 6),
+    M_ERR((byte) 7),
+    M_BSY((byte) 8),
+    M_GET((byte) 9),
+    M_SKIP((byte) 10),
+    M_PROCESS_FILE((byte) 99);
+
+    private byte cmd;
+
+    BinkCommand(byte cmd) {
+        this.cmd = cmd;
+    }
+
+    public byte getCmd() {
+        return cmd;
+    }
+
+    public static BinkCommand findCommand(byte cmd) {
+        for (BinkCommand command : BinkCommand.values()) {
+            if (command.getCmd() == cmd) {
+                return command;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return this.name();
+    }
 }

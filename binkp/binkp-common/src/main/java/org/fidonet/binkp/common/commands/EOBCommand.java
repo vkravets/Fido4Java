@@ -26,22 +26,54 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.commands.share.Command;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 3:14 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class EOBCommand extends MessageCommand {
+
+    public EOBCommand() {
+        super(BinkCommand.M_EOB);
+    }
+
+    @Override
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return (command.equals(BinkCommand.M_EOB));
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        sessionContext.setReceivingIsFinish(true);
+        if (sessionContext.isSendingIsFinish()) {
+            Command eob = new EOBCommand();
+            eob.send(session, sessionContext);
+            sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
+            if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
+                log.debug("CLIENT MODE! Mark session as finished");
+                sessionContext.setState(SessionState.STATE_END);
+            } else {
+                log.debug("Close session");
+                session.close(false);
+            }
+        }
+    }
+
+    @Override
+    public String getCommandArguments(SessionContext sessionContext) {
+        return null;
+    }
 }

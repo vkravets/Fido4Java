@@ -26,22 +26,69 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.io.OutputStream;
+import java.util.Deque;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 6:19 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class GETCommand extends MessageCommand {
+
+    public GETCommand() {
+        super(BinkCommand.M_GET);
+    }
+
+    @Override
+    public boolean isHandle(SessionContext sessionContext, BinkCommand command, String args) {
+        return command.equals(BinkCommand.M_GET) && args != null && args.length() > 0;
+    }
+
+    @Override
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+        final FilesSender filesSender = session.getFileSender();
+        if (filesSender != null) {
+            final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+            if (sessionContext.getState().equals(SessionState.STATE_WAITGET)) {
+                Thread sendFileBegin = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            filesSender.getExchanger().exchange(fileInfo);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                });
+                sendFileBegin.start();
+                sendFileBegin.join();
+            } else {
+                filesSender.skip(fileInfo, true);
+            }
+        }
+    }
+
+    @Override
+    public String getCommandArguments(SessionContext sessionContext) {
+        Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
+        FileData curFile = receivedFiles.peek();
+        if (curFile != null) {
+            FileInfo info = curFile.getInfo();
+            return String.format("%s %s %s %s", info.getName(), info.getSize(), info.getTimestamp(), info.getCurSize());
+        }
+        return null;
+    }
 }

@@ -46,11 +46,11 @@ import java.sql.SQLException;
  * Date: 8/7/13
  * Time: 9:53 AM
  */
-public class DatabasePlugin implements Plugin {
+public class DatabasePlugin implements Plugin<DatabaseManager> {
 
     private DatabaseManager manager;
     private String databaseUrl;
-    private WeakReference<Object> context;
+    private WeakReference<DatabaseManager> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -75,7 +75,7 @@ public class DatabasePlugin implements Plugin {
         }
 
         manager = new DatabaseManager(ormManager);
-        context = new WeakReference<Object>(manager);
+        context = new WeakReference<DatabaseManager>(manager);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class DatabasePlugin implements Plugin {
     }
 
     @Override
-    public WeakReference<Object> getContext() {
+    public WeakReference<DatabaseManager> getContext() {
         return context;
     }
 }

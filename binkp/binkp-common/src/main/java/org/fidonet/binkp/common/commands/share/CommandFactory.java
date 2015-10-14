@@ -26,22 +26,71 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.mina3.commons;
+package org.fidonet.binkp.common.commands.share;
 
-import org.apache.mina.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.commands.*;
+import org.fidonet.binkp.common.io.BinkData;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 4/24/14
- * Time: 1:44 AM
+ * Date: 9/19/12
+ * Time: 3:53 PM
  */
-public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");
+public class CommandFactory {
+
+    private static List<Command> commands;
+
+    public static Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {
+        if (data.isCommand()) {
+            String argsStr = new String(data.getData());
+            BinkCommand command = BinkCommand.findCommand(data.getCommand());
+            if (command != null)
+                return createCommand(sessionContext, command, argsStr);
+        }
+        return null;
+    }
+
+    public static Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args) throws UnknownCommandException {
+        for (Command command : getCommandsList()) {
+            if (command.isHandle(sessionContext, cmd, args)) {
+                return command;
+            }
+        }
+        String msg = String.format("Command[%s %s] is not found! ", cmd, args);
+        throw new UnknownCommandException(msg);
+    }
+
+    private static List<Command> getCommandsList() {
+        if (commands == null) {
+            commands = new LinkedList<Command>();
+            commands.add(new ADRCommand());
+            commands.add(new BSYCommand());
+            commands.add(new EOBCommand());
+            commands.add(new ERRCommand());
+            commands.add(new FILECommand());
+            commands.add(new GETCommand());
+            commands.add(new GOTCommand());
+            commands.add(new LOCCommand());
+            commands.add(new NDLCommand());
+            commands.add(new OKCommand());
+            commands.add(new PWDCommand());
+            commands.add(new SYSCommand());
+            commands.add(new TIMECommand());
+            commands.add(new VERCommand());
+            commands.add(new ZYZCommand());
+            commands.add(new OPTCommand());
+            commands.add(new TRFCommand());
+            commands.add(new LogCommand());
+            commands.add(new SKIPCommand());
+        }
+        return commands;
+    }
 }
