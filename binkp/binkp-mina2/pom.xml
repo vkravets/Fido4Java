@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ~ Copyright (c) 2012-2015, Vladimir Kravets                                 ~
+  ~ Copyright (c) 2012-2016, Vladimir Kravets                                 ~
   ~ All rights reserved.                                                      ~
   ~                                                                           ~
   ~ Redistribution and use in source and binary forms, with or without        ~
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
-            <version>2.0.7</version>
+            <version>2.0.13</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
@@ -71,8 +71,8 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
