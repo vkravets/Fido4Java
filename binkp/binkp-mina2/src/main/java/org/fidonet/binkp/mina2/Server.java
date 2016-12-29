@@ -113,6 +113,10 @@ public class Server extends Connector {
 
             @Override
             public void sessionDestroyed(IoSession session) throws Exception {
+            }
+
+            @Override
+            public void sessionClosed(IoSession session) throws Exception {
                 SessionContext sessionContext = (SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
                 if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                         sessionContext.getState().equals(SessionState.STATE_BSY)) {
