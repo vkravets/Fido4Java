@@ -2,9 +2,12 @@ node {
   stage("Checkout") {
     checkout scm
   }
-  stage("Build") {
-    withMaven {
-      sh "mvn clean install"
+  withMaven {
+    stage("Build") {
+      sh "mvn clean install -Dmaven.test.skip=true"
+    }
+    stage("Test") {
+      sh "mvn test"
     }
   }
 }
