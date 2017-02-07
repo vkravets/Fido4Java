@@ -1,8 +1,6 @@
 JFtn v0.1
 =========
 
-[![Build Status](https://www.cloudbees.com/sites/default/files/Button-Built-on-CB-1.png)](http://fido4java.ci.cloudbees.com/)
-
 ### BUILD STATUS: 
 Travis: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
 
