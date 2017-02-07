@@ -3,6 +3,8 @@ node {
     checkout scm
   }
   stage("Build") {
-    echo "test"
+    withMaven {
+      sh "mvn clean install"
+    }
   }
 }
