@@ -4,7 +4,7 @@ def emailNotification() {
                                  [$class: 'DevelopersRecipientProvider'],
                                  [$class: 'RequesterRecipientProvider']])
     String currentResult = currentBuild.result
-    String previousResult = currentBuild.getPreviousBuild().result
+    String previousResult = currentBuild.getPreviousBuild() != null ? currentBuild.getPreviousBuild().result : 'SUCCESS'
 
     def causes = currentBuild.rawBuild.getCauses()
     // E.g. 'started by user', 'triggered by scm change'
