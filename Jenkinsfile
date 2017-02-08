@@ -29,9 +29,6 @@ node {
                 [$class: 'DevelopersRecipientProvider'],
                 [$class: 'RequesterRecipientProvider']
         ])
-
-        echo recipients
-
         step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: recipients, sendToIndividuals: true])
     }
 }
