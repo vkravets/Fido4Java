@@ -66,11 +66,8 @@ public class TestServer {
     @Before
     public void setUp() {
 
-        try {
-            bind_ip = System.getenv("RPC_BIND_IP");
-        } catch (Exception _) {
-            bind_ip = DEFAULT_TEST_SERVER_IP;
-        }
+        bind_ip = System.getenv("RPC_BIND_IP");
+        bind_ip = bind_ip.isEmpty() ? DEFAULT_TEST_SERVER_IP : bind_ip;
 
         server = new Server(TEST_SERVER_PORT, bind_ip, new ServerHandlerTestMock());
         server.run();
