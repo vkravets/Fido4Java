@@ -117,7 +117,7 @@ public class TestServer {
     public void testASyncClient() {
         try {
 
-            for (int k = 0; k < 200; k++) {
+            for (int k = 0; k < 100; k++) {
                 final int i = k;
                 TNonblockingSocket transportApi = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
                 Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
