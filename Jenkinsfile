@@ -2,7 +2,7 @@ node {
   stage("Checkout") {
     checkout scm
   }
-  withMaven(mavenOpts: '-Xmx200m') {
+  withMaven {
     stage("Build") {
       sh "mvn clean install -Dmaven.test.skip=true"
     }
