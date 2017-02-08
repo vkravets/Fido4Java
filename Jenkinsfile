@@ -7,7 +7,9 @@ node {
       sh "mvn clean install -Dmaven.test.skip=true"
     }
     stage("Test") {
-      sh "mvn test"
+      withEnv(['RPC_BIND_IP=$OPENSHIFT_JENKINS_IP']) {
+        sh "mvn test"
+      }
     }
   }
 }

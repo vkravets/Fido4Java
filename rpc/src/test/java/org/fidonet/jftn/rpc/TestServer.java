@@ -56,13 +56,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestServer {
 
     private Server server;
-    private static final int TEST_SERVER_PORT = 30001;
+    private static final int TEST_SERVER_PORT = 15001;
+    private static final String DEFAULT_TEST_SERVER_IP = "127.0.0.1";
     private final static AtomicInteger pingCurIndex = new AtomicInteger(0);
     private final static AtomicInteger loginCurIndex = new AtomicInteger(0);
+    private String bind_ip;
 
     @Before
     public void setUp() {
-        server = new Server(TEST_SERVER_PORT, new ServerHandlerTestMock());
+
+        try {
+            bind_ip = System.getenv("RPC_BIND_IP");
+        } catch (Exception _) {
+            bind_ip = DEFAULT_TEST_SERVER_IP;
+        }
+
+        server = new Server(TEST_SERVER_PORT, bind_ip, new ServerHandlerTestMock());
         server.run();
         System.out.println("Server Started");
     }
@@ -82,7 +91,7 @@ public class TestServer {
     public void testServerAndClient() {
         TTransport transport = null;
         try {
-            transport = new TFramedTransport(new TSocket("127.0.0.1", TEST_SERVER_PORT));
+            transport = new TFramedTransport(new TSocket(bind_ip, TEST_SERVER_PORT));
             TProtocol protocol = new TBinaryProtocol(transport);
             TMultiplexedProtocol apiProtocol = new TMultiplexedProtocol(protocol, "api");
             TMultiplexedProtocol loginProtocol = new TMultiplexedProtocol(protocol, "login");
@@ -110,7 +119,7 @@ public class TestServer {
 
             for (int k = 0; k < 200; k++) {
                 final int i = k;
-                TNonblockingSocket transportApi = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
+                TNonblockingSocket transportApi = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
                 Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
                         new TMultiplexedProtocolFactory("api"),
                         new TAsyncClientManager(),
@@ -137,7 +146,7 @@ public class TestServer {
                 });
 
 
-                TNonblockingSocket transportLogin = new TNonblockingSocket("127.0.0.1", TEST_SERVER_PORT);
+                TNonblockingSocket transportLogin = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
                 LoginService.AsyncClient loginAsyncClient = new LoginService.AsyncClient(
                         new TMultiplexedProtocolFactory("login"),
                         new TAsyncClientManager(),

@@ -57,26 +57,27 @@ public class Server {
     private ServerHandler serverHandler;
 
     private static final int DEFAULT_PORT = 9090;
+    private static final String DEFAULT_BIND_IP = "127.0.0.1";
 
     public Server() {
         this(DEFAULT_PORT);
     }
 
     public Server(int port) {
-        this(port, new DefaultServerHandler());
+        this(port, DEFAULT_BIND_IP, new DefaultServerHandler());
     }
 
     public Server(ServerHandler handler) {
-        this(DEFAULT_PORT, handler);
+        this(DEFAULT_PORT, DEFAULT_BIND_IP, handler);
     }
 
-    public Server(int port, ServerHandler handler) {
+    public Server(int port, String bind_ip, ServerHandler handler) {
         this.port = port;
         this.serverHandler = handler;
-        createServer();
+        createServer(bind_ip);
     }
 
-    private void createServer() {
+    private void createServer(String bind_ip) {
         Api.Processor<Api.Iface> apiProcessor = new Api.Processor<Api.Iface>(serverHandler.getApiHandler());
         LoginService.Processor<LoginService.Iface> loginProcessor = new LoginService.Processor<LoginService.Iface>(serverHandler.getLoginHandler());
         MessageService.Processor<MessageService.Iface> messageProcessor = new MessageService.Processor<MessageService.Iface>(serverHandler.getMessageHandler());
@@ -89,7 +90,7 @@ public class Server {
         multiplexedProcessor.registerProcessor("statistics", statisticProcessor);
 
         try {
-            TNonblockingServerTransport transport = new TNonblockingServerSocket(new InetSocketAddress("127.0.0.1", this.port));
+            TNonblockingServerTransport transport = new TNonblockingServerSocket(new InetSocketAddress(bind_ip, this.port));
             TProtocolFactory factory = new TBinaryProtocol.Factory();
             server = new TNonblockingServer(new TNonblockingServer.Args(transport).processor(multiplexedProcessor).protocolFactory(factory));
         } catch (TTransportException e) {
