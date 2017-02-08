@@ -58,6 +58,7 @@ public class TestServer {
     private Server server;
     private static final int TEST_SERVER_PORT = 15001;
     private static final String DEFAULT_TEST_SERVER_IP = "127.0.0.1";
+    private static final int TEST_THREAD_NUMBER = 100;
     private final static AtomicInteger pingCurIndex = new AtomicInteger(0);
     private final static AtomicInteger loginCurIndex = new AtomicInteger(0);
     private String bind_ip;
@@ -117,7 +118,7 @@ public class TestServer {
     public void testASyncClient() {
         try {
 
-            for (int k = 0; k < 100; k++) {
+            for (int k = 0; k < TEST_THREAD_NUMBER; k++) {
                 final int i = k;
                 TNonblockingSocket transportApi = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
                 Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
@@ -177,8 +178,8 @@ public class TestServer {
                 Thread.sleep(10);
             }
             Thread.sleep(1000);
-            TestCase.assertEquals(loginCurIndex.get(), 200);
-            TestCase.assertEquals(pingCurIndex.get(), 200);
+            TestCase.assertEquals(loginCurIndex.get(), TEST_THREAD_NUMBER);
+            TestCase.assertEquals(pingCurIndex.get(), TEST_THREAD_NUMBER);
         } catch (TException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
