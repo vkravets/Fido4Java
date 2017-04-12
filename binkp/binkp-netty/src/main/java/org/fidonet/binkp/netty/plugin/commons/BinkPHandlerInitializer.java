@@ -26,25 +26,41 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.commons;
+
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.socket.SocketChannel;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
+import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
+import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
+
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/11/17
+ * Time: 21:35
  */
-public class DataReader {
+public class BinkPHandlerInitializer extends ChannelInitializer<SocketChannel> {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+    private ChannelInboundHandler sessionHandler;
+
+    public BinkPHandlerInitializer(ChannelInboundHandler sessionHandler) {
+        this.sessionHandler = sessionHandler;
     }
 
+    @Override
+    protected void initChannel(SocketChannel ch) throws Exception {
+        ChannelPipeline pipeline = ch.pipeline();
+
+        pipeline.addLast(new TrafficCrypterCodec());
+        pipeline.addLast(new BinkDataDecoder());
+        pipeline.addLast(new BinkDataEncoder());
+        pipeline.addLast(sessionHandler);
+    }
 }

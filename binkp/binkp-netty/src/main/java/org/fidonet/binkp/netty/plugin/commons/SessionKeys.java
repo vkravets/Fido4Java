@@ -26,25 +26,22 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.commons;
+
+import io.netty.util.AttributeKey;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.io.FilesSender;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/24/14
+ * Time: 1:44 AM
  */
-public class DataReader {
-
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
-    }
-
+public class SessionKeys {
+    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = AttributeKey.<TrafficCrypter>newInstance(TrafficCrypter.class.getName() + ".KEY");
+    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = AttributeKey.<SessionContext>newInstance(SessionContext.class.getName() + ".CONTEXT");
+    public static final AttributeKey<FilesSender> FILESENDER_KEY = AttributeKey.<FilesSender>newInstance(FilesSender.class.getName() + ".KEY");
 }

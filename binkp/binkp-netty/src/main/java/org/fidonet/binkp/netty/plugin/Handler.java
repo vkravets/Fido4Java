@@ -26,25 +26,14 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/11/17
+ * Time: 21:40
  */
-public class DataReader {
-
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
-    }
-
+public class Handler {
 }

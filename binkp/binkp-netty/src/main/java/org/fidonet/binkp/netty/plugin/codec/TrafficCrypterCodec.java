@@ -26,25 +26,52 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.codec;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageCodec;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
+
+import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/14/14
+ * Time: 9:56 AM
  */
-public class DataReader {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+/**
+ * This class control decrypt process for received data,
+ * crypt process during sending data controls by last encoder
+ */
+public class TrafficCrypterCodec extends ByteToMessageCodec<ByteBuf> {
+
+    @Override
+    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+        TrafficCrypter trafficCrypter = ctx.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).get();
+        byte[] array = new byte[msg.readableBytes()];
+        msg.readBytes(array);
+        trafficCrypter.encrypt(array, array.length);
+        out.writeBytes(array);
     }
 
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        if (in.readableBytes() > 0) {
+            TrafficCrypter trafficCrypter = ctx.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).get();
+            byte[] array = new byte[in.readableBytes()];
+            ByteBuf buf = Unpooled.buffer(array.length);
+            in.readBytes(array);
+            trafficCrypter.decrypt(array, array.length);
+            buf.writeBytes(array);
+            out.add(buf);
+        }
+
+    }
 }

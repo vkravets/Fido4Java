@@ -26,25 +26,30 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.codec;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToByteEncoder;
+import org.fidonet.binkp.common.io.BinkFrame;
+
+import java.nio.ByteBuffer;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 9/19/12
- * Time: 6:58 PM
+ * Time: 1:20 PM
  */
-public class DataReader {
+public class BinkDataEncoder extends MessageToByteEncoder<BinkFrame> {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+    @Override
+    protected void encode(ChannelHandlerContext ctx, BinkFrame msg, ByteBuf out) throws Exception {
+        ByteBuf buf = Unpooled.buffer(msg.getData().length + 2);
+        buf.writeShort(msg.getDataInfo());
+        buf.writeBytes(msg.getData());
+        out.writeBytes(buf);
     }
-
 }

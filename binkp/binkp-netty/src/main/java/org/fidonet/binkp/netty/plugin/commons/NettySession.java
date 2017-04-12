@@ -26,25 +26,56 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.commons;
+
+import io.netty.channel.ChannelHandlerContext;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/11/17
+ * Time: 23:12
  */
-public class DataReader {
+public class NettySession implements Session {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+    private ChannelHandlerContext context;
+
+    public NettySession(ChannelHandlerContext context) {
+        this.context = context;
     }
 
+    @Override
+    public void write(Object message) {
+        context.channel().write(message);
+        context.channel().flush();
+    }
+
+    @Override
+    public void close(boolean close) {
+        context.channel().close();
+    }
+
+    @Override
+    public FilesSender getFileSender() {
+        return context.channel().attr(SessionKeys.FILESENDER_KEY).get();
+    }
+
+    @Override
+    public void setFileSender(FilesSender filesSender) {
+        context.channel().attr(SessionKeys.FILESENDER_KEY).set(filesSender);
+    }
+
+    @Override
+    public TrafficCrypter getTrafficCrypter() {
+        return context.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).get();
+    }
+
+    @Override
+    public void setTrafficCrypter(TrafficCrypter trafficCrypter) {
+        context.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(trafficCrypter);
+    }
 }

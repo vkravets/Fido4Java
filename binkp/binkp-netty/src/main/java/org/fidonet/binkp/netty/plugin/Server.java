@@ -26,25 +26,53 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.netty.plugin.commons.BinkPHandlerInitializer;
+import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 4/11/17
+ * Time: 21:22
  */
-public class DataReader {
+public class Server extends Connector {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+    private Integer port;
+
+    public Server(Integer port) {
+        this.port = port;
     }
 
+    public void run(SessionContext context) throws InterruptedException {
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .childHandler(new BinkPHandlerInitializer(new BinkServerSessionHandler(context, getEventBus())));
+
+            b.bind(port).sync().channel().closeFuture().sync();
+        } finally {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+
+    }
+
+    public void stop() {
+
+    }
 }

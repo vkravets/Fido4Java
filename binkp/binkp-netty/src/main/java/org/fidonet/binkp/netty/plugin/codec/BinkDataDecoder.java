@@ -26,25 +26,45 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin.codec;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import org.fidonet.binkp.common.codec.DataInfo;
+import org.fidonet.binkp.common.codec.DataReader;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.io.BinkData;
+import org.fidonet.binkp.common.io.BinkFrame;
+
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
  * Date: 9/19/12
- * Time: 6:58 PM
+ * Time: 1:20 PM
  */
-public class DataReader {
+public class BinkDataDecoder extends ByteToMessageDecoder {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
+    private final static int HEADER_SIZE = 2;
+
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        if (in.readableBytes() < HEADER_SIZE) {
+            return;
         }
-        return null;
-    }
 
+        short dataInfoRaw = in.getShort(0);
+        DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
+
+        if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
+            return;
+        }
+        in.skipBytes(2);
+        byte[] buf = new byte[dataInfo.getSize()];
+        in.readBytes(buf).retain();
+        out.add(new BinkFrame(dataInfoRaw, buf));
+    }
 }

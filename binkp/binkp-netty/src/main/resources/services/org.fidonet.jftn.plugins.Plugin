@@ -26,4 +26,4 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-org.fidonet.binkp.mina3.plugin.BinkPPlugin
+org.fidonet.binkp.netty.plugin.NettyPlugin

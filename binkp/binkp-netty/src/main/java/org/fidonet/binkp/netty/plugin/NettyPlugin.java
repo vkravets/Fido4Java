@@ -26,25 +26,63 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.netty.plugin;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 04/11/17
+ * Time: 8:22 PM
  */
-public class DataReader {
+import org.fidonet.events.EventBus;
+import org.fidonet.jftn.plugins.Plugin;
+import org.fidonet.jftn.plugins.PluginException;
+import org.fidonet.jftn.plugins.PluginInformation;
+import org.fidonet.jftn.plugins.PluginManager;
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+import java.lang.ref.WeakReference;
+
+/**
+ * Created by IntelliJ IDEA.
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 8/6/13
+ * Time: 10:44 AM
+ */
+public class NettyPlugin implements Plugin<Runner> {
+
+    private Runner runner;
+    private WeakReference<Runner> context;
+
+    public static final String BINKP_PLUGIN_ID = "binkp_netty";
+
+    @Override
+    public PluginInformation getPluginInfo() {
+        return new PluginInformation(BINKP_PLUGIN_ID, 1, 0, "Realization of BinkP protocol.");
     }
 
+    @Override
+    public void init(PluginManager manager, EventBus eventBus) {
+        // Check if all plugins is exist
+    }
+
+    @Override
+    public void load() throws PluginException {
+//        System.out.println("Load Binp0");
+        runner = new Runner();
+        context = new WeakReference<Runner>(runner);
+    }
+
+    @Override
+    public void unload() throws PluginException {
+        runner.shutdown();
+        runner = null;
+        context.clear();
+    }
+
+    @Override
+    public WeakReference<Runner> getContext() {
+        return context;
+    }
 }
