@@ -31,6 +31,8 @@ package org.fidonet.binkp.common.commands.share;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.protocol.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.List;
  * Time: 11:06 AM
  */
 public class CompositeMessage implements Command {
+    protected static final Logger log = LoggerFactory.getLogger(CompositeMessage.class);
 
     private List<MessageCommand> commands;
 
@@ -57,10 +60,12 @@ public class CompositeMessage implements Command {
 
     @Override
     public void send(Session session, SessionContext sessionContext) {
-        List<BinkFrame> frames = new ArrayList<BinkFrame>();
+        final List<BinkFrame> frames = new ArrayList<BinkFrame>();
 
         for (MessageCommand command : commands) {
-            frames.add(command.getData(command.getCommandArguments(sessionContext)));
+            final String commandArguments = command.getCommandArguments(sessionContext);
+            log.debug("Send command: {}", commandArguments);
+            frames.add(command.getData(commandArguments));
         }
         for (BinkFrame frame : frames) {
             session.write(frame);

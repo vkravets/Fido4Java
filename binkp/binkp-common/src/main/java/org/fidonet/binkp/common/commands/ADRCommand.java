@@ -63,36 +63,34 @@ public class ADRCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
-            Command pwd = new PWDCommand();
+            final Command pwd = new PWDCommand();
             pwd.send(session, sessionContext);
         } else {
             // in case if we are server set to session context curent link
-            LinksInfo linksInfo = sessionContext.getLinksInfo();
-            if (linksInfo.getCurLink() != null) {
-                sessionContext.setLastErrorMessage(linksInfo.getCurLink().getAddr().as4D());
-                Command busy = new BSYCommand();
-                busy.send(session, sessionContext);
+            final LinksInfo linksInfo = sessionContext.getLinksInfo();
+            commandArgs = commandArgs.trim();
+            final String[] tokens = commandArgs.split(" ");
+            boolean wait_pwd = false;
+            for (String token : tokens) {
+                FTNAddr linkAddr = new FTNAddr(token);
+                if (linksInfo.setCurLink(linkAddr)) {
+                    sessionContext.setState(SessionState.STATE_WAITPWD);
+                    wait_pwd = true;
+                    break;
+                }
+            }
+            if (!wait_pwd) {
+                sessionContext.setState(SessionState.STATE_ERR);
+                Command error = new ERRCommand();
+                String msg = "Link with address [%s] is not register on the node";
+                sessionContext.setLastErrorMessage(String.format(msg, commandArgs));
+                error.send(session, sessionContext);
+                sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
+                session.close(false);
             } else {
-                commandArgs = commandArgs.trim();
-                String[] tokens = commandArgs.split(" ");
-                boolean wait_pwd = false;
-                for (String token : tokens) {
-                    FTNAddr linkAddr = new FTNAddr(token);
-                    if (linksInfo.setCurLink(linkAddr)) {
-                        sessionContext.setState(SessionState.STATE_WAITPWD);
-                        wait_pwd = true;
-                        break;
-                    }
-                }
-                if (!wait_pwd) {
-                    sessionContext.setState(SessionState.STATE_ERR);
-                    Command error = new ERRCommand();
-                    String msg = "Link with address [%s] is not register on the node";
-                    sessionContext.setLastErrorMessage(String.format(msg, commandArgs));
-                    error.send(session, sessionContext);
-                    sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
-                    session.close(false);
-                }
+                // Send traffic information
+                final Command traffic = new TRFCommand();
+                traffic.send(session, sessionContext);
             }
         }
 

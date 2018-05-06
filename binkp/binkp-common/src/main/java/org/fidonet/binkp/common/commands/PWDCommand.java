@@ -29,13 +29,19 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionHelper;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.events.ConnectedEvent;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
+
+import java.io.InputStream;
+import java.util.Deque;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,11 +65,30 @@ public class PWDCommand extends MessageCommand {
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
-            Password remotePassword = new Password(commandArgs.trim(), password.isCrypt(), password.getMessageDigest(), password.getKey());
-            if (password.getText().equals(remotePassword.getText())) {
+            final String passwordString = commandArgs.trim();
+            if (passwordString.startsWith("CRAM") && sessionContext.isCryptMode()) {
+                password.setCrypt(true);
+                password.setMd(sessionContext.getMessageDigest());
+                password.setKey(sessionContext.getPasswordKey());
+            }
+            if (password.getText().equals(passwordString)) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
+
+                boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
+                log.debug("MD5: {}", isMD5);
+                if (sessionContext.isCryptMode()) {
+                    log.info("Setting incoming/oncoming message crypt");
+                    SessionHelper.setSessionSecurity(session, sessionContext);
+                }
+
                 sessionContext.sendEvent(new ConnectedEvent(sessionContext));
+                Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
+                // Run thread to sending files in client mode
+                FilesSender filesSender = new FilesSender(session, files, sessionContext);
+                session.setFileSender(filesSender);
+                Thread sendFiles = new Thread(filesSender);
+                sendFiles.start();
             } else {
                 ERRCommand error = new ERRCommand();
                 sessionContext.setState(SessionState.STATE_ERR);

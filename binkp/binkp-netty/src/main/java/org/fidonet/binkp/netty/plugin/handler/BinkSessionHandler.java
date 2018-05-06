@@ -36,10 +36,12 @@ import org.fidonet.binkp.common.codec.DataBulk;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.commands.ADRCommand;
 import org.fidonet.binkp.common.commands.BSYCommand;
+import org.fidonet.binkp.common.commands.CramOPTCommand;
 import org.fidonet.binkp.common.commands.ERRCommand;
 import org.fidonet.binkp.common.commands.GOTCommand;
 import org.fidonet.binkp.common.commands.LOCCommand;
 import org.fidonet.binkp.common.commands.NDLCommand;
+import org.fidonet.binkp.common.commands.OPTCommand;
 import org.fidonet.binkp.common.commands.SYSCommand;
 import org.fidonet.binkp.common.commands.TIMECommand;
 import org.fidonet.binkp.common.commands.VERCommand;
@@ -64,6 +66,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,21 +100,21 @@ public class BinkSessionHandler extends
     }
 
     private SessionContext getSessionContext(ChannelHandlerContext session) {
-        if (sessionContext != null) {
-            return sessionContext;
-        } else {
-            return session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get();
-        }
+        return session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get();
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext session) throws Exception {
-        SessionContext sessionContext = getSessionContext(session);
-        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
-
+    public void channelActive(ChannelHandlerContext session) throws NoSuchAlgorithmException {
         session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).set(sessionContext);
         session.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
 
+        SessionContext sessionContext = getSessionContext(session);
+        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
+
+        sendGreeting(session, sessionContext);
+    }
+
+    protected void sendGreeting(ChannelHandlerContext session, SessionContext sessionContext) throws NoSuchAlgorithmException {
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
         NettySession nettySession = new NettySession(session);
@@ -127,8 +131,14 @@ public class BinkSessionHandler extends
             sessionContext.setState(SessionState.STATE_BSY);
 //            session.close(false);
         }
+        final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        sessionContext.setMessageDigest(messageDigest);
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
+        if (sessionContext.getServerRole().equals(ServerRole.SERVER)) {
+            commands.add(new CramOPTCommand(sessionContext.getMessageDigest()));
+        }
+        commands.add(new OPTCommand());
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
         commands.add(new LOCCommand());
@@ -143,7 +153,6 @@ public class BinkSessionHandler extends
             log.debug("Greeting was sent. Waiting password...");
             sessionContext.setState(SessionState.STATE_WAITPWD);
         }
-
     }
 
     @Override
@@ -154,7 +163,7 @@ public class BinkSessionHandler extends
         NettySession nettySession = new NettySession(ctx);
         try {
             binkData = BinkFrame.toBinkData(data);
-            command = CommandFactory.createCommand(sessionContext, binkData);
+            command = new CommandFactory().createCommand(sessionContext, binkData);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             sessionContext.setState(SessionState.STATE_ERR);

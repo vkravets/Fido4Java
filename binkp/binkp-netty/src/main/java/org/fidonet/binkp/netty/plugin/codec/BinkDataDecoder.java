@@ -33,8 +33,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.fidonet.binkp.common.codec.DataInfo;
 import org.fidonet.binkp.common.codec.DataReader;
-import org.fidonet.binkp.common.commands.share.BinkCommand;
-import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 
 import java.util.List;
@@ -56,14 +54,14 @@ public class BinkDataDecoder extends ByteToMessageDecoder {
             return;
         }
 
-        short dataInfoRaw = in.getShort(0);
-        DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
+        short dataInfoRaw = in.getShort(in.readerIndex());
+        final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
 
         if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
             return;
         }
         in.skipBytes(2);
-        byte[] buf = new byte[dataInfo.getSize()];
+        final byte[] buf = new byte[dataInfo.getSize()];
         in.readBytes(buf).retain();
         out.add(new BinkFrame(dataInfoRaw, buf));
     }

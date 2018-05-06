@@ -31,6 +31,7 @@ package org.fidonet.binkp.common.io;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.DataBulk;
+import org.fidonet.binkp.common.commands.EOBCommand;
 import org.fidonet.binkp.common.commands.FILECommand;
 import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.protocol.Session;
@@ -69,7 +70,7 @@ public class FilesSender<T extends Session> implements Runnable {
     }
 
     public boolean send(FileData<InputStream> data) throws Exception {
-        DataInputStream reader = new DataInputStream(data.getStream());
+        final DataInputStream reader = new DataInputStream(data.getStream());
         FileInfo fileInfo = data.getInfo();
         if (fileInfo.getOffset() >= 0) {
             if (fileInfo.getOffset() <= fileInfo.getSize()) {
@@ -84,14 +85,14 @@ public class FilesSender<T extends Session> implements Runnable {
             fileInfo = exchanger.exchange(fileInfo);
             System.out.println(fileInfo);
         }
-        byte[] buf = new byte[FILE_BLOCK_SIZE];
+        final byte[] buf = new byte[FILE_BLOCK_SIZE];
         int read = reader.read(buf);
         long fileSize = 0;
         while (read != -1) {
             if (data.getInfo().isShouldSkip()) {
                 return false;
             }
-            DataBulk dataBulk = new DataBulk(buf, read);
+            final DataBulk dataBulk = new DataBulk(buf, read);
             session.write(dataBulk.getRawData());
             fileSize += read;
             data.getInfo().setCurSize(fileSize);
@@ -106,7 +107,7 @@ public class FilesSender<T extends Session> implements Runnable {
         sessionContext.setState(SessionState.STATE_TRANSFER);
         try {
             while (!files.isEmpty()) {
-                Command file = new FILECommand();
+                final Command file = new FILECommand();
                 file.send(session, sessionContext);
                 curFile = files.poll();
                 try {
@@ -115,8 +116,8 @@ public class FilesSender<T extends Session> implements Runnable {
                     logger.error("Unable to sent file {}", curFile.getInfo().toString());
                 }
             }
-//            Command eob = new EOBCommand();
-//            eob.send(session, sessionContext);
+            final Command eob = new EOBCommand();
+            eob.send(session, sessionContext);
             sessionContext.setSendingIsFinish(true);
         } catch (Exception e) {
             logger.error("Unable to send files", e);

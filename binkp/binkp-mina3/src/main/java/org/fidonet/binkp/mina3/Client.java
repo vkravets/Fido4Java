@@ -32,6 +32,7 @@ import org.apache.mina.api.IoFuture;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.nio.NioTcpClient;
+import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
@@ -55,7 +56,7 @@ import java.util.concurrent.ExecutionException;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Client extends Connector {
+public class Client extends ClientConnector {
     private int connectionTimeout = 30 * 1000;
 
     private NioTcpClient connector;
@@ -77,12 +78,12 @@ public class Client extends Connector {
         sessionContext.setServerRole(ServerRole.CLIENT);
         connector = new NioTcpClient();
         connector.setConnectTimeoutMillis(connectionTimeout);
-        TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
-        ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter = new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
+        final TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
+        final ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter = new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
         connector.setFilters(crypterFilter, bikpProtocolFilter);
         connector.setIoHandler(new BinkSessionHandler(sessionContext, getEventBus()));
-        String hostname = link.getHostAddress();
-        int port = link.getPort() != 0 ? link.getPort() : Connector.BINK_PORT;
+        final String hostname = link.getHostAddress();
+        final int port = link.getPort() != 0 ? link.getPort() : Connector.BINK_PORT;
         IoFuture<IoSession> connection = connector.connect(new InetSocketAddress(hostname, port));
         try {
             session = connection.get();
@@ -100,7 +101,7 @@ public class Client extends Connector {
 
     public void stop() {
         if (session != null && !(session.isClosing() || session.isClosed())) {
-            IoFuture<Void> close = session.close(true);
+            final IoFuture<Void> close = session.close(true);
             try {
                 close.get();
             } catch (InterruptedException e) {

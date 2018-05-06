@@ -42,6 +42,8 @@ public class TRFCommand extends NULCommand {
 
     @Override
     public String getArguments(SessionContext sessionContext) {
+        final long total = sessionContext.getSendMailSize() + sessionContext.getSendFilesSize();
+        sessionContext.setSendingIsFinish(total == 0);
         return String.format("%s %s", sessionContext.getSendMailSize(), sessionContext.getSendFilesSize());
     }
 

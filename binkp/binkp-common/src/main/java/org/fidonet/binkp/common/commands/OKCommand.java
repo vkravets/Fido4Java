@@ -29,12 +29,13 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionHelper;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
+import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.events.ConnectedEvent;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
@@ -67,12 +68,17 @@ public class OKCommand extends MessageCommand {
         }
 
         sessionContext.setState(SessionState.STATE_IDLE);
-
         sessionContext.sendEvent(new ConnectedEvent(sessionContext));
 
-        // Password was right init file sending
-        Command traffic = new TRFCommand();
-        traffic.send(session, sessionContext);
+        if (sessionContext.isSecureSession()) {
+            final Password password = sessionContext.getPassword();
+            final boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
+            log.debug("MD5: {}", isMD5);
+            if (sessionContext.isCryptMode()) {
+                log.info("Setting incoming/oncoming message crypt...");
+                SessionHelper.setSessionSecurity(session, sessionContext);
+            }
+        }
 
         Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
         // Run thread to sending files in client mode
@@ -84,10 +90,17 @@ public class OKCommand extends MessageCommand {
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        if (sessionContext.getPassword() != null) {
-            return "secure";
+        String mode = "none";
+        String secureMessage;
+        final Password password = sessionContext.getPassword();
+        if (password != null) {
+            secureMessage = "secure";
+            mode = password.isCrypt() ? password.getMessageDigest().getAlgorithm() : "plain-text";
         }
-        return "insecure";
+        else {
+            secureMessage = "insecure";
+        }
+        return String.format("%s (%s)", secureMessage, mode);
     }
 
 }

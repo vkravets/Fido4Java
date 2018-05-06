@@ -44,6 +44,7 @@ public class Link {
     private String hostAddress;
     private int port;
     private String boxPath;
+    private boolean isMD;
 
     public Link(FTNAddr addr, List<FTNAddr> myaddrs, String pass, String hostAddress, int port) {
         this.addr = addr;
@@ -126,5 +127,18 @@ public class Link {
 
     public void setBoxPath(String boxPath) {
         this.boxPath = boxPath;
+    }
+
+    public boolean isMD() {
+        return isMD;
+    }
+
+    public void setMD(boolean MD) {
+        isMD = MD;
+    }
+
+    public Link withMD(Boolean isMD) {
+        this.setMD(isMD);
+        return this;
     }
 }

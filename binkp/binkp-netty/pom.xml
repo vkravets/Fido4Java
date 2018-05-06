@@ -43,6 +43,10 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <netty.version>4.1.24.Final</netty.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.fidonet</groupId>
@@ -55,17 +59,17 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport</artifactId>
-            <version>4.1.9.Final</version>
+            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>4.1.9.Final</version>
+            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-common</artifactId>
-            <version>4.1.9.Final</version>
+            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fidonet.jftn</groupId>
@@ -99,6 +103,13 @@
             <groupId>org.fidonet.binkp</groupId>
             <artifactId>binkp-common</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.fidonet.binkp</groupId>
+            <artifactId>binkp-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

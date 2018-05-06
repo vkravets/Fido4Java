@@ -109,7 +109,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             sessionContext.setLastErrorMessage("To many connections");
             bsy.send(mina2Session, sessionContext);
             sessionContext.setState(SessionState.STATE_BSY);
-            session.close(false);
+            session.closeOnFlush();
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
@@ -139,12 +139,12 @@ public class BinkSessionHandler extends IoHandlerAdapter {
     public void messageReceived(IoSession session, Object message) throws Exception {
         SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
-        Command command = null;
-        BinkData binkData = null;
+        Command command;
+        BinkData binkData;
         Mina2Session mina2Session = new Mina2Session(session);
         try {
             binkData = BinkFrame.toBinkData(data);
-            command = CommandFactory.createCommand(sessionContext, binkData);
+            command = new CommandFactory().createCommand(sessionContext, binkData);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             sessionContext.setState(SessionState.STATE_ERR);
@@ -152,7 +152,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             Command error = new ERRCommand();
             error.send(mina2Session, sessionContext);
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
-            session.close(false);
+            session.closeOnFlush();
             throw ex;
         }
         if (command != null) {

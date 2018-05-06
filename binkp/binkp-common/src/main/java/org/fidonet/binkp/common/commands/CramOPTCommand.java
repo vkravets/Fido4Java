@@ -53,12 +53,16 @@ public class CramOPTCommand extends OPTCommand {
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        byte[] bufKey = messageDigest.digest();
-        StringBuilder builder = new StringBuilder();
+        if (!sessionContext.getLinksInfo().getCurLink().isMD()) {
+            return null;
+        }
+        final byte[] bufKey = messageDigest.digest();
+        final StringBuilder builder = new StringBuilder();
         for (int i = 0; i < 16; i++) {
             builder.append(String.format("%02x", bufKey[i]));
         }
-        String key = builder.toString();
+        final String key = builder.toString();
+        sessionContext.setPasswordKey(key);
         return String.format("CRAM-%s-%s", messageDigest.getAlgorithm(), key);
     }
 }

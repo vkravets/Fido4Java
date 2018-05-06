@@ -29,15 +29,15 @@
 package org.fidonet.binkp.netty.plugin.handler;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 import org.fidonet.types.FTNAddr;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -62,27 +62,25 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext session) {
-
-        SessionContext sessionContext = new SessionContext(this.sessionContext);
+    public void channelActive(ChannelHandlerContext session) throws NoSuchAlgorithmException {
+        final SessionContext sessionContext = new SessionContext(this.sessionContext);
         sessionContext.getLinksInfo().setCurLink(new FTNAddr(sessionContext.getStationConfig().getAddress()));
         sessionContext.setBusy(this.sessionContext.isBusy());
         sessionContext.setServerRole(ServerRole.SERVER);
         session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).set(sessionContext);
-        this.sessionContext = sessionContext;
-        //session.getRemoteAddress()
+        session.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
         synchronized (userConnected) {
             userConnected.set(userConnected.incrementAndGet());
         }
         if (!this.sessionContext.isBusy() && userConnected.get() > MAX_USER_CONNECTED) {
             this.sessionContext.setBusy(true);
         }
+        sendGreeting(session, sessionContext);
     }
-
 
     @Override
     public void channelUnregistered(ChannelHandlerContext session) throws Exception {
-        SessionContext sessionContext = session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get();
+        final SessionContext sessionContext = session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get();
         if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
                 sessionContext.getState().equals(SessionState.STATE_BSY)) {
             log.warn("Client close with error: {}", sessionContext.getLastErrorMessage());

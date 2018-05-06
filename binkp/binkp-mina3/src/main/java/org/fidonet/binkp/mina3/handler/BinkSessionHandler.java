@@ -146,7 +146,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
         Mina3Session mina3Session = new Mina3Session(session);
         try {
             binkData = BinkFrame.toBinkData(data);
-            command = CommandFactory.createCommand(sessionContext, binkData);
+            command = new CommandFactory().createCommand(sessionContext, binkData);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             sessionContext.setState(SessionState.STATE_ERR);
