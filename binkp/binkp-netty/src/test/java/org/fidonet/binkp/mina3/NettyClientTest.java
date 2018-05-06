@@ -72,7 +72,8 @@ public class NettyClientTest extends HasEventBus {
 
     @Before
     public void setUp() throws Exception {
-        StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        final StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        config.setCryptMode(true);
         final FTNAddr node = new FTNAddr("2:467/110");
         LinksInfo linksInfo = new LinksInfo(
                 new LinkedList<Link>() {
@@ -84,7 +85,7 @@ public class NettyClientTest extends HasEventBus {
                                             }
                                         },
                                         "pass_i_f", "localhost", 24554
-                                )
+                                ).withMD(true)
                         );
                     }
                 }
@@ -113,6 +114,7 @@ public class NettyClientTest extends HasEventBus {
                     .addLast(new BinkDataEncoder())
                     .addLast(new BinkSessionHandler(sessionContext, getEventBus()));
             sessionContext.setState(SessionState.STATE_IDLE);
+            session.attr(SessionKeys.SESSION_CONTEXT_KEY).set(sessionContext);
             session.attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
         }
 
@@ -126,7 +128,7 @@ public class NettyClientTest extends HasEventBus {
         }
 
         public void writeStreamToSession(InputStream stream) throws Exception {
-            int bufSize = 10;
+            int bufSize = 5;
             int size = 0;
             byte[] bytes = new byte[bufSize];
             while ((size = stream.read(bytes)) != -1) {
@@ -134,7 +136,7 @@ public class NettyClientTest extends HasEventBus {
                 buf.writeBytes(bytes, 0, size);
                 session.writeInbound(buf);
                 session.readInbound();
-                Thread.sleep(100);
+                Thread.sleep(20);
             }
             Thread.sleep(1000);
             sessionContext.setState(SessionState.STATE_END);

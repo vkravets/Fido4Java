@@ -61,7 +61,9 @@ public class OPTCommand extends NULCommand {
     protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         String[] tokens = commandArgs.trim().split(" ");
         for (String token : tokens) {
-            if (token.startsWith("CRAM") && sessionContext.getStationConfig().isCryptMode()) {
+            if (token.startsWith("CRAM")
+                    && sessionContext.getStationConfig().isCryptMode()
+                    && sessionContext.getLinksInfo().getCurLink().isMD()) {
                 String[] cramTokens = commandArgs.split("-");
                 String cryptType = cramTokens[1];
                 MessageDigest md = MessageDigest.getInstance(cryptType);

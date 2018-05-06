@@ -189,7 +189,7 @@ public class BinkSessionHandler extends
         } else {
             // try to get data bulk
             DataBulk dataFile = new DataBulk(binkData.getData());
-            log.debug("Received data block with size {}bytes", dataFile.getRawData().getData().length);
+            log.debug("Received data block with size {} bytes", dataFile.getRawData().getData().length);
             FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
             if (fileData != null) {
                 FileInfo info = fileData.getInfo();

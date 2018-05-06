@@ -57,7 +57,7 @@ public class NettyServerTest extends AbstractServerTest {
     @Rule
     public ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT), this.sessionContext);
 
-    @Test
+    @Test(timeout = 30000)
     public void Test() throws Exception {
         final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost");
         uplink.setMD(true);
