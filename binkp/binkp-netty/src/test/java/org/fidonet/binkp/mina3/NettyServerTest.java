@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, Vladimir Kravets
+ * Copyright (c) 2012-2018, Vladimir Kravets
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,43 +26,61 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.netty.plugin.codec;
+package org.fidonet.binkp.mina3;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
-import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.LinksInfo;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.config.StationConfig;
+import org.fidonet.binkp.netty.plugin.Client;
+import org.fidonet.binkp.netty.plugin.Server;
+import org.fidonet.binkp.test.AbstractServerTest;
+import org.fidonet.binkp.test.ServerRule;
+import org.fidonet.types.Link;
+import org.junit.Rule;
+import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 1:20 PM
+ * Date: 5/5/18
+ * Time: 23:09
  */
-public class BinkDataDecoder extends ByteToMessageDecoder {
 
-    private final static int HEADER_SIZE = 2;
 
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < HEADER_SIZE) {
-            return;
+public class NettyServerTest extends AbstractServerTest {
+
+    @Rule
+    public ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT), this.sessionContext);
+
+    @Test
+    public void Test() throws Exception {
+        final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost");
+        uplink.setMD(true);
+        Client client = new Client(uplink, 10);
+        final StationConfig stationConfig = new StationConfig("Test",
+                "Test Test",
+                "Odessa,UA",
+                "BINKP",
+                "2:467/10.1");
+        stationConfig.setCryptMode(true);
+//        stationConfig.setNRMode(true);
+        final List<Link> links = new ArrayList<Link>();
+        links.add(uplink);
+
+        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        try {
+            client.run(sessionContext);
+            if (client.isConnect()) {
+                waitSessionFinish(sessionContext);
+            }
         }
-
-        short dataInfoRaw = in.getShort(in.readerIndex());
-        final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
-
-        if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
-            return;
+        finally {
+            client.stop();
         }
-        in.skipBytes(2);
-        final byte[] buf = new byte[dataInfo.getSize()];
-        in.readBytes(buf).retain();
-        out.add(new BinkFrame(dataInfoRaw, buf));
     }
 }

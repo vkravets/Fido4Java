@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, Vladimir Kravets
+ * Copyright (c) 2012-2018, Vladimir Kravets
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,43 +26,31 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.netty.plugin.codec;
+package org.fidonet.binkp.common;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
-import org.fidonet.binkp.common.io.BinkFrame;
-
-import java.util.List;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.config.Password;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.crypt.StandardDecrypt;
+import org.fidonet.binkp.common.crypt.StandardEncrypt;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 1:20 PM
+ * Date: 5/6/18
+ * Time: 21:37
  */
-public class BinkDataDecoder extends ByteToMessageDecoder {
+public class SessionHelper {
 
-    private final static int HEADER_SIZE = 2;
-
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < HEADER_SIZE) {
-            return;
-        }
-
-        short dataInfoRaw = in.getShort(in.readerIndex());
-        final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
-
-        if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
-            return;
-        }
-        in.skipBytes(2);
-        final byte[] buf = new byte[dataInfo.getSize()];
-        in.readBytes(buf).retain();
-        out.add(new BinkFrame(dataInfoRaw, buf));
+    public static void setSessionSecurity(Session session, SessionContext sessionContext) {
+        final TrafficCrypter trafficCrypter = session.getTrafficCrypter();
+        final Password password = sessionContext.getPassword();
+        final char[] pass = password.getPassword().toCharArray();
+        final boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
+        trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
+        trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
     }
+
 }

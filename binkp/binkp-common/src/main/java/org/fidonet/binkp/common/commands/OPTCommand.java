@@ -29,12 +29,7 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.Password;
-import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.common.crypt.StandardDecrypt;
-import org.fidonet.binkp.common.crypt.StandardEncrypt;
-import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.protocol.Session;
 
 import java.security.MessageDigest;
@@ -66,7 +61,7 @@ public class OPTCommand extends NULCommand {
     protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         String[] tokens = commandArgs.trim().split(" ");
         for (String token : tokens) {
-            if (token.startsWith("CRAM")) {
+            if (token.startsWith("CRAM") && sessionContext.getStationConfig().isCryptMode()) {
                 String[] cramTokens = commandArgs.split("-");
                 String cryptType = cramTokens[1];
                 MessageDigest md = MessageDigest.getInstance(cryptType);
@@ -74,22 +69,17 @@ public class OPTCommand extends NULCommand {
                 password.setCrypt(true);
                 password.setMd(md);
                 password.setKey(cramTokens[2]);
-                Command opt_md5 = new CramOPTCommand(MessageDigest.getInstance("MD5"));
-                opt_md5.send(session, sessionContext);
             } else if (token.equals("NR")) {
                 sessionContext.setNRMode(true);
             } else if (token.equals("CRYPT")) {
-                sessionContext.setCryptMode(true);
-                Password password = sessionContext.getPassword();
-                boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
-                if (isMD5) {
-                    TrafficCrypter trafficCrypter = session.getTrafficCrypter();
-                    char[] pass = password.getPassword().toCharArray();
-                    boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
-                    trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
-                    trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
+                if (sessionContext.getStationConfig().isCryptMode()) {
+                    sessionContext.setCryptMode(true);
+                    log.info("Remote requests CRYPT mode");
                 }
-                log.info("Remote requests CRYPT mode");
+                else {
+                    sessionContext.setCryptMode(false);
+                    log.info("Ignore CRYPT mode, doesn't support");
+                }
             }
         }
     }

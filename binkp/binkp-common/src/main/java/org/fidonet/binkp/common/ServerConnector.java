@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, Vladimir Kravets
+ * Copyright (c) 2012-2018, Vladimir Kravets
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,43 +26,13 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.netty.plugin.codec;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
-import org.fidonet.binkp.common.io.BinkFrame;
-
-import java.util.List;
+package org.fidonet.binkp.common;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 1:20 PM
+ * Date: 5/5/18
+ * Time: 22:55
  */
-public class BinkDataDecoder extends ByteToMessageDecoder {
-
-    private final static int HEADER_SIZE = 2;
-
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < HEADER_SIZE) {
-            return;
-        }
-
-        short dataInfoRaw = in.getShort(in.readerIndex());
-        final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
-
-        if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
-            return;
-        }
-        in.skipBytes(2);
-        final byte[] buf = new byte[dataInfo.getSize()];
-        in.readBytes(buf).retain();
-        out.add(new BinkFrame(dataInfoRaw, buf));
-    }
-}
+public abstract class ServerConnector extends Connector { }

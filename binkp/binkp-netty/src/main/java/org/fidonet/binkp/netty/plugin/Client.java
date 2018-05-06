@@ -30,26 +30,18 @@ package org.fidonet.binkp.netty.plugin;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.netty.plugin.commons.BinkPHandlerInitializer;
 import org.fidonet.binkp.netty.plugin.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -58,7 +50,7 @@ import java.util.concurrent.ExecutionException;
  * Date: 4/11/17
  * Time: 21:22
  */
-public class Client extends Connector {
+public class Client extends ClientConnector {
     private int connectionTimeout = 30 * 1000;
 
     private EventLoopGroup connector;

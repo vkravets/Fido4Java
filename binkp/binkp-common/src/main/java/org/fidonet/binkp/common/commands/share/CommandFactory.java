@@ -31,7 +31,6 @@ package org.fidonet.binkp.common.commands.share;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.commands.*;
 import org.fidonet.binkp.common.io.BinkData;
-import org.fidonet.binkp.common.protocol.Session;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -46,9 +45,9 @@ import java.util.List;
  */
 public class CommandFactory {
 
-    private static List<Command> commands;
+    private List<Command> commands;
 
-    public static Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {
+    public Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {
         if (data.isCommand()) {
             String argsStr = new String(data.getData());
             BinkCommand command = BinkCommand.findCommand(data.getCommand());
@@ -58,7 +57,7 @@ public class CommandFactory {
         return null;
     }
 
-    public static Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args) throws UnknownCommandException {
+    public Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args) throws UnknownCommandException {
         for (Command command : getCommandsList()) {
             if (command.isHandle(sessionContext, cmd, args)) {
                 return command;
@@ -68,7 +67,7 @@ public class CommandFactory {
         throw new UnknownCommandException(msg);
     }
 
-    private static List<Command> getCommandsList() {
+    private List<Command> getCommandsList() {
         if (commands == null) {
             commands = new LinkedList<Command>();
             commands.add(new ADRCommand());

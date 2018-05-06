@@ -30,14 +30,13 @@ package org.fidonet.binkp.mina3;
 
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.nio.NioTcpServer;
-import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
 import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
 import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina3.handler.BinkServerSessionHandler;
-import org.fidonet.binkp.mina3.handler.BinkSessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +51,7 @@ import java.nio.ByteBuffer;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Server extends Connector {
+public class Server extends ServerConnector {
 
     private NioTcpServer acceptor;
     private int port = BINK_PORT;

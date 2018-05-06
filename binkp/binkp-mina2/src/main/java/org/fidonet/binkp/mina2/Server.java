@@ -34,7 +34,7 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
-import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.ServerRole;
@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Server extends Connector {
+public class Server extends ServerConnector {
 
     private NioSocketAcceptor acceptor;
     private int port = BINK_PORT;

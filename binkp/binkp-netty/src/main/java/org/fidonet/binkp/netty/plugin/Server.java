@@ -34,7 +34,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.fidonet.binkp.common.Connector;
+import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.netty.plugin.commons.BinkPHandlerInitializer;
 import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
@@ -46,7 +46,7 @@ import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
  * Date: 4/11/17
  * Time: 21:22
  */
-public class Server extends Connector {
+public class Server extends ServerConnector {
 
     private Integer port;
 

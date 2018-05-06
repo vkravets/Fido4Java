@@ -39,6 +39,7 @@ import org.fidonet.types.Link;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -86,6 +87,8 @@ public class SessionContext extends HasEventBus {
 
     private boolean isSecureSession = false;
     private Password password;
+    private MessageDigest messageDigest;
+    private String passwordKey;
     private String logMessage;
 
     private boolean nrMode = false;
@@ -217,6 +220,22 @@ public class SessionContext extends HasEventBus {
             return new Password(link.getPass());
         }
         return null;
+    }
+
+    public MessageDigest getMessageDigest() {
+        return messageDigest;
+    }
+
+    public void setMessageDigest(MessageDigest messageDigest) {
+        this.messageDigest = messageDigest;
+    }
+
+    public String getPasswordKey() {
+        return passwordKey;
+    }
+
+    public void setPasswordKey(String passwordKey) {
+        this.passwordKey = passwordKey;
     }
 
     public String getLogMessage() {

@@ -32,6 +32,7 @@ import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
@@ -50,7 +51,7 @@ import java.net.InetSocketAddress;
  * Date: 9/19/12
  * Time: 2:02 PM
  */
-public class Client extends Connector {
+public class Client extends ClientConnector {
     private long connectionTimeout = 30 * 1000L;
 
     private NioSocketConnector connector;
