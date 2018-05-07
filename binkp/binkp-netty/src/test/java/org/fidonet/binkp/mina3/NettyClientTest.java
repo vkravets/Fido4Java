@@ -30,9 +30,7 @@ package org.fidonet.binkp.mina3;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;

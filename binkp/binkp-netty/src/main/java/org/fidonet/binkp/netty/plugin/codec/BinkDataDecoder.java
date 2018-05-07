@@ -30,7 +30,7 @@ package org.fidonet.binkp.netty.plugin.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.ReplayingDecoder;
 import org.fidonet.binkp.common.codec.DataInfo;
 import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
@@ -44,25 +44,35 @@ import java.util.List;
  * Date: 9/19/12
  * Time: 1:20 PM
  */
-public class BinkDataDecoder extends ByteToMessageDecoder {
+public class BinkDataDecoder extends ReplayingDecoder<BinkDataDecoder.State> {
 
-    private final static int HEADER_SIZE = 2;
+    private short dataInfoRaw;
+
+    public BinkDataDecoder() {
+        super(State.READ_LENGTH);
+    }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < HEADER_SIZE) {
-            return;
+        switch (state()) {
+            case READ_LENGTH:
+                dataInfoRaw = in.readShort();
+                checkpoint(State.READ_CONTENT);
+                break;
+            case READ_CONTENT:
+                final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
+                byte[] buf = new byte[dataInfo.getSize()];
+                in.readBytes(buf);
+                checkpoint(State.READ_LENGTH);
+                out.add(new BinkFrame(dataInfoRaw, buf));
+                break;
+            default:
+                    throw new Error("Shouldn't reach here!");
         }
+    }
 
-        short dataInfoRaw = in.getShort(in.readerIndex());
-        final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
-
-        if (dataInfo == null || in.readableBytes() < dataInfo.getSize() + 2) {
-            return;
-        }
-        in.skipBytes(2);
-        final byte[] buf = new byte[dataInfo.getSize()];
-        in.readBytes(buf).retain();
-        out.add(new BinkFrame(dataInfoRaw, buf));
+    public enum State {
+        READ_LENGTH,
+        READ_CONTENT
     }
 }
