@@ -29,14 +29,19 @@
 package org.fidonet.binkp.netty.plugin;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.netty.plugin.commons.BinkPHandlerInitializer;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
+import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
 import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
 
 /**
@@ -48,31 +53,42 @@ import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
  */
 public class Server extends ServerConnector {
 
-    private Integer port;
+    private final Integer port;
+    private final EventLoopGroup bossGroup;
+    private final EventLoopGroup workerGroup;
 
     public Server(Integer port) {
         this.port = port;
+        this.bossGroup = new NioEventLoopGroup();
+        this.workerGroup = new NioEventLoopGroup();
     }
 
-    public void run(SessionContext context) throws InterruptedException {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+    public void run(final SessionContext context) throws InterruptedException {
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new BinkPHandlerInitializer(new BinkServerSessionHandler(context, getEventBus())));
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            final ChannelPipeline pipeline = ch.pipeline();
+                            pipeline.addLast(new TrafficCrypterCodec());
+                            pipeline.addLast(new BinkDataDecoder());
+                            pipeline.addLast(new BinkDataEncoder());
+                            pipeline.addLast(new BinkServerSessionHandler(context, getEventBus()));
+                        }
+                    });
 
             b.bind(port).sync().channel().closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-
     }
 
     public void stop() {
-
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
     }
 }

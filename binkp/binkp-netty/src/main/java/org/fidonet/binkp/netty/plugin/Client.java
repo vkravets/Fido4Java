@@ -30,16 +30,21 @@ package org.fidonet.binkp.netty.plugin;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.netty.plugin.commons.BinkPHandlerInitializer;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
+import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
 import org.fidonet.binkp.netty.plugin.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
 
@@ -76,7 +81,17 @@ public class Client extends ClientConnector {
         b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeout)
                 .group(connector)
                 .channel(NioSocketChannel.class)
-                .handler(new BinkPHandlerInitializer(new BinkSessionHandler(sessionContext, getEventBus())));
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ChannelPipeline pipeline = ch.pipeline();
+
+                        pipeline.addLast(new TrafficCrypterCodec());
+                        pipeline.addLast(new BinkDataDecoder());
+                        pipeline.addLast(new BinkDataEncoder());
+                        pipeline.addLast(new BinkSessionHandler(sessionContext, getEventBus()));
+                    }
+                });
 
         // Start the connection attempt.
         String hostname = link.getHostAddress();
