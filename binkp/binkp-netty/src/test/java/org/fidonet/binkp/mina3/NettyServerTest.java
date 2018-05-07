@@ -37,7 +37,7 @@ import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -54,11 +54,11 @@ import java.util.List;
 
 public class NettyServerTest extends AbstractServerTest {
 
-    @Rule
-    public ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT), this.sessionContext);
+    @ClassRule
+    public static ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT), sessionContext);
 
     @Test(timeout = 30000)
-    public void Test() throws Exception {
+    public void test1() throws Exception {
         final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost");
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
@@ -73,6 +73,29 @@ public class NettyServerTest extends AbstractServerTest {
         links.add(uplink);
 
         final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        runAndWait(client, sessionContext);
+    }
+
+    @Test(timeout = 30000)
+    public void test2() throws Exception {
+        final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost");
+        uplink.setMD(true);
+        Client client = new Client(uplink, 10);
+        final StationConfig stationConfig = new StationConfig("Test",
+                "Test Test",
+                "Odessa,UA",
+                "BINKP",
+                "2:467/10.999");
+        stationConfig.setCryptMode(true);
+//        stationConfig.setNRMode(true);
+        final List<Link> links = new ArrayList<Link>();
+        links.add(uplink);
+
+        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        runAndWait(client, sessionContext);
+    }
+
+    protected void runAndWait(Client client, SessionContext sessionContext) throws Exception {
         try {
             client.run(sessionContext);
             if (client.isConnect()) {

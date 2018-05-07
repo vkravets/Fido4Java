@@ -45,7 +45,7 @@ import java.util.List;
  * Time: 23:29
  */
 public class AbstractServerTest {
-    private static final StationConfig config;
+    protected static final StationConfig config;
     static {
         config = new StationConfig(
             "Test Station",
@@ -57,8 +57,8 @@ public class AbstractServerTest {
 //        config.setNRMode(true);
     }
 
-    private final LinksInfo links = new TestLinksInfo().getLinksInfo();
-    protected final SessionContext sessionContext = new SessionContext(config, links);
+    protected static final LinksInfo links = new TestLinksInfo().getLinksInfo();
+    protected static final SessionContext sessionContext = new SessionContext(config, links);
 
     public void waitSessionFinish(SessionContext context) throws InterruptedException {
         for (; ; ) {
@@ -71,7 +71,7 @@ public class AbstractServerTest {
         }
     }
 
-    private class TestLinksInfo {
+    private static class TestLinksInfo {
 
         private final LinksInfo linksInfo;
 
