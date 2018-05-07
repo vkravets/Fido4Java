@@ -67,8 +67,8 @@ public class EOBCommand extends MessageCommand {
                 sessionContext.setState(SessionState.STATE_END);
             } else {
                 log.debug("Close session");
+                session.close(false);
             }
-            session.close(false);
         }
     }
 
