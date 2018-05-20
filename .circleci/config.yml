@@ -15,5 +15,5 @@ jobs:
       - run:
           name: Build & Tests
           command: |
-            ./gradlew build
+            ./gradlew build -x test
             ./gradlew test
