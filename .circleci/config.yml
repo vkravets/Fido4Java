@@ -9,7 +9,7 @@ dependecies:
 jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
-      - image: circleci/openjdk8
+      - image: circleci/openjdk:8-jdk-node-browsers
     steps:
       - checkout
       - run: ./gradlew build
