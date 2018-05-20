@@ -28,58 +28,42 @@
 
 package org.fidonet.binkp.mina3;
 
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.transport.nio.NioTcpServer;
-import org.fidonet.binkp.common.ServerConnector;
-import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
-import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
-import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
-import org.fidonet.binkp.mina3.handler.BinkServerSessionHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import junit.framework.TestCase;
+import org.fidonet.binkp.netty.plugin.Runner;
+import org.fidonet.jftn.plugins.PluginException;
+import org.fidonet.jftn.plugins.PluginManager;
+import org.junit.Test;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+import java.lang.ref.WeakReference;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 2:02 PM
+ * Date: 8/6/13
+ * Time: 10:54 AM
  */
-public class Server extends ServerConnector {
+public class NettyPluginTest {
 
-    private NioTcpServer acceptor;
-    private int port = BINK_PORT;
-
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
-
-    public Server() {
-        this(BINK_PORT);
-    }
-
-    public Server(int port) {
-        this.port = port;
-    }
-
-    @Override
-    public void run(final SessionContext context) throws Exception {
-        acceptor = new NioTcpServer();
-        TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
-        ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter =
-                new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
-        acceptor.setFilters(crypterFilter, bikpProtocolFilter);
-        acceptor.setIoHandler(new BinkServerSessionHandler(context, getEventBus()));
-        SocketAddress address = new InetSocketAddress(port);
-        acceptor.bind(address);
-    }
-
-    @Override
-    public void stop() {
-        acceptor.unbind();
+    @Test
+    public void pluginTest() throws InterruptedException {
+        PluginManager manager = PluginManager.getInstance();
+        manager.loadPlugins();
+        boolean exception = false;
+        WeakReference<Runner> binkp = null;
+        try {
+            binkp = manager.getContext("binkp_netty");
+            TestCase.assertNotNull(binkp.get());
+        } catch (PluginException ex) {
+            exception = true;
+            ex.printStackTrace();
+        } catch (ClassCastException ex) {
+            exception = true;
+            ex.printStackTrace();
+        } finally {
+            PluginManager.getInstance().unloadPlugins();
+        }
+        TestCase.assertEquals(false, exception);
+        TestCase.assertNull(binkp.get());
     }
 }

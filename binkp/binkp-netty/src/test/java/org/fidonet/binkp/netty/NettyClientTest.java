@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, Vladimir Kravets
+ * Copyright (c) 2012-2018, Vladimir Kravets
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.mina3;
+package org.fidonet.binkp.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

@@ -49,12 +49,12 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
 
     private final ServerConnector serverConnector;
     private final SessionContext sessionContext;
+    private final Boolean isAsync;
 
-
-    public ServerRule(ServerConnector serverConnector, SessionContext context) {
+    public ServerRule(ServerConnector serverConnector, SessionContext context, Boolean isAsync) {
         this.serverConnector = serverConnector;
         this.sessionContext = context;
-
+        this.isAsync = isAsync;
     }
 
     @Override
@@ -66,26 +66,38 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
 
         private final ServerConnector serverConnector;
         private final Statement base;
+        private final ThreadPoolExecutor threadPoolExecutor;
 
         public ServerStatement(Statement base,
                                ServerConnector serverConnector) {
             this.base = base;
             this.serverConnector = serverConnector;
+            if (!isAsync) {
+                this.threadPoolExecutor = new ThreadPoolExecutor(
+                        1, 1,
+                        60L, TimeUnit.SECONDS,
+                        new SynchronousQueue<Runnable>());
+            } else {
+                this.threadPoolExecutor = null;
+            }
         }
 
         @Override
         public void evaluate() throws Throwable {
-            ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                    1, 1,
-                    60L, TimeUnit.SECONDS,
-                    new SynchronousQueue<Runnable>());
             try {
-                threadPoolExecutor.submit(new ServerThread());
+                if (!isAsync) {
+                    threadPoolExecutor.submit(new ServerThread());
+                }
+                else {
+                    this.serverConnector.run(sessionContext);
+                }
                 base.evaluate();
             }
             finally {
                 this.serverConnector.stop();
-                threadPoolExecutor.shutdownNow();
+                if (!isAsync) {
+                    threadPoolExecutor.shutdownNow();
+                }
             }
         }
     }
@@ -99,6 +111,7 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
             catch (Exception e) {
                 throw new RuntimeException("Server error", e);
             }
+            System.out.print("Server stopped");
         }
     }
 }

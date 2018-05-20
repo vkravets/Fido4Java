@@ -37,7 +37,9 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
@@ -100,6 +102,7 @@ public class Server extends ServerConnector {
                 sessionContext.setBusy(context.isBusy());
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
+                session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
                 //session.getRemoteAddress()
                 synchronized (userConnected) {
                     userConnected.set(userConnected.incrementAndGet());

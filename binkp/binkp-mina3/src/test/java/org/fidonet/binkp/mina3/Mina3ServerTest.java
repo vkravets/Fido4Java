@@ -32,8 +32,6 @@ import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.netty.plugin.Client;
-import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
@@ -52,10 +50,13 @@ import java.util.List;
  */
 
 
-public class NettyServerTest extends AbstractServerTest {
+public class Mina3ServerTest extends AbstractServerTest {
 
     @ClassRule
-    public static ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT), sessionContext);
+    public static ServerRule SERVER = new ServerRule(
+            new Server(Connector.BINK_PORT),
+            AbstractServerTest.sessionContext,
+            true);
 
     @Test(timeout = 30000)
     public void test1() throws Exception {
@@ -95,7 +96,7 @@ public class NettyServerTest extends AbstractServerTest {
         runAndWait(client, sessionContext);
     }
 
-    protected void runAndWait(Client client, SessionContext sessionContext) throws Exception {
+    private void runAndWait(Client client, SessionContext sessionContext) throws Exception {
         try {
             client.run(sessionContext);
             if (client.isConnect()) {
