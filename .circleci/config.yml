@@ -1,10 +1,16 @@
 version: 2
+dependecies:
+  pre:
+    - sudo apt-get install libboost-dev libboost-test-dev libboost-program-options-dev libboost-system-dev libboost-filesystem-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
+    - cd /tmp; curl http://archive.apache.org/dist/thrift/0.11.0/thrift-0.11.0.tar.gz | tar zx
+    - ./configure
+    - make
+    - sudo make install
 jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
-      - image: circleci/java:8-jdk
-      - image: thrift:0.11
+      - image: circleci/openjdk8
     steps:
       - checkout
-      - run: ./gradle build
-      - run: ./gradle test
+      - run: ./gradlew build
+      - run: ./gradlew test
