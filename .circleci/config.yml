@@ -2,12 +2,16 @@ version: 2
 jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
-      - image: circleci/openjdk:8-jdk-node-browsers
-      - image: thrift:0.11.0
+      - image: vkravets/jftn-build:java1.8_thrift0.11
     steps:
       - checkout
       - run:
+          nam: Download gradle
+          command: |
+            cd gradle/wrapper
+            wget https://raw.githubusercontent.com/gradle/gradle/v4.7.0/gradle/wrapper/gradle-wrapper.jar
+      - run:
           name: Build & Tests
           command: |
-            gradle build
-            gradle test
+            ./gradlew build
+            ./gradlew test
