@@ -6,6 +6,8 @@ jobs:
       - image: thrift:0.11.0
     steps:
       - checkout
-      - command: |
-          gradle build
-          gradle test
+      - run:
+          name: Build & Tests
+          command: |
+            gradle build
+            gradle test
