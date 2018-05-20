@@ -3,6 +3,8 @@ jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
       - image: circleci/java:8-jdk
+      - image: thrift:0.11
     steps:
       - checkout
-      - run: mvn clean verify
+      - run: ./gradle build
+      - run: ./gradle test
