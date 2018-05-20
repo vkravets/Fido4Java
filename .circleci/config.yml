@@ -4,7 +4,7 @@ jobs:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
       - image: vkravets/jftn-build:java1.8_thrift0.11
     environment:
-      - LANG: en_US.UTF-8
+      - LANG: ru_RU.UTF-8
     steps:
       - checkout
       - run:
