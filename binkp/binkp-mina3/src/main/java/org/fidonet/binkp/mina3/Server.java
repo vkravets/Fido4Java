@@ -70,7 +70,8 @@ public class Server extends ServerConnector {
     public void run(final SessionContext context) throws Exception {
         acceptor = new NioTcpServer();
         TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
-        ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter = new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
+        ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context> bikpProtocolFilter =
+                new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
         acceptor.setFilters(crypterFilter, bikpProtocolFilter);
         acceptor.setIoHandler(new BinkServerSessionHandler(context, getEventBus()));
         SocketAddress address = new InetSocketAddress(port);

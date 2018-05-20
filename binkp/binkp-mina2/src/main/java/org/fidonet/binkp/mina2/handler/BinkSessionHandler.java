@@ -82,18 +82,13 @@ public class BinkSessionHandler extends IoHandlerAdapter {
     }
 
     private SessionContext getSessionContext(IoSession session) {
-        if (sessionContext != null) {
-            return sessionContext;
-        } else {
-            return (SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
-        }
+        return (SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
     }
 
     @Override
     public void sessionOpened(IoSession session) throws Exception {
         super.sessionOpened(session);
 
-        SessionContext sessionContext = getSessionContext(session);
         log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
 
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
