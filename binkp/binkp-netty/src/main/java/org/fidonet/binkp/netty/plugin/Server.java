@@ -64,27 +64,22 @@ public class Server extends ServerConnector {
     }
 
     public void run(final SessionContext context) throws InterruptedException {
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            final ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new TrafficCrypterCodec());
-                            pipeline.addLast(new BinkDataDecoder());
-                            pipeline.addLast(new BinkDataEncoder());
-                            pipeline.addLast(new BinkServerSessionHandler(context, getEventBus()));
-                        }
-                    });
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        final ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast(new TrafficCrypterCodec());
+                        pipeline.addLast(new BinkDataDecoder());
+                        pipeline.addLast(new BinkDataEncoder());
+                        pipeline.addLast(new BinkServerSessionHandler(context, getEventBus()));
+                    }
+                });
 
-            b.bind(port).sync().channel().closeFuture().sync();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
+        b.bind(port).sync().channel().closeFuture();
     }
 
     public void stop() {

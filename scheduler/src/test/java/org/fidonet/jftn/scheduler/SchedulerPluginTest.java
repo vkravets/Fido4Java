@@ -46,7 +46,6 @@ import java.lang.ref.WeakReference;
 public class SchedulerPluginTest {
 
     @Test
-    @Ignore
     public void pluginTest() {
         PluginManager manager = PluginManager.getInstance();
         manager.loadPlugins();
@@ -65,12 +64,7 @@ public class SchedulerPluginTest {
         TestCase.assertNotNull(schedule.get());
         schedule.get().start();
         final Boolean[] taskExecute = {false};
-        schedule.get().schedule("* * * * *", new Runnable() {
-            @Override
-            public void run() {
-                taskExecute[0] = true;
-            }
-        });
+        schedule.get().schedule("* * * * *", () -> taskExecute[0] = true);
         try {
             Thread.sleep(1000 * 60 + 200);
         } catch (InterruptedException e) {

@@ -36,6 +36,7 @@ import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.events.*;
@@ -44,6 +45,7 @@ import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina3.codec.BinkDataDecoder;
 import org.fidonet.binkp.mina3.codec.BinkDataEncoder;
 import org.fidonet.binkp.mina3.codec.TrafficCrypterCodecFilter;
+import org.fidonet.binkp.mina3.commons.SessionKeys;
 import org.fidonet.binkp.mina3.handler.BinkSessionHandler;
 import org.fidonet.events.EventHandler;
 import org.fidonet.events.HasEventBus;
@@ -74,14 +76,19 @@ public class Mina3ClientTest extends HasEventBus {
     private SessionContext sessionContext;
 
     public final IoFilter filter1 = new TrafficCrypterCodecFilter();
-    public final IoFilter filter2 = new ProtocolCodecFilter<BinkFrame, ByteBuffer, Void, BinkDataDecoder.Context>(new BinkDataEncoder<BinkFrame>(), new BinkDataDecoder());
+    public final IoFilter filter2 = new ProtocolCodecFilter<>(new BinkDataEncoder<>(), new BinkDataDecoder());
 
 
     @Before
     public void setUp() throws Exception {
         service = mock(IoService.class);
 
-        StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        StationConfig config = new StationConfig(
+                "Test Station",
+                "Vasya Pupkin",
+                "Odessa, Ukraine",
+                "BINKP",
+                "2:467/110.113");
         final FTNAddr node = new FTNAddr("2:467/110");
         LinksInfo linksInfo = new LinksInfo(
                 new LinkedList<Link>() {
@@ -118,6 +125,8 @@ public class Mina3ClientTest extends HasEventBus {
         public void run(SessionContext sessionContext) throws Exception {
             session = new DummySession(service);
             sessionContext.setServerRole(ServerRole.CLIENT);
+            session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
+            session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
             session.getService().getIoHandler().sessionOpened(session);
             sessionContext.setState(SessionState.STATE_IDLE);
         }

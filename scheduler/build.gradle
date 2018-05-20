@@ -1,0 +1,10 @@
+group = 'org.fidonet.jftn.plugin'
+description = ''
+
+dependencies {
+    compileOnly project(':plugin-manager')
+    compile group: 'it.sauronsoftware.cron4j', name: 'cron4j', version:'2.2.5'
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.6.2'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.2'
+}

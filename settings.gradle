@@ -1,0 +1,40 @@
+rootProject.name = 'jftn'
+include ':tools'
+include ':event-bus'
+include ':script-api'
+include ':plugin-manager'
+include ':fido-fts'
+include ':fido-config'
+include ':fido-tools'
+include ':fido-database'
+include ':binkp-root:binkp-common'
+include ':binkp-root:binkp-mina2'
+include ':binkp-root:binkp-mina3'
+include ':binkp-root:binkp-netty'
+include ':binkp-root'
+include ':jambase'
+include ':jtoss'
+include ':scheduler'
+include ':web-interface'
+include ':jftn-bundle'
+include ':rpc'
+
+project(':tools').projectDir = "$rootDir/tools" as File
+project(':event-bus').projectDir = "$rootDir/event-bus" as File
+project(':script-api').projectDir = "$rootDir/script-api" as File
+project(':plugin-manager').projectDir = "$rootDir/plugin-manager" as File
+project(':fido-fts').projectDir = "$rootDir/fido-fts" as File
+project(':fido-config').projectDir = "$rootDir/fido-config" as File
+project(':fido-tools').projectDir = "$rootDir/fido-tools" as File
+project(':fido-database').projectDir = "$rootDir/fido-database" as File
+project(':binkp-root:binkp-common').projectDir = "$rootDir/binkp/binkp-common" as File
+project(':binkp-root:binkp-mina2').projectDir = "$rootDir/binkp/binkp-mina2" as File
+project(':binkp-root:binkp-mina3').projectDir = "$rootDir/binkp/binkp-mina3" as File
+project(':binkp-root:binkp-netty').projectDir = "$rootDir/binkp/binkp-netty" as File
+project(':binkp-root').projectDir = "$rootDir/binkp" as File
+project(':jambase').projectDir = "$rootDir/jambase" as File
+project(':jtoss').projectDir = "$rootDir/jtoss" as File
+project(':scheduler').projectDir = "$rootDir/scheduler" as File
+project(':web-interface').projectDir = "$rootDir/web-interface" as File
+project(':jftn-bundle').projectDir = "$rootDir/jftn-bundle" as File
+project(':rpc').projectDir = "$rootDir/rpc" as File

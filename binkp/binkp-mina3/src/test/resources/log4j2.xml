@@ -35,7 +35,7 @@
     </Appenders>
     <Loggers>
         <Logger name="org.apache.log4j.xml" level="info"/>
-        <Logger name="io.netty" level="info"/>
+        <Logger name="org.apache" level="info"/>
         <Root level="debug">
             <AppenderRef ref="STDOUT"/>
         </Root>

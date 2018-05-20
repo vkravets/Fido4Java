@@ -36,6 +36,7 @@ import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import java.util.List;
  */
 
 
+@Ignore
 public class Mina2ServerTest extends AbstractServerTest {
 
     @ClassRule

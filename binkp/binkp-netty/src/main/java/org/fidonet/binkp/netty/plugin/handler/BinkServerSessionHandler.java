@@ -92,6 +92,7 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
         if (this.sessionContext.isBusy() && userConnected.get() < MAX_USER_CONNECTED) {
             this.sessionContext.setBusy(false);
         }
+        log.debug("Session closed");
     }
 
 }

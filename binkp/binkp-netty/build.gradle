@@ -1,0 +1,23 @@
+group = 'org.fidonet.binkp'
+description = 'binkp-netty'
+dependencies {
+    compile project(':fido-config')
+    compile project(':fido-fts')
+    compile project(':tools')
+    compile project(':event-bus')
+    compile project(':binkp-root:binkp-common')
+    compileOnly project(':plugin-manager')
+
+    compile group: 'io.netty', name: 'netty-transport', version: '4.1.24.Final'
+    compile group: 'io.netty', name: 'netty-handler', version: '4.1.24.Final'
+    compile group: 'io.netty', name: 'netty-common', version: '4.1.24.Final'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.21'
+    compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.6.2'
+    compileOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.2'
+
+    testCompile project(path: ':binkp-root:binkp-common', configuration: 'testArtifacts')
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.0.14-beta'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.6.2'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.2'
+}
