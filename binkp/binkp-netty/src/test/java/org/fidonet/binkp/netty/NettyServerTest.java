@@ -51,7 +51,6 @@ import java.util.List;
  * Time: 23:09
  */
 
-
 public class NettyServerTest extends AbstractServerTest {
 
     @ClassRule

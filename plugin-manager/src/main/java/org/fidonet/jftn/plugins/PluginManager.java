@@ -29,7 +29,6 @@
 package org.fidonet.jftn.plugins;
 
 import org.fidonet.events.HasEventBus;
-import org.openide.util.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,10 +61,7 @@ public class PluginManager extends HasEventBus {
     }
 
     public void loadPlugins() {
-        Lookup lookupService = Lookup.getDefault();
-        Lookup.Template<Plugin> pluginTemplate = new Lookup.Template<Plugin>(Plugin.class);
-        Lookup.Result<Plugin> pluginResult = lookupService.lookup(pluginTemplate);
-        Collection<? extends Plugin> plugins = pluginResult.allInstances();
+        Iterable<? extends Plugin> plugins = ServiceLoader.load(Plugin.class);
 
         // Register all plugins before it's loading 
         for (Plugin plugin : plugins) {
@@ -73,10 +69,10 @@ public class PluginManager extends HasEventBus {
         }
 
         // sort plugins for loading according to its dependencies 
-        plugins = sortDependencies(plugins);
+        Collection<? extends Plugin> sortedPlugins = sortDependencies(plugins);
 
         // After loading all plugins, try to init and load it
-        for (Plugin plugin : plugins) {
+        for (Plugin plugin : sortedPlugins) {
             String pluginId = plugin.getPluginInfo().getId();
             try {
                 long startTime = System.currentTimeMillis();
@@ -92,16 +88,16 @@ public class PluginManager extends HasEventBus {
         }
     }
 
-    private Collection<? extends Plugin> sortDependencies(Collection<? extends Plugin> plugins) {
-        Set<Plugin> result = new LinkedHashSet<Plugin>();
+    private Collection<? extends Plugin> sortDependencies(Iterable<? extends Plugin> plugins) {
+        Set<Plugin> result = new LinkedHashSet<>();
 
-        Map<String, Plugin> mapPlugins = new HashMap<String, Plugin>();
+        Map<String, Plugin> mapPlugins = new HashMap<>();
         for (Plugin plugin : plugins) {
             mapPlugins.put(plugin.getPluginInfo().getId(), plugin);
         }
 
-        Set<Plugin> firstPlugins = new LinkedHashSet<Plugin>();
-        Set<Plugin> pluginsWithDeps = new LinkedHashSet<Plugin>();
+        Set<Plugin> firstPlugins = new LinkedHashSet<>();
+        Set<Plugin> pluginsWithDeps = new LinkedHashSet<>();
         for (Plugin plugin : plugins) {
             Collection<? extends Plugin> dependencies = buildDependencies(plugin, mapPlugins, firstPlugins);
             if (!dependencies.isEmpty()) {
@@ -118,7 +114,7 @@ public class PluginManager extends HasEventBus {
     }
 
     private Collection<? extends Plugin> buildDependencies(Plugin plugin, Map<String, Plugin> pluginMap, Set<Plugin> firstPlugins) {
-        LinkedHashSet<Plugin> result = new LinkedHashSet<Plugin>();
+        LinkedHashSet<Plugin> result = new LinkedHashSet<>();
         List<String> dependencies = plugin.getPluginInfo().getDependencies();
         for (String dependency : dependencies) {
             Plugin depPlugin = pluginMap.get(dependency);

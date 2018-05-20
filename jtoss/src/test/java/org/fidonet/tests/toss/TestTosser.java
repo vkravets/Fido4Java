@@ -40,6 +40,7 @@ import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -84,7 +85,7 @@ public class TestTosser {
 //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
         ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
         databaseManager = new DatabaseManager(ormManager);
-        databaseManager.open();
+        if (!databaseManager.open()) Assert.fail();
     }
 
     @AfterClass

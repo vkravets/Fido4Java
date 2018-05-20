@@ -1,0 +1,8 @@
+
+description = 'fido-tools'
+dependencies {
+  compile project(':fido-config')
+    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
+}

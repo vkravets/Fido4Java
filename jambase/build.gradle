@@ -1,0 +1,7 @@
+
+description = 'jambase'
+dependencies {
+  compile project(':fido-tools')
+  compile project(':tools')
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+}

@@ -67,7 +67,7 @@ public class TestServer {
     public void setUp() {
 
         bind_ip = System.getenv("RPC_BIND_IP");
-        bind_ip = bind_ip.isEmpty() ? DEFAULT_TEST_SERVER_IP : bind_ip;
+        bind_ip = bind_ip == null || bind_ip.isEmpty() ? DEFAULT_TEST_SERVER_IP : bind_ip;
 
         server = new Server(TEST_SERVER_PORT, bind_ip, new ServerHandlerTestMock());
         server.run();
@@ -79,7 +79,8 @@ public class TestServer {
         server.stop();
         try {
             Thread.sleep(500);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.println("Server Stopped");
@@ -105,7 +106,8 @@ public class TestServer {
             System.out.println("[CLIENT] LoginService.logout()");
             logClient.logout("session_id_test_1");
 
-        } catch (TException e) {
+        }
+        catch (TException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
         }
@@ -123,23 +125,19 @@ public class TestServer {
                         new TAsyncClientManager(),
                         transportApi);
                 // Make async call of ping RPC API
-                apiAsyncClient.ping(new AsyncMethodCallback<Api.AsyncClient.ping_call>() {
+                apiAsyncClient.ping(new AsyncMethodCallback<Response>() {
                     @Override
-                    public void onComplete(Api.AsyncClient.ping_call response) {
-                        try {
-                            System.out.println("[CLIENT] Async Api.ping() " + i);
-                            TestCase.assertEquals(Response.OK, response.getResult());
-                        } catch (TException e) {
-                            this.onError(e);
-                        }
+                    public void onComplete(Response response) {
+                        System.out.println("[CLIENT] Async Api.ping() " + i);
+                        TestCase.assertEquals(Response.OK, response);
                         synchronized (pingCurIndex) {
                             pingCurIndex.set(pingCurIndex.incrementAndGet());
                         }
                     }
 
                     @Override
-                    public void onError(Exception e) {
-                        TestCase.fail(e.getMessage());
+                    public void onError(Exception exception) {
+                        TestCase.fail(exception.getMessage());
                     }
                 });
 
@@ -151,39 +149,42 @@ public class TestServer {
                         transportLogin);
 
                 // Make async call of login RPC API
-                loginAsyncClient.login(new Credential("test", "test"), new AsyncMethodCallback<LoginService.AsyncClient.login_call>() {
-                    @Override
-                    public void onComplete(LoginService.AsyncClient.login_call login_call) {
-                        try {
-                            System.out.println("[CLIENT] Async LoginService.login() " + i);
-                            TestCase.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login_call.getResult());
-                        } catch (TException e) {
-                            this.onError(e);
-                        }
-                        synchronized (loginCurIndex) {
-                            loginCurIndex.set(loginCurIndex.incrementAndGet());
-                        }
-                    }
+                loginAsyncClient.login(
+                        new Credential("test", "test"),
+                        new AsyncMethodCallback<LoginResponse>() {
+                            @Override
+                            public void onComplete(LoginResponse loginResponse) {
+                                System.out.println("[CLIENT] Async LoginService.login() " + i);
+                                TestCase.assertEquals(
+                                        new LoginResponse(Response.OK, "session_id_test_1"),
+                                        loginResponse);
+                                synchronized (loginCurIndex) {
+                                    loginCurIndex.set(loginCurIndex.incrementAndGet());
+                                }
+                            }
 
-                    @Override
-                    public void onError(Exception e) {
-                        e.printStackTrace();
-                        TestCase.fail(e.getMessage());
-                    }
-                });
+                            @Override
+                            public void onError(Exception e) {
+                                e.printStackTrace();
+                                TestCase.fail(e.getMessage());
+                            }
+                        });
 
                 Thread.sleep(10);
             }
             Thread.sleep(1000);
             TestCase.assertEquals(loginCurIndex.get(), TEST_THREAD_NUMBER);
             TestCase.assertEquals(pingCurIndex.get(), TEST_THREAD_NUMBER);
-        } catch (TException e) {
+        }
+        catch (TException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             TestCase.fail(e.getMessage());
         }
