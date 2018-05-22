@@ -1,0 +1,4 @@
+group = 'org.fidonet.binkp'
+description = 'BinkP Common'
+
+jar.enabled = false
