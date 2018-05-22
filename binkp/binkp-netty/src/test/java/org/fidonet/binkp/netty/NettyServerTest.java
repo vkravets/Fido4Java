@@ -57,7 +57,7 @@ public class NettyServerTest extends AbstractServerTest {
     public static ServerRule SERVER = new ServerRule(
             new Server(Connector.BINK_PORT),
             sessionContext,
-            false);
+            true);
 
     @Test(timeout = 30000)
     public void test1() throws Exception {
