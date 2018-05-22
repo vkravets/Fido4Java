@@ -17,6 +17,8 @@ subprojects {
         mavenCentral()
 
         jcenter()  // because of Gretty
+        maven { url 'https://maven.vaadin.com/vaadin-addons' }
+        maven { url 'https://maven.vaadin.com/vaadin-prereleases' }
         maven { url "http://bits.netbeans.org/nexus/content/groups/netbeans" }
     }
 
