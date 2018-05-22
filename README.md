@@ -2,10 +2,7 @@ JFtn v0.1
 =========
 
 ### BUILD STATUS: 
-Travis: [![Build Status](https://secure.travis-ci.org/vkravets/Fido4Java.png?branch=master)](http://travis-ci.org/vkravets/Fido4Java)
-
-Jenkins: [![Build Status](https://jenkins-jftn.rhcloud.com/buildStatus/icon?job=vkravets/Fido4Java/master)](https://jenkins-jftn.rhcloud.com/job/vkravets/job/Fido4Java/job/master/)
-
+[![CircleCI](https://circleci.com/gh/vkravets/Fido4Java.svg?style=svg)](https://circleci.com/gh/vkravets/Fido4Java)
 
 ### ABOUT
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
