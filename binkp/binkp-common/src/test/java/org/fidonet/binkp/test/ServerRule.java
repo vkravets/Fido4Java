@@ -33,6 +33,8 @@ import org.fidonet.binkp.common.SessionContext;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -46,6 +48,8 @@ import java.util.concurrent.TimeUnit;
  * Time: 22:44
  */
 public class ServerRule<T extends ServerConnector> implements TestRule {
+
+    private static final Logger log = LoggerFactory.getLogger(ServerRule.class);
 
     private final ServerConnector serverConnector;
     private final SessionContext sessionContext;
@@ -87,9 +91,11 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
             try {
                 if (!isAsync) {
                     threadPoolExecutor.submit(new ServerThread());
+                    log.info("Ran in Async mode");
                 }
                 else {
                     this.serverConnector.run(sessionContext);
+                    log.info("Ran in Non Async mode");
                 }
                 base.evaluate();
             }
