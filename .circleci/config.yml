@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
-      - image: vkravets/jftn-build:java1.8_thrift0.11
+      - image: vkravets/jftn-build:java1.8_thrift0.12
     environment:
       - LANG: ru_RU.UTF-8
     steps:
@@ -11,7 +11,7 @@ jobs:
           name: Download gradle
           command: |
             cd gradle/wrapper
-            wget https://raw.githubusercontent.com/gradle/gradle/v4.7.0/gradle/wrapper/gradle-wrapper.jar
+            wget https://raw.githubusercontent.com/gradle/gradle/v5.6.0/gradle/wrapper/gradle-wrapper.jar
       - run:
           name: Build & Tests
           command: |
