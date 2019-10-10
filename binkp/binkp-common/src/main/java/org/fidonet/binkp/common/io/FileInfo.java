@@ -137,12 +137,12 @@ public class FileInfo {
         // Parse command args from M_FILE and M_GOT commands
         if (tokens.length >= 3) {
             String name = tokens[0].trim();
-            long size = Long.valueOf(tokens[1].trim());
-            long timestamp = Long.valueOf(tokens[2].trim());
+            long size = Long.parseLong(tokens[1].trim());
+            long timestamp = Long.parseLong(tokens[2].trim());
             FileInfo info = new FileInfo(name, size, timestamp);
             // Check if command args get from M_FILE with offset
             if (tokens.length == 4) {
-                long offset = Long.valueOf(tokens[3]);
+                long offset = Long.parseLong(tokens[3]);
                 info.setOffset(offset);
             } else {
                 info.setOffset(0);

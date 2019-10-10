@@ -84,8 +84,8 @@ public class PWDCommand extends MessageCommand {
 
                 sessionContext.sendEvent(new ConnectedEvent(sessionContext));
                 Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
-                // Run thread to sending files in client mode
-                FilesSender filesSender = new FilesSender(session, files, sessionContext);
+                // Run thread to sending files in server mode
+                FilesSender<Session> filesSender = new FilesSender<>(session, files, sessionContext);
                 session.setFileSender(filesSender);
                 Thread sendFiles = new Thread(filesSender);
                 sendFiles.start();

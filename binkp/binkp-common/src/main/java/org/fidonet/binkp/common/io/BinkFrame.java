@@ -68,6 +68,7 @@ public class BinkFrame {
         DataInfo info = DataReader.parseDataInfo(frame.getDataInfo());
         byte cmd = -1;
         byte[] dataBuf = null;
+        // FIXME: possible NPE
         if (info.isCommand()) {
             DataInputStream dataStream = new DataInputStream(new ByteArrayInputStream(frame.getData()));
             try {
