@@ -30,8 +30,8 @@ package org.fidonet.binkp.common.crypt;
 
 public class ZipCryptoEngine {
 
-    private final int keys[] = new int[3];
-    private int keysOld[] = new int[3];
+    private final int[] keys = new int[3];
+    private int[] keysOld = new int[3];
     private static final int[] CRC_TABLE = new int[256];
 
     static {

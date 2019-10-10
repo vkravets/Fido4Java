@@ -61,7 +61,7 @@ public class OKCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs) {
 
         if (commandArgs != null && commandArgs.length() > 0) {
             sessionContext.setSecureSession(commandArgs.startsWith("secure"));
@@ -82,7 +82,7 @@ public class OKCommand extends MessageCommand {
 
         Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
         // Run thread to sending files in client mode
-        FilesSender filesSender = new FilesSender(session, files, sessionContext);
+        FilesSender<Session> filesSender = new FilesSender<>(session, files, sessionContext);
         session.setFileSender(filesSender);
         Thread sendFiles = new Thread(filesSender);
         sendFiles.start();

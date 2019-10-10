@@ -57,7 +57,7 @@ public class TRFCommand extends NULCommand {
         String[] token = commandArgs.split(" ");
         if (token.length != 2)
             throw new UnsupportedOperationException("Invalid TRF command arguments");
-        sessionContext.setRecvMailSize(Long.valueOf(token[0]));
-        sessionContext.setRecvFilesSize(Long.valueOf(token[1]));
+        sessionContext.setRecvMailSize(Long.parseLong(token[0]));
+        sessionContext.setRecvFilesSize(Long.parseLong(token[1]));
     }
 }

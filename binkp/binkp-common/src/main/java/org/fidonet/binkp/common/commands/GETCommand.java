@@ -60,21 +60,11 @@ public class GETCommand extends MessageCommand {
 
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
-        final FilesSender filesSender = session.getFileSender();
+        final FilesSender<Session> filesSender = session.getFileSender();
         if (filesSender != null) {
             final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
             if (sessionContext.getState().equals(SessionState.STATE_WAITGET)) {
-                Thread sendFileBegin = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            filesSender.getExchanger().exchange(fileInfo);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-                });
-                sendFileBegin.start();
-                sendFileBegin.join();
+                filesSender.getExchanger().exchange(fileInfo);
             } else {
                 filesSender.skip(fileInfo, true);
             }

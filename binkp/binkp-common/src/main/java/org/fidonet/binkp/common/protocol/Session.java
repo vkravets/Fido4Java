@@ -44,7 +44,7 @@ public interface Session {
 
     void close(boolean close);
 
-    FilesSender getFileSender();
+    FilesSender<Session> getFileSender();
 
     void setFileSender(FilesSender filesSender);
 

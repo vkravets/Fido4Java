@@ -70,7 +70,7 @@ public class FILECommand extends MessageCommand {
             Command get = new GETCommand();
             get.send(session, sessionContext);
         }
-        FileInfo fileInfo = null;
+        FileInfo fileInfo;
         try {
             fileInfo = FileInfo.parseFileInfo(commandArgs);
         } catch (Exception e) {
@@ -81,7 +81,7 @@ public class FILECommand extends MessageCommand {
         if (fileData == null) {
             // TODO: Out file to FS (tmp folder - sessionContext.getTmpFolder())
             // TODO: if file exist (send skip or create file with diff name with fido-style)
-            fileData = new FileData<OutputStream>(fileInfo, new ByteArrayOutputStream());
+            fileData = new FileData<>(fileInfo, new ByteArrayOutputStream());
             receivedFiles.addFirst(fileData);
             Command get = new GETCommand();
             get.send(session, sessionContext);
