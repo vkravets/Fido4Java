@@ -8,11 +8,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Download gradle
-          command: |
-            cd gradle/wrapper
-            wget https://raw.githubusercontent.com/gradle/gradle/v5.6.0/gradle/wrapper/gradle-wrapper.jar
-      - run:
           name: Build & Tests
           command: |
             ./gradlew build -x test
