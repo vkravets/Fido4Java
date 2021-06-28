@@ -1,11 +1,11 @@
 
 description = ''
 dependencies {
-    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
-  compile project(':fido-config')
-  compile project(':event-bus')
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
-  compile project(':tools')
-    testCompile group: 'junit', name: 'junit', version:'4.12'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
+  implementation project(':fido-config')
+  implementation project(':event-bus')
+    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
+  implementation project(':tools')
+    testImplementation group: 'junit', name: 'junit', version:'4.12'
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
 }
