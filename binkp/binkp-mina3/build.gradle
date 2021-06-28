@@ -1,19 +1,19 @@
 group = 'org.fidonet.binkp'
 description = 'binkp-mina3'
 dependencies {
-  compile project(':fido-config')
-  compile project(':fido-fts')
-    compile group: 'org.apache.mina', name: 'mina-core', version:'3.0.0-M2'
-  compile project(':tools')
-  compile project(':event-bus')
-    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
-  compile project(':binkp-root:binkp-common')
-    testCompile group: 'junit', name: 'junit', version:'4.12'
-  testCompile project(path: ':binkp-root:binkp-common', configuration: 'testArtifacts')
-    testCompile group: 'org.mockito', name: 'mockito-core', version:'2.0.14-beta'
+  implementation project(':fido-config')
+  implementation project(':fido-fts')
+    implementation group: 'org.apache.mina', name: 'mina-core', version:'3.0.0-M2'
+  implementation project(':tools')
+  implementation project(':event-bus')
+    implementation group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
+  implementation project(':binkp-root:binkp-common')
+    testImplementation group: 'junit', name: 'junit', version:'4.12'
+  testImplementation project(path: ':binkp-root:binkp-common', configuration: 'testArtifacts')
+    testImplementation group: 'org.mockito', name: 'mockito-core', version:'2.0.14-beta'
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.6.2'
-    testCompile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
-    testCompile group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.6.2'
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.6.2'
   compileOnly project(':plugin-manager')
 }
