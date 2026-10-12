@@ -29,6 +29,7 @@
 package org.fidonet.binkp.netty.plugin;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -44,6 +45,8 @@ import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
 import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
 import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
 
+import java.net.InetSocketAddress;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -56,6 +59,7 @@ public class Server extends ServerConnector {
     private final Integer port;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
+    private volatile Channel serverChannel;
 
     public Server(Integer port) {
         this.port = port;
@@ -79,10 +83,23 @@ public class Server extends ServerConnector {
                     }
                 });
 
-        b.bind(port).sync().channel().closeFuture();
+        serverChannel = b.bind(port).sync().channel();
+    }
+
+    /** Returns the actual listening port, including when constructed with port zero. */
+    public int getLocalPort() {
+        Channel channel = serverChannel;
+        if (channel == null || !channel.isActive()) {
+            throw new IllegalStateException("Server is not listening");
+        }
+        return ((InetSocketAddress) channel.localAddress()).getPort();
     }
 
     public void stop() {
+        Channel channel = serverChannel;
+        if (channel != null) {
+            channel.close();
+        }
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
     }

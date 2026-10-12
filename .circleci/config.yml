@@ -7,20 +7,37 @@ jobs:
       LANG: C.UTF-8
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-thrift-0.14.2-{{ arch }}-{{ checksum ".circleci/config.yml" }}
       - run:
           name: Install Apache Thrift compiler
           command: |
-            sudo apt-get update
-            sudo apt-get install -y build-essential bison flex libtool pkg-config libboost-dev
-            thrift_build_dir=$(mktemp -d)
-            cd "$thrift_build_dir"
-            curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.14.2/thrift-0.14.2.tar.gz
-            tar -xzf thrift.tar.gz
-            cd thrift-0.14.2
-            ./configure --disable-libs --disable-tests --disable-tutorial
-            make -C compiler/cpp -j2
-            sudo install compiler/cpp/thrift /usr/local/bin/thrift
+            thrift_cached_bin="$HOME/.cache/thrift/0.14.2/bin/thrift"
+            if [ -x "$thrift_cached_bin" ] && [ "$("$thrift_cached_bin" -version)" = "Thrift version 0.14.2" ]; then
+              echo "Using cached Thrift compiler"
+            else
+              sudo apt-get update
+              sudo apt-get install -y build-essential bison flex libtool pkg-config libboost-dev
+              thrift_build_dir=$(mktemp -d)
+              (
+                cd "$thrift_build_dir"
+                curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.14.2/thrift-0.14.2.tar.gz
+                tar -xzf thrift.tar.gz
+                cd thrift-0.14.2
+                ./configure --disable-libs --disable-tests --disable-tutorial
+                make -C compiler/cpp -j2
+                test "$(compiler/cpp/thrift -version)" = "Thrift version 0.14.2"
+                mkdir -p "$(dirname "$thrift_cached_bin")"
+                install compiler/cpp/thrift "$thrift_cached_bin"
+              )
+            fi
+            sudo install "$thrift_cached_bin" /usr/local/bin/thrift
             thrift -version
+      - save_cache:
+          key: v1-thrift-0.14.2-{{ arch }}-{{ checksum ".circleci/config.yml" }}
+          paths:
+            - ~/.cache/thrift/0.14.2/bin/thrift
       - run:
           name: Build & Tests
           command: |
