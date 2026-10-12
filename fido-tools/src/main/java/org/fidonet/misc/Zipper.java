@@ -49,35 +49,29 @@ public class Zipper {
         long startTime = System.currentTimeMillis();
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
-        ZipFile zip = new ZipFile(bound);
-
-        Enumeration entries = zip.entries();
-
-        byte[] buf = new byte[1024];
-
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = (ZipEntry) entries.nextElement();
-
-            if (entry.isDirectory()) {
-                //(new File(entry.getName())).mkdir();
-                continue;
+        try (ZipFile zip = new ZipFile(bound)) {
+            Enumeration entries = zip.entries();
+            byte[] buf = new byte[1024];
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                logger.debug("        {}", entry.getName());
+                ByteBuffer resbuf = ByteBuffer.allocate((int) entry.getSize());
+                resbuf.order(ByteOrder.LITTLE_ENDIAN);
+                resbuf.position(0);
+                try (InputStream fis = zip.getInputStream(entry)) {
+                    int readed;
+                    while ((readed = fis.read(buf)) != -1) {
+                        resbuf.put(buf, 0, readed);
+                    }
+                }
+                resbuf.position(0);
+                PktTemp pkt = new PktTemp(entry.getName(), resbuf);
+                res.push(pkt);
             }
-
-            logger.debug("        {}", entry.getName());
-
-            ByteBuffer resbuf = ByteBuffer.allocate((int) entry.getSize());
-            resbuf.order(ByteOrder.LITTLE_ENDIAN);
-            resbuf.position(0);
-            InputStream fis = zip.getInputStream(entry);
-            while (fis.available() > 0) {
-                int readed = fis.read(buf);
-                resbuf.put(buf, 0, readed);
-            }
-            resbuf.position(0);
-            PktTemp pkt = new PktTemp(entry.getName(), resbuf);
-            res.push(pkt);
         }
-        zip.close();
         logger.info("Unpacking was finished");
         logger.debug("Unpacking takes {}ms", System.currentTimeMillis() - startTime);
         return res;

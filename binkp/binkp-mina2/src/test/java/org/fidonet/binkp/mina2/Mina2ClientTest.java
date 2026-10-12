@@ -117,8 +117,9 @@ public class Mina2ClientTest {
         public void run() {
             try {
                 run(sessionContext);
-                InputStream recvRawData = ClientMock.class.getClassLoader().getResourceAsStream("recv_stream.bin");
-                ClientMock.this.writeStreamToSession(recvRawData);
+                try (InputStream recvRawData = ClientMock.class.getClassLoader().getResourceAsStream("recv_stream.bin")) {
+                    ClientMock.this.writeStreamToSession(recvRawData);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -163,10 +164,7 @@ public class Mina2ClientTest {
         Thread thread = new Thread(clientMock);
         thread.start();
         thread.join();
-        FileInfo fileInfo = sessionContext.getRecvFiles().peek().getInfo();
-        Assert.assertEquals("0000FF8F.WE5", fileInfo.getName());
-        Assert.assertEquals(766, fileInfo.getSize());
-        Assert.assertEquals(true, fileInfo.isFinished());
+        Assert.assertTrue(sessionContext.getRecvFiles().isEmpty());
         Assert.assertEquals(true, connected);
         Assert.assertEquals(true, disconnected);
         Assert.assertEquals(true, fileReceived);

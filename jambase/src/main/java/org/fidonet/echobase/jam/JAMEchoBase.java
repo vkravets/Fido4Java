@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -112,25 +113,16 @@ public class JAMEchoBase implements EchoBase {
         hdr.setModcounter(1);
         hdr.setPasswordcrc(0xFFFFFFFF);
 
-        FileOutputStream fhdr = null;
-
-        try {
-            fhdr = new FileOutputStream(headerfile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (fhdr != null) {
-                fhdr.write(hdr.toByteArray());
-                fhdr.close();
-            }
+        try (FileOutputStream fhdr = new FileOutputStream(headerfile)) {
+            fhdr.write(hdr.toByteArray());
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new EchoBaseException("Unable to write " + name + " area header", e);
         }
     }
 
     @Override
     public void openArea(String name) throws EchoBaseException {
+        closeArea();
         setFileNames(name);
         initFiles();
         if (!isExists()) {
@@ -142,20 +134,33 @@ public class JAMEchoBase implements EchoBase {
             index = new JDXFile(indexfile);
             lastread = new JLRFile(lastrfile);
         } catch (FileNotFoundException e) {
-            throw new EchoBaseException(e.getMessage());
+            try {
+                closeArea();
+            } catch (EchoBaseException closeError) {
+                e.addSuppressed(closeError);
+            }
+            throw new EchoBaseException(e.getMessage(), e);
         }
     }
 
     @Override
     public void closeArea() throws EchoBaseException {
-        try {
-            header.close();
-            text.close();
-            index.close();
-            lastread.close();
-        } catch (IOException e) {
-            throw new EchoBaseException(e.getMessage());
+        Closeable[] files = {header, text, index, lastread};
+        header = null;
+        text = null;
+        index = null;
+        lastread = null;
+        IOException failure = null;
+        for (Closeable file : files) {
+            if (file == null) continue;
+            try {
+                file.close();
+            } catch (IOException e) {
+                if (failure == null) failure = e;
+                else failure.addSuppressed(e);
+            }
         }
+        if (failure != null) throw new EchoBaseException(failure.getMessage(), failure);
     }
 
     @Override

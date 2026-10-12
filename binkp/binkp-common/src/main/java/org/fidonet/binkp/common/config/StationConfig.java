@@ -43,7 +43,12 @@ public class StationConfig {
     private String address;
     private ServerRole role;
     private boolean nrMode;
+    private boolean nrEnabled = true;
     private boolean cryptMode;
+    private java.nio.file.Path partialDirectory = java.nio.file.Paths.get("inbound", ".binkp-partials");
+
+    public java.nio.file.Path getPartialDirectory() { return partialDirectory; }
+    public void setPartialDirectory(java.nio.file.Path directory) { partialDirectory = directory; }
 
     public StationConfig(String name, String sysopName, String location, String NDL, String address) {
         this.name = name;
@@ -85,9 +90,20 @@ public class StationConfig {
         return nrMode;
     }
 
+    /** Requests NR for incoming files by sending OPT NR to the peer. */
     public void setNRMode(boolean state) {
         this.nrMode = state;
     }
+
+    /** Local policy for NR, independent of whether we request it from the peer. */
+    public boolean isNREnabled() { return nrEnabled; }
+
+    /** Set before opening a session. False suppresses OPT NR and ignores peer NR requests. */
+    public void setNREnabled(boolean enabled) { nrEnabled = enabled; }
+
+    public boolean isNRRequested() { return nrMode; }
+
+    public void setNRRequested(boolean requested) { nrMode = requested; }
 
     public boolean isCryptMode() {
         return cryptMode;

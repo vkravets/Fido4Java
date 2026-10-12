@@ -78,7 +78,7 @@ public abstract class MessageCommand implements Command {
         ByteBuffer buf;
         byte[] argsData = null;
         if (cmdArgs != null) {
-            argsData = cmdArgs.getBytes();
+            argsData = cmdArgs.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             buf = ByteBuffer.allocate(1 + argsData.length);
         } else {
             buf = ByteBuffer.allocate(1);

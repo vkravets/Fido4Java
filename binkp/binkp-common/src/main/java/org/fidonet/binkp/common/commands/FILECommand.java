@@ -41,7 +41,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Deque;
-import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -63,33 +62,33 @@ public class FILECommand extends MessageCommand {
 
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
-        sessionContext.setState(SessionState.STATE_TRANSFER);
         Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
         FileData curFile = receivedFiles.peek();
-        if (curFile != null && !curFile.getInfo().isFinished()) {
+        FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+        if (fileInfo.getOffset() < -1 || fileInfo.getOffset() > fileInfo.getSize())
+            throw new java.io.IOException("Invalid file offset");
+        if (curFile != null && !curFile.getInfo().isFinished() && !curFile.getInfo().equals(fileInfo)) {
             Command get = new GETCommand();
             get.send(session, sessionContext);
-        }
-        FileInfo fileInfo;
-        try {
-            fileInfo = FileInfo.parseFileInfo(commandArgs);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return;
         }
         FileData<OutputStream> fileData = sessionContext.getNotFinishedFileData(fileInfo);
         if (fileData == null) {
-            // TODO: Out file to FS (tmp folder - sessionContext.getTmpFolder())
-            // TODO: if file exist (send skip or create file with diff name with fido-style)
-            fileData = new FileData<>(fileInfo, new ByteArrayOutputStream());
+            fileData = org.fidonet.binkp.common.io.ReceiveTransfer.open(sessionContext, fileInfo);
             receivedFiles.addFirst(fileData);
-            Command get = new GETCommand();
-            get.send(session, sessionContext);
+        } else {
+            receivedFiles.remove(fileData);
+            receivedFiles.addFirst(fileData);
+        }
+
+        if (fileData.getInfo().getCurSize() == fileInfo.getSize()) {
+            org.fidonet.binkp.common.io.ReceiveTransfer.complete(session, sessionContext);
+            return;
         }
 
         // process NR mode
-        if (fileInfo.getOffset() < 0) {
-            fileInfo.setOffset(0);
+        boolean requestOffset = fileInfo.getOffset() < 0 || fileInfo.getOffset() != fileData.getInfo().getCurSize();
+        fileData.setWaitingForHeader(requestOffset);
+        if (requestOffset) {
             Command get = new GETCommand();
             get.send(session, sessionContext);
         }
@@ -97,20 +96,16 @@ public class FILECommand extends MessageCommand {
 
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
-        Iterator<FileData<InputStream>> iterator = sessionContext.getSendFiles().iterator();
-        boolean isSent = true;
-        FileInfo fileInfo = null;
-        while (isSent && iterator.hasNext()) {
-            FileData fileData = iterator.next();
-            fileInfo = fileData.getInfo();
-            isSent = fileInfo.getCurSize() == fileInfo.getSize();
-        }
+        FileData<InputStream> fileData = sessionContext.getSendFiles().peek();
+        FileInfo fileInfo = fileData == null ? null : fileData.getInfo();
         if (fileInfo != null) {
             long offset = fileInfo.getOffset();
-            if (sessionContext.getStationConfig().isNRMode() && offset == 0) {
+            if (sessionContext.isNRMode() && offset == 0 && !fileData.isResumeResponse()) {
                 fileInfo.setOffset(-1);
+                offset = -1;
             }
-            return String.format("%s %s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp(), offset);
+            if (offset < 0) sessionContext.setState(SessionState.STATE_WAITGET);
+            return fileInfo.arguments() + " " + offset;
 
         }
         return null;

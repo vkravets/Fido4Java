@@ -115,6 +115,8 @@ public class BinkSessionHandler extends
     }
 
     protected void sendGreeting(ChannelHandlerContext session, SessionContext sessionContext) throws NoSuchAlgorithmException {
+        sessionContext.prepareTransfer();
+        sessionContext.setReceiveEventBus(eventBus);
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
         NettySession nettySession = new NettySession(session);
@@ -173,6 +175,7 @@ public class BinkSessionHandler extends
                 error.send(nettySession, sessionContext);
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
+                exceptionCaught(ctx, e);
             }
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             ctx.close();
@@ -180,39 +183,16 @@ public class BinkSessionHandler extends
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData()));
+            log.debug("Command data: {}", new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
             try {
-                command.handle(nettySession, sessionContext, new String(binkData.getData()));
+                command.handle(nettySession, sessionContext, new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
+                exceptionCaught(ctx, e);
             }
         } else {
-            // try to get data bulk
-            DataBulk dataFile = new DataBulk(binkData.getData());
-            log.debug("Received data block with size {} bytes", dataFile.getRawData().getData().length);
-            FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
-            if (fileData != null) {
-                FileInfo info = fileData.getInfo();
-                log.debug("Saving data bulk for {} file", info.getName());
-                long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
-                try {
-                    fileData.getStream().write(dataFile.getRawData().getData());
-                } catch (IOException e) {
-                    exceptionCaught(ctx, e);
-                }
-                info.setCurSize(curSize);
-                info.setFinished(curSize == info.getSize());
-                if (info.isFinished()) {
-                    GOTCommand confirmRecv = new GOTCommand();
-                    try {
-                        confirmRecv.send(nettySession, sessionContext);
-                    } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
-                    }
-                    eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
-                    log.info("Got {} file with {} bytes file size", info.getName(), info.getSize());
-                }
-            }
+            try { org.fidonet.binkp.common.io.ReceiveTransfer.accept(nettySession, sessionContext, binkData.getData()); }
+            catch (Exception e) { exceptionCaught(ctx, e); }
         }
 
     }
@@ -223,5 +203,11 @@ public class BinkSessionHandler extends
         log.error(cause.getMessage(), cause);
         sessionContext.setState(SessionState.STATE_ERR);
         ctx.channel().close();
+    }
+
+    @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        SessionContext context = getSessionContext(ctx);
+        if (context != null) { context.setState(SessionState.STATE_END); context.closeReceiveStreams(); }
+        super.channelInactive(ctx);
     }
 }

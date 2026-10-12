@@ -79,11 +79,14 @@ public class SessionContext extends HasEventBus {
     // send files number
     // queue send files
     private Deque<FileData<InputStream>> sendFiles;
-    private SessionState state;
+    private final java.util.concurrent.ConcurrentMap<FileInfo, FileData<InputStream>> pendingFiles = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Deque<FileData<InputStream>> deferredFiles = new LinkedBlockingDeque<>();
+    public Deque<FileData<InputStream>> getDeferredFiles() { return deferredFiles; }
+    private volatile SessionState state;
     private ServerRole serverRole;
 
-    private boolean sendingIsFinish = false;
-    private boolean receivingIsFinish = false;
+    private volatile boolean sendingIsFinish = false;
+    private volatile boolean receivingIsFinish = false;
 
     private boolean isSecureSession = false;
     private Password password;
@@ -91,12 +94,44 @@ public class SessionContext extends HasEventBus {
     private String passwordKey;
     private String logMessage;
 
-    private boolean nrMode = false;
+    private volatile boolean nrMode = false;
     private boolean cryptMode = false;
     private boolean busy = false;
+    private org.fidonet.events.EventBus receiveEventBus;
+    private org.fidonet.binkp.common.io.FilesSender<?> activeSender;
+    public void setActiveSender(org.fidonet.binkp.common.io.FilesSender<?> sender) { activeSender = sender; }
+    public void setReceiveEventBus(org.fidonet.events.EventBus bus) { receiveEventBus = bus; }
+    public void receiveEvent(Event event) { (receiveEventBus == null ? getEventBus() : receiveEventBus).publish(event); }
+
+    public void closeReceiveStreams() {
+        if (activeSender != null) activeSender.cancel();
+        for (FileData<OutputStream> file : recvFiles) {
+            try { file.getStream().close(); } catch (java.io.IOException ignored) { }
+        }
+        for (FileData<OutputStream> file : notFinishedFiles) {
+            try { file.getStream().close(); } catch (java.io.IOException ignored) { }
+        }
+        recvFiles.clear(); notFinishedFiles.clear();
+        synchronized (this) { notifyAll(); }
+    }
+
+    public void prepareTransfer() {
+        for (FileData<InputStream> deferred : deferredFiles) pendingFiles.putIfAbsent(deferred.getInfo(), deferred);
+        deferredFiles.clear();
+        for (FileData<InputStream> pending : pendingFiles.values()) {
+            pending.getInfo().setFinished(false); pending.getInfo().setSkip(false);
+            pending.getInfo().setOffset(0); pending.getInfo().setCurSize(0);
+            pending.setRewindBeforeSend(true);
+            pending.setResumeResponse(false);
+            if (!sendFiles.contains(pending)) sendFiles.addFirst(pending);
+        }
+        pendingFiles.clear(); sendingIsFinish = false; receivingIsFinish = false;
+        nrMode = false; cryptMode = false; password = null; passwordKey = null; messageDigest = null;
+    }
 
     public SessionContext(SessionContext context) {
-        this(context.getStationConfig(), context.getLinksInfo());
+        this(context.getStationConfig(), new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
+        if (context.getLinksInfo().getCurLink() != null) linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
     }
 
     public SessionContext(StationConfig config, LinksInfo linksInfo) {
@@ -176,7 +211,7 @@ public class SessionContext extends HasEventBus {
     }
 
     public void setServerRole(ServerRole serverRole) {
-        this.serverRole = serverRole;
+        this.serverRole = java.util.Objects.requireNonNull(serverRole, "Session role must be CLIENT or SERVER");
     }
 
     public void setSendingIsFinish(boolean sendingIsFinish) {
@@ -189,6 +224,21 @@ public class SessionContext extends HasEventBus {
 
     public boolean isReceivingIsFinish() {
         return receivingIsFinish;
+    }
+
+    public java.util.concurrent.ConcurrentMap<FileInfo, FileData<InputStream>> getPendingFiles() { return pendingFiles; }
+
+    public boolean isTransferComplete() {
+        return sendingIsFinish && receivingIsFinish && pendingFiles.isEmpty() && sendFiles.isEmpty();
+    }
+
+    public synchronized void finishSessionIfComplete(org.fidonet.binkp.common.protocol.Session session) {
+        if (isTransferComplete() && state != SessionState.STATE_END) {
+            ServerRole role = java.util.Objects.requireNonNull(serverRole, "Session role must be set before completing a transfer");
+            setState(SessionState.STATE_END);
+            sendEvent(new org.fidonet.binkp.common.events.DisconnectedEvent(this));
+            if (role == ServerRole.SERVER) session.close(false);
+        }
     }
 
     public void setReceivingIsFinish(boolean receivingIsFinish) {
@@ -247,11 +297,11 @@ public class SessionContext extends HasEventBus {
     }
 
     public boolean isNRMode() {
-        return nrMode;
+        return nrMode && stationConfig.isNREnabled();
     }
 
     public void setNRMode(boolean nrMode) {
-        this.nrMode = nrMode;
+        this.nrMode = nrMode && stationConfig.isNREnabled();
     }
 
     public boolean isCryptMode() {
@@ -279,9 +329,11 @@ public class SessionContext extends HasEventBus {
     }
 
     public FileData<OutputStream> getNotFinishedFileData(FileInfo info) {
-        int pos = notFinishedFiles.indexOf(info);
-        if (pos != -1) {
-            return notFinishedFiles.get(pos);
+        for (FileData<OutputStream> file : notFinishedFiles) {
+            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) return file;
+        }
+        for (FileData<OutputStream> file : recvFiles) {
+            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) return file;
         }
         return null;
     }

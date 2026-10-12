@@ -53,11 +53,9 @@ public abstract class BaseConfig implements IConfig {
 
     @Override
     public void load(InputStream stream) throws ParseConfigException {
-        InputStreamReader reader = new InputStreamReader(stream);
-        try {
+        try (BufferedReader file = new BufferedReader(new InputStreamReader(stream))) {
             int strnum = 0;
             String str;
-            BufferedReader file = new BufferedReader(reader);
             while ((str = file.readLine()) != null) {
                 strnum++;
                 if (str.contains("#")) {
@@ -71,17 +69,12 @@ public abstract class BaseConfig implements IConfig {
                     logger.debug("Error in config string on {} line", strnum);
                     break;
                 }
-                Scanner scanner = new Scanner(str);
-                scanner.useDelimiter("=");
-                if (scanner.hasNext()) {
-                    String name = scanner.next();
-                    String value = scanner.next();
-                    setValue(name.trim().toLowerCase(), value.trim());
-                }
+                int separator = str.indexOf('=');
+                String name = str.substring(0, separator).trim();
+                String value = str.substring(separator + 1).trim();
+                setValue(name.toLowerCase(Locale.ROOT), value);
             }
 
-            stream.close();
-            file.close();
         } catch (IOException e) {
             throw new ParseConfigException(e);
         }
@@ -90,9 +83,9 @@ public abstract class BaseConfig implements IConfig {
 
     @Override
     public void load(String fileName) throws ParseConfigException {
-        try {
-            load(new FileInputStream(fileName));
-        } catch (FileNotFoundException e) {
+        try (InputStream stream = new FileInputStream(fileName)) {
+            load(stream);
+        } catch (IOException e) {
             throw new ParseConfigException(e);
         }
     }
@@ -125,7 +118,7 @@ public abstract class BaseConfig implements IConfig {
 
     @Override
     public List<String> getValuesAsList(String key) {
-        List<String> values = props.get(key.trim().toLowerCase());
+        List<String> values = props.get(key.trim().toLowerCase(Locale.ROOT));
         if ((values == null) || (values.size() == 0)) {
             return null;
         } else {

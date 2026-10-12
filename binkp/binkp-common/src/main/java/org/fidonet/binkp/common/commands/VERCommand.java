@@ -44,7 +44,7 @@ public class VERCommand extends NULCommand {
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        return String.format("%s %s", version, "binkp/1.1");
+        return String.format("%s %s", version, "binkp/1.0");
     }
 
     @Override

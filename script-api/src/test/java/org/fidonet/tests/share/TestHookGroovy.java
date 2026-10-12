@@ -43,6 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.PrintStream;
+import java.io.InputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -60,7 +61,10 @@ public class TestHookGroovy extends HasEventBus {
     @Before
     public void setupEnv() throws Exception {
 
-        String hookScriptContent = FileUtils.getFileContent(TestHookGroovy.class.getClassLoader().getResourceAsStream(FILE_HOOK_NAME));
+        String hookScriptContent;
+        try (InputStream stream = TestHookGroovy.class.getClassLoader().getResourceAsStream(FILE_HOOK_NAME)) {
+            hookScriptContent = FileUtils.getFileContent(stream);
+        }
 
         // Init hook and command classes
         scriptManager = new GroovyScriptManager();
@@ -93,10 +97,13 @@ public class TestHookGroovy extends HasEventBus {
 
         PrintStream console = System.out;
         ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();
-        System.setOut(new PrintStream(consoleMonitor, true));
-        getEventBus().publish(new NullEvent());
-        System.out.flush();
-        System.setOut(console);
+        try (PrintStream capture = new PrintStream(consoleMonitor, true)) {
+            System.setOut(capture);
+            getEventBus().publish(new NullEvent());
+            System.out.flush();
+        } finally {
+            System.setOut(console);
+        }
         TestCase.assertEquals("", consoleMonitor.getBuffer());
     }
 
@@ -104,11 +111,14 @@ public class TestHookGroovy extends HasEventBus {
     public void testHookExecute() throws Exception {
         PrintStream console = System.out;
         ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();
-        System.setOut(new PrintStream(consoleMonitor, true));
-        getEventBus().publish(new TestEvent("test"));
-        Thread.sleep(500);
-        System.out.flush();
-        System.setOut(console);
+        try (PrintStream capture = new PrintStream(consoleMonitor, true)) {
+            System.setOut(capture);
+            getEventBus().publish(new TestEvent("test"));
+            Thread.sleep(500);
+            System.out.flush();
+        } finally {
+            System.setOut(console);
+        }
         TestCase.assertEquals("TestHook test", consoleMonitor.getBuffer());
     }
 }

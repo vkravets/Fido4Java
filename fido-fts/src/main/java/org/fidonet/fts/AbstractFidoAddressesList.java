@@ -54,8 +54,9 @@ public abstract class AbstractFidoAddressesList {
     }
 
     protected static <T extends Set<FTNAddr>> T parseAddresses(String addressesString, int defaultZone, T addresses) {
+        if (addressesString == null || addressesString.trim().isEmpty()) return addresses;
         FTNAddr node = new FTNAddr(defaultZone, 0, 0, 0);
-        String[] tokens = addressesString.split("\\s");
+        String[] tokens = addressesString.trim().split("\\s+");
         for (String addr : tokens) {
             if (addr.contains("/")) {
                 node = new FTNAddr(defaultZone + ":" + addr.trim());
@@ -124,7 +125,7 @@ public abstract class AbstractFidoAddressesList {
     @Override
     public String toString() {
         if (addresses.size() == 0)
-            return null;
+            return "";
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<FTNAddr> iterator = addresses.iterator();
         FTNAddr first = iterator.next();
@@ -148,6 +149,7 @@ public abstract class AbstractFidoAddressesList {
 
     protected List<String> getWrapStrings(int wrapLength, String prefix) {
         String original = toString();
+        if (original.isEmpty()) return Collections.emptyList();
         return StringTools.wrap(original, wrapLength, prefix);
     }
 

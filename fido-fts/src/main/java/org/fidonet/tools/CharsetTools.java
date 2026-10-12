@@ -52,7 +52,7 @@ public class CharsetTools {
         fidoToJavaCharsetMap.put("+7_FIDO", Charset.forName(DEFAULT_ENCODING));
         try {
             return Charset.forName(messageCharset);
-        } catch (UnsupportedCharsetException e) {
+        } catch (UnsupportedCharsetException | java.nio.charset.IllegalCharsetNameException e) {
             Charset charset = fidoToJavaCharsetMap.get(messageCharset);
             if (charset == null) {
                 charset = Charset.forName(DEFAULT_ENCODING);

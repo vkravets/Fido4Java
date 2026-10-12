@@ -45,8 +45,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
@@ -111,22 +114,32 @@ public class Tosser extends HasEventBus {
     }
 
     private void saveBad(PktTemp pkt) throws IOException, TosserException {
-        File bad = new File(config.getTmpDir() + pkt.getName().replace(".pkt", ".bad"));
+        Path root = new File(config.getTmpDir()).toPath().toRealPath();
+        String name = pkt.getName().replace('\\', '/');
+        if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
+            throw new TosserException("Absolute packet path is not allowed");
+        }
+        String badName = name.toLowerCase(java.util.Locale.ROOT).endsWith(".pkt")
+                ? name.substring(0, name.length() - 4) + ".bad" : name + ".bad";
+        Path badPath = root.resolve(badName).normalize();
+        if (!badPath.startsWith(root) || badPath.equals(root)
+                || !badPath.getParent().toRealPath().startsWith(root)) {
+            throw new TosserException("Packet path escapes the temporary directory");
+        }
+        File bad = badPath.toFile();
 
         if (bad.exists()) {
             logger.warn("Bad {} already exists.", pkt.getName());
             // TODO: need to throw exception?
             return;
         }
-        if (!bad.createNewFile()) {
-            throw new TosserException("Creating bad packet was failed.");
+        try (OutputStream out = Files.newOutputStream(badPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            pkt.getPkt().position(0);
+            ByteBuffer buffer = pkt.getPkt().duplicate();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            out.write(bytes);
         }
-
-        RandomAccessFile out = new RandomAccessFile(bad, "rw");
-
-        pkt.getPkt().position(0);
-        out.seek(0);
-        out.write(pkt.getPkt().array());
     }
 
 
@@ -172,13 +185,16 @@ public class Tosser extends HasEventBus {
     }*/
 
     private boolean tosspkt(ByteBuffer buf) throws IOException, EchoBaseException {
-        final FtsPkt q = new FtsPkt(buf);
+        final FtsPkt q;
+        try { q = new FtsPkt(buf); }
+        catch (IllegalArgumentException e) { throw new IOException("Invalid FTN packet", e); }
         Link origlink = config.getLink(q.getOrigaddr());
         if (origlink == null) {
             logger.error("Unknown Link! Drop it.");
             return false;
         }
-        if (!q.getPass().equals("") && !q.getPass().equals(origlink.getPass())) {
+        String expectedPassword = origlink.getPass() == null ? "" : origlink.getPass();
+        if (!q.getPass().equals(expectedPassword)) {
             logger.error("Bad PASSWORD! Drop it.");
             return false;
         }
@@ -186,7 +202,7 @@ public class Tosser extends HasEventBus {
         final FtsPackMsg[] msgs = q.getMsgs();
         logger.debug("Find {} messages in the bundle", msgs.length);
         for (FtsPackMsg msg1 : msgs) {
-            final Message msg = new Message(msg1);
+            final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
             if (msg.isEchomail()) {
                 // Call onTossEchoMsg hook
                 getEventBus().publish(new TossEchoMailEvent(msg, areamgr));

@@ -448,22 +448,19 @@ public class DatabaseManager implements IBase {
                 return Collections.emptyIterator();
             }
 
-            Long minLastMessage = Long.MAX_VALUE;
-            List<Long> areas_ids = new ArrayList<Long>();
+            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true);
+            Where<Echomail, Object> where = echomailQueryBuilder.where();
+            int branches = 0;
             for (Subscription subscription : subscriptionList) {
-                Long lastMessageID = subscription.getLastMessage();
-                if (lastMessageID < minLastMessage)
-                    minLastMessage = lastMessageID;
-                if (areaname == null || (subscription.getEchoarea().getName().equals(areaname))) {
-                    areas_ids.add(subscription.getEchoarea().getId());
+                if (areaname == null || subscription.getEchoarea().getName().equalsIgnoreCase(areaname)) {
+                    Long lastMessageID = subscription.getLastMessage();
+                    where.eq(Echomail.ID_AREA_COLUMN, subscription.getEchoarea().getId()).and()
+                            .gt(Echomail.ID_COLUMN, lastMessageID == null ? 0L : lastMessageID);
+                    branches++;
                 }
             }
-
-            echomailQueryBuilder.orderBy(Echomail.ID_COLUMN, true).
-                    where().
-                    in(Echomail.ID_AREA_COLUMN, areas_ids).
-                    and().
-                    gt(Echomail.ID_COLUMN, minLastMessage);
+            if (branches == 0) return Collections.emptyIterator();
+            if (branches > 1) where.or(branches);
 
             return createEchomailIterator(echomailQueryBuilder, startMessage, bundleSize, continueQuery);
 

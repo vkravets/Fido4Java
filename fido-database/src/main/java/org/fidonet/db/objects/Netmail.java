@@ -44,7 +44,7 @@ import java.util.Date;
 @DatabaseTable(tableName = "netmail")
 public class Netmail {
 
-    @DatabaseField(columnName = "id", generatedId = true, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(columnName = "id", generatedId = true, allowGeneratedIdInsert = true, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = "from_name", canBeNull = false)
@@ -82,6 +82,11 @@ public class Netmail {
 
     public Long getId() {
         return id;
+    }
+
+    /** Preserve original identities when migrating a database. */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getFromName() {

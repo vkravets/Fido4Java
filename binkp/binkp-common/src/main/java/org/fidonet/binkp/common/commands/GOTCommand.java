@@ -58,13 +58,7 @@ public class GOTCommand extends MessageCommand {
     }
 
     private FileData<InputStream> findSentFile(SessionContext sessionContext, FileInfo info) {
-        for (FileData<InputStream> next : sessionContext.getSendFiles()) {
-            FileInfo fileInfo = next.getInfo();
-            if (fileInfo.equals(info)) {
-                return next;
-            }
-        }
-        return null;
+        return sessionContext.getPendingFiles().remove(info);
     }
 
     @Override
@@ -74,10 +68,13 @@ public class GOTCommand extends MessageCommand {
         if (sentFile != null) {
             FileInfo fileSentInfo = sentFile.getInfo();
             fileSentInfo.setFinished(true);
+            sessionContext.getSendFiles().removeIf(file -> file.getInfo().equals(info));
+            if (session.getFileSender() != null) session.getFileSender().acknowledge(info);
             sessionContext.sendEvent(new FileSendEvent(sessionContext, sentFile));
-            long totalSize = sessionContext.getRecvFilesSize() + fileSentInfo.getSize();
+            long totalSize = sessionContext.getSendFilesSize() + fileSentInfo.getSize();
             sessionContext.setSendFilesSize(totalSize);
         }
+        sessionContext.finishSessionIfComplete(session);
     }
 
     @Override
@@ -85,7 +82,7 @@ public class GOTCommand extends MessageCommand {
         FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
         if (fileData != null) {
             FileInfo fileInfo = fileData.getInfo();
-            return String.format("%s %s %s", fileInfo.getName(), fileInfo.getSize(), fileInfo.getTimestamp());
+            return fileInfo.arguments();
         }
         return null;
     }

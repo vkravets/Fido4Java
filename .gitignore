@@ -1,4 +1,9 @@
 .idea/
+.gradle/
+.gradle-user-home/
+/gradle/wrapper/gradle-wrapper.jar
+**/build/
+**/*.class
 !.gitignore
 *.iml
 *.ipr
@@ -6,3 +11,6 @@
 **/target/
 **/logs/
 **/tmp/
+/inbound/.binkp-partials/
+**/*.hprof
+**/*.part

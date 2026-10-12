@@ -43,26 +43,33 @@ public class CramOPTCommand extends OPTCommand {
 
     private MessageDigest messageDigest;
 
+    public CramOPTCommand() {
+        this(md5());
+    }
+    private static MessageDigest md5() {
+        try { return MessageDigest.getInstance("MD5"); }
+        catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+
     public CramOPTCommand(MessageDigest messageDigest) {
         this.messageDigest = messageDigest;
         messageDigest.reset();
-        messageDigest.update(String.format("%d%d", System.currentTimeMillis(),
-                System.nanoTime()).getBytes());
+        byte[] nonce = new byte[32];
+        new java.security.SecureRandom().nextBytes(nonce);
+        messageDigest.update(nonce);
 
     }
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        if (!sessionContext.getLinksInfo().getCurLink().isMD()) {
-            return null;
-        }
         final byte[] bufKey = messageDigest.digest();
         final StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < bufKey.length; i++) {
             builder.append(String.format("%02x", bufKey[i]));
         }
         final String key = builder.toString();
         sessionContext.setPasswordKey(key);
-        return String.format("CRAM-%s-%s", messageDigest.getAlgorithm(), key);
+        sessionContext.setMessageDigest(messageDigest);
+        return String.format("CRAM-%s-%s", messageDigest.getAlgorithm().replace("-", ""), key);
     }
 }

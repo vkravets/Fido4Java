@@ -56,7 +56,13 @@ public class NettySession implements Session {
 
     @Override
     public void close(boolean close) {
-        context.channel().close();
+        if (close) context.channel().close();
+        else {
+            // Enqueue behind writes from the sender thread, including the final M_EOB.
+            context.executor().execute(() -> context.channel()
+                    .writeAndFlush(io.netty.buffer.Unpooled.EMPTY_BUFFER)
+                    .addListener(io.netty.channel.ChannelFutureListener.CLOSE));
+        }
     }
 
     @Override

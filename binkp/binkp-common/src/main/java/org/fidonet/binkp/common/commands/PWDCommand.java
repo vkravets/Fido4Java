@@ -66,12 +66,16 @@ public class PWDCommand extends MessageCommand {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
             final String passwordString = commandArgs.trim();
-            if (passwordString.startsWith("CRAM") && sessionContext.isCryptMode()) {
+            if (password != null) password.setCrypt(false);
+            if (password != null && passwordString.startsWith("CRAM-") && sessionContext.getPasswordKey() != null
+                    && sessionContext.getMessageDigest() != null
+                    && passwordString.startsWith("CRAM-" + sessionContext.getMessageDigest().getAlgorithm().replace("-", "") + "-")) {
                 password.setCrypt(true);
                 password.setMd(sessionContext.getMessageDigest());
                 password.setKey(sessionContext.getPasswordKey());
             }
-            if (password.getText().equals(passwordString)) {
+            if (password != null && java.security.MessageDigest.isEqual(password.getText().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    passwordString.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
 
@@ -92,7 +96,7 @@ public class PWDCommand extends MessageCommand {
             } else {
                 ERRCommand error = new ERRCommand();
                 sessionContext.setState(SessionState.STATE_ERR);
-                sessionContext.setLastErrorMessage(String.format("Bad password \"%s\"", commandArgs));
+                sessionContext.setLastErrorMessage("Incorrect password");
                 error.send(session, sessionContext);
                 sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
                 session.close(false);

@@ -55,7 +55,8 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     private static final String REGISTER_FUNC_NAME = "register";
     private static final String UNREGISTER_FUNC_NAME = "unload";
 
-    private static final HashMap<String, String> loadedScripts = new HashMap<String, String>();
+    private final Map<String, String> loadedScripts = new HashMap<String, String>();
+    private final Map<String, javax.script.ScriptEngine> scriptEngines = new HashMap<>();
 
     private javax.script.ScriptEngine engine;
 
@@ -79,26 +80,33 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         this.engine = engine;
     }
 
-    public void registerScript(String name, String script, Object... params) throws Exception {
+    public synchronized void registerScript(String name, String script, Object... params) throws Exception {
+        if (loadedScripts.containsKey(name)) unregisterScript(name, params);
+        javax.script.ScriptEngine scriptEngine = scriptEngines.isEmpty() ? engine
+                : new ScriptEngineManager().getEngineByExtension(getFileExtension());
+        Object globals = engine.getContext().getAttribute("#jsr223.groovy.engine.keep.globals");
+        if (globals != null) scriptEngine.getContext().setAttribute("#jsr223.groovy.engine.keep.globals",
+                globals, javax.script.ScriptContext.ENGINE_SCOPE);
+        scriptEngine.eval(script);
+        scriptCallFunctions(scriptEngine, REGISTER_FUNC_NAME, params);
+        scriptEngines.put(name, scriptEngine);
         updateCache(name, script);
-        scriptCallFunctions(name, script, REGISTER_FUNC_NAME, params);
     }
 
-    public void unregisterScript(String name, Object... params) throws Exception {
+    public synchronized void unregisterScript(String name, Object... params) throws Exception {
         String cache = getFromCache(name);
         if (cache == null || cache.isEmpty()) {
             logger.warn("Something wrong. {} script is empty", name);
             return;
         }
-        scriptCallFunctions(name, cache, UNREGISTER_FUNC_NAME, params);
+        scriptCallFunctions(scriptEngines.get(name), UNREGISTER_FUNC_NAME, params);
+        loadedScripts.remove(name);
+        scriptEngines.remove(name);
     }
 
-    private void scriptCallFunctions(String name, String script, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
-
-        engine.eval(script);
-
+    private void scriptCallFunctions(javax.script.ScriptEngine scriptEngine, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
         try {
-            Invocable invocableEngine = (Invocable) engine;
+            Invocable invocableEngine = (Invocable) scriptEngine;
             invocableEngine.invokeFunction(funcName, params);
         } catch (ClassCastException ex) {
             throw new NotSupportedScriptEngine("This script engine is not supported", ex);
@@ -111,25 +119,22 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         reloadScripts(scriptsContent, false, params);
     }
 
-    public void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params) {
+    public synchronized void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params) {
         if (scriptsContent.size() > 0) {
             for (Map.Entry<String, String> script : scriptsContent.entrySet()) {
                 String fileName = script.getKey();
-                if (fileName.indexOf("." + getFileExtension()) == fileName.length() - 3) {
+                if (fileName.endsWith("." + getFileExtension())) {
                     try {
                         logger.debug("Loading {}", fileName);
                         String cacheContent = getFromCache(fileName);
-                        String content = loadScriptContent(new FileInputStream(fileName));
-                        boolean isCached = cacheContent != null && cacheContent.equals(content);
-                        // if script was read before, need to call unregister on it, to unload old one.
-                        if (isCached) {
-                            logger.debug("Unloading old one");
-                            unregisterScript(fileName, params);
+                        String content;
+                        try (InputStream stream = new FileInputStream(fileName)) {
+                            content = loadScriptContent(stream);
                         }
-                        // if force reload set to true or file was not read - try to register it.
-                        if (forceReload || !isCached) {
+                        boolean isCached = cacheContent != null && cacheContent.equals(content);
+                        if (Boolean.TRUE.equals(forceReload) || !isCached) {
                             logger.debug("Registering {} script", fileName);
-                            registerScript(fileName, content);
+                            registerScript(fileName, content, params);
                         }
                         logger.debug("{} successfully registered", fileName);
 

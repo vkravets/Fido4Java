@@ -33,7 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FtsPackMsg {
 
@@ -59,69 +63,52 @@ public class FtsPackMsg {
     }
 
     public FtsPackMsg(ByteBuffer buf) {
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        if (buf.remaining() < 34) throw new IllegalArgumentException("Truncated packed message header");
         type = buf.getShort();
         if (type != 2) {
             logger.debug("Seems like not a packet!");
             isValid = false;
             return;
         }
-        origNode = buf.getShort();
-        destNode = buf.getShort();
-        origNet = buf.getShort();
-        destNet = buf.getShort();
+        origNode = Short.toUnsignedInt(buf.getShort());
+        destNode = Short.toUnsignedInt(buf.getShort());
+        origNet = Short.toUnsignedInt(buf.getShort());
+        destNet = Short.toUnsignedInt(buf.getShort());
         attr = buf.getShort();
-        cost = buf.getShort();
+        cost = Short.toUnsignedInt(buf.getShort());
         final byte[] tmp = new byte[20];
         buf.get(tmp, 0, 20);
         dateTime = tmp;
 
-        ByteBuffer tmpbuffer = ByteBuffer.allocate(65535);
-        byte end = 1;
-        while (end != 0) {
-            end = buf.get();
-            tmpbuffer.put(end);
+        byte[] toBytes = readString(buf, 36);
+        byte[] fromBytes = readString(buf, 36);
+        byte[] subjectBytes = readString(buf, 72);
+        body = readString(buf, Integer.MAX_VALUE);
+        Charset charset = detectCharset(body);
+        to = new String(toBytes, charset);
+        from = new String(fromBytes, charset);
+        subj = new String(subjectBytes, charset);
+    }
+
+    private static byte[] readString(ByteBuffer buf, int maxBytes) {
+        int start = buf.position();
+        while (buf.hasRemaining()) {
+            if (buf.position() - start >= maxBytes) throw new IllegalArgumentException("Packed message field exceeds its maximum size");
+            if (buf.get() == 0) {
+                int end = buf.position();
+                byte[] value = new byte[end - start - 1];
+                buf.position(start); buf.get(value); buf.position(end);
+                return value;
+            }
         }
+        throw new IllegalArgumentException("Unterminated packed message field");
+    }
 
-        byte[] to_array = new byte[tmpbuffer.position() - 1];
-        tmpbuffer.position(0);
-        tmpbuffer.get(to_array);
-        tmpbuffer.position(0);
-        to = new String(to_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
-
-        end = 1;
-        while (end != 0) {
-            end = buf.get();
-            tmpbuffer.put(end);
-        }
-        byte[] from_array = new byte[tmpbuffer.position() - 1];
-        tmpbuffer.position(0);
-        tmpbuffer.get(from_array);
-        tmpbuffer.position(0);
-        from = new String(from_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
-
-        end = 1;
-        while (end != 0) {
-            end = buf.get();
-            tmpbuffer.put(end);
-        }
-        byte[] subj_array = new byte[tmpbuffer.position() - 1];
-        tmpbuffer.position(0);
-        tmpbuffer.get(subj_array);
-        tmpbuffer.position(0);
-        subj = new String(subj_array, Charset.forName(CharsetTools.DEFAULT_ENCODING));
-
-        end = 1;
-        while (end != 0) {
-            end = buf.get();
-            tmpbuffer.put(end);
-        }
-
-        byte[] body_array = new byte[tmpbuffer.position() - 1];
-        tmpbuffer.position(0);
-        tmpbuffer.get(body_array);
-        tmpbuffer.position(0);
-        body = new byte[body_array.length];
-        System.arraycopy(body_array, 0, body, 0, body_array.length);
+    public static Charset detectCharset(byte[] text) {
+        Matcher matcher = Pattern.compile("(?:^|\\r)\\n?\\u0001(?:CHRS|CHARSET):\\s*([^\\s\\r]+)")
+                .matcher(new String(text, StandardCharsets.ISO_8859_1));
+        return CharsetTools.charsetDetect(matcher.find() ? matcher.group(1) : CharsetTools.DEFAULT_ENCODING);
     }
 
     public boolean isValid() {
