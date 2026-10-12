@@ -28,7 +28,6 @@
 
 package org.fidonet.binkp.netty;
 
-import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.StationConfig;
@@ -38,6 +37,7 @@ import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
 import org.junit.ClassRule;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -53,15 +53,17 @@ import java.util.List;
 
 public class NettyServerTest extends AbstractServerTest {
 
+    private static final Server server = new Server(0);
+
     @ClassRule
     public static ServerRule SERVER = new ServerRule(
-            new Server(Connector.BINK_PORT),
+            server,
             sessionContext,
             true);
 
     @Test(timeout = 30000)
     public void test1() throws Exception {
-        final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost");
+        final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost:" + server.getLocalPort());
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
@@ -80,7 +82,7 @@ public class NettyServerTest extends AbstractServerTest {
 
     @Test(timeout = 30000)
     public void test2() throws Exception {
-        final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost");
+        final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost:" + server.getLocalPort());
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
@@ -95,6 +97,19 @@ public class NettyServerTest extends AbstractServerTest {
 
         final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
         runAndWait(client, sessionContext);
+    }
+
+    @Test(timeout = 30000)
+    public void serversUseDifferentPortsWhenStartedTogether() throws Exception {
+        Server other = new Server(0);
+        try {
+            other.run(sessionContext);
+            Assert.assertTrue(server.getLocalPort() > 0);
+            Assert.assertTrue(other.getLocalPort() > 0);
+            Assert.assertNotEquals(server.getLocalPort(), other.getLocalPort());
+        } finally {
+            other.stop();
+        }
     }
 
     private void runAndWait(Client client, SessionContext sessionContext) throws Exception {
