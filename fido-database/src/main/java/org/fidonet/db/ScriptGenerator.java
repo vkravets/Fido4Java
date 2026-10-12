@@ -131,21 +131,22 @@ public class ScriptGenerator {
 
     public static void main(String[] argv) throws IOException, SQLException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         OrmManagerEx ormManager = new OrmManagerEx(argv[0]);
-        ormManager.connect();
+        try {
+            ormManager.connect();
+            List<BaseDaoImpl<?, ?>> daos = new ArrayList<BaseDaoImpl<?, ?>>();
+            daos.addAll(ormManager.<BaseDaoImpl<?, ?>>getAllDaos());
 
-        List<BaseDaoImpl<?, ?>> daos = new ArrayList<BaseDaoImpl<?, ?>>();
-        daos.addAll(ormManager.<BaseDaoImpl<?, ?>>getAllDaos());
+            try (OutputStream createTablesStream = new FileOutputStream("createTables.sql")) {
+                String createTablesScriptContent = generateCreateScript(ormManager.getConnectionSource(), daos);
+                createTablesStream.write(createTablesScriptContent.getBytes());
+            }
 
-        OutputStream createTablesStream = new FileOutputStream("createTables.sql");
-        String createTablesScriptContent = generateCreateScript(ormManager.getConnectionSource(), daos);
-        createTablesStream.write(createTablesScriptContent.getBytes());
-        createTablesStream.flush();
-        createTablesStream.close();
-
-        OutputStream dropTablesStream = new FileOutputStream("dropTables.sql");
-        String dropTablesScriptContent = generateDropScript(ormManager.getConnectionSource(), daos);
-        dropTablesStream.write(dropTablesScriptContent.getBytes());
-        dropTablesStream.flush();
-        dropTablesStream.close();
+            try (OutputStream dropTablesStream = new FileOutputStream("dropTables.sql")) {
+                String dropTablesScriptContent = generateDropScript(ormManager.getConnectionSource(), daos);
+                dropTablesStream.write(dropTablesScriptContent.getBytes());
+            }
+        } finally {
+            ormManager.disconnect();
+        }
     }
 }

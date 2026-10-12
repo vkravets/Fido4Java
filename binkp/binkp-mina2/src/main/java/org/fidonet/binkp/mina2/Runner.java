@@ -66,7 +66,7 @@ public class Runner {
             public void waitSessionFinish() throws InterruptedException {
                 for (; ; ) {
                     Thread.sleep(500);
-                    if (context.isReceivingIsFinish() && context.isSendingIsFinish() ||
+                    if (context.isTransferComplete() ||
                             context.getState().equals(SessionState.STATE_ERR) ||
                             context.getState().equals(SessionState.STATE_END)) {
                         break;

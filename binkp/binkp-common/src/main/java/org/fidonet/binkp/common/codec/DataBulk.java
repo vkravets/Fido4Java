@@ -57,14 +57,8 @@ public class DataBulk implements Data {
     @Override
     public BinkFrame getRawData() {
         int len = this.len & 0x7fff;
-        byte[] buf;
-        if (data.length != this.len) {
-            ByteBuffer tmp = ByteBuffer.allocate(this.len);
-            tmp.put(data, 0, this.len);
-            buf = tmp.array();
-        } else {
-            buf = data;
-        }
+        // Socket transports may encode the frame after the caller reuses its read buffer.
+        byte[] buf = java.util.Arrays.copyOf(data, this.len);
         return new BinkFrame((short) len, buf);
     }
 

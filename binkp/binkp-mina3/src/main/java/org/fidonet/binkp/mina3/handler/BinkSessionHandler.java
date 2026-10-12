@@ -82,11 +82,8 @@ public class BinkSessionHandler extends AbstractIoHandler {
     }
 
     private SessionContext getSessionContext(IoSession session) {
-        if (sessionContext != null) {
-            return sessionContext;
-        } else {
-            return session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
-        }
+        SessionContext context = session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
+        return context == null ? sessionContext : context;
     }
 
     @Override
@@ -97,6 +94,8 @@ public class BinkSessionHandler extends AbstractIoHandler {
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
         session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
 
+        sessionContext.prepareTransfer();
+        sessionContext.setReceiveEventBus(eventBus);
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
         Mina3Session mina3Session = new Mina3Session(session);
@@ -115,6 +114,8 @@ public class BinkSessionHandler extends AbstractIoHandler {
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
+        if (!isClient) commands.add(new org.fidonet.binkp.common.commands.CramOPTCommand());
+        commands.add(new org.fidonet.binkp.common.commands.OPTCommand());
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
         commands.add(new LOCCommand());
@@ -134,13 +135,15 @@ public class BinkSessionHandler extends AbstractIoHandler {
 
     @Override
     public void sessionClosed(IoSession session) {
-
+        SessionContext context = getSessionContext(session);
+        if (context != null) { context.setState(SessionState.STATE_END); context.closeReceiveStreams(); }
     }
 
     @Override
     public void messageReceived(IoSession session, Object message) {
         SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
+        if (data.getData().length == 0) return;
         Command command = null;
         BinkData binkData = null;
         Mina3Session mina3Session = new Mina3Session(session);
@@ -156,6 +159,7 @@ public class BinkSessionHandler extends AbstractIoHandler {
                 error.send(mina3Session, sessionContext);
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
+                exceptionCaught(session, e);
             }
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             session.close(false);
@@ -163,39 +167,16 @@ public class BinkSessionHandler extends AbstractIoHandler {
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData()));
+            log.debug("Command data: {}", new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
             try {
-                command.handle(mina3Session, sessionContext, new String(binkData.getData()));
+                command.handle(mina3Session, sessionContext, new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
+                exceptionCaught(session, e);
             }
         } else {
-            // try to get data bulk
-            DataBulk dataFile = new DataBulk(binkData.getData());
-            log.debug("Received data block with size {}bytes", dataFile.getRawData().getData().length);
-            FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
-            if (fileData != null) {
-                FileInfo info = fileData.getInfo();
-                log.debug("Saving data bulk for {} file", info.getName());
-                long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
-                try {
-                    fileData.getStream().write(dataFile.getRawData().getData());
-                } catch (IOException e) {
-                    exceptionCaught(session, e);
-                }
-                info.setCurSize(curSize);
-                info.setFinished(curSize == info.getSize());
-                if (info.isFinished()) {
-                    GOTCommand confirmRecv = new GOTCommand();
-                    try {
-                        confirmRecv.send(mina3Session, sessionContext);
-                    } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
-                    }
-                    eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
-                    log.info("Got {} file with {} bytes file size", info.getName(), info.getSize());
-                }
-            }
+            try { org.fidonet.binkp.common.io.ReceiveTransfer.accept(mina3Session, sessionContext, binkData.getData()); }
+            catch (Exception e) { exceptionCaught(session, e); }
         }
     }
 

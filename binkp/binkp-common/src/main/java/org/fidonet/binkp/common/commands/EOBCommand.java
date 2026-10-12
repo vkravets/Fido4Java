@@ -58,18 +58,7 @@ public class EOBCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         sessionContext.setReceivingIsFinish(true);
-        if (sessionContext.isSendingIsFinish()) {
-            Command eob = new EOBCommand();
-            eob.send(session, sessionContext);
-            sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
-            if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
-                log.debug("CLIENT MODE! Mark session as finished");
-                sessionContext.setState(SessionState.STATE_END);
-            } else {
-                log.debug("Close session");
-                session.close(false);
-            }
-        }
+        sessionContext.finishSessionIfComplete(session);
     }
 
     @Override

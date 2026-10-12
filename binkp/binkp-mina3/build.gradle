@@ -1,5 +1,15 @@
 group = 'org.fidonet.binkp'
 description = 'binkp-mina3'
+
+def mockitoVersion = '5.24.0'
+
+configurations {
+    mockitoAgent {
+        canBeConsumed = false
+        transitive = false
+    }
+}
+
 dependencies {
   implementation project(':fido-config')
   implementation project(':fido-fts')
@@ -10,10 +20,29 @@ dependencies {
   implementation project(':binkp-root:binkp-common')
     testImplementation group: 'junit', name: 'junit', version:'4.12'
   testImplementation project(path: ':binkp-root:binkp-common', configuration: 'testArtifacts')
-    testImplementation group: 'org.mockito', name: 'mockito-core', version:'2.0.14-beta'
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    mockitoAgent "org.mockito:mockito-core:${mockitoVersion}"
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.6.2'
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.6.2'
   compileOnly project(':plugin-manager')
+}
+
+// Explicit instrumentation for Mockito's inline mock maker on modern JDKs.
+abstract class MockitoAgentProvider implements CommandLineArgumentProvider {
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract ConfigurableFileCollection getAgentJar()
+
+    @Override
+    Iterable<String> asArguments() {
+        ["-javaagent:${agentJar.asPath}".toString()]
+    }
+}
+
+tasks.withType(Test).configureEach {
+    def agentProvider = objects.newInstance(MockitoAgentProvider)
+    agentProvider.agentJar.from(configurations.mockitoAgent)
+    jvmArgumentProviders.add(agentProvider)
 }

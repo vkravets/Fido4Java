@@ -56,42 +56,38 @@ public class EchoList {
     public void load() throws IOException {
         list = new HashMap<String, EchoCfg>();
 
-        FileReader fr;
-        fr = new FileReader(areaListFile);
         String str;
-        final BufferedReader file = new BufferedReader(fr);
-        while ((str = file.readLine()) != null) {
-            if (str.contains("#")) {
-                str = str.substring(0, str.indexOf('#'));
-            }
-            if (str.length() == 0) {
-                continue;
-            }
-            if (str.toLowerCase().startsWith("echoarea")) {
-                String[] area = str.split(" ");
-                EchoCfg echo = new EchoCfg();
-                echo.Name = area[1];
-                echo.Path = area[2];
-                for (int i = 3; i < area.length - 1; i++) {
-                    if (area[i].equals("-b")) {
-                        echo.Type = area[i + 1];
-                        i++;
-                    } else if (area[i].equals("-g")) {
-                        echo.Group = area[i + 1];
-                        i++;
-                    } else if (area[i].equals("-a")) {
-                        echo.AKA = new FTNAddr(area[i + 1]);
-                        i++;
-                    } else if (!area[i].startsWith("-")) {
-                        echo.Link = new FTNAddr(area[i]);
-                    }
+        try (BufferedReader file = new BufferedReader(new FileReader(areaListFile))) {
+            while ((str = file.readLine()) != null) {
+                if (str.contains("#")) {
+                    str = str.substring(0, str.indexOf('#'));
                 }
-                list.put(echo.Name, echo);
+                if (str.length() == 0) {
+                    continue;
+                }
+                if (str.toLowerCase().startsWith("echoarea")) {
+                    String[] area = str.split(" ");
+                    EchoCfg echo = new EchoCfg();
+                    echo.Name = area[1];
+                    echo.Path = area[2];
+                    for (int i = 3; i < area.length - 1; i++) {
+                        if (area[i].equals("-b")) {
+                            echo.Type = area[i + 1];
+                            i++;
+                        } else if (area[i].equals("-g")) {
+                            echo.Group = area[i + 1];
+                            i++;
+                        } else if (area[i].equals("-a")) {
+                            echo.AKA = new FTNAddr(area[i + 1]);
+                            i++;
+                        } else if (!area[i].startsWith("-")) {
+                            echo.Link = new FTNAddr(area[i]);
+                        }
+                    }
+                    list.put(echo.Name, echo);
+                }
             }
         }
-
-        fr.close();
-        file.close();
 
     }
 
@@ -119,16 +115,8 @@ public class EchoList {
     }
 
     private void saveToList(EchoCfg echo) throws IOException {
-        FileWriter fw = null;
-        try {
-            fw = new FileWriter(areaListFile, true);
-            PrintWriter out = new PrintWriter(fw);
+        try (PrintWriter out = new PrintWriter(new FileWriter(areaListFile, true))) {
             out.println(echo.getEchoString());
-            out.close();
-        } finally {
-            if (fw != null) {
-                fw.close();
-            }
         }
 
 

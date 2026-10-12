@@ -94,6 +94,8 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
         session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
 
+        sessionContext.prepareTransfer();
+        sessionContext.setReceiveEventBus(eventBus);
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
 
         Mina2Session mina2Session = new Mina2Session(session);
@@ -108,6 +110,8 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
+        if (!isClient) commands.add(new org.fidonet.binkp.common.commands.CramOPTCommand());
+        commands.add(new org.fidonet.binkp.common.commands.OPTCommand());
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
         commands.add(new LOCCommand());
@@ -126,14 +130,10 @@ public class BinkSessionHandler extends IoHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-        log.error(cause.getMessage(), cause);
-    }
-
-    @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
         SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
+        if (data.getData().length == 0) return;
         Command command;
         BinkData binkData;
         Mina2Session mina2Session = new Mina2Session(session);
@@ -152,32 +152,33 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData()));
-            command.handle(mina2Session, sessionContext, new String(binkData.getData()));
+            log.debug("Command data: {}", new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
+            command.handle(mina2Session, sessionContext, new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
         } else {
-            // try to get data bulk
-            DataBulk dataFile = new DataBulk(binkData.getData());
-            log.debug("Received data block with size {}bytes", dataFile.getRawData().getData().length);
-            FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
-            if (fileData != null) {
-                FileInfo info = fileData.getInfo();
-                log.debug("Saving data bulk for {} file", info.getName());
-                long curSize = info.getCurSize() + dataFile.getRawData().getData().length;
-                fileData.getStream().write(dataFile.getRawData().getData());
-                info.setCurSize(curSize);
-                info.setFinished(curSize == info.getSize());
-                if (info.isFinished()) {
-                    GOTCommand confirmRecv = new GOTCommand();
-                    confirmRecv.send(mina2Session, sessionContext);
-                    eventBus.publish(new FileReceivedEvent(sessionContext, fileData));
-                    log.info("Got {} file with {} bytes file size", info.getName(), info.getSize());
-                }
-            }
+            try { org.fidonet.binkp.common.io.ReceiveTransfer.accept(mina2Session, sessionContext, binkData.getData()); }
+            catch (Exception e) { exceptionCaught(session, e); }
         }
     }
 
     @Override
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
         super.sessionIdle(session, status);  //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override public void sessionClosed(IoSession session) throws Exception {
+        SessionContext context = getSessionContext(session);
+        if (context != null) { context.setState(SessionState.STATE_END); context.closeReceiveStreams(); }
+        super.sessionClosed(session);
+    }
+
+    @Override public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
+        log.error(cause.getMessage(), cause);
+        SessionContext context = getSessionContext(session);
+        if (context != null) {
+            context.setState(SessionState.STATE_ERR);
+            context.setLastErrorMessage(cause.getMessage());
+            try { new ERRCommand().send(new Mina2Session(session), context); }
+            finally { context.closeReceiveStreams(); session.closeOnFlush(); }
+        }
     }
 }

@@ -47,7 +47,7 @@ public class Version {
     public static final String ID_COLUMN = "id";
     public static final String VERSION_ID_COLUMN = "version_id";
 
-    @DatabaseField(columnName = ID_COLUMN, generatedId = true)
+    @DatabaseField(columnName = ID_COLUMN, generatedId = true, allowGeneratedIdInsert = true)
     private Long id;
 
     @DatabaseField(columnName = VERSION_ID_COLUMN)
@@ -55,6 +55,11 @@ public class Version {
 
     public Long getId() {
         return id;
+    }
+
+    /** Preserve original identities when migrating a database. */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getVersion() {

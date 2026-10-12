@@ -32,15 +32,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Closeable;
 
-class JLRFile {
+class JLRFile implements Closeable {
     private RandomAccessFile jlr;
 
     public JLRFile(File tmp) throws FileNotFoundException {
         jlr = new RandomAccessFile(tmp, "rw");
     }
 
-    void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         jlr.close();
     }
 

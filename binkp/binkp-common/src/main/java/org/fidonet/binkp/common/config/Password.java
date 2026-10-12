@@ -54,7 +54,7 @@ public class Password {
 
 
     public Password(String password) {
-        this.password = password == null || password.startsWith("-") ? null : password;
+        this.password = password == null || password.equals("-") || password.isEmpty() ? "-" : password;
         this.isCrypt = false;
         this.md = null;
         this.key = null;
@@ -86,7 +86,8 @@ public class Password {
 
     private String getCryptText() {
         byte[] textKey = new byte[key.length() / 2];
-        byte[] text = password.getBytes();
+        byte[] text = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (text.length > 64) text = md.digest(text);
         byte[] k_ipad = new byte[64];
         byte[] k_opad = new byte[64];
 
@@ -111,8 +112,8 @@ public class Password {
         md.update(digest);
         digest = md.digest();
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("CRAM-%s-", md.getAlgorithm()));
-        for (int i = 0; i < 16; i++) {
+        builder.append(String.format("CRAM-%s-", md.getAlgorithm().replace("-", "")));
+        for (int i = 0; i < digest.length; i++) {
             builder.append(String.format("%02x", digest[i]));
         }
         return builder.toString();

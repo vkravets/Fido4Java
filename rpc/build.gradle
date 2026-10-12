@@ -1,9 +1,4 @@
-plugins {
-    id "org.jruyi.thrift" version "0.4.2"
-}
-
 apply plugin: 'java-library'
-apply plugin: 'org.jruyi.thrift'
 
 dependencies {
     api group: 'org.apache.thrift', name: 'libthrift', version:'0.14.2'
@@ -12,19 +7,30 @@ dependencies {
     compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
 }
 
-compileThrift {
-    thriftExecutable "thrift"
-    sourceDir "$projectDir/src/main/thrift"
-    outputDir "$buildDir/gen-src"
+// The old Thrift plugin uses IncrementalTaskInputs, removed in Gradle 8.
+// Keep the native compiler configurable for Windows and other platforms.
+def thriftExecutable = providers.gradleProperty('thriftExecutable').orElse('thrift')
+def generatedThriftSources = layout.buildDirectory.dir('gen-src')
 
-    nowarn true
-    strict true
-    verbose true
-    recurse true
-    debug true
-    allowNegKeys true
-    allow64bitsConsts true
-    createGenFolder false
+def compileThrift = tasks.register('compileThrift', Exec) {
+    inputs.files(fileTree('src/main/thrift') { include '**/*.thrift' })
+    inputs.property('thriftExecutable', thriftExecutable)
+    outputs.dir(generatedThriftSources)
 
-    generator 'java', 'private-members'
+    doFirst {
+        def outputDir = generatedThriftSources.get().asFile
+        outputDir.mkdirs()
+        commandLine thriftExecutable.get(), '--nowarn', '--strict', '--recurse',
+                '--allow-neg-keys', '--allow-64bit-consts',
+                '--gen', 'java:private-members', '-out', outputDir.absolutePath,
+                file('src/main/thrift/main.thrift').absolutePath
+    }
+}
+
+sourceSets.main.java.srcDir(generatedThriftSources)
+tasks.named('compileJava') { dependsOn compileThrift }
+
+// The RPC test sources currently contain mocks and commented-out tests only.
+test {
+    failOnNoDiscoveredTests = false
 }

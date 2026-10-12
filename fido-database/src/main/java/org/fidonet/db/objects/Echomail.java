@@ -67,7 +67,7 @@ public class Echomail {
     public static final String ORIGIN_COLUMN = "origin";
 
 
-    @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(generatedId = true, allowGeneratedIdInsert = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = MSGID_COLUMN, canBeNull = false, index = true)
@@ -114,6 +114,11 @@ public class Echomail {
 
     public Long getId() {
         return id;
+    }
+
+    /** Preserve original identities when migrating a database. */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Echoarea getArea() {
@@ -225,6 +230,13 @@ public class Echomail {
     }
 
     public static Message toMessage(Echomail echomail) {
+        String text = echomail.getText() == null ? "" : echomail.getText();
+        String areaName = echomail.getArea() == null ? null : echomail.getArea().getName();
+        if (areaName != null && !text.startsWith("AREA:")) text = "AREA:" + areaName + "\r" + text;
+        if (echomail.getMsgId() != null && !text.contains("\1MSGID:")) {
+            int areaEnd = text.startsWith("AREA:") ? text.indexOf('\r') + 1 : 0;
+            text = text.substring(0, areaEnd) + "\1MSGID: " + echomail.getMsgId() + "\r" + text.substring(areaEnd);
+        }
         FTNAddr toAddr = null;
         if (echomail.getToAddr() != null) {
             toAddr = new FTNAddr(echomail.getToAddr());
@@ -234,12 +246,13 @@ public class Echomail {
                 new FTNAddr(echomail.getFromAddr()),
                 toAddr,
                 echomail.getSubject(),
-                echomail.getText(),
+                text,
                 echomail.getDate());
         message.getBody().setOrigin(echomail.getOrigin());
         // FIXME: default zone
-        message.getBody().setSeenBy(SeenBy.valueOf(echomail.getSeenBy(), 2));
-        message.getBody().setPath(FidoPath.valueOf(echomail.getPath(), 2));
+        int zone = message.getFAddr().getZone();
+        message.getBody().setSeenBy(SeenBy.valueOf(echomail.getSeenBy(), zone));
+        message.getBody().setPath(FidoPath.valueOf(echomail.getPath(), zone));
         return message;
     }
 
@@ -256,7 +269,7 @@ public class Echomail {
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(message.getSubject());
-        msg.setText(message.getBody().getBody());
+        msg.setText(message.getBody().toString());
         msg.setOrigin(message.getBody().getOrigin());
         msg.setSeenBy(message.getBody().getSeenBy().toString());
         msg.setPath(message.getBody().getPath().toString());

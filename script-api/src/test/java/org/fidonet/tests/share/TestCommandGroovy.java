@@ -59,8 +59,7 @@ public class TestCommandGroovy {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
         String fileName = "testCommand.groovy";
-        InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream(fileName);
-        try {
+        try (InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream(fileName)) {
             String fileContent = FileUtils.getFileContent(inputStream);
             scriptManager.registerScript(fileName, fileContent, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
         } catch (Exception e) {

@@ -61,7 +61,10 @@ public class SKIPCommand extends MessageCommand {
     public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
         FilesSender filesSender = session.getFileSender();
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
-        filesSender.skip(info, false);
+        if (filesSender != null) filesSender.skip(info, false);
+        FileData<java.io.InputStream> deferred = sessionContext.getPendingFiles().remove(info);
+        if (deferred != null) sessionContext.getDeferredFiles().add(deferred);
+        sessionContext.finishSessionIfComplete(session);
     }
 
     @Override
@@ -69,7 +72,7 @@ public class SKIPCommand extends MessageCommand {
         FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
         if (fileData != null) {
             FileInfo info = fileData.getInfo();
-            return String.format("%s %s %s", info.getName(), info.getSize(), info.getTimestamp());
+            return info.arguments();
         }
         throw new RuntimeException(new ProtocolException("Cannot send SKIP command without metadata"));
     }

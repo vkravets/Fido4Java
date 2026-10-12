@@ -39,6 +39,7 @@ import org.fidonet.binkp.common.protocol.Session;
 
 import java.io.OutputStream;
 import java.util.Deque;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -63,11 +64,7 @@ public class GETCommand extends MessageCommand {
         final FilesSender<Session> filesSender = session.getFileSender();
         if (filesSender != null) {
             final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-            if (sessionContext.getState().equals(SessionState.STATE_WAITGET)) {
-                filesSender.getExchanger().exchange(fileInfo);
-            } else {
-                filesSender.skip(fileInfo, true);
-            }
+            filesSender.resume(fileInfo);
         }
     }
 
@@ -77,7 +74,7 @@ public class GETCommand extends MessageCommand {
         FileData curFile = receivedFiles.peek();
         if (curFile != null) {
             FileInfo info = curFile.getInfo();
-            return String.format("%s %s %s %s", info.getName(), info.getSize(), info.getTimestamp(), info.getCurSize());
+            return info.arguments() + " " + info.getCurSize();
         }
         return null;
     }

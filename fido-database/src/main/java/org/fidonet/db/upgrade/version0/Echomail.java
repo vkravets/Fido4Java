@@ -38,6 +38,7 @@ import org.fidonet.types.Message;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
+import java.io.Serializable;
 
 /**
  * Created by IntelliJ IDEA.
@@ -94,7 +95,7 @@ public class Echomail {
     private String subject;
 
     @DatabaseField(columnName = KLUDGES_COLUMN, dataType = DataType.SERIALIZABLE)
-    private Map<String, String> kludges;
+    private Serializable kludges;
 
     @DatabaseField(columnName = TEXT_COLUMN, dataType = DataType.LONG_STRING)
     private String text;
@@ -176,6 +177,14 @@ public class Echomail {
 
     public String getText() {
         return text;
+    }
+
+    public String getOrigin() { return origin; }
+    public void setOrigin(String origin) { this.origin = origin; }
+    @SuppressWarnings("unchecked")
+    public Map<String, String> getKludges() { return (Map<String, String>) kludges; }
+    public void setKludges(Map<String, String> kludges) {
+        this.kludges = kludges == null ? null : new java.util.LinkedHashMap<>(kludges);
     }
 
     public void setText(String text) {

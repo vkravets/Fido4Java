@@ -5,11 +5,25 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    apply plugin: 'eclipse'
+
+    // VS Code's Java extension imports the Eclipse/Buildship model.
+    // Keep IDE output separate from Gradle output and inside the build directory.
+    eclipse {
+        classpath {
+            defaultOutputDir = layout.buildDirectory.dir('ide/classes/default').get().asFile
+            baseSourceOutputDir.set(layout.buildDirectory.dir('ide/classes'))
+        }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
+        options.release = 11
     }
 
     repositories {

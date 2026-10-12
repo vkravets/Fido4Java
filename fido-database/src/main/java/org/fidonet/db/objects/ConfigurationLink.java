@@ -53,7 +53,7 @@ public class ConfigurationLink {
     public static final String PORT_COLUMN = "port";
     public static final String FLAGS_COLUMN = "flags";
 
-    @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(generatedId = true, allowGeneratedIdInsert = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = ADDRESS_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
@@ -79,6 +79,11 @@ public class ConfigurationLink {
 
     public Long getId() {
         return id;
+    }
+
+    /** Preserve original identities when migrating a database. */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getAddress() {

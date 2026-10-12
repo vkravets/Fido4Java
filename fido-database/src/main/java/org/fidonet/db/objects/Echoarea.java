@@ -45,7 +45,7 @@ public class Echoarea {
     public static final String NAME_COLUMN = "name";
     public static final String DESCRIPTION_COLUMN = "description";
 
-    @DatabaseField(columnName = ID_COLUMN, generatedId = true, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(columnName = ID_COLUMN, generatedId = true, allowGeneratedIdInsert = true, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = NAME_COLUMN, canBeNull = false, uniqueIndex = true)
@@ -59,6 +59,11 @@ public class Echoarea {
 
     public Long getId() {
         return id;
+    }
+
+    /** Preserve original identities when migrating a database. */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {

@@ -38,6 +38,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -69,42 +72,39 @@ public class Message {
         this.fAddr = fromAddr;
         this.tAddr = toAddr;
         this.subject = subj;
-        this.msgDate = date.toString();
+        this.msgDate = new SimpleDateFormat("dd MMM yy  HH:mm:ss", Locale.US).format(date);
         this.isValid = true;
 
         stripAndUpdateKludges(message);
 
-        if (echomail) {
-            tryDetectAddressesAndId();
-        }
+        tryDetectAddressesAndId();
 
     }
 
     public Message(FtsPackMsg src) {
+        this(src, 2, 2);
+    }
+
+    public Message(FtsPackMsg src, int originZone, int destinationZone) {
         from = src.getFrom();
         to = src.getTo();
         subject = src.getSubj();
         attrs = new Attribute(src.getAttr());
         byte[] ttTime = src.getDateTime();
-        msgDate = new String(ttTime);
+        msgDate = new String(ttTime, StandardCharsets.US_ASCII).replace("\0", "").trim();
         int net = src.getOrigNet();
         int node = src.getOrigNode();
-        upLink = new FTNAddr(2, net, node, 0);
+        upLink = new FTNAddr(originZone, net, node, 0);
+        fAddr = new FTNAddr(originZone, net, node, 0);
+        tAddr = new FTNAddr(destinationZone, src.getDestNet(), src.getDestNode(), 0);
 
 
 //        String messageCharsetName = getMessageCharset();
 //        Charset charset = CharsetTools.charsetDetect(messageCharsetName);
 //        CharBuffer decode = charset.decode(ByteBuffer.wrap(src.getBody()));
 //        body = new String(decode.array());
-        try {
-            stripAndUpdateKludges(new String(src.getBody(), CharsetTools.DEFAULT_ENCODING));
-        } catch (UnsupportedEncodingException e) {
-            logger.warn(e.getMessage(), e);
-        }
-
-        if (echomail) {
-            tryDetectAddressesAndId();
-        }
+        stripAndUpdateKludges(new String(src.getBody(), FtsPackMsg.detectCharset(src.getBody())));
+        tryDetectAddressesAndId();
         isValid = true;
     }
 
@@ -113,37 +113,43 @@ public class Message {
     }
 
     public Body getStripedBody(String body) {
-        return getStripedBody(body.split("\\r"));
+        return getStripedBody(body.replace("\n", "").replace("\u008d", "").split("\\r", -1));
     }
 
     public Body getStripedBody(String[] lines) {
         final Map<String, String> kltmp = new LinkedHashMap<String, String>();
+        java.util.List<String> controlLines = new java.util.ArrayList<>();
         SeenBy seenBy = new SeenBy();
         FidoPath path = new FidoPath();
         StringBuilder sb = new StringBuilder();
         String origin = null;
-        if (lines[0].startsWith("AREA:")) {
-            area = collon.split(lines[0])[1];
+        if (lines.length > 0 && lines[0].startsWith("AREA:")) {
+            area = lines[0].substring(5).trim();
             echomail = true;
         } else {
             area = "";
             echomail = false;
         }
 
-        for (String x : lines) {
-            if (x.lastIndexOf(1) == 0 && x.indexOf(":") > 0) {
-                String[] split = collon.split(x, 2);
+        int defaultZone = fAddr == null ? 2 : fAddr.getZone();
+        for (int i = 0; i < lines.length; i++) {
+            String x = lines[i];
+            if (i == lines.length - 1 && x.isEmpty()) continue;
+            if (i == 0 && echomail) continue;
+            if (x.startsWith("\1")) {
+                java.util.regex.Matcher control = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(x);
+                if (!control.matches()) { sb.append(x).append("\r"); continue; }
+                String key = control.group(1), value = control.group(2);
                 if (x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
-                    // FIXME: need to pass default zone
-                    path.add(FidoPath.valueOf(split[1], 2));
+                    path.add(FidoPath.valueOf(value, defaultZone));
                 } else {
-                    kltmp.put(split[0].trim(), split[1]);
+                    kltmp.putIfAbsent(key, value);
+                    controlLines.add(x);
                 }
             } else {
                 if (x.startsWith("SEEN-BY: ")) {
                     String[] split = collon.split(x, 2);
-                    // FIXME: need to pass default zone
-                    seenBy.add(SeenBy.valueOf(split[1], 2));
+                    seenBy.add(SeenBy.valueOf(split[1], defaultZone));
                 } else if (x.startsWith(" * Origin")) {
                     origin = x;
                 } else {
@@ -151,25 +157,51 @@ public class Message {
                 }
             }
         }
-        return new Body(sb.toString(), kltmp, origin, seenBy, path);
+        Body parsed = new Body(sb.toString(), kltmp, origin, seenBy, path);
+        parsed.setArea(echomail ? area : null);
+        parsed.setControlLines(controlLines);
+        return parsed;
     }
 
     private void tryDetectAddressesAndId() {
-        final String fmpt = body.getKludges().get("MSGID");
-        Pattern p = Pattern.compile("[\\s@]");
-        if (fmpt != null) {
-            String[] tokens = p.split(fmpt);
-            fAddr = new FTNAddr(tokens[0].trim());
-            msgId = fmpt.trim();
-            logger.debug("{} {} {} {}", msgId, subject, from, area);
+        String id = body.getKludges().get("MSGID");
+        msgId = id == null ? null : id.trim();
+        if (echomail) {
+            String origin = body.getOrigin();
+            if (origin != null && origin.lastIndexOf('(') >= 0 && origin.lastIndexOf(')') > origin.lastIndexOf('(')) {
+                FTNAddr address = parseAddress(origin.substring(origin.lastIndexOf('(') + 1, origin.lastIndexOf(')')));
+                if (address != null) fAddr = address;
+            }
+            if ((fAddr == null || !fAddr.isValid()) && msgId != null) {
+                FTNAddr address = parseAddress(msgId.split("\\s+", 2)[0]);
+                if (address != null) fAddr = address;
+            }
         } else {
-            fAddr = new FTNAddr(-1, -1, -1, -1);
+            String intl = body.getKludges().get("INTL");
+            if (intl != null) {
+                String[] addresses = intl.trim().split("\\s+");
+                if (addresses.length == 2) {
+                    FTNAddr dest = parseAddress(addresses[0]), source = parseAddress(addresses[1]);
+                    if (dest != null && source != null) { tAddr = dest; fAddr = source; }
+                }
+            }
+            fAddr = withPoint(fAddr, body.getKludges().get("FMPT"));
+            tAddr = withPoint(tAddr, body.getKludges().get("TOPT"));
         }
+    }
 
-        if (!fAddr.isValid() && body.getOrigin() != null) {
-            final String origin = body.getOrigin();
-            fAddr = new FTNAddr(origin.substring(origin.lastIndexOf('(') + 1, origin.lastIndexOf(')')));
-        }
+    private static FTNAddr parseAddress(String value) {
+        try { FTNAddr address = new FTNAddr(value); return address.isValid() ? address : null; }
+        catch (RuntimeException e) { return null; }
+    }
+
+    private static FTNAddr withPoint(FTNAddr address, String point) {
+        if (address == null || point == null) return address;
+        try {
+            int n = Integer.parseInt(point.trim());
+            if (n > 0 && n <= 65535) return new FTNAddr(address.getZone(), address.getNet(), address.getNode(), n);
+        } catch (NumberFormatException ignored) { }
+        return address;
     }
 
     public void dumpHead() {
@@ -209,8 +241,7 @@ public class Message {
     }
 
     public String getBodyInMessageCharset() {
-        Charset charset = CharsetTools.charsetDetect(getMessageCharset());
-        return new String(charset.encode(body.getBody()).array());
+        return body.getBody();
     }
 
     public FTNAddr getUpLink() {
@@ -227,10 +258,11 @@ public class Message {
 
     public String getMessageCharset() {
         String messageEncoding = body.getKludges().get("CHRS");
+        if (messageEncoding == null) messageEncoding = body.getKludges().get("CHARSET");
         if (messageEncoding == null) {
             return CharsetTools.DEFAULT_ENCODING;
         }
-        return messageEncoding.split(" ")[0];
+        return messageEncoding.trim().split("\\s+")[0];
     }
 
     @Override

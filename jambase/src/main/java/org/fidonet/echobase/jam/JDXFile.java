@@ -34,8 +34,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Closeable;
 
-class JDXFile {
+class JDXFile implements Closeable {
 
     private RandomAccessFile jdx;
 
@@ -43,7 +44,8 @@ class JDXFile {
         jdx = new RandomAccessFile(tmp, "rw");
     }
 
-    void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         jdx.close();
     }
 

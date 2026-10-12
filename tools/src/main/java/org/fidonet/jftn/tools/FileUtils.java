@@ -29,6 +29,7 @@
 package org.fidonet.jftn.tools;
 
 import java.io.IOException;
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
@@ -41,15 +42,21 @@ import java.io.InputStreamReader;
  */
 public class FileUtils {
 
+    /** Reads the stream without closing it; the caller retains ownership. */
     public static String getFileContent(InputStream stream) throws IOException {
-        InputStreamReader reader = new InputStreamReader(stream);
-
-        char[] arr = new char[8 * 1024]; // 8K at a time
-        StringBuilder buf = new StringBuilder();
-        int numChars;
-        while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
-            buf.append(arr, 0, numChars);
+        try (InputStreamReader reader = new InputStreamReader(new FilterInputStream(stream) {
+            @Override
+            public void close() {
+                // Closing the reader must not close the caller's stream.
+            }
+        })) {
+            char[] arr = new char[8 * 1024]; // 8K at a time
+            StringBuilder buf = new StringBuilder();
+            int numChars;
+            while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
+                buf.append(arr, 0, numChars);
+            }
+            return buf.toString().intern(); // if file already read return java cached string
         }
-        return buf.toString().intern(); // if file already read return java cached string
     }
 }

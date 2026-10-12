@@ -38,13 +38,13 @@ package org.fidonet.binkp.common.io;
 public class FileInfo {
 
     private String name;
-    private long curSize;
+    private volatile long curSize;
     private long size;
     private long timestamp;
-    private boolean finished;
-    private boolean shouldSkip;
+    private volatile boolean finished;
+    private volatile boolean shouldSkip;
 
-    private long offset;
+    private volatile long offset;
 
     public FileInfo(String name, long size, long timestamp) {
         this.name = name;
@@ -133,12 +133,13 @@ public class FileInfo {
     }
 
     public static FileInfo parseFileInfo(String commandArgs) throws Exception {
-        String[] tokens = commandArgs.split(" ");
+        String[] tokens = commandArgs.trim().split("\\s+");
         // Parse command args from M_FILE and M_GOT commands
-        if (tokens.length >= 3) {
-            String name = tokens[0].trim();
+        if (tokens.length == 3 || tokens.length == 4) {
+            String name = unescapeName(tokens[0]);
             long size = Long.parseLong(tokens[1].trim());
             long timestamp = Long.parseLong(tokens[2].trim());
+            if (name.isEmpty() || size < 0) throw new IllegalArgumentException("Invalid file metadata");
             FileInfo info = new FileInfo(name, size, timestamp);
             // Check if command args get from M_FILE with offset
             if (tokens.length == 4) {
@@ -150,5 +151,36 @@ public class FileInfo {
             return info;
         }
         throw new Exception("Invalid file info was passed");
+    }
+
+    public String arguments() {
+        return escapeName(name) + " " + size + " " + timestamp;
+    }
+
+    public static String escapeName(String name) {
+        StringBuilder out = new StringBuilder();
+        for (char c : name.toCharArray()) {
+            if (c <= 32 || c == '\\' || c == 127) out.append(String.format("\\x%02x", (int)c));
+            else out.append(c);
+        }
+        return out.toString();
+    }
+
+    public static String unescapeName(String name) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c == '\\') {
+                int start = i + 1;
+                if (start < name.length() && name.charAt(start) == 'x') start++;
+                if (start + 2 > name.length()) throw new IllegalArgumentException("Invalid filename escape");
+                try { c = (char)Integer.parseInt(name.substring(start, start + 2), 16); }
+                catch (NumberFormatException e) { throw new IllegalArgumentException("Invalid filename escape", e); }
+                i = start + 1;
+            }
+            if (c == 0) throw new IllegalArgumentException("NUL in filename");
+            out.append(c);
+        }
+        return out.toString();
     }
 }

@@ -33,6 +33,8 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
+import com.j256.ormlite.misc.TransactionManager;
+import java.util.concurrent.Callable;
 import org.fidonet.db.objects.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,17 +97,31 @@ public class OrmManager {
             connectionSource = new JdbcConnectionSource(jdbcUrl);
         }
 
-        daoMap = new HashMap<Class<?>, Dao<?, ?>>();
-
-        for (Class<?> daoClass : daoClasses) {
-            daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
+        try {
+            daoMap = new HashMap<Class<?>, Dao<?, ?>>();
+            for (Class<?> daoClass : daoClasses) {
+                daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
+            }
+            createTables();
+        } catch (SQLException | RuntimeException e) {
+            try {
+                connectionSource.close();
+            } catch (SQLException closeError) {
+                e.addSuppressed(closeError);
+            } finally {
+                connectionSource = null;
+                daoMap = null;
+            }
+            throw e;
         }
-
-        createTables();
     }
 
     public boolean isConnect() {
         return connectionSource != null && connectionSource.isOpen();
+    }
+
+    public <T> T inTransaction(Callable<T> work) throws SQLException {
+        return TransactionManager.callInTransaction(connectionSource, work);
     }
 
 

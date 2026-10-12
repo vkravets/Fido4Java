@@ -2,18 +2,26 @@ version: 2
 jobs:
   build:
     docker: # See https://docs.docker.com/get-started/#docker-concepts if you are new to Docker.
-      - image: vkravets/jftn-build:java1.8_thrift0.14.1
+      - image: cimg/openjdk:17.0
     environment:
-      - LANG: ru_RU.UTF-8
+      LANG: C.UTF-8
     steps:
       - checkout
       - run:
-          name: Download gradle
+          name: Install Apache Thrift compiler
           command: |
-            cd gradle/wrapper
-            wget https://raw.githubusercontent.com/gradle/gradle/v7.1.0/gradle/wrapper/gradle-wrapper.jar
+            sudo apt-get update
+            sudo apt-get install -y build-essential bison flex libtool pkg-config libboost-dev
+            thrift_build_dir=$(mktemp -d)
+            cd "$thrift_build_dir"
+            curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.14.2/thrift-0.14.2.tar.gz
+            tar -xzf thrift.tar.gz
+            cd thrift-0.14.2
+            ./configure --disable-libs --disable-tests --disable-tutorial
+            make -C compiler/cpp -j2
+            sudo install compiler/cpp/thrift /usr/local/bin/thrift
+            thrift -version
       - run:
           name: Build & Tests
           command: |
-            ./gradlew build -x test
-            ./gradlew test
+            bash ./gradlew build

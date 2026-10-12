@@ -44,7 +44,7 @@ import java.util.NoSuchElementException;
  * Date: 1/29/14
  * Time: 2:54 PM
  */
-public class DatabasePagingIterator<T, K> implements Iterator<K> {
+public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable {
 
     public static final Logger logger = LoggerFactory.getLogger(DatabasePagingIterator.class);
 
@@ -56,6 +56,8 @@ public class DatabasePagingIterator<T, K> implements Iterator<K> {
     private CloseableIterator<T> curlist;
     private QueryBuilder<T, Object> objectQueryBuilder;
     private boolean continueQuery;
+    private boolean closed;
+    private long pageCount;
 
     public DatabasePagingIterator(QueryBuilder<T, Object> queryBuilder) {
         this(queryBuilder, -1, MESSAGE_LIMIT_QUERY, false);
@@ -67,42 +69,54 @@ public class DatabasePagingIterator<T, K> implements Iterator<K> {
 
     public DatabasePagingIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit, boolean continueQuery) {
         this.limit = limit;
-        this.offset = offset;
+        if (offset < -1 || limit == 0 || limit < -1) {
+            throw new IllegalArgumentException("Invalid paging offset or limit");
+        }
+        this.offset = Math.max(0, offset);
         objectQueryBuilder = queryBuilder;
         this.continueQuery = continueQuery;
     }
 
     @Override
     public boolean hasNext() {
-        if (curlist != null && curlist.hasNext()) return true;
+        if (closed) return false;
         try {
-            if (curlist == null || continueQuery && (offset % limit == 0)) {
+            if (curlist != null && curlist.hasNext()) return true;
+            if (curlist == null || continueQuery && limit > 0 && pageCount == limit) {
                 queryDb();
             } else {
                 // need to close iterator, since amount of queried message are less then limit
-                if (curlist != null) curlist.close();
+                close();
                 return false;
             }
+            return curlist != null && curlist.hasNext();
         } catch (SQLException e) {
-            // There no need to close iterator here, since old one will be closed in queryDb()
-            // and SQLException could be appeared only during curlist.close() in the above expression.
+            closeAfterFailure(e);
             logger.error(e.getMessage(), e);
-            return false;
+            throw new IllegalStateException("Unable to read database page", e);
+        } catch (RuntimeException e) {
+            closeAfterFailure(e);
+            throw e;
         }
-        return curlist != null && curlist.hasNext();
     }
 
     private void queryDb() throws SQLException {
-        if (curlist != null) curlist.close();
-        if (limit > -1) {
-            objectQueryBuilder = objectQueryBuilder.limit(limit);
-        }
-        if (offset > -1) {
-            objectQueryBuilder = objectQueryBuilder.offset(offset);
-        }
+        closeCurrentIterator();
+        objectQueryBuilder.limit(limit > 0 ? Long.valueOf(limit) : null);
+        objectQueryBuilder.offset(limit > 0 && offset > 0 ? Long.valueOf(offset) : null);
         curlist = objectQueryBuilder.iterator();
+        // Some databases require LIMIT with OFFSET. An unlimited query skips
+        // the requested prefix using its cursor instead of inventing a limit.
+        if (limit < 0) {
+            long skipped = 0;
+            while (skipped < offset && curlist.hasNext()) {
+                curlist.next();
+                skipped++;
+            }
+        }
+        pageCount = 0;
         if (!curlist.hasNext()) {
-            curlist.close();
+            close();
         }
     }
 
@@ -110,7 +124,13 @@ public class DatabasePagingIterator<T, K> implements Iterator<K> {
     public K next() {
         if (hasNext()) {
             offset++;
-            return convert(curlist.next());
+            pageCount++;
+            try {
+                return convert(curlist.next());
+            } catch (RuntimeException e) {
+                closeAfterFailure(e);
+                throw e;
+            }
         }
         throw new NoSuchElementException();
     }
@@ -122,6 +142,26 @@ public class DatabasePagingIterator<T, K> implements Iterator<K> {
     @Override
     public void remove() {
         curlist.remove();
+    }
+
+    @Override
+    public void close() throws SQLException {
+        closed = true;
+        closeCurrentIterator();
+    }
+
+    private void closeCurrentIterator() throws SQLException {
+        CloseableIterator<T> iterator = curlist;
+        curlist = null;
+        if (iterator != null) iterator.close();
+    }
+
+    private void closeAfterFailure(Throwable failure) {
+        try {
+            close();
+        } catch (SQLException closeError) {
+            failure.addSuppressed(closeError);
+        }
     }
 
 }

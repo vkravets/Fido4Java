@@ -32,6 +32,7 @@ import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
 
 import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,6 +48,12 @@ public class Body {
     private SeenBy seenBy;
     private FidoPath path;
     private String body;
+    private String area;
+    private List<String> controlLines = Collections.emptyList();
+
+    public void setControlLines(List<String> lines) { controlLines = new ArrayList<>(lines); }
+
+    public void setArea(String area) { this.area = area; }
 
     public Body(String body, Map<String, String> kludges, String origin, SeenBy seenBy, FidoPath path) {
         this.kludges = kludges;
@@ -95,14 +102,29 @@ public class Body {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (area != null && !area.isEmpty()) sb.append("AREA:").append(area).append("\r");
         // insert kludges
-        for (Map.Entry<String, String> kludge : kludges.entrySet()) {
-            sb.append(kludge.getKey()).append(":").append(kludge.getValue()).append("\r");
+        Map<String, String> originalValues = new LinkedHashMap<>();
+        Set<String> emitted = new HashSet<>();
+        for (String line : controlLines) {
+            java.util.regex.Matcher match = java.util.regex.Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(line);
+            if (!match.matches()) continue;
+            String key = match.group(1);
+            originalValues.putIfAbsent(key, match.group(2));
+            if (!kludges.containsKey(key)) continue;
+            if (Objects.equals(kludges.get(key), originalValues.get(key))) {
+                sb.append(line).append('\r'); emitted.add(key);
+            } else if (emitted.add(key)) appendControl(sb, key, kludges.get(key));
         }
+        for (Map.Entry<String, String> kludge : kludges.entrySet())
+            if (emitted.add(kludge.getKey())) appendControl(sb, kludge.getKey(), kludge.getValue());
         // insert text
         sb.append(body);
         // insert origin
-        sb.append(origin).append("\r");
+        if (origin != null) {
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\r') sb.append('\r');
+            sb.append(origin).append("\r");
+        }
         // insert seen
         for (String s : seenBy.toSeenByStrings()) {
             sb.append(s).append("\r");
@@ -112,5 +134,16 @@ public class Body {
             sb.append(p).append("\r");
         }
         return sb.toString();
+    }
+
+    private static void appendControl(StringBuilder sb, String key, String value) {
+        sb.append('\1').append(key);
+        if (key.equals("INTL") || key.equals("FMPT") || key.equals("TOPT")) sb.append(' ').append(value.trim());
+        else {
+            sb.append(':');
+            if (!value.isEmpty() && !Character.isWhitespace(value.charAt(0))) sb.append(' ');
+            sb.append(value);
+        }
+        sb.append('\r');
     }
 }

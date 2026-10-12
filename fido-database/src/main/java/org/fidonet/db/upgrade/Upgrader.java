@@ -30,11 +30,12 @@ package org.fidonet.db.upgrade;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.field.DatabaseField;
+import java.lang.reflect.Field;
 import org.fidonet.db.DatabasePagingIterator;
 import org.fidonet.db.OrmManager;
 
 import java.sql.SQLException;
-import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,7 +51,7 @@ public interface Upgrader {
     long getVersion();
 
     interface ObjectUpgrader<OLD, NEW> {
-        void upgrade(OLD oldObject, NEW newObject);
+        void upgrade(OLD oldObject, NEW newObject) throws SQLException;
 
         void onException(OLD oldObject, Exception ex);
     }
@@ -66,26 +67,38 @@ public interface Upgrader {
             Dao<NEW, Object> newEchoareDao = newManager.getDao(newClazz);
 
             QueryBuilder<OLD, Object> oldObjectQueryBuilder = oldEchoareaDao.queryBuilder();
-
-            Iterator<OLD> linkIterator = new DatabasePagingIterator<OLD, OLD>(oldObjectQueryBuilder);
-            while (linkIterator.hasNext()) {
-                OLD oldObject = linkIterator.next();
-                try {
-                    NEW newObject = newClazz.newInstance();
-                    objectUpgrader.upgrade(oldObject, newObject);
-                    newEchoareDao.create(newObject);
-                } catch (InstantiationException e) {
-                    objectUpgrader.onException(oldObject, e);
-                    if (failOnError) return false;
-                } catch (IllegalAccessException e) {
-                    objectUpgrader.onException(oldObject, e);
-                    if (failOnError) return false;
-                } catch (SQLException e) {
-                    objectUpgrader.onException(oldObject, e);
-                    if (failOnError) return false;
+            for (Field field : oldClazz.getDeclaredFields()) {
+                DatabaseField metadata = field.getAnnotation(DatabaseField.class);
+                if (metadata != null && (metadata.id() || metadata.generatedId())) {
+                    oldObjectQueryBuilder.orderBy(metadata.columnName().isEmpty() ? field.getName() : metadata.columnName(), true);
+                    break;
                 }
             }
-            return true;
+
+            try (DatabasePagingIterator<OLD, OLD> linkIterator = new DatabasePagingIterator<OLD, OLD>(
+                    oldObjectQueryBuilder, 0, DatabasePagingIterator.MESSAGE_LIMIT_QUERY, true)) {
+                while (linkIterator.hasNext()) {
+                    OLD oldObject = linkIterator.next();
+                    try {
+                        NEW newObject = newClazz.newInstance();
+                        objectUpgrader.upgrade(oldObject, newObject);
+                        newEchoareDao.create(newObject);
+                    } catch (InstantiationException e) {
+                        objectUpgrader.onException(oldObject, e);
+                        if (failOnError) return false;
+                    } catch (IllegalAccessException e) {
+                        objectUpgrader.onException(oldObject, e);
+                        if (failOnError) return false;
+                    } catch (SQLException e) {
+                        objectUpgrader.onException(oldObject, e);
+                        if (failOnError) return false;
+                    }
+                }
+                return true;
+            } catch (SQLException e) {
+                DatabasePagingIterator.logger.error("Unable to close migration iterator", e);
+                return false;
+            }
         }
 
     }

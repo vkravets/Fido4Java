@@ -38,11 +38,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
 
-class JHRFile {
+class JHRFile implements Closeable {
 
     private static final Logger logger = LoggerFactory.getLogger(JHRFile.class.getName());
 
@@ -166,7 +167,8 @@ class JHRFile {
         jhr.write(fh.toByteArray());
     }
 
-    void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         jhr.close();
     }
 

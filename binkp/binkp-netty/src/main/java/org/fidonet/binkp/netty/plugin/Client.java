@@ -75,6 +75,8 @@ public class Client extends ClientConnector {
 
     public void run(final SessionContext sessionContext) throws Exception {
         sessionContext.setServerRole(ServerRole.CLIENT);
+        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
+        sessionContext.setState(SessionState.STATE_IDLE);
 
         connector = new NioEventLoopGroup();
         Bootstrap b = new Bootstrap();
@@ -98,8 +100,6 @@ public class Client extends ClientConnector {
         int port = link.getPort() != 0 ? link.getPort() : Connector.BINK_PORT;
         session = b.connect(hostname, port).sync().channel();
         try {
-            sessionContext.getLinksInfo().setCurLink(link.getAddr());
-            sessionContext.setState(SessionState.STATE_IDLE);
             connected = true;
         } catch (Exception ex) {
             connected = false;

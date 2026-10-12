@@ -54,11 +54,8 @@ public class SeenBy extends AbstractFidoAddressesList {
     }
 
     public SeenBy(Set<FTNAddr> addresses) {
-        if (addresses instanceof TreeSet) {
-            this.addresses = addresses;
-        } else {
-            this.addresses = new TreeSet<FTNAddr>(addresses);
-        }
+        this();
+        this.addresses.addAll(addresses);
     }
 
     public static SeenBy valueOf(String addressesString, int defaultZone) {
@@ -68,7 +65,7 @@ public class SeenBy extends AbstractFidoAddressesList {
                 return o2.compareTo(o1);
             }
         });
-        return new SeenBy(parseAddresses(addressesString.trim(), defaultZone, path));
+        return new SeenBy(parseAddresses(addressesString, defaultZone, path));
     }
 
     public void add(SeenBy seenBy) {

@@ -71,6 +71,8 @@ public class Client extends ClientConnector {
 
     public void run(SessionContext sessionContext) throws Exception {
         sessionContext.setServerRole(ServerRole.CLIENT);
+        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
+        sessionContext.setState(SessionState.STATE_IDLE);
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
         connector.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
@@ -83,8 +85,6 @@ public class Client extends ClientConnector {
         connected = connection.isConnected();
         if (connected) {
             session = connection.getSession();
-            sessionContext.getLinksInfo().setCurLink(link.getAddr());
-            sessionContext.setState(SessionState.STATE_IDLE);
         } else {
             connected = false;
             System.out.println("Cannot connect to target host");

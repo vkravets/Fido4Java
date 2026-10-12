@@ -76,6 +76,8 @@ public class Client extends ClientConnector {
 
     public void run(final SessionContext sessionContext) throws Exception {
         sessionContext.setServerRole(ServerRole.CLIENT);
+        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
+        sessionContext.setState(SessionState.STATE_IDLE);
         connector = new NioTcpClient();
         connector.setConnectTimeoutMillis(connectionTimeout);
         final TrafficCrypterCodecFilter crypterFilter = new TrafficCrypterCodecFilter();
@@ -87,8 +89,6 @@ public class Client extends ClientConnector {
         IoFuture<IoSession> connection = connector.connect(new InetSocketAddress(hostname, port));
         try {
             session = connection.get();
-            sessionContext.getLinksInfo().setCurLink(link.getAddr());
-            sessionContext.setState(SessionState.STATE_IDLE);
             connected = true;
         } catch (Exception ex) {
             connected = false;

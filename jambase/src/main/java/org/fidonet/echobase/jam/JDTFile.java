@@ -32,8 +32,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Closeable;
 
-class JDTFile {
+class JDTFile implements Closeable {
 
     private RandomAccessFile jdt;
 
@@ -53,7 +54,8 @@ class JDTFile {
         jdt.write(buffer);
     }
 
-    void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         jdt.close();
     }
 }

@@ -38,11 +38,11 @@ import org.fidonet.binkp.common.protocol.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.util.Deque;
-import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,46 +59,72 @@ public class FilesSender<T extends Session> implements Runnable {
     protected T session;
     protected static final int FILE_BLOCK_SIZE = 4096;
     protected SessionContext sessionContext;
-    protected FileData<InputStream> curFile;
-    protected Exchanger<FileInfo> exchanger;
+    protected volatile FileData<InputStream> curFile;
+    private final java.util.concurrent.BlockingQueue<FileInfo> requests = new java.util.concurrent.LinkedBlockingQueue<>();
+    private volatile boolean awaitingOffset;
+    private volatile boolean cancelled;
 
     public FilesSender(T session, Deque<FileData<InputStream>> files, SessionContext sessionContext) {
         this.files = files;
         this.session = session;
         this.sessionContext = sessionContext;
-        exchanger = new Exchanger<FileInfo>();
+        sessionContext.setActiveSender(this);
     }
 
     public boolean send(FileData<InputStream> data) throws Exception {
-        final DataInputStream reader = new DataInputStream(data.getStream());
+        // The caller owns this stream; GET may reset and reuse it for a resend.
+        final InputStream reader = data.getStream();
         FileInfo fileInfo = data.getInfo();
-        if (fileInfo.getOffset() >= 0) {
-            if (fileInfo.getOffset() <= fileInfo.getSize()) {
-                long skippedBytes = reader.skip(fileInfo.getOffset());
-                assert skippedBytes == fileInfo.getOffset();
-            } else {
-                logger.warn("{} file have current offset greater than file size", fileInfo.getName(), new Throwable());
-                logger.debug(fileInfo.toString());
-            }
-        } else {
+        curFile = data;
+        if (data.isRewindBeforeSend()) {
+            if (reader instanceof java.io.FileInputStream) ((java.io.FileInputStream)reader).getChannel().position(0);
+            else if (reader.markSupported()) reader.reset();
+            else throw new IOException("Cannot seek input stream for retransmission");
+        } else if (reader.markSupported()) reader.mark(Integer.MAX_VALUE);
+        if (fileInfo.getOffset() < 0) {
+            awaitingOffset = true;
             sessionContext.setState(SessionState.STATE_WAITGET);
-            fileInfo = exchanger.exchange(fileInfo);
-            System.out.println(fileInfo);
+            FileInfo requested = requests.poll(300, TimeUnit.SECONDS);
+            awaitingOffset = false;
+            if (cancelled || fileInfo.isShouldSkip() || fileInfo.isFinished()) return false;
+            if (requested == null) throw new IOException("Timed out waiting for M_GET");
+            if (!fileInfo.equals(requested)) throw new IOException("GET does not match the offered file");
+            fileInfo.setOffset(requested.getOffset());
+            session.write(new FILECommand().getData(fileInfo.arguments() + " " + fileInfo.getOffset()));
         }
+        long offset = fileInfo.getOffset();
+        if (offset < 0 || offset > fileInfo.getSize()) throw new IOException("Invalid file offset: " + offset);
+        skipFully(reader, offset);
+        sessionContext.setState(SessionState.STATE_TRANSFER);
         final byte[] buf = new byte[FILE_BLOCK_SIZE];
         int read = reader.read(buf);
-        long fileSize = 0;
+        long fileSize = offset;
+        data.getInfo().setCurSize(fileSize);
         while (read != -1) {
-            if (data.getInfo().isShouldSkip()) {
+            if (cancelled || data.getInfo().isShouldSkip() || data.getInfo().isFinished()) {
                 return false;
             }
             final DataBulk dataBulk = new DataBulk(buf, read);
+            if (read > fileInfo.getSize() - fileSize) throw new IOException("Input exceeds advertised file size");
             session.write(dataBulk.getRawData());
             fileSize += read;
             data.getInfo().setCurSize(fileSize);
             read = reader.read(buf);
         }
+        if (fileSize != fileInfo.getSize()) throw new EOFException("Input ends before advertised file size");
         return true;
+    }
+
+    private void skipFully(InputStream reader, long offset) throws IOException {
+        long remaining = offset;
+        while (remaining > 0) {
+            long skipped = reader.skip(remaining);
+            if (skipped > 0) remaining -= skipped;
+            else {
+                if (reader.read() == -1) throw new EOFException("File ends before requested offset");
+                remaining--;
+            }
+        }
     }
 
     @Override
@@ -106,21 +132,46 @@ public class FilesSender<T extends Session> implements Runnable {
 
         sessionContext.setState(SessionState.STATE_TRANSFER);
         try {
-            while (!files.isEmpty()) {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
+            while (!files.isEmpty() || !sessionContext.getPendingFiles().isEmpty()) {
+                if (cancelled || sessionContext.getState() == SessionState.STATE_ERR || sessionContext.getState() == SessionState.STATE_END) return;
+                if (files.isEmpty()) {
+                    if (System.nanoTime() > deadline) throw new IOException("Timed out waiting for file acknowledgement");
+                    synchronized (sessionContext) { sessionContext.wait(100); }
+                    continue;
+                }
+                deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
+                curFile = files.peek();
+                if (curFile.getStream().markSupported() && !curFile.isRewindBeforeSend()) curFile.getStream().mark(Integer.MAX_VALUE);
+                if (sessionContext.isNRMode() && curFile.getInfo().getOffset() == 0 && !curFile.isResumeResponse()) curFile.getInfo().setOffset(-1);
+                awaitingOffset = curFile.getInfo().getOffset() < 0;
+                sessionContext.getPendingFiles().put(curFile.getInfo(), curFile);
                 final Command file = new FILECommand();
                 file.send(session, sessionContext);
-                curFile = files.poll();
+                files.poll();
                 try {
                     send(curFile);
                 } catch (Exception e) {
-                    logger.error("Unable to sent file {}", curFile.getInfo().toString());
+                    logger.error("Unable to send file {}", curFile.getInfo(), e);
+                    sessionContext.setLastErrorMessage(e.getMessage());
+                    sessionContext.setState(SessionState.STATE_ERR);
+                    try { new org.fidonet.binkp.common.commands.ERRCommand().send(session, sessionContext); }
+                    catch (Exception ignored) { }
+                    session.close(false);
+                    return;
                 }
             }
             final Command eob = new EOBCommand();
             eob.send(session, sessionContext);
             sessionContext.setSendingIsFinish(true);
+            sessionContext.finishSessionIfComplete(session);
         } catch (Exception e) {
             logger.error("Unable to send files", e);
+            sessionContext.setState(SessionState.STATE_ERR);
+            sessionContext.setLastErrorMessage(e.getMessage());
+            try { new org.fidonet.binkp.common.commands.ERRCommand().send(session, sessionContext); }
+            catch (Exception ignored) { }
+            session.close(false);
         }
 
     }
@@ -135,28 +186,39 @@ public class FilesSender<T extends Session> implements Runnable {
     }
 
     public synchronized void skip(FileInfo fileInfo, boolean isResend) throws IOException {
-        if (curFile.getInfo().equals(fileInfo)) {
-            curFile.getInfo().setSkip(true);
-            if (isResend) {
-                curFile.getStream().reset();
-                files.addFirst(new FileData<InputStream>(fileInfo, curFile.getStream()));
-            }
-        } else {
-            FileData<InputStream> fileData = findFile(fileInfo);
-            if (fileData != null) {
-                fileData.getInfo().setSkip(true);
-                if (isResend) {
-                    fileData.getStream().reset();
-                    files.addLast(new FileData<InputStream>(fileInfo, fileData.getStream()));
-                }
-            } else {
-                logger.warn("File is not found the the queue {}", fileInfo.toString());
-            }
+        FileData<InputStream> data = sessionContext.getPendingFiles().get(fileInfo);
+        if (data == null && curFile != null && curFile.getInfo().equals(fileInfo)) data = curFile;
+        if (data == null) data = findFile(fileInfo);
+        if (data == null) return;
+        if (isResend && (fileInfo.getOffset() < 0 || fileInfo.getOffset() > data.getInfo().getSize()))
+            throw new IOException("Invalid resume offset");
+        data.getInfo().setSkip(true);
+        if (awaitingOffset && data == curFile) requests.offer(fileInfo);
+        if (isResend) {
+            FileData<InputStream> resend = new FileData<>(fileInfo, data.getStream());
+            resend.setRewindBeforeSend(true);
+            resend.setResumeResponse(true);
+            files.addFirst(resend);
         }
+        synchronized (sessionContext) { sessionContext.notifyAll(); }
     }
 
-    public Exchanger<FileInfo> getExchanger() {
-        return exchanger;
+    public void resume(FileInfo info) throws IOException {
+        if (awaitingOffset && curFile != null && curFile.getInfo().equals(info)) {
+            if (info.getOffset() < 0 || info.getOffset() > curFile.getInfo().getSize()) throw new IOException("Invalid resume offset");
+            requests.offer(info);
+        } else skip(info, true);
+    }
+
+    public void acknowledge(FileInfo info) {
+        if (awaitingOffset && curFile != null && curFile.getInfo().equals(info)) requests.offer(info);
+        synchronized (sessionContext) { sessionContext.notifyAll(); }
+    }
+
+    public void cancel() {
+        cancelled = true;
+        requests.offer(new FileInfo("",0,0));
+        synchronized (sessionContext) { sessionContext.notifyAll(); }
     }
 
 }
