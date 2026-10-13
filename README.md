@@ -74,6 +74,11 @@ If Thrift is not on `PATH`, specify its executable explicitly:
 On Linux/macOS, use `./gradlew build` with the same optional
 `-PthriftExecutable=/path/to/thrift` property.
 
+An optional Docker interoperability test exchanges files with an external binkd
+peer using both JFtn client and server roles. It runs only through the explicit `:binkp-root:binkp-netty:binkdDockerTest`
+task; see the [test plan, container lifecycle and diagnostics](binkp/binkp-netty/src/integrationTest/README.md).
+Ordinary transfer and JFtn-requested NR were verified in both roles with binkd in Podman on Windows.
+
 For now there are a few developers (see below list), but you can join for develompent anytime.
 You can always get a fresh version at GitHub: github.com/vkravets/Fido4Java.git or git://github.com/vkravets/Fido4Java.git
 

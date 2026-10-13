@@ -1,5 +1,17 @@
 group = 'org.fidonet.binkp'
 description = 'binkp-netty'
+
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
 dependencies {
     implementation project(':fido-config')
     implementation project(':fido-fts')
@@ -20,4 +32,21 @@ dependencies {
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.0.14-beta'
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.6.2'
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.2'
+    integrationTestImplementation 'org.testcontainers:testcontainers:1.21.4'
+}
+
+// Opt-in only: neither test, check nor build starts Docker.
+tasks.register('binkdDockerTest', Test) {
+    description = 'Exchanges files with binkd in Docker using both JFtn client and server roles.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnit()
+    maxParallelForks = 1
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+    outputs.upToDateWhen { false }
+    systemProperty 'binkd.artifactsDir', layout.buildDirectory.dir('reports/binkdDockerTest').get().asFile.absolutePath
 }
