@@ -2,7 +2,7 @@ group = 'org.fidonet.protocol'
 description = 'BinkP Mina2'
 dependencies {
   implementation project(':fido-config')
-    implementation 'org.apache.mina:mina-core:2.0.13'
+    implementation 'org.apache.mina:mina-core:2.0.31'
   implementation project(':tools')
   implementation project(':event-bus')
     implementation 'org.slf4j:slf4j-api:1.7.21'
