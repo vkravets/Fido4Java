@@ -74,7 +74,7 @@ jobs:
             set -euo pipefail
             mkdir -p build/binkd-integration
             bash ./gradlew :binkp-root:binkp-netty:binkdDockerTest \
-              :binkp-root:binkp-mina2:binkdDockerTest :binkp-root:binkp-mina3:binkdDockerTest \
+              :binkp-root:binkp-mina2:binkdDockerTest \
               --continue --warning-mode fail --no-daemon --console=plain \
               2>&1 | tee build/binkd-integration/gradle.log
       - save_cache:
@@ -87,7 +87,7 @@ jobs:
           when: always
           command: |
             mkdir -p build/binkd-integration/test-results
-            for backend in netty mina2 mina3; do
+            for backend in netty mina2; do
               module_build="binkp/binkp-$backend/build"
               destination="build/binkd-integration/$backend"
               mkdir -p "$destination" "build/binkd-integration/test-results/$backend"

@@ -75,7 +75,7 @@ If Thrift is not on `PATH`, specify its executable explicitly:
 On Linux/macOS, use `./gradlew build` with the same optional
 `-PthriftExecutable=/path/to/thrift` property.
 
-Optional Docker interoperability tests for Netty, MINA2 and MINA3 exchange files with an external binkd
+Optional Docker interoperability tests for Netty and MINA2 exchange files with an external binkd
 peer using both JFtn client and server roles. They run only through each backend's explicit
 `binkdDockerTest` task; see the [test plan, container lifecycle and diagnostics](binkp/src/integrationTestShared/README.md).
 Ordinary transfer and JFtn-requested NR were verified in both roles with binkd in Podman on Windows.

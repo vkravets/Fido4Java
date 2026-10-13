@@ -5,7 +5,7 @@ Scenarios cover **JFtn client -> external binkd server in Docker** and
 Both peers send a file in the same authenticated TCP session. The test uses
 production JFtn handlers and codecs and an independent binkd process; it does
 not replay a recorded stream. Each role runs with and without an NR request from
-JFtn, giving four cases per backend (Netty, MINA2 and MINA3), twelve in total. NR assertions check binkd sending to JFtn.
+JFtn, giving four cases per backend (Netty and MINA2), eight in total. NR assertions check binkd sending to JFtn.
 
 The Netty backend uses Netty 4.2 with NIO I/O handlers. Production connections
 and Docker test peers explicitly use the pooled allocator to preserve Netty 4.1
@@ -65,7 +65,7 @@ are separate scenarios to add later. No real FTN nodes are contacted.
 ## Explicit launch
 
 Requires JDK 17+ and a running Docker-compatible engine for **Linux containers**.
-All twelve cases were verified on Windows with Podman 6.0.2, a rootful WSL machine,
+All eight cases were verified on Windows with Podman 6.0.2, a rootful WSL machine,
 Docker compatibility enabled, and the WSL host override below. This verifies
 ordinary transfer and JFtn-requested NR in both JFtn roles with binkd 1.1a-115, not the other scenarios
 listed above.
@@ -153,17 +153,15 @@ References: [binkd command options](https://manpages.debian.org/bookworm/binkd/b
 
 ## All backends
 
-Each backend has its own `binkdDockerTest` task and isolated test JVM. MINA2 and
-MINA3 must not share a runtime classpath because both publish `mina-core` with
-incompatible APIs. Shared source code and resources are compiled separately by
+Each backend has its own `binkdDockerTest` task and isolated test JVM.
+Shared source code and resources are compiled separately by
 `gradle/binkd-integration.gradle`; production artifacts have no Testcontainers dependency.
 
 ```bash
 ./gradlew :binkp-root:binkp-netty:binkdDockerTest \
-  :binkp-root:binkp-mina2:binkdDockerTest \
-  :binkp-root:binkp-mina3:binkdDockerTest --continue --console=plain
+  :binkp-root:binkp-mina2:binkdDockerTest --continue --console=plain
 ```
 
-On Windows use `gradlew.bat` and put the three task names on one line; apply the
+On Windows use `gradlew.bat` and put the two task names on one line; apply the
 Podman host override described above first. An individual backend can also be run
 by supplying only its task name.
