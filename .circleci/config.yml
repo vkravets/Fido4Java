@@ -43,7 +43,59 @@ jobs:
           command: |
             bash ./gradlew build --no-daemon --console=plain
 
+  binkd-integration:
+    machine:
+      image: ubuntu-2404:2026.05.1
+    resource_class: medium
+    environment:
+      LANG: C.UTF-8
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    steps:
+      - checkout
+      - run:
+          name: Prepare Java 17 and Docker
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends openjdk-17-jdk-headless
+            echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> "$BASH_ENV"
+            "$JAVA_HOME/bin/java" -version
+            "$JAVA_HOME/bin/javac" -version
+            docker version
+            docker info
+      - restore_cache:
+          keys:
+            - v1-binkd-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "build.gradle" }}-{{ checksum "binkp/binkp-netty/build.gradle" }}
+      - run:
+          name: Test JFtn client and server against binkd
+          no_output_timeout: 20m
+          command: |
+            set -euo pipefail
+            mkdir -p binkp/binkp-netty/build/reports/binkdDockerTest
+            bash ./gradlew :binkp-root:binkp-netty:binkdDockerTest --no-daemon --console=plain \
+              2>&1 | tee binkp/binkp-netty/build/reports/binkdDockerTest/gradle.log
+      - save_cache:
+          key: v1-binkd-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "build.gradle" }}-{{ checksum "binkp/binkp-netty/build.gradle" }}
+          paths:
+            - ~/.gradle/caches
+            - ~/.gradle/wrapper
+      - run:
+          name: Collect Docker diagnostics
+          when: always
+          command: |
+            mkdir -p binkp/binkp-netty/build/reports/binkdDockerTest
+            docker ps -a > binkp/binkp-netty/build/reports/binkdDockerTest/docker-containers.txt 2>&1 || true
+            docker info > binkp/binkp-netty/build/reports/binkdDockerTest/docker-info.txt 2>&1 || true
+      - store_test_results:
+          path: binkp/binkp-netty/build/test-results/binkdDockerTest
+      - store_artifacts:
+          path: binkp/binkp-netty/build/reports/tests/binkdDockerTest
+          destination: binkd-integration-report
+      - store_artifacts:
+          path: binkp/binkp-netty/build/reports/binkdDockerTest
+          destination: binkd-integration-diagnostics
+
 workflows:
   build-and-test:
     jobs:
       - build
+      - binkd-integration
