@@ -9,7 +9,6 @@ include ':fido-tools'
 include ':fido-database'
 include ':binkp-root:binkp-common'
 include ':binkp-root:binkp-mina2'
-include ':binkp-root:binkp-mina3'
 include ':binkp-root:binkp-netty'
 include ':binkp-root'
 include ':jambase'
@@ -28,7 +27,6 @@ project(':fido-tools').projectDir = "$rootDir/fido-tools" as File
 project(':fido-database').projectDir = "$rootDir/fido-database" as File
 project(':binkp-root:binkp-common').projectDir = "$rootDir/binkp/binkp-common" as File
 project(':binkp-root:binkp-mina2').projectDir = "$rootDir/binkp/binkp-mina2" as File
-project(':binkp-root:binkp-mina3').projectDir = "$rootDir/binkp/binkp-mina3" as File
 project(':binkp-root:binkp-netty').projectDir = "$rootDir/binkp/binkp-netty" as File
 project(':binkp-root').projectDir = "$rootDir/binkp" as File
 project(':jambase').projectDir = "$rootDir/jambase" as File
