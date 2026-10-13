@@ -34,7 +34,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.fidonet.binkp.common.ClientConnector;
@@ -78,9 +80,11 @@ public class Client extends ClientConnector {
         if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
         sessionContext.setState(SessionState.STATE_IDLE);
 
-        connector = new NioEventLoopGroup();
+        connector = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         Bootstrap b = new Bootstrap();
         b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeout)
+                // Keep the allocator used by Netty 4.1 during migration.
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .group(connector)
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {

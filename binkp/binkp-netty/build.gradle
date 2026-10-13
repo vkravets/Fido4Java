@@ -1,17 +1,6 @@
 group = 'org.fidonet.binkp'
 description = 'binkp-netty'
 
-sourceSets {
-    integrationTest {
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
-    }
-}
-
-configurations {
-    integrationTestImplementation.extendsFrom testImplementation
-    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
 dependencies {
     implementation project(':fido-config')
     implementation project(':fido-fts')
@@ -20,9 +9,10 @@ dependencies {
     implementation project(':binkp-root:binkp-common')
     compileOnly project(':plugin-manager')
 
-    implementation 'io.netty:netty-transport:4.1.24.Final'
-    implementation 'io.netty:netty-handler:4.1.24.Final'
-    implementation 'io.netty:netty-common:4.1.24.Final'
+    implementation platform('io.netty:netty-bom:4.2.19.Final')
+    implementation 'io.netty:netty-transport'
+    implementation 'io.netty:netty-handler'
+    implementation 'io.netty:netty-common'
     implementation 'org.slf4j:slf4j-api:1.7.21'
     compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
     compileOnly 'org.apache.logging.log4j:log4j-core:2.6.2'
@@ -32,21 +22,6 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.0.14-beta'
     testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
     testImplementation 'org.apache.logging.log4j:log4j-core:2.6.2'
-    integrationTestImplementation 'org.testcontainers:testcontainers:1.21.4'
 }
 
-// Opt-in only: neither test, check nor build starts Docker.
-tasks.register('binkdDockerTest', Test) {
-    description = 'Exchanges files with binkd in Docker using both JFtn client and server roles.'
-    group = 'verification'
-    testClassesDirs = sourceSets.integrationTest.output.classesDirs
-    classpath = sourceSets.integrationTest.runtimeClasspath
-    useJUnit()
-    maxParallelForks = 1
-    testLogging {
-        events 'passed', 'failed', 'skipped'
-        exceptionFormat = 'full'
-    }
-    outputs.upToDateWhen { false }
-    systemProperty 'binkd.artifactsDir', layout.buildDirectory.dir('reports/binkdDockerTest').get().asFile.absolutePath
-}
+apply from: "$rootDir/gradle/binkd-integration.gradle"

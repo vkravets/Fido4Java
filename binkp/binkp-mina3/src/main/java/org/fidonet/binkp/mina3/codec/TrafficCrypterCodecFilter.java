@@ -77,8 +77,9 @@ public class TrafficCrypterCodecFilter extends AbstractIoFilter {
             buf.put(array);
             buf.flip();
             message.setMessage(buf);
-            super.messageWriting(session, message, controller);
         }
+        // Empty writes must also reach the transport and complete their futures.
+        super.messageWriting(session, message, controller);
     }
 
 }

@@ -89,7 +89,7 @@ public class Mina2ClientTest {
 
         @Override
         public void stop() {
-            session.close();
+            session.closeNow();
         }
 
         public ProtocolCodecSession getSession() {

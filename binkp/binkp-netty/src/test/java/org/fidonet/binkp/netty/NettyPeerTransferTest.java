@@ -3,7 +3,7 @@ package org.fidonet.binkp.netty;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -77,7 +77,9 @@ public class NettyPeerTransferTest {
         clientBus.subscribe(receiver);serverBus.subscribe(receiver);
         FrameTrace clientTrace=new FrameTrace(),serverTrace=new FrameTrace();
         AtomicReference<SessionContext> accepted=new AtomicReference<>();
-        EventLoopGroup acceptor=new NioEventLoopGroup(1),serverWorkers=new NioEventLoopGroup(1),clientWorkers=new NioEventLoopGroup(1);
+        EventLoopGroup acceptor=new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()),
+                serverWorkers=new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()),
+                clientWorkers=new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         Channel listener=null,connection=null;
         try {
             listener=new ServerBootstrap().group(acceptor,serverWorkers).channel(NioServerSocketChannel.class)

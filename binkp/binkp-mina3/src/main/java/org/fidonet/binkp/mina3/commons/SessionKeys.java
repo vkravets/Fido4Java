@@ -41,6 +41,9 @@ import org.fidonet.binkp.common.io.FilesSender;
  * Time: 1:44 AM
  */
 public class SessionKeys {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static final AttributeKey<org.apache.mina.api.IoFuture<Void>> LAST_WRITE_KEY =
+            new AttributeKey((Class) org.apache.mina.api.IoFuture.class, "last-write");
     public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = new AttributeKey<TrafficCrypter>(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
     public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = new AttributeKey<SessionContext>(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
     public static final AttributeKey<FilesSender> FILESENDER_KEY = new AttributeKey<FilesSender>(FilesSender.class, FilesSender.class.getName() + ".KEY");

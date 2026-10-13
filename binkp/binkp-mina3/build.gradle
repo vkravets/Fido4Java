@@ -46,3 +46,5 @@ tasks.withType(Test).configureEach {
     agentProvider.agentJar.from(configurations.mockitoAgent)
     jvmArgumentProviders.add(agentProvider)
 }
+
+apply from: "$rootDir/gradle/binkd-integration.gradle"
