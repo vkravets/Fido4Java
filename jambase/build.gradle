@@ -6,5 +6,5 @@ description = 'jambase'
 dependencies {
     api project(':fido-tools')
     api project(':tools')
-    testImplementation group: 'junit', name: 'junit', version:'4.12'
+    testImplementation 'junit:junit:4.12'
 }

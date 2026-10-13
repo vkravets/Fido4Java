@@ -12,8 +12,8 @@ dependencies {
     implementation project(':binkp-root:binkp-common')
     implementation project(':binkp-root:binkp-mina3')
     implementation project(':rpc')
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.21'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.6.2'
-    implementation group: 'com.h2database', name: 'h2', version: '1.4.192'
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    implementation 'org.slf4j:slf4j-api:1.7.21'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+    implementation 'com.h2database:h2:1.4.192'
+    testImplementation 'junit:junit:4.12'
 }
