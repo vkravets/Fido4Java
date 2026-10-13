@@ -6,9 +6,9 @@ dependencies {
   api project(':event-bus')
   api project(':fido-config')
   api project(':fido-tools')
-    implementation group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
-    testImplementation group: 'junit', name: 'junit', version:'4.12'
-    compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version:'2.6.2'
+    implementation 'org.slf4j:slf4j-api:1.7.21'
+    testImplementation 'junit:junit:4.12'
+    compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
   api project(':fido-database')
-    testRuntimeOnly group: 'com.h2database', name: 'h2', version:'1.4.192'
+    testRuntimeOnly 'com.h2database:h2:1.4.192'
 }

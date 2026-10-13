@@ -30,9 +30,9 @@ subprojects {
         mavenLocal()
         mavenCentral()
 
-        maven { url 'https://maven.vaadin.com/vaadin-addons' }
-        maven { url 'https://maven.vaadin.com/vaadin-prereleases' }
-        maven { url "https://bits.netbeans.org/nexus/content/groups/netbeans" }
+        maven { url = 'https://maven.vaadin.com/vaadin-addons' }
+        maven { url = 'https://maven.vaadin.com/vaadin-prereleases' }
+        maven { url = "https://bits.netbeans.org/nexus/content/groups/netbeans" }
     }
 
 // give test dependencies access to compileOnly dependencies to emulate providedCompile
@@ -43,7 +43,7 @@ subprojects {
     test {
         testLogging {
             events 'passed', 'skipped', 'failed', 'standard_out', 'standard_error'
-            exceptionFormat 'full'
+            exceptionFormat = 'full'
         }
     }
 }
