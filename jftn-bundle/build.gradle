@@ -10,7 +10,7 @@ dependencies {
     implementation project(':scheduler')
     implementation project(':jtoss')
     implementation project(':binkp-root:binkp-common')
-    implementation project(':binkp-root:binkp-mina3')
+    implementation project(':binkp-root:binkp-netty')
     implementation project(':rpc')
     implementation 'org.slf4j:slf4j-api:1.7.21'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'

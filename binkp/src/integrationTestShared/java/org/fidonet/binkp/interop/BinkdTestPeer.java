@@ -1,4 +1,4 @@
-package org.fidonet.binkp.netty;
+package org.fidonet.binkp.interop;
 
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.Container;

@@ -57,7 +57,11 @@ public class Mina2Session implements Session {
 
     @Override
     public void close(boolean close) {
-        session.close(close);
+        if (close) {
+            session.closeNow();
+        } else {
+            session.closeOnFlush();
+        }
     }
 
     @Override

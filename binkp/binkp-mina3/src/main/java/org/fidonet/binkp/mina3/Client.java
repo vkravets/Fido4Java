@@ -101,14 +101,9 @@ public class Client extends ClientConnector {
 
     public void stop() {
         if (session != null && !(session.isClosing() || session.isClosed())) {
-            final IoFuture<Void> close = session.close(true);
-            try {
-                close.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            // Immediate close shuts the channel synchronously in MINA3-M2;
+            // its returned close future is not reliably completed.
+            session.close(true);
         }
         if (connector != null) {
             try {

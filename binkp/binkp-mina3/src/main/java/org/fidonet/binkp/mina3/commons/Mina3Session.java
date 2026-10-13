@@ -47,12 +47,28 @@ public class Mina3Session implements Session {
 
     @Override
     public void write(Object message) {
-        session.write(message);
+        // MINA3's filter-chain cursor belongs to the session, not to each write.
+        // File sender and protocol replies can otherwise run the chain concurrently.
+        synchronized (session) {
+            session.setAttribute(SessionKeys.LAST_WRITE_KEY, session.writeWithFuture(message));
+        }
     }
 
     @Override
     public void close(boolean close) {
-        session.close(close);
+        synchronized (session) {
+            org.apache.mina.api.IoFuture<Void> lastWrite = session.getAttribute(SessionKeys.LAST_WRITE_KEY);
+            if (close || lastWrite == null) {
+                session.close(true);
+            } else {
+                // MINA3-M2 close(false) can remain CLOSING when the queue is already empty.
+                // Wait for the last queued write, then explicitly close the transport.
+                lastWrite.register(new org.apache.mina.api.IoFutureListener<Void>() {
+                    @Override public void completed(Void value) { session.close(true); }
+                    @Override public void exception(Throwable failure) { session.close(true); }
+                });
+            }
+        }
     }
 
     @Override

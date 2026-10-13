@@ -48,16 +48,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class Runner {
 
-    private ExecutorService threadPoolExecutor;
-    private Client client;
+    private final ExecutorService threadPoolExecutor;
     private Server server;
 
     private static final Logger logger = LoggerFactory.getLogger(Runner.class);
 
     public Runner() {
-        threadPoolExecutor = new ThreadPoolExecutor(3, Integer.MAX_VALUE,
+        this(new ThreadPoolExecutor(3, Integer.MAX_VALUE,
                 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>());
+                new SynchronousQueue<Runnable>()));
+    }
+
+    Runner(ExecutorService executor) {
+        threadPoolExecutor = executor;
+    }
+
+    protected Client createClient(Link link) {
+        return new Client(link);
     }
 
     public void poll(final Link link, final SessionContext context) throws Exception {
@@ -67,8 +74,8 @@ public class Runner {
                 for (; ; ) {
                     Thread.sleep(500);
                     if (context.isTransferComplete() ||
-                            context.getState().equals(SessionState.STATE_ERR) ||
-                            context.getState().equals(SessionState.STATE_END)) {
+                            context.getState() == SessionState.STATE_ERR ||
+                            context.getState() == SessionState.STATE_END) {
                         break;
                     }
                 }
@@ -76,17 +83,21 @@ public class Runner {
 
             @Override
             public void run() {
+                Client client = null;
                 try {
-                    client = new Client(link);
+                    client = createClient(link);
                     client.run(context);
                     if (client.isConnect()) {
                         waitSessionFinish();
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } catch (Exception e) {
                     logger.error("Client unexpectedly stops", e);
                 } finally {
-                    client.stop();
-                    client = null;
+                    if (client != null) {
+                        client.stop();
+                    }
                 }
             }
         };

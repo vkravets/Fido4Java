@@ -32,8 +32,8 @@ import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.mina3.Runner;
-import org.fidonet.binkp.mina3.plugin.BinkPPlugin;
+import org.fidonet.binkp.netty.plugin.Runner;
+import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.plugins.PluginManager;
@@ -75,7 +75,7 @@ public class JFtnRunner {
         final PluginManager pluginManager = PluginManager.getInstance();
         pluginManager.loadPlugins();
 
-        final WeakReference<Runner> binkpRunner = pluginManager.getContext(BinkPPlugin.BINKP_PLUGIN_ID);
+        final WeakReference<Runner> binkpRunner = pluginManager.getContext(NettyPlugin.BINKP_PLUGIN_ID);
         LinksInfo linksInfo = new LinksInfo(new ArrayList<Link>());
         linksInfo.getLinks().add(new Link(FTNAddr.valueOf("2:467/70.0"),
                 new LinkedList<FTNAddr>() {
@@ -151,7 +151,9 @@ public class JFtnRunner {
         logger.info("Pooling all uplinks");
         for (Link link : binkpSession.getLinksInfo().getLinks()) {
             try {
-                runner.poll(link, binkpSession);
+                // The server context is a configuration template; each outgoing
+                // connection owns its link, state and transfer queues.
+                runner.poll(link, new SessionContext(binkpSession));
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }

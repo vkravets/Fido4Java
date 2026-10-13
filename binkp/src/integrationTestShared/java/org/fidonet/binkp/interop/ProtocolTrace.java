@@ -1,8 +1,5 @@
-package org.fidonet.binkp.netty;
+package org.fidonet.binkp.interop;
 
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileInfo;
@@ -12,12 +9,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.junit.Assert.*;
 
 /** Captures decoded commands in both directions without logging payload bytes or passwords. */
-final class ProtocolTrace extends ChannelDuplexHandler {
+public final class ProtocolTrace {
     private final List<BinkFrame> incoming = new CopyOnWriteArrayList<>();
     private final List<BinkFrame> outgoing = new CopyOnWriteArrayList<>();
     private final List<String> lines = new CopyOnWriteArrayList<>();
 
-    void assertExchange(boolean requestNr) throws Exception {
+    public void assertExchange(boolean requestNr) throws Exception {
         assertTrue("JFtn must receive M_GOT", has(incoming, BinkCommand.M_GOT));
         assertTrue("JFtn must send M_GOT", has(outgoing, BinkCommand.M_GOT));
         assertTrue("binkd must send M_EOB", has(incoming, BinkCommand.M_EOB));
@@ -26,20 +23,12 @@ final class ProtocolTrace extends ChannelDuplexHandler {
         assertEquals("JFtn must issue M_GET for NR reception", requestNr, has(outgoing, BinkCommand.M_GET));
     }
 
-    String log() {
+    public String log() {
         return String.join("\n", lines);
     }
 
-    @Override public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
-        record("IN", incoming, message);
-        super.channelRead(context, message);
-    }
-
-    @Override public void write(ChannelHandlerContext context, Object message, ChannelPromise promise) throws Exception {
-        record("OUT", outgoing, message);
-        super.write(context, message, promise);
-    }
-
+    public void incoming(Object message) { record("IN", incoming, message); }
+    public void outgoing(Object message) { record("OUT", outgoing, message); }
     private void record(String direction, List<BinkFrame> target, Object message) {
         if (!(message instanceof BinkFrame)) return;
         BinkFrame frame = (BinkFrame) message;

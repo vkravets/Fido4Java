@@ -7,6 +7,7 @@ JFtn v0.1
 ### ABOUT
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
 To use JFtn you need Java 11 or newer.
+The application bundle uses Netty as its default BinkP transport.
 Feel free to report bugs and request for features.
 Its very simple for now and can be used only for read-only system. It can toss netmail, have bugs,
 and still under develompent.
@@ -74,9 +75,9 @@ If Thrift is not on `PATH`, specify its executable explicitly:
 On Linux/macOS, use `./gradlew build` with the same optional
 `-PthriftExecutable=/path/to/thrift` property.
 
-An optional Docker interoperability test exchanges files with an external binkd
-peer using both JFtn client and server roles. It runs only through the explicit `:binkp-root:binkp-netty:binkdDockerTest`
-task; see the [test plan, container lifecycle and diagnostics](binkp/binkp-netty/src/integrationTest/README.md).
+Optional Docker interoperability tests for Netty, MINA2 and MINA3 exchange files with an external binkd
+peer using both JFtn client and server roles. They run only through each backend's explicit
+`binkdDockerTest` task; see the [test plan, container lifecycle and diagnostics](binkp/src/integrationTestShared/README.md).
 Ordinary transfer and JFtn-requested NR were verified in both roles with binkd in Podman on Windows.
 
 For now there are a few developers (see below list), but you can join for develompent anytime.
