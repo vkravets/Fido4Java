@@ -3,13 +3,15 @@ jobs:
   build:
     docker:
       - image: cimg/openjdk:17.0
+    retention:
+      caches: 15d
     environment:
       LANG: C.UTF-8
     steps:
       - checkout
       - restore_cache:
           keys:
-            - v1-thrift-0.14.2-{{ arch }}-{{ checksum ".circleci/config.yml" }}
+            - v1-thrift-0.14.2-{{ arch }}
       - run:
           name: Install Apache Thrift compiler
           command: |
@@ -35,7 +37,7 @@ jobs:
             sudo install "$thrift_cached_bin" /usr/local/bin/thrift
             thrift -version
       - save_cache:
-          key: v1-thrift-0.14.2-{{ arch }}-{{ checksum ".circleci/config.yml" }}
+          key: v1-thrift-0.14.2-{{ arch }}
           paths:
             - ~/.cache/thrift/0.14.2/bin/thrift
       - run:
