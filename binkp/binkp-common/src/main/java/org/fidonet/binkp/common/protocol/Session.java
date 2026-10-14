@@ -40,7 +40,7 @@ import org.fidonet.binkp.common.io.FilesSender;
  */
 public interface Session {
 
-    void  write(Object message);
+    void write(Object message);
 
     void close(boolean close);
 

@@ -28,11 +28,11 @@
 
 package org.fidonet.echobase.jam;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Closeable;
 
 class JDTFile implements Closeable {
 
@@ -41,7 +41,6 @@ class JDTFile implements Closeable {
     public JDTFile(File tmp) throws FileNotFoundException {
         jdt = new RandomAccessFile(tmp, "rw");
     }
-
 
     public int getSize() throws IOException {
         int size = 0;

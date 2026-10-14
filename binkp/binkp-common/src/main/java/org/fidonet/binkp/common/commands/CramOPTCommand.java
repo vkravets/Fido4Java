@@ -31,6 +31,8 @@ package org.fidonet.binkp.common.commands;
 import org.fidonet.binkp.common.SessionContext;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 /**
  * Created by IntelliJ IDEA.
@@ -46,18 +48,21 @@ public class CramOPTCommand extends OPTCommand {
     public CramOPTCommand() {
         this(md5());
     }
+
     private static MessageDigest md5() {
-        try { return MessageDigest.getInstance("MD5"); }
-        catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public CramOPTCommand(MessageDigest messageDigest) {
         this.messageDigest = messageDigest;
         messageDigest.reset();
         byte[] nonce = new byte[32];
-        new java.security.SecureRandom().nextBytes(nonce);
+        new SecureRandom().nextBytes(nonce);
         messageDigest.update(nonce);
-
     }
 
     @Override

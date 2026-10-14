@@ -69,7 +69,7 @@ public class NettyPlugin implements Plugin<Runner> {
 
     @Override
     public void load() throws PluginException {
-//        System.out.println("Load Binp0");
+        //        System.out.println("Load Binp0");
         runner = new Runner();
         context = new WeakReference<Runner>(runner);
     }

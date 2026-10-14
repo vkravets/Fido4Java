@@ -41,6 +41,8 @@ import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Deque;
 
 /**
@@ -62,24 +64,34 @@ public class PWDCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
             final String passwordString = commandArgs.trim();
-            if (password != null) password.setCrypt(false);
-            if (password != null && passwordString.startsWith("CRAM-") && sessionContext.getPasswordKey() != null
+            if (password != null) {
+                password.setCrypt(false);
+            }
+            if (password != null && passwordString.startsWith("CRAM-")
+                    && sessionContext.getPasswordKey() != null
                     && sessionContext.getMessageDigest() != null
-                    && passwordString.startsWith("CRAM-" + sessionContext.getMessageDigest().getAlgorithm().replace("-", "") + "-")) {
+                    && passwordString.startsWith("CRAM-"
+                                                 + sessionContext.getMessageDigest()
+                                                                 .getAlgorithm()
+                                                                 .replace("-", "")
+                                                 + "-")) {
                 password.setCrypt(true);
                 password.setMd(sessionContext.getMessageDigest());
                 password.setKey(sessionContext.getPasswordKey());
             }
-            if (password != null && java.security.MessageDigest.isEqual(password.getText().getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                    passwordString.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            if (password != null
+                    && MessageDigest.isEqual(password.getText().getBytes(StandardCharsets.UTF_8),
+                                             passwordString.getBytes(StandardCharsets.UTF_8))) {
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
 
-                boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
+                boolean isMD5 = password.isCrypt()
+                        && password.getMessageDigest().getAlgorithm().equals("MD5");
                 log.debug("MD5: {}", isMD5);
                 if (sessionContext.isCryptMode()) {
                     log.info("Setting incoming/oncoming message crypt");
@@ -89,7 +101,9 @@ public class PWDCommand extends MessageCommand {
                 sessionContext.sendEvent(new ConnectedEvent(sessionContext));
                 Deque<FileData<InputStream>> files = sessionContext.getSendFiles();
                 // Run thread to sending files in server mode
-                FilesSender<Session> filesSender = new FilesSender<>(session, files, sessionContext);
+                FilesSender<Session> filesSender = new FilesSender<>(session,
+                                                                     files,
+                                                                     sessionContext);
                 session.setFileSender(filesSender);
                 Thread sendFiles = new Thread(filesSender);
                 sendFiles.start();

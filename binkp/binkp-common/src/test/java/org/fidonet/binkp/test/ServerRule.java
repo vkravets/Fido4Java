@@ -30,6 +30,7 @@ package org.fidonet.binkp.test;
 
 import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
+
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -72,15 +73,15 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
         private final Statement base;
         private final ThreadPoolExecutor threadPoolExecutor;
 
-        public ServerStatement(Statement base,
-                               ServerConnector serverConnector) {
+        public ServerStatement(Statement base, ServerConnector serverConnector) {
             this.base = base;
             this.serverConnector = serverConnector;
             if (!isAsync) {
-                this.threadPoolExecutor = new ThreadPoolExecutor(
-                        1, 1,
-                        60L, TimeUnit.SECONDS,
-                        new SynchronousQueue<Runnable>());
+                this.threadPoolExecutor = new ThreadPoolExecutor(1,
+                                                                 1,
+                                                                 60L,
+                                                                 TimeUnit.SECONDS,
+                                                                 new SynchronousQueue<Runnable>());
             } else {
                 this.threadPoolExecutor = null;
             }
@@ -92,14 +93,12 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
                 if (!isAsync) {
                     threadPoolExecutor.submit(new ServerThread());
                     log.info("Ran in Async mode");
-                }
-                else {
+                } else {
                     this.serverConnector.run(sessionContext);
                     log.info("Ran in Non Async mode");
                 }
                 base.evaluate();
-            }
-            finally {
+            } finally {
                 this.serverConnector.stop();
                 if (!isAsync) {
                     threadPoolExecutor.shutdownNow();
@@ -113,8 +112,7 @@ public class ServerRule<T extends ServerConnector> implements TestRule {
         public void run() {
             try {
                 serverConnector.run(sessionContext);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException("Server error", e);
             }
             System.out.print("Server stopped");

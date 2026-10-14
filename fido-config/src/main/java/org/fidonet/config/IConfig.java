@@ -50,5 +50,4 @@ public interface IConfig {
     List<String> getValuesAsList(String key);
 
     boolean isValidate();
-
 }

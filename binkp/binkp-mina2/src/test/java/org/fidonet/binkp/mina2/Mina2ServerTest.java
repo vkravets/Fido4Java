@@ -35,6 +35,7 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
+
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,16 +50,13 @@ import java.util.List;
  * Date: 5/5/18
  * Time: 23:09
  */
-
-
 @Ignore
 public class Mina2ServerTest extends AbstractServerTest {
 
     @ClassRule
-    public static ServerRule SERVER = new ServerRule(
-            new Server(Connector.BINK_PORT),
-            AbstractServerTest.sessionContext,
-            true);
+    public static ServerRule SERVER = new ServerRule(new Server(Connector.BINK_PORT),
+                                                     AbstractServerTest.sessionContext,
+                                                     true);
 
     @Test(timeout = 30000)
     public void test1() throws Exception {
@@ -66,16 +64,17 @@ public class Mina2ServerTest extends AbstractServerTest {
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
-                "Test Test",
-                "Odessa,UA",
-                "BINKP",
-                "2:467/10.1");
+                                                              "Test Test",
+                                                              "Odessa,UA",
+                                                              "BINKP",
+                                                              "2:467/10.1");
         stationConfig.setCryptMode(true);
-//        stationConfig.setNRMode(true);
+        //        stationConfig.setNRMode(true);
         final List<Link> links = new ArrayList<Link>();
         links.add(uplink);
 
-        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        final SessionContext sessionContext = new SessionContext(stationConfig,
+                                                                 new LinksInfo(links));
         sessionContext.getLinksInfo().setCurLink(uplink.getAddr());
         runAndWait(client, sessionContext);
     }
@@ -86,16 +85,17 @@ public class Mina2ServerTest extends AbstractServerTest {
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
-                "Test Test",
-                "Odessa,UA",
-                "BINKP",
-                "2:467/10.999");
+                                                              "Test Test",
+                                                              "Odessa,UA",
+                                                              "BINKP",
+                                                              "2:467/10.999");
         stationConfig.setCryptMode(true);
-//        stationConfig.setNRMode(true);
+        //        stationConfig.setNRMode(true);
         final List<Link> links = new ArrayList<Link>();
         links.add(uplink);
 
-        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        final SessionContext sessionContext = new SessionContext(stationConfig,
+                                                                 new LinksInfo(links));
         runAndWait(client, sessionContext);
     }
 
@@ -105,8 +105,7 @@ public class Mina2ServerTest extends AbstractServerTest {
             if (client.isConnect()) {
                 waitSessionFinish(sessionContext);
             }
-        }
-        finally {
+        } finally {
             client.stop();
         }
     }

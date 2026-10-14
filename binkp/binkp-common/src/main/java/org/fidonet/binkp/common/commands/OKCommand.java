@@ -72,7 +72,8 @@ public class OKCommand extends MessageCommand {
 
         if (sessionContext.isSecureSession()) {
             final Password password = sessionContext.getPassword();
-            final boolean isMD5 = password.isCrypt() && password.getMessageDigest().getAlgorithm().equals("MD5");
+            final boolean isMD5 = password.isCrypt()
+                    && password.getMessageDigest().getAlgorithm().equals("MD5");
             log.debug("MD5: {}", isMD5);
             if (sessionContext.isCryptMode()) {
                 log.info("Setting incoming/oncoming message crypt...");
@@ -96,11 +97,9 @@ public class OKCommand extends MessageCommand {
         if (password != null) {
             secureMessage = "secure";
             mode = password.isCrypt() ? password.getMessageDigest().getAlgorithm() : "plain-text";
-        }
-        else {
+        } else {
             secureMessage = "insecure";
         }
         return String.format("%s (%s)", secureMessage, mode);
     }
-
 }

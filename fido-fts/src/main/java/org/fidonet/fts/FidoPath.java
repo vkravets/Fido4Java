@@ -65,7 +65,8 @@ public class FidoPath extends AbstractFidoAddressesList {
     }
 
     public String[] toPathStrings() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - PATH_LINE_PREFIX.length(), PATH_LINE_PREFIX);
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - PATH_LINE_PREFIX.length(),
+                                                PATH_LINE_PREFIX);
         return wrapLines.toArray(new String[wrapLines.size()]);
     }
 }

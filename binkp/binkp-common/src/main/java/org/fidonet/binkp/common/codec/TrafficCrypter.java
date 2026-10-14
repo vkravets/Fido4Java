@@ -50,7 +50,6 @@ public class TrafficCrypter {
         this.decrypt = new DummyDecrypt();
     }
 
-
     public Encrypt getEncrypt() {
         return encrypt;
     }
@@ -75,4 +74,3 @@ public class TrafficCrypter {
         decrypt.decryptData(dataBuf, length);
     }
 }
-

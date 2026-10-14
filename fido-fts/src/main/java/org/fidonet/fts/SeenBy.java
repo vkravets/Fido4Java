@@ -31,7 +31,11 @@ package org.fidonet.fts;
 import org.fidonet.tools.StringTools;
 import org.fidonet.types.FTNAddr;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -86,7 +90,8 @@ public class SeenBy extends AbstractFidoAddressesList {
     }
 
     public String[] toSeenByStrings() {
-        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - SEEN_BY_LINE_PREFIX.length(), SEEN_BY_LINE_PREFIX);
+        List<String> wrapLines = getWrapStrings(WRAP_LENGTH - SEEN_BY_LINE_PREFIX.length(),
+                                                SEEN_BY_LINE_PREFIX);
         return wrapLines.toArray(new String[wrapLines.size()]);
     }
 }

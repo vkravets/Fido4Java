@@ -28,14 +28,7 @@
 
 package org.fidonet.binkp.common.io;
 
-import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,8 +38,6 @@ import java.io.IOException;
  * Time: 1:22 PM
  */
 public class BinkFrame {
-
-    private static final Logger logger = LoggerFactory.getLogger(BinkFrame.class);
 
     private short dataInfo;
     private byte[] data;
@@ -65,24 +56,19 @@ public class BinkFrame {
     }
 
     public static BinkData toBinkData(BinkFrame frame) {
-        DataInfo info = DataReader.parseDataInfo(frame.getDataInfo());
-        byte cmd = -1;
-        byte[] dataBuf = null;
-        // FIXME: possible NPE
-        if (info.isCommand()) {
-            try (DataInputStream dataStream = new DataInputStream(new ByteArrayInputStream(frame.getData()))) {
-                cmd = dataStream.readByte();
-                dataBuf = new byte[info.getSize() - 1];
-                int read = dataStream.read(dataBuf);
-                assert read == -1 && info.getSize() == 1 || read == info.getSize() - 1;
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-            }
-        } else {
-            dataBuf = frame.getData();
+        int size = frame.getDataInfo() & 0x7fff;
+        boolean command = (frame.getDataInfo() & 0x8000) != 0;
+        if (frame.getData() == null || frame.getData().length != size) {
+            throw new IllegalArgumentException("Binkp frame length does not match its header");
         }
-        return new BinkData(info.isCommand(), cmd, dataBuf);
-
+        if (command) {
+            if (size == 0) {
+                throw new IllegalArgumentException("Binkp command has no command byte");
+            }
+            return new BinkData(true,
+                                frame.getData()[0],
+                                Arrays.copyOfRange(frame.getData(), 1, size));
+        }
+        return new BinkData(false, (byte) -1, frame.getData());
     }
-
 }

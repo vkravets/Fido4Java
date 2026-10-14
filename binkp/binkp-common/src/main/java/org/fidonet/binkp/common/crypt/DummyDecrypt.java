@@ -49,12 +49,11 @@ public class DummyDecrypt implements Decrypt {
 
     @Override
     public void save() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void restore() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // To change body of implemented methods use File | Settings | File Templates.
     }
-
 }

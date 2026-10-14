@@ -29,12 +29,8 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
-import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.protocol.Session;
 
 /**
@@ -56,7 +52,8 @@ public class EOBCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         sessionContext.setReceivingIsFinish(true);
         sessionContext.finishSessionIfComplete(session);
     }

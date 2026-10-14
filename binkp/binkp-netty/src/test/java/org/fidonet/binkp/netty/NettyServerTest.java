@@ -36,8 +36,9 @@ import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.binkp.test.AbstractServerTest;
 import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
-import org.junit.ClassRule;
+
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -50,52 +51,52 @@ import java.util.List;
  * Date: 5/5/18
  * Time: 23:09
  */
-
 public class NettyServerTest extends AbstractServerTest {
 
     private static final Server server = new Server(0);
 
     @ClassRule
-    public static ServerRule SERVER = new ServerRule(
-            server,
-            sessionContext,
-            true);
+    public static ServerRule SERVER = new ServerRule(server, sessionContext, true);
 
     @Test(timeout = 30000)
     public void test1() throws Exception {
-        final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost:" + server.getLocalPort());
+        final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost:"
+                                     + server.getLocalPort());
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
-                "Test Test",
-                "Odessa,UA",
-                "BINKP",
-                "2:467/10.1");
+                                                              "Test Test",
+                                                              "Odessa,UA",
+                                                              "BINKP",
+                                                              "2:467/10.1");
         stationConfig.setCryptMode(true);
-//        stationConfig.setNRMode(true);
+        //        stationConfig.setNRMode(true);
         final List<Link> links = new ArrayList<Link>();
         links.add(uplink);
 
-        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        final SessionContext sessionContext = new SessionContext(stationConfig,
+                                                                 new LinksInfo(links));
         runAndWait(client, sessionContext);
     }
 
     @Test(timeout = 30000)
     public void test2() throws Exception {
-        final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost:" + server.getLocalPort());
+        final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost:"
+                                     + server.getLocalPort());
         uplink.setMD(true);
         Client client = new Client(uplink, 10);
         final StationConfig stationConfig = new StationConfig("Test",
-                "Test Test",
-                "Odessa,UA",
-                "BINKP",
-                "2:467/10.999");
+                                                              "Test Test",
+                                                              "Odessa,UA",
+                                                              "BINKP",
+                                                              "2:467/10.999");
         stationConfig.setCryptMode(true);
-//        stationConfig.setNRMode(true);
+        //        stationConfig.setNRMode(true);
         final List<Link> links = new ArrayList<Link>();
         links.add(uplink);
 
-        final SessionContext sessionContext = new SessionContext(stationConfig, new LinksInfo(links));
+        final SessionContext sessionContext = new SessionContext(stationConfig,
+                                                                 new LinksInfo(links));
         runAndWait(client, sessionContext);
     }
 
@@ -118,8 +119,7 @@ public class NettyServerTest extends AbstractServerTest {
             if (client.isConnect()) {
                 waitSessionFinish(sessionContext);
             }
-        }
-        finally {
+        } finally {
             client.stop();
         }
     }

@@ -69,5 +69,4 @@ public class CommandCollection {
     public Collection<Command> getCommands() {
         return commands.values();
     }
-
 }

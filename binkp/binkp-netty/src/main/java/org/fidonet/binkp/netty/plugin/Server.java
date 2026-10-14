@@ -28,7 +28,15 @@
 
 package org.fidonet.binkp.netty.plugin;
 
+import org.fidonet.binkp.common.ServerConnector;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
+import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
+import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
+import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
+
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -36,17 +44,10 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.fidonet.binkp.common.ServerConnector;
-import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
-import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
-import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
-import org.fidonet.binkp.netty.plugin.handler.BinkServerSessionHandler;
 
 import java.net.InetSocketAddress;
 
@@ -73,20 +74,20 @@ public class Server extends ServerConnector {
     public void run(final SessionContext context) throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup)
-                // Keep the allocator used by Netty 4.1 during migration.
-                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .channel(NioServerSocketChannel.class)
-                .handler(new LoggingHandler(LogLevel.INFO))
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        final ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast(new TrafficCrypterCodec());
-                        pipeline.addLast(new BinkDataDecoder());
-                        pipeline.addLast(new BinkDataEncoder());
-                        pipeline.addLast(new BinkServerSessionHandler(context, getEventBus()));
-                    }
-                });
+         // Keep the allocator used by Netty 4.1 during migration.
+         .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+         .channel(NioServerSocketChannel.class)
+         .handler(new LoggingHandler(LogLevel.INFO))
+         .childHandler(new ChannelInitializer<SocketChannel>() {
+             @Override
+             protected void initChannel(SocketChannel ch) throws Exception {
+                 final ChannelPipeline pipeline = ch.pipeline();
+                 pipeline.addLast(new TrafficCrypterCodec());
+                 pipeline.addLast(new BinkDataDecoder());
+                 pipeline.addLast(new BinkDataEncoder());
+                 pipeline.addLast(new BinkServerSessionHandler(context, getEventBus()));
+             }
+         });
 
         serverChannel = b.bind(port).sync().channel();
     }

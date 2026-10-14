@@ -29,10 +29,15 @@
 package org.fidonet.echobase;
 
 import org.fidonet.types.FTNAddr;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +46,7 @@ public class EchoList {
 
     private static final Logger logger = LoggerFactory.getLogger(EchoList.class.getName());
 
-    private HashMap<String, EchoCfg> list;
+    private HashMap<String, EchoCfg> list = new HashMap<>();
     private String areaListFile;
 
     public EchoList(String areaListFile) {
@@ -49,28 +54,51 @@ public class EchoList {
     }
 
     public void load(String filename) throws IOException {
+        HashMap<String, EchoCfg> loaded = readList(filename);
         this.areaListFile = filename;
-        this.load();
+        this.list = loaded;
     }
 
     public void load() throws IOException {
-        list = new HashMap<String, EchoCfg>();
+        list = readList(areaListFile);
+    }
+
+    private HashMap<String, EchoCfg> readList(String filename) throws IOException {
+        HashMap<String, EchoCfg> loaded = new HashMap<>();
 
         String str;
-        try (BufferedReader file = new BufferedReader(new FileReader(areaListFile))) {
+        try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
+            int lineNumber = 0;
             while ((str = file.readLine()) != null) {
+                lineNumber++;
                 if (str.contains("#")) {
                     str = str.substring(0, str.indexOf('#'));
                 }
+                str = str.trim();
                 if (str.length() == 0) {
                     continue;
                 }
-                if (str.toLowerCase().startsWith("echoarea")) {
-                    String[] area = str.split(" ");
+                String[] area = str.split("\\s+");
+                if (area[0].equalsIgnoreCase("echoarea")) {
+                    if (area.length < 3) {
+                        throw new IOException("Incomplete EchoArea at "
+                                              + filename
+                                              + ":"
+                                              + lineNumber);
+                    }
                     EchoCfg echo = new EchoCfg();
                     echo.Name = area[1];
                     echo.Path = area[2];
-                    for (int i = 3; i < area.length - 1; i++) {
+                    for (int i = 3; i < area.length; i++) {
+                        if ((area[i].equals("-b") || area[i].equals("-g") || area[i].equals("-a"))
+                                && (i + 1 == area.length || area[i + 1].startsWith("-"))) {
+                            throw new IOException("Missing value for "
+                                                  + area[i]
+                                                  + " at "
+                                                  + filename
+                                                  + ":"
+                                                  + lineNumber);
+                        }
                         if (area[i].equals("-b")) {
                             echo.Type = area[i + 1];
                             i++;
@@ -84,11 +112,11 @@ public class EchoList {
                             echo.Link = new FTNAddr(area[i]);
                         }
                     }
-                    list.put(echo.Name, echo);
+                    loaded.put(echo.Name, echo);
                 }
             }
         }
-
+        return loaded;
     }
 
     public boolean isInList(String name) {
@@ -108,17 +136,16 @@ public class EchoList {
         cfg.Name = name;
         cfg.Path = Path + System.getProperty("file.separator") + name;
         cfg.Type = "JAM";
-        cfg.AKA = myAddr; //Config.getAddress();
+        cfg.AKA = myAddr; // Config.getAddress();
         cfg.Link = link;
-        list.put(name, cfg);
         saveToList(cfg);
+        list.put(name, cfg);
     }
 
     private void saveToList(EchoCfg echo) throws IOException {
-        try (PrintWriter out = new PrintWriter(new FileWriter(areaListFile, true))) {
-            out.println(echo.getEchoString());
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(areaListFile, true))) {
+            out.write(echo.getEchoString());
+            out.newLine();
         }
-
-
     }
 }

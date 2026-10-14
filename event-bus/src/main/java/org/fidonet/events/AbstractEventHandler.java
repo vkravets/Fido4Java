@@ -35,7 +35,7 @@ package org.fidonet.events;
  * Date: 1/17/14
  * Time: 12:02 AM
  */
-//@Listener(references = References.Strong)
+// @Listener(references = References.Strong)
 public abstract class AbstractEventHandler<T extends Event> implements EventHandler<T> {
     public abstract void onEventHandle(T event);
 }

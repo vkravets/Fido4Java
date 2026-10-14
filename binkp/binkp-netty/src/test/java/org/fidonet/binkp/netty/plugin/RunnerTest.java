@@ -1,8 +1,14 @@
 package org.fidonet.binkp.netty.plugin;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
 import org.fidonet.types.Link;
+
 import org.junit.Test;
 
 import java.io.IOException;
@@ -13,11 +19,93 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
-
 public class RunnerTest {
+    @Test(timeout = 15000)
+    public void stopsConnectedClientForEachTerminalSessionCondition() throws Exception {
+        SessionContext ended = context();
+        SessionContext failed = context();
+        SessionContext completed = context();
+        ended.setState(SessionState.STATE_END);
+        failed.setState(SessionState.STATE_ERR);
+        completed.setSendingIsFinish(true);
+        completed.setReceivingIsFinish(true);
+        for (SessionContext context : new SessionContext[]{ended, failed, completed}) {
+            RecordingExecutor executor = new RecordingExecutor();
+            ControlledClient client = new ControlledClient(false);
+            client.connected = true;
+            client.release.countDown();
+            Runner runner = runner(executor, client);
+            try {
+                runner.poll(null, context);
+                executor.tasks.get(0).get(5, TimeUnit.SECONDS);
+                assertEquals(1, client.stops.get());
+            } finally {
+                runner.shutdown();
+                executor.shutdownNow();
+                assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+            }
+        }
+    }
+
+    @Test(timeout = 15000)
+    public void keepsClientOpenUntilSessionCompletesEvenWithUnsetState() throws Exception {
+        RecordingExecutor executor = new RecordingExecutor();
+        ControlledClient client = new ControlledClient(false);
+        client.connected = true;
+        client.release.countDown();
+        Runner runner = runner(executor, client);
+        SessionContext context = context();
+        try {
+            runner.poll(null, context);
+            try {
+                executor.tasks.get(0).get(750, TimeUnit.MILLISECONDS);
+                fail("Session must remain active");
+            } catch (TimeoutException expected) {
+            }
+            assertEquals(0, client.stops.get());
+            context.setState(SessionState.STATE_END);
+            executor.tasks.get(0).get(5, TimeUnit.SECONDS);
+            assertEquals(1, client.stops.get());
+        } finally {
+            runner.shutdown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test(timeout = 15000)
+    public void cancelledPollClosesClientAndPreservesInterruption() throws Exception {
+        RecordingExecutor executor = new RecordingExecutor();
+        ControlledClient client = new ControlledClient(false);
+        client.connected = true;
+        client.release.countDown();
+        Runner runner = runner(executor, client);
+        try {
+            runner.poll(null, context());
+            assertTrue(client.connectionChecked.await(5, TimeUnit.SECONDS));
+            assertTrue(executor.tasks.get(0).cancel(true));
+            assertTrue(client.stopped.await(5, TimeUnit.SECONDS));
+            assertEquals(1, client.stops.get());
+            assertTrue(client.interruptedOnStop);
+        } finally {
+            runner.shutdown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+    }
+
+    private static Runner runner(RecordingExecutor executor, ControlledClient client) {
+        return new Runner(executor) {
+            @Override
+            protected Client createClient(Link link) {
+                return client;
+            }
+        };
+    }
+
     @Test(timeout = 15000)
     public void concurrentPollsStopOnlyTheirOwnClient() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
@@ -119,6 +207,10 @@ public class RunnerTest {
         private final CountDownLatch started = new CountDownLatch(1);
         private final CountDownLatch release = new CountDownLatch(1);
         private final AtomicInteger stops = new AtomicInteger();
+        private final CountDownLatch connectionChecked = new CountDownLatch(1);
+        private final CountDownLatch stopped = new CountDownLatch(1);
+        private boolean connected;
+        private boolean interruptedOnStop;
         private final boolean fail;
 
         private ControlledClient(boolean fail) {
@@ -139,12 +231,15 @@ public class RunnerTest {
 
         @Override
         public boolean isConnect() {
-            return false;
+            connectionChecked.countDown();
+            return connected;
         }
 
         @Override
         public void stop() {
+            interruptedOnStop = Thread.currentThread().isInterrupted();
             stops.incrementAndGet();
+            stopped.countDown();
         }
     }
 }

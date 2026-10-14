@@ -46,7 +46,9 @@ public class JFtnScriptService {
     private HookInterpreter hooks;
     private IConfig config;
 
-    public JFtnScriptService(ScriptEngine scriptEngine, HookInterpreter hooks, CommandInterpreter commands) {
+    public JFtnScriptService(ScriptEngine scriptEngine,
+                             HookInterpreter hooks,
+                             CommandInterpreter commands) {
         this.hooks = hooks;
         this.commands = commands;
     }
@@ -70,5 +72,4 @@ public class JFtnScriptService {
     public void setConfig(IConfig config) {
         this.config = config;
     }
-
 }

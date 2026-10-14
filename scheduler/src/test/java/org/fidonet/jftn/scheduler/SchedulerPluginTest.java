@@ -28,10 +28,10 @@
 
 package org.fidonet.jftn.scheduler;
 
-import junit.framework.TestCase;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
-import org.junit.Ignore;
+
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;

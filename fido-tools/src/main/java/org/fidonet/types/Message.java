@@ -33,17 +33,19 @@ import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.SeenBy;
 import org.fidonet.tools.CharsetTools;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Message {
@@ -66,7 +68,13 @@ public class Message {
     private String msgId;
     private boolean isValid;
 
-    public Message(String from, String to, FTNAddr fromAddr, FTNAddr toAddr, String subj, String message, Date date) {
+    public Message(String from,
+                   String to,
+                   FTNAddr fromAddr,
+                   FTNAddr toAddr,
+                   String subj,
+                   String message,
+                   Date date) {
         this.from = from;
         this.to = to;
         this.fAddr = fromAddr;
@@ -78,7 +86,6 @@ public class Message {
         stripAndUpdateKludges(message);
 
         tryDetectAddressesAndId();
-
     }
 
     public Message(FtsPackMsg src) {
@@ -98,11 +105,10 @@ public class Message {
         fAddr = new FTNAddr(originZone, net, node, 0);
         tAddr = new FTNAddr(destinationZone, src.getDestNet(), src.getDestNode(), 0);
 
-
-//        String messageCharsetName = getMessageCharset();
-//        Charset charset = CharsetTools.charsetDetect(messageCharsetName);
-//        CharBuffer decode = charset.decode(ByteBuffer.wrap(src.getBody()));
-//        body = new String(decode.array());
+        //        String messageCharsetName = getMessageCharset();
+        //        Charset charset = CharsetTools.charsetDetect(messageCharsetName);
+        //        CharBuffer decode = charset.decode(ByteBuffer.wrap(src.getBody()));
+        //        body = new String(decode.array());
         stripAndUpdateKludges(new String(src.getBody(), FtsPackMsg.detectCharset(src.getBody())));
         tryDetectAddressesAndId();
         isValid = true;
@@ -118,7 +124,7 @@ public class Message {
 
     public Body getStripedBody(String[] lines) {
         final Map<String, String> kltmp = new LinkedHashMap<String, String>();
-        java.util.List<String> controlLines = new java.util.ArrayList<>();
+        List<String> controlLines = new ArrayList<>();
         SeenBy seenBy = new SeenBy();
         FidoPath path = new FidoPath();
         StringBuilder sb = new StringBuilder();
@@ -134,12 +140,20 @@ public class Message {
         int defaultZone = fAddr == null ? 2 : fAddr.getZone();
         for (int i = 0; i < lines.length; i++) {
             String x = lines[i];
-            if (i == lines.length - 1 && x.isEmpty()) continue;
-            if (i == 0 && echomail) continue;
+            if (i == lines.length - 1 && x.isEmpty()) {
+                continue;
+            }
+            if (i == 0 && echomail) {
+                continue;
+            }
             if (x.startsWith("\1")) {
-                java.util.regex.Matcher control = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(x);
-                if (!control.matches()) { sb.append(x).append("\r"); continue; }
-                String key = control.group(1), value = control.group(2);
+                Matcher control = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(x);
+                if (!control.matches()) {
+                    sb.append(x).append("\r");
+                    continue;
+                }
+                String key = control.group(1);
+                String value = control.group(2);
                 if (x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
                     path.add(FidoPath.valueOf(value, defaultZone));
                 } else {
@@ -168,21 +182,31 @@ public class Message {
         msgId = id == null ? null : id.trim();
         if (echomail) {
             String origin = body.getOrigin();
-            if (origin != null && origin.lastIndexOf('(') >= 0 && origin.lastIndexOf(')') > origin.lastIndexOf('(')) {
-                FTNAddr address = parseAddress(origin.substring(origin.lastIndexOf('(') + 1, origin.lastIndexOf(')')));
-                if (address != null) fAddr = address;
+            if (origin != null && origin.lastIndexOf('(') >= 0
+                    && origin.lastIndexOf(')') > origin.lastIndexOf('(')) {
+                FTNAddr address = parseAddress(origin.substring(origin.lastIndexOf('(') + 1,
+                                                                origin.lastIndexOf(')')));
+                if (address != null) {
+                    fAddr = address;
+                }
             }
             if ((fAddr == null || !fAddr.isValid()) && msgId != null) {
                 FTNAddr address = parseAddress(msgId.split("\\s+", 2)[0]);
-                if (address != null) fAddr = address;
+                if (address != null) {
+                    fAddr = address;
+                }
             }
         } else {
             String intl = body.getKludges().get("INTL");
             if (intl != null) {
                 String[] addresses = intl.trim().split("\\s+");
                 if (addresses.length == 2) {
-                    FTNAddr dest = parseAddress(addresses[0]), source = parseAddress(addresses[1]);
-                    if (dest != null && source != null) { tAddr = dest; fAddr = source; }
+                    FTNAddr dest = parseAddress(addresses[0]);
+                    FTNAddr source = parseAddress(addresses[1]);
+                    if (dest != null && source != null) {
+                        tAddr = dest;
+                        fAddr = source;
+                    }
                 }
             }
             fAddr = withPoint(fAddr, body.getKludges().get("FMPT"));
@@ -191,16 +215,25 @@ public class Message {
     }
 
     private static FTNAddr parseAddress(String value) {
-        try { FTNAddr address = new FTNAddr(value); return address.isValid() ? address : null; }
-        catch (RuntimeException e) { return null; }
+        try {
+            FTNAddr address = new FTNAddr(value);
+            return address.isValid() ? address : null;
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private static FTNAddr withPoint(FTNAddr address, String point) {
-        if (address == null || point == null) return address;
+        if (address == null || point == null) {
+            return address;
+        }
         try {
             int n = Integer.parseInt(point.trim());
-            if (n > 0 && n <= 65535) return new FTNAddr(address.getZone(), address.getNet(), address.getNode(), n);
-        } catch (NumberFormatException ignored) { }
+            if (n > 0 && n <= 65535) {
+                return new FTNAddr(address.getZone(), address.getNet(), address.getNode(), n);
+            }
+        } catch (NumberFormatException ignored) {
+        }
         return address;
     }
 
@@ -258,7 +291,9 @@ public class Message {
 
     public String getMessageCharset() {
         String messageEncoding = body.getKludges().get("CHRS");
-        if (messageEncoding == null) messageEncoding = body.getKludges().get("CHARSET");
+        if (messageEncoding == null) {
+            messageEncoding = body.getKludges().get("CHARSET");
+        }
         if (messageEncoding == null) {
             return CharsetTools.DEFAULT_ENCODING;
         }
@@ -267,14 +302,26 @@ public class Message {
 
     @Override
     public String toString() {
-        return "Message{\n" +
-                "from='" + from + '\'' +
-                ", \n\tto='" + to + '\'' +
-                ", \n\tarea='" + area + '\'' +
-                ", \n\tsubject='" + subject + '\'' +
-                ", \n\tmsgDate='" + msgDate + '\'' +
-                ", \n\tmsgId='" + msgId + '\'' +
-                "\n}";
+        return "Message{\n"
+               + "from='"
+               + from
+               + '\''
+               + ", \n\tto='"
+               + to
+               + '\''
+               + ", \n\tarea='"
+               + area
+               + '\''
+               + ", \n\tsubject='"
+               + subject
+               + '\''
+               + ", \n\tmsgDate='"
+               + msgDate
+               + '\''
+               + ", \n\tmsgId='"
+               + msgId
+               + '\''
+               + "\n}";
     }
 
     public boolean isValid() {

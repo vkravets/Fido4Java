@@ -50,7 +50,6 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
 
     public static final Long MESSAGE_LIMIT_QUERY = 1000L;
 
-
     private long limit;
     private long offset;
     private CloseableIterator<T> curlist;
@@ -67,7 +66,10 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
         this(queryBuilder, offset, limit, false);
     }
 
-    public DatabasePagingIterator(QueryBuilder<T, Object> queryBuilder, long offset, long limit, boolean continueQuery) {
+    public DatabasePagingIterator(QueryBuilder<T, Object> queryBuilder,
+                                  long offset,
+                                  long limit,
+                                  boolean continueQuery) {
         this.limit = limit;
         if (offset < -1 || limit == 0 || limit < -1) {
             throw new IllegalArgumentException("Invalid paging offset or limit");
@@ -79,9 +81,13 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
 
     @Override
     public boolean hasNext() {
-        if (closed) return false;
+        if (closed) {
+            return false;
+        }
         try {
-            if (curlist != null && curlist.hasNext()) return true;
+            if (curlist != null && curlist.hasNext()) {
+                return true;
+            }
             if (curlist == null || continueQuery && limit > 0 && pageCount == limit) {
                 queryDb();
             } else {
@@ -153,7 +159,9 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
     private void closeCurrentIterator() throws SQLException {
         CloseableIterator<T> iterator = curlist;
         curlist = null;
-        if (iterator != null) iterator.close();
+        if (iterator != null) {
+            iterator.close();
+        }
     }
 
     private void closeAfterFailure(Throwable failure) {
@@ -163,5 +171,4 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
             failure.addSuppressed(closeError);
         }
     }
-
 }

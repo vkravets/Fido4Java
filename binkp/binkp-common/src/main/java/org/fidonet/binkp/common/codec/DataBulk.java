@@ -30,7 +30,7 @@ package org.fidonet.binkp.common.codec;
 
 import org.fidonet.binkp.common.io.BinkFrame;
 
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Created by IntelliJ IDEA.
@@ -58,7 +58,7 @@ public class DataBulk implements Data {
     public BinkFrame getRawData() {
         int len = this.len & 0x7fff;
         // Socket transports may encode the frame after the caller reuses its read buffer.
-        byte[] buf = java.util.Arrays.copyOf(data, this.len);
+        byte[] buf = Arrays.copyOf(data, this.len);
         return new BinkFrame((short) len, buf);
     }
 

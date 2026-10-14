@@ -28,10 +28,13 @@
 
 package org.fidonet.binkp.netty.plugin.commons;
 
-import io.netty.channel.ChannelHandlerContext;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * Created by IntelliJ IDEA.
@@ -56,12 +59,14 @@ public class NettySession implements Session {
 
     @Override
     public void close(boolean close) {
-        if (close) context.channel().close();
-        else {
+        if (close) {
+            context.channel().close();
+        } else {
             // Enqueue behind writes from the sender thread, including the final M_EOB.
-            context.executor().execute(() -> context.channel()
-                    .writeAndFlush(io.netty.buffer.Unpooled.EMPTY_BUFFER)
-                    .addListener(io.netty.channel.ChannelFutureListener.CLOSE));
+            context.executor()
+                   .execute(() -> context.channel()
+                                         .writeAndFlush(Unpooled.EMPTY_BUFFER)
+                                         .addListener(ChannelFutureListener.CLOSE));
         }
     }
 

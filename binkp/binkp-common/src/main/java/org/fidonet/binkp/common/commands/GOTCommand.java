@@ -62,14 +62,17 @@ public class GOTCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
         FileData<InputStream> sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {
             FileInfo fileSentInfo = sentFile.getInfo();
             fileSentInfo.setFinished(true);
             sessionContext.getSendFiles().removeIf(file -> file.getInfo().equals(info));
-            if (session.getFileSender() != null) session.getFileSender().acknowledge(info);
+            if (session.getFileSender() != null) {
+                session.getFileSender().acknowledge(info);
+            }
             sessionContext.sendEvent(new FileSendEvent(sessionContext, sentFile));
             long totalSize = sessionContext.getSendFilesSize() + fileSentInfo.getSize();
             sessionContext.setSendFilesSize(totalSize);

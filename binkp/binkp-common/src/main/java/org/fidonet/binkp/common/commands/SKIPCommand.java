@@ -36,6 +36,7 @@ import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ProtocolException;
 
@@ -58,12 +59,17 @@ public class SKIPCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         FilesSender filesSender = session.getFileSender();
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
-        if (filesSender != null) filesSender.skip(info, false);
-        FileData<java.io.InputStream> deferred = sessionContext.getPendingFiles().remove(info);
-        if (deferred != null) sessionContext.getDeferredFiles().add(deferred);
+        if (filesSender != null) {
+            filesSender.skip(info, false);
+        }
+        FileData<InputStream> deferred = sessionContext.getPendingFiles().remove(info);
+        if (deferred != null) {
+            sessionContext.getDeferredFiles().add(deferred);
+        }
         sessionContext.finishSessionIfComplete(session);
     }
 

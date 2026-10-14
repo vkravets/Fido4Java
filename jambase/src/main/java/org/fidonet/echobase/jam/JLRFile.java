@@ -28,11 +28,11 @@
 
 package org.fidonet.echobase.jam;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Closeable;
 
 class JLRFile implements Closeable {
     private RandomAccessFile jlr;
@@ -45,6 +45,4 @@ class JLRFile implements Closeable {
     public void close() throws IOException {
         jlr.close();
     }
-
-
 }

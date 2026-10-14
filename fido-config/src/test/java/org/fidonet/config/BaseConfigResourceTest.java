@@ -1,18 +1,28 @@
 package org.fidonet.config;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
-import static org.junit.Assert.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BaseConfigResourceTest {
     private BaseConfig config() {
         return new BaseConfig() {
-            @Override public boolean isValidate() { return true; }
+            @Override
+            public boolean isValidate() {
+                return true;
+            }
         };
     }
 
@@ -47,8 +57,15 @@ public class BaseConfigResourceTest {
     public void closesInputWhenReadingThrows() throws Exception {
         AtomicBoolean closed = new AtomicBoolean();
         InputStream stream = new InputStream() {
-            @Override public int read() throws IOException { throw new IOException("read failure"); }
-            @Override public void close() { closed.set(true); }
+            @Override
+            public int read() throws IOException {
+                throw new IOException("read failure");
+            }
+
+            @Override
+            public void close() {
+                closed.set(true);
+            }
         };
         try {
             config().load(stream);
@@ -68,12 +85,48 @@ public class BaseConfigResourceTest {
             config.load(new TrackingStream("INBOUND=path\n"));
             assertEquals("path", config.getValue("INBOUND"));
             assertEquals("path", config.getValue("inbound"));
-        } finally { Locale.setDefault(previous); }
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     private static class TrackingStream extends ByteArrayInputStream {
         boolean closed;
-        TrackingStream(String input) { super(input.getBytes(StandardCharsets.UTF_8)); }
-        @Override public void close() throws IOException { closed = true; super.close(); }
+
+        TrackingStream(String input) {
+            super(input.getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        public void close() throws IOException {
+            closed = true;
+            super.close();
+        }
+    }
+
+    @Test
+    public void ignoresWhitespaceAndEmptyKeysAndReturnsIndependentValueLists() throws Exception {
+        BaseConfig config = config();
+        config.load(new TrackingStream(" \t \n# comment\n =ignored\nKEY=first # tail\nkey=second\n"));
+        assertEquals("first", config.getValue(" key "));
+        List<String> values = config.getValuesAsList("KEY");
+        assertEquals(Arrays.asList("first", "second"), values);
+        values.clear();
+        assertEquals(2, config.getValuesAsList("key").size());
+        assertEquals("fallback", config.getValue("missing", "fallback"));
+        assertNull(config.getValue(""));
+    }
+
+    @Test
+    public void malformedLineIsReportedRatherThanSilentlyTruncatingConfiguration()
+            throws Exception {
+        TrackingStream input = new TrackingStream("first=ok\ninvalid line\nnext=value\n");
+        try {
+            config().load(input);
+            fail("Malformed line was silently accepted");
+        } catch (ParseConfigException expected) {
+            assertTrue(expected.getMessage().contains("2"));
+            assertTrue(input.closed);
+        }
     }
 }

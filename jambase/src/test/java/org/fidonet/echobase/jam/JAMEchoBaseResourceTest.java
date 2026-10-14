@@ -1,18 +1,25 @@
 package org.fidonet.echobase.jam;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.types.FTNAddr;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import static org.junit.Assert.*;
 
 public class JAMEchoBaseResourceTest {
-    @Rule public TemporaryFolder temporary = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder temporary = new TemporaryFolder();
 
     @Test
     public void releasesAlreadyOpenedFilesWhenNextFileCannotOpen() throws Exception {
@@ -39,14 +46,16 @@ public class JAMEchoBaseResourceTest {
         boolean[] closed = new boolean[2];
         JAMEchoBase base = new JAMEchoBase(null);
         JHRFile header = new JHRFile(temporary.newFile("header")) {
-            @Override public void close() throws IOException {
+            @Override
+            public void close() throws IOException {
                 super.close();
                 closed[0] = true;
                 throw new IOException("header close failure");
             }
         };
         JDTFile text = new JDTFile(temporary.newFile("text")) {
-            @Override public void close() throws IOException {
+            @Override
+            public void close() throws IOException {
                 super.close();
                 closed[1] = true;
             }

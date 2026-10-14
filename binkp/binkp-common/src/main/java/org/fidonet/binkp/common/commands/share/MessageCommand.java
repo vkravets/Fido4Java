@@ -31,10 +31,12 @@ package org.fidonet.binkp.common.commands.share;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.protocol.Session;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by IntelliJ IDEA.
@@ -58,10 +60,13 @@ public abstract class MessageCommand implements Command {
     }
 
     @Override
-    public abstract boolean isHandle(SessionContext sessionContext, BinkCommand command, String args);
+    public abstract boolean isHandle(SessionContext sessionContext,
+                                     BinkCommand command,
+                                     String args);
 
     @Override
-    public abstract void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception;
+    public abstract void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception;
 
     @Override
     public void send(Session session, SessionContext sessionContext) throws Exception {
@@ -78,7 +83,7 @@ public abstract class MessageCommand implements Command {
         ByteBuffer buf;
         byte[] argsData = null;
         if (cmdArgs != null) {
-            argsData = cmdArgs.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            argsData = cmdArgs.getBytes(StandardCharsets.UTF_8);
             buf = ByteBuffer.allocate(1 + argsData.length);
         } else {
             buf = ByteBuffer.allocate(1);
@@ -103,9 +108,6 @@ public abstract class MessageCommand implements Command {
 
     @Override
     public String toString() {
-        return "MessageCommand{" +
-                "commandType=" + commandType +
-                "isCommand=" + isCommand() +
-                '}';
+        return "MessageCommand{" + "commandType=" + commandType + "isCommand=" + isCommand() + '}';
     }
 }

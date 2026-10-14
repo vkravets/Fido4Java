@@ -28,11 +28,12 @@
 
 package org.fidonet.db.objects;
 
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
+
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import org.fidonet.types.FTNAddr;
-import org.fidonet.types.Link;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,7 +42,6 @@ import org.fidonet.types.Link;
  * Date: 10/3/12
  * Time: 9:54 AM
  */
-
 @DatabaseTable(tableName = "links")
 public class ConfigurationLink {
 
@@ -137,5 +137,4 @@ public class ConfigurationLink {
     public Link toLink() {
         return new Link(new FTNAddr(getAddress()), null, getPassword(), getHost(), getPort());
     }
-
 }

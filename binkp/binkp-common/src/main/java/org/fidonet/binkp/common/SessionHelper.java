@@ -52,5 +52,4 @@ public class SessionHelper {
         trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
         trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
     }
-
 }

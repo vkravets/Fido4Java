@@ -28,10 +28,11 @@
 
 package org.fidonet.binkp.mina2.commons;
 
-import org.apache.mina.core.session.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
+
+import org.apache.mina.core.session.AttributeKey;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,7 +43,13 @@ import org.fidonet.binkp.common.io.FilesSender;
  */
 public class SessionKeys {
 
-    public static final AttributeKey TRAFFIC_CRYPTER_KEY = new AttributeKey(TrafficCrypter.class, TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey SESSION_CONTEXT_KEY = new AttributeKey(SessionContext.class, SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey FILESENDER_KEY = new AttributeKey(FilesSender.class, FilesSender.class.getName() + ".KEY");
+    public static final AttributeKey TRAFFIC_CRYPTER_KEY = new AttributeKey(TrafficCrypter.class,
+                                                                            TrafficCrypter.class.getName()
+                                                                                    + ".KEY");
+    public static final AttributeKey SESSION_CONTEXT_KEY = new AttributeKey(SessionContext.class,
+                                                                            SessionContext.class.getName()
+                                                                                    + ".CONTEXT");
+    public static final AttributeKey FILESENDER_KEY = new AttributeKey(FilesSender.class,
+                                                                       FilesSender.class.getName()
+                                                                       + ".KEY");
 }

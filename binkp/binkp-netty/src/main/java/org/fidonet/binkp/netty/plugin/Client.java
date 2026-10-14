@@ -28,17 +28,6 @@
 
 package org.fidonet.binkp.netty.plugin;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
@@ -49,6 +38,18 @@ import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
 import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
 import org.fidonet.binkp.netty.plugin.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
  * Created by IntelliJ IDEA.
@@ -77,27 +78,29 @@ public class Client extends ClientConnector {
 
     public void run(final SessionContext sessionContext) throws Exception {
         sessionContext.setServerRole(ServerRole.CLIENT);
-        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
+        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) {
+            throw new IllegalArgumentException("Remote link is not configured");
+        }
         sessionContext.setState(SessionState.STATE_IDLE);
 
         connector = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         Bootstrap b = new Bootstrap();
         b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeout)
-                // Keep the allocator used by Netty 4.1 during migration.
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .group(connector)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ChannelPipeline pipeline = ch.pipeline();
+         // Keep the allocator used by Netty 4.1 during migration.
+         .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+         .group(connector)
+         .channel(NioSocketChannel.class)
+         .handler(new ChannelInitializer<SocketChannel>() {
+             @Override
+             protected void initChannel(SocketChannel ch) throws Exception {
+                 ChannelPipeline pipeline = ch.pipeline();
 
-                        pipeline.addLast(new TrafficCrypterCodec());
-                        pipeline.addLast(new BinkDataDecoder());
-                        pipeline.addLast(new BinkDataEncoder());
-                        pipeline.addLast(new BinkSessionHandler(sessionContext, getEventBus()));
-                    }
-                });
+                 pipeline.addLast(new TrafficCrypterCodec());
+                 pipeline.addLast(new BinkDataDecoder());
+                 pipeline.addLast(new BinkDataEncoder());
+                 pipeline.addLast(new BinkSessionHandler(sessionContext, getEventBus()));
+             }
+         });
 
         // Start the connection attempt.
         String hostname = link.getHostAddress();

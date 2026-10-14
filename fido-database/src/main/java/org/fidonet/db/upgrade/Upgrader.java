@@ -28,13 +28,14 @@
 
 package org.fidonet.db.upgrade;
 
-import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.QueryBuilder;
-import com.j256.ormlite.field.DatabaseField;
-import java.lang.reflect.Field;
 import org.fidonet.db.DatabasePagingIterator;
 import org.fidonet.db.OrmManager;
 
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.stmt.QueryBuilder;
+
+import java.lang.reflect.Field;
 import java.sql.SQLException;
 
 /**
@@ -57,9 +58,12 @@ public interface Upgrader {
     }
 
     class Helper {
-        public static <OLD, NEW> boolean upgradeObjects(Class<OLD> oldClazz, OrmManager oldManager,
-                                                        Class<NEW> newClazz, OrmManager newManager,
-                                                        ObjectUpgrader<OLD, NEW> objectUpgrader, boolean failOnError) {
+        public static <OLD, NEW> boolean upgradeObjects(Class<OLD> oldClazz,
+                                                        OrmManager oldManager,
+                                                        Class<NEW> newClazz,
+                                                        OrmManager newManager,
+                                                        ObjectUpgrader<OLD, NEW> objectUpgrader,
+                                                        boolean failOnError) {
             // old DAO
             Dao<OLD, Object> oldEchoareaDao = oldManager.getDao(oldClazz);
 
@@ -70,13 +74,17 @@ public interface Upgrader {
             for (Field field : oldClazz.getDeclaredFields()) {
                 DatabaseField metadata = field.getAnnotation(DatabaseField.class);
                 if (metadata != null && (metadata.id() || metadata.generatedId())) {
-                    oldObjectQueryBuilder.orderBy(metadata.columnName().isEmpty() ? field.getName() : metadata.columnName(), true);
+                    oldObjectQueryBuilder.orderBy(metadata.columnName().isEmpty()
+                            ? field.getName()
+                            : metadata.columnName(), true);
                     break;
                 }
             }
 
-            try (DatabasePagingIterator<OLD, OLD> linkIterator = new DatabasePagingIterator<OLD, OLD>(
-                    oldObjectQueryBuilder, 0, DatabasePagingIterator.MESSAGE_LIMIT_QUERY, true)) {
+            try (DatabasePagingIterator<OLD, OLD> linkIterator = new DatabasePagingIterator<OLD, OLD>(oldObjectQueryBuilder,
+                                                                                                      0,
+                                                                                                      DatabasePagingIterator.MESSAGE_LIMIT_QUERY,
+                                                                                                      true)) {
                 while (linkIterator.hasNext()) {
                     OLD oldObject = linkIterator.next();
                     try {
@@ -85,13 +93,19 @@ public interface Upgrader {
                         newEchoareDao.create(newObject);
                     } catch (InstantiationException e) {
                         objectUpgrader.onException(oldObject, e);
-                        if (failOnError) return false;
+                        if (failOnError) {
+                            return false;
+                        }
                     } catch (IllegalAccessException e) {
                         objectUpgrader.onException(oldObject, e);
-                        if (failOnError) return false;
+                        if (failOnError) {
+                            return false;
+                        }
                     } catch (SQLException e) {
                         objectUpgrader.onException(oldObject, e);
-                        if (failOnError) return false;
+                        if (failOnError) {
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -100,7 +114,5 @@ public interface Upgrader {
                 return false;
             }
         }
-
     }
-
 }

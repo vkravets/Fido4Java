@@ -31,13 +31,14 @@ package org.fidonet.binkp.common.commands;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
-import org.fidonet.binkp.common.commands.share.Command;
+import org.fidonet.binkp.common.io.ReceiveTransfer;
 import org.fidonet.binkp.common.protocol.Session;
 
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Deque;
@@ -61,19 +62,22 @@ public class FILECommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
         FileData curFile = receivedFiles.peek();
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
-        if (fileInfo.getOffset() < -1 || fileInfo.getOffset() > fileInfo.getSize())
-            throw new java.io.IOException("Invalid file offset");
-        if (curFile != null && !curFile.getInfo().isFinished() && !curFile.getInfo().equals(fileInfo)) {
+        if (fileInfo.getOffset() < -1 || fileInfo.getOffset() > fileInfo.getSize()) {
+            throw new IOException("Invalid file offset");
+        }
+        if (curFile != null && !curFile.getInfo().isFinished()
+                && !curFile.getInfo().equals(fileInfo)) {
             Command get = new GETCommand();
             get.send(session, sessionContext);
         }
         FileData<OutputStream> fileData = sessionContext.getNotFinishedFileData(fileInfo);
         if (fileData == null) {
-            fileData = org.fidonet.binkp.common.io.ReceiveTransfer.open(sessionContext, fileInfo);
+            fileData = ReceiveTransfer.open(sessionContext, fileInfo);
             receivedFiles.addFirst(fileData);
         } else {
             receivedFiles.remove(fileData);
@@ -81,12 +85,13 @@ public class FILECommand extends MessageCommand {
         }
 
         if (fileData.getInfo().getCurSize() == fileInfo.getSize()) {
-            org.fidonet.binkp.common.io.ReceiveTransfer.complete(session, sessionContext);
+            ReceiveTransfer.complete(session, sessionContext);
             return;
         }
 
         // process NR mode
-        boolean requestOffset = fileInfo.getOffset() < 0 || fileInfo.getOffset() != fileData.getInfo().getCurSize();
+        boolean requestOffset = fileInfo.getOffset() < 0
+                || fileInfo.getOffset() != fileData.getInfo().getCurSize();
         fileData.setWaitingForHeader(requestOffset);
         if (requestOffset) {
             Command get = new GETCommand();
@@ -104,9 +109,10 @@ public class FILECommand extends MessageCommand {
                 fileInfo.setOffset(-1);
                 offset = -1;
             }
-            if (offset < 0) sessionContext.setState(SessionState.STATE_WAITGET);
+            if (offset < 0) {
+                sessionContext.setState(SessionState.STATE_WAITGET);
+            }
             return fileInfo.arguments() + " " + offset;
-
         }
         return null;
     }

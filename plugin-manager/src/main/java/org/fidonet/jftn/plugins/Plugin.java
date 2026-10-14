@@ -41,13 +41,13 @@ import java.lang.ref.WeakReference;
  */
 public interface Plugin<T> {
 
-     PluginInformation getPluginInfo();
+    PluginInformation getPluginInfo();
 
-     void init(PluginManager manager, EventBus eventBus);
+    void init(PluginManager manager, EventBus eventBus);
 
-     void load() throws PluginException;
+    void load() throws PluginException;
 
-     void unload() throws PluginException;
+    void unload() throws PluginException;
 
-     WeakReference<T> getContext();
+    WeakReference<T> getContext();
 }

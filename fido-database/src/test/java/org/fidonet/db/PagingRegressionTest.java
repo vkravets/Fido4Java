@@ -1,15 +1,27 @@
 package org.fidonet.db;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.fidonet.db.objects.Echoarea;
+
 import com.j256.ormlite.dao.Dao;
-import org.junit.*;
-import java.util.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class PagingRegressionTest {
     private OrmManager database;
     private Dao<Echoarea, Object> dao;
-    @Before public void open() throws Exception {
+
+    @Before
+    public void open() throws Exception {
         database = new OrmManager("jdbc:h2:mem:paging" + System.nanoTime());
         database.connect();
         dao = database.getDao(Echoarea.class);
@@ -19,12 +31,20 @@ public class PagingRegressionTest {
             dao.create(area);
         }
     }
-    @After public void close() { database.disconnect(); }
+
+    @After
+    public void close() {
+        database.disconnect();
+    }
 
     private List<Long> read(long offset, long limit, boolean all) throws Exception {
         List<Long> ids = new ArrayList<>();
-        try (DatabasePagingIterator<Echoarea, Echoarea> iterator = new DatabasePagingIterator<>(
-                dao.queryBuilder().orderBy("id", true), offset, limit, all)) {
+        try (DatabasePagingIterator<Echoarea, Echoarea> iterator = new DatabasePagingIterator<>(dao.queryBuilder()
+                                                                                                   .orderBy("id",
+                                                                                                            true),
+                                                                                                offset,
+                                                                                                limit,
+                                                                                                all)) {
             while (iterator.hasNext()) {
                 assertTrue(iterator.hasNext());
                 ids.add(iterator.next().getId());
@@ -33,13 +53,17 @@ public class PagingRegressionTest {
         }
         return ids;
     }
-    @Test public void readsAllPagesFromDefaultOffsetWithoutDuplicates() throws Exception {
+
+    @Test
+    public void readsAllPagesFromDefaultOffsetWithoutDuplicates() throws Exception {
         List<Long> ids = read(-1, 1000, true);
         assertEquals(2005, ids.size());
         assertEquals(2005, new HashSet<>(ids).size());
         assertEquals(Long.valueOf(2005), ids.get(2004));
     }
-    @Test public void nonAlignedOffsetAndSinglePageWork() throws Exception {
+
+    @Test
+    public void nonAlignedOffsetAndSinglePageWork() throws Exception {
         List<Long> ids = read(7, 1000, true);
         assertEquals(1998, ids.size());
         assertEquals(Long.valueOf(8), ids.get(0));
@@ -48,10 +72,13 @@ public class PagingRegressionTest {
         assertEquals(1998, read(7, -1, true).size());
         assertTrue(read(3000, 1000, true).isEmpty());
     }
-    @Test public void rejectsZeroLimit() throws Exception {
+
+    @Test
+    public void rejectsZeroLimit() throws Exception {
         try {
             new DatabasePagingIterator<>(dao.queryBuilder(), 0, 0, true);
             fail("Expected invalid limit");
-        } catch (IllegalArgumentException expected) { }
+        } catch (IllegalArgumentException expected) {
+        }
     }
 }

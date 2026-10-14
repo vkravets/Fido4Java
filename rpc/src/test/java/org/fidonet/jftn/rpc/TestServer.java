@@ -1,4 +1,4 @@
-///******************************************************************************
+/// ******************************************************************************
 // * Copyright (c) 2012-2015, Vladimir Kravets                                  *
 // * All rights reserved.                                                       *
 // *                                                                            *
@@ -26,34 +26,34 @@
 // * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
 // ******************************************************************************/
 //
-//package org.fidonet.jftn.rpc;
+// package org.fidonet.jftn.rpc;
 //
-//import junit.framework.TestCase;
-//import org.apache.thrift.TException;
-//import org.apache.thrift.async.AsyncMethodCallback;
-//import org.apache.thrift.async.TAsyncClientManager;
-//import org.apache.thrift.protocol.TBinaryProtocol;
-//import org.apache.thrift.protocol.TMultiplexedProtocol;
-//import org.apache.thrift.protocol.TProtocol;
-//import org.apache.thrift.transport.TFramedTransport;
-//import org.apache.thrift.transport.TNonblockingSocket;
-//import org.apache.thrift.transport.TSocket;
-//import org.apache.thrift.transport.TTransport;
-//import org.junit.After;
-//import org.junit.Before;
-//import org.junit.Test;
+// import junit.framework.TestCase;
+// import org.apache.thrift.TException;
+// import org.apache.thrift.async.AsyncMethodCallback;
+// import org.apache.thrift.async.TAsyncClientManager;
+// import org.apache.thrift.protocol.TBinaryProtocol;
+// import org.apache.thrift.protocol.TMultiplexedProtocol;
+// import org.apache.thrift.protocol.TProtocol;
+// import org.apache.thrift.transport.TFramedTransport;
+// import org.apache.thrift.transport.TNonblockingSocket;
+// import org.apache.thrift.transport.TSocket;
+// import org.apache.thrift.transport.TTransport;
+// import org.junit.After;
+// import org.junit.Before;
+// import org.junit.Test;
 //
-//import java.io.IOException;
-//import java.util.concurrent.atomic.AtomicInteger;
+// import java.io.IOException;
+// import java.util.concurrent.atomic.AtomicInteger;
 //
-///**
+/// **
 // * Created by IntelliJ IDEA.
 // * Author: Vladimir Kravets
 // * E-Mail: vova.kravets@gmail.com
 // * Date: 1/24/14
 // * Time: 12:49 PM
 // */
-//public class TestServer {
+// public class TestServer {
 //
 //    private Server server;
 //    private static final int TEST_SERVER_PORT = 15001;
@@ -98,7 +98,8 @@
 //            LoginService.Client logClient = new LoginService.Client(loginProtocol);
 //            transport.open();
 //            System.out.println("[CLIENT] Api.getVersion");
-//            TestCase.assertEquals(new VersionResponse(Response.OK, "1.0.1"), apiClient.getVersion());
+//            TestCase.assertEquals(new VersionResponse(Response.OK, "1.0.1"),
+// apiClient.getVersion());
 //            TestCase.assertEquals(Response.OK, apiClient.ping());
 //            System.out.println("[CLIENT] LoginService.login()");
 //            LoginResponse login = logClient.login(new Credential("test", "test"));
@@ -119,7 +120,8 @@
 //
 //            for (int k = 0; k < TEST_THREAD_NUMBER; k++) {
 //                final int i = k;
-//                TNonblockingSocket transportApi = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
+//                TNonblockingSocket transportApi = new TNonblockingSocket(bind_ip,
+// TEST_SERVER_PORT);
 //                Api.AsyncClient apiAsyncClient = new Api.AsyncClient(
 //                        new TMultiplexedProtocolFactory("api"),
 //                        new TAsyncClientManager(),
@@ -142,7 +144,8 @@
 //                });
 //
 //
-//                TNonblockingSocket transportLogin = new TNonblockingSocket(bind_ip, TEST_SERVER_PORT);
+//                TNonblockingSocket transportLogin = new TNonblockingSocket(bind_ip,
+// TEST_SERVER_PORT);
 //                LoginService.AsyncClient loginAsyncClient = new LoginService.AsyncClient(
 //                        new TMultiplexedProtocolFactory("login"),
 //                        new TAsyncClientManager(),
@@ -191,4 +194,4 @@
 //
 //    }
 //
-//}
+// }

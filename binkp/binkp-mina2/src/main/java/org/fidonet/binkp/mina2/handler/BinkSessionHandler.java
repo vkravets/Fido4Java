@@ -28,31 +28,44 @@
 
 package org.fidonet.binkp.mina2.handler;
 
-import org.apache.mina.core.service.IoHandlerAdapter;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
-import org.fidonet.binkp.common.codec.DataBulk;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.commands.*;
-import org.fidonet.binkp.common.commands.share.*;
+import org.fidonet.binkp.common.commands.ADRCommand;
+import org.fidonet.binkp.common.commands.BSYCommand;
+import org.fidonet.binkp.common.commands.CramOPTCommand;
+import org.fidonet.binkp.common.commands.ERRCommand;
+import org.fidonet.binkp.common.commands.LOCCommand;
+import org.fidonet.binkp.common.commands.NDLCommand;
+import org.fidonet.binkp.common.commands.OPTCommand;
+import org.fidonet.binkp.common.commands.SYSCommand;
+import org.fidonet.binkp.common.commands.TIMECommand;
+import org.fidonet.binkp.common.commands.VERCommand;
+import org.fidonet.binkp.common.commands.ZYZCommand;
+import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.Command;
+import org.fidonet.binkp.common.commands.share.CommandFactory;
+import org.fidonet.binkp.common.commands.share.CompositeMessage;
+import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.ReceiveTransfer;
 import org.fidonet.binkp.mina2.commons.Mina2Session;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.events.EventBus;
+
+import org.apache.mina.core.service.IoHandlerAdapter;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by IntelliJ IDEA.
@@ -89,10 +102,14 @@ public class BinkSessionHandler extends IoHandlerAdapter {
     public void sessionOpened(IoSession session) throws Exception {
         super.sessionOpened(session);
 
-        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
-
-        session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
-        session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
+        SessionContext sessionContext = getSessionContext(session);
+        if (sessionContext == null) {
+            sessionContext = Objects.requireNonNull(this.sessionContext,
+                                                    "Session context is missing");
+            session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
+            session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
+        }
+        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink());
 
         sessionContext.prepareTransfer();
         sessionContext.setReceiveEventBus(eventBus);
@@ -107,11 +124,14 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             bsy.send(mina2Session, sessionContext);
             sessionContext.setState(SessionState.STATE_BSY);
             session.closeOnFlush();
+            return;
         }
 
         List<MessageCommand> commands = new ArrayList<MessageCommand>();
-        if (!isClient) commands.add(new org.fidonet.binkp.common.commands.CramOPTCommand());
-        commands.add(new org.fidonet.binkp.common.commands.OPTCommand());
+        if (!isClient) {
+            commands.add(new CramOPTCommand());
+        }
+        commands.add(new OPTCommand());
         commands.add(new SYSCommand());
         commands.add(new ZYZCommand());
         commands.add(new LOCCommand());
@@ -126,14 +146,15 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             log.debug("Greeting was sent. Waiting password...");
             sessionContext.setState(SessionState.STATE_WAITPWD);
         }
-
     }
 
     @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
         SessionContext sessionContext = getSessionContext(session);
         BinkFrame data = (BinkFrame) message;
-        if (data.getData().length == 0) return;
+        if (data.getData().length == 0) {
+            return;
+        }
         Command command;
         BinkData binkData;
         Mina2Session mina2Session = new Mina2Session(session);
@@ -152,33 +173,51 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
-            command.handle(mina2Session, sessionContext, new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
+            log.debug("Command data: {}", new String(binkData.getData(), StandardCharsets.UTF_8));
+            command.handle(mina2Session,
+                           sessionContext,
+                           new String(binkData.getData(), StandardCharsets.UTF_8));
         } else {
-            try { org.fidonet.binkp.common.io.ReceiveTransfer.accept(mina2Session, sessionContext, binkData.getData()); }
-            catch (Exception e) { exceptionCaught(session, e); }
+            try {
+                ReceiveTransfer.accept(mina2Session, sessionContext, binkData.getData());
+            } catch (Exception e) {
+                exceptionCaught(session, e);
+            }
         }
     }
 
     @Override
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
-        super.sessionIdle(session, status);  //To change body of overridden methods use File | Settings | File Templates.
+        super.sessionIdle(session, status); // To change body of overridden methods use File | Settings | File
+        // Templates.
     }
 
-    @Override public void sessionClosed(IoSession session) throws Exception {
+    @Override
+    public void sessionClosed(IoSession session) throws Exception {
         SessionContext context = getSessionContext(session);
-        if (context != null) { context.setState(SessionState.STATE_END); context.closeReceiveStreams(); }
+        if (context != null) {
+            if (context.getState() != SessionState.STATE_ERR
+                    && context.getState() != SessionState.STATE_BSY) {
+                context.setState(SessionState.STATE_END);
+            }
+            context.closeReceiveStreams();
+        }
         super.sessionClosed(session);
     }
 
-    @Override public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
+    @Override
+    public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
         log.error(cause.getMessage(), cause);
         SessionContext context = getSessionContext(session);
         if (context != null) {
             context.setState(SessionState.STATE_ERR);
             context.setLastErrorMessage(cause.getMessage());
-            try { new ERRCommand().send(new Mina2Session(session), context); }
-            finally { context.closeReceiveStreams(); session.closeOnFlush(); }
+            try {
+                new ERRCommand().send(new Mina2Session(session), context);
+            } finally {
+                context.closeReceiveStreams();
+                session.closeOnFlush();
+            }
         }
     }
 }

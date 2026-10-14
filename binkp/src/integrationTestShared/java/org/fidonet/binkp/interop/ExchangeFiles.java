@@ -2,6 +2,7 @@ package org.fidonet.binkp.interop;
 
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Random;
@@ -15,7 +16,7 @@ public final class ExchangeFiles {
 
     public FileData<InputStream> outgoingFromJftn() {
         return new FileData<>(new FileInfo(FROM_JFTN, toBinkd.length, 1700000000L),
-                new ByteArrayInputStream(toBinkd));
+                              new ByteArrayInputStream(toBinkd));
     }
 
     private static byte[] randomBytes(int size, long seed) {

@@ -31,6 +31,7 @@ package org.fidonet.binkp.netty.plugin;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.types.Link;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,9 +55,11 @@ public class Runner {
     private static final Logger logger = LoggerFactory.getLogger(Runner.class);
 
     public Runner() {
-        this(new ThreadPoolExecutor(3, Integer.MAX_VALUE,
-                60L, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>()));
+        this(new ThreadPoolExecutor(3,
+                                    Integer.MAX_VALUE,
+                                    60L,
+                                    TimeUnit.SECONDS,
+                                    new SynchronousQueue<Runnable>()));
     }
 
     Runner(ExecutorService executor) {
@@ -71,11 +74,10 @@ public class Runner {
         Runnable clientRun = new Runnable() {
 
             public void waitSessionFinish() throws InterruptedException {
-                for (; ; ) {
+                for (;;) {
                     Thread.sleep(500);
-                    if (context.isTransferComplete() ||
-                            context.getState() == SessionState.STATE_ERR ||
-                            context.getState() == SessionState.STATE_END) {
+                    if (context.isTransferComplete() || context.getState() == SessionState.STATE_ERR
+                            || context.getState() == SessionState.STATE_END) {
                         break;
                     }
                 }
@@ -126,5 +128,4 @@ public class Runner {
         }
         threadPoolExecutor.shutdown();
     }
-
 }

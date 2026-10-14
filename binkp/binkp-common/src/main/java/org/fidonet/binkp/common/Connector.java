@@ -39,10 +39,9 @@ import org.fidonet.events.HasEventBus;
  */
 public abstract class Connector extends HasEventBus {
 
-    public final static int BINK_PORT = 24554;
+    public static final int BINK_PORT = 24554;
 
     public abstract void run(SessionContext sessionContext) throws Exception;
 
     public abstract void stop();
-
 }

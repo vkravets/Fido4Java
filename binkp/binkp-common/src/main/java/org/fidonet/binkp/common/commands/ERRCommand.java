@@ -55,13 +55,13 @@ public class ERRCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         log.error("Got error from server: " + commandArgs);
         sessionContext.setLastErrorMessage(commandArgs);
+        sessionContext.setState(SessionState.STATE_ERR);
         sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
-        if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
-            sessionContext.setState(SessionState.STATE_ERR);
-        } else {
+        if (sessionContext.getServerRole().equals(ServerRole.SERVER)) {
             session.close(false);
         }
     }

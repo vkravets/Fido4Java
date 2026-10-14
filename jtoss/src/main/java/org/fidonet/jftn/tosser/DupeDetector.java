@@ -30,6 +30,7 @@ package org.fidonet.jftn.tosser;
 
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.types.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +54,11 @@ public class DupeDetector extends TossEchoMailEventHandler {
         boolean isDupe = echoMgr.isDupe(message);
         logger.debug("Dupe calculation check {}ms", System.currentTimeMillis() - startTime);
         if (isDupe) {
-            logger.warn("Dupe detected in the area {}. Skip message!", event.getMessage().getArea());
-            logger.debug("Dupe details:\n{}\nKludges:\n{}\n", event.getMessage(), event.getMessage().getBody().getKludges());
+            logger.warn("Dupe detected in the area {}. Skip message!",
+                        event.getMessage().getArea());
+            logger.debug("Dupe details:\n{}\nKludges:\n{}\n",
+                         event.getMessage(),
+                         event.getMessage().getBody().getKludges());
             message.setValid(false);
         }
     }

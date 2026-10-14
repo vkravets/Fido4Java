@@ -28,7 +28,6 @@
 
 package org.fidonet.tests.share;
 
-import junit.framework.TestCase;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnScriptService;
 import org.fidonet.jftn.engine.script.ScriptEngine;
@@ -37,6 +36,8 @@ import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tools.FileUtils;
+
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -59,9 +60,14 @@ public class TestCommandGroovy {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
         String fileName = "testCommand.groovy";
-        try (InputStream inputStream = ScriptEngine.class.getClassLoader().getResourceAsStream(fileName)) {
+        try (InputStream inputStream = ScriptEngine.class.getClassLoader()
+                                                         .getResourceAsStream(fileName)) {
             String fileContent = FileUtils.getFileContent(inputStream);
-            scriptManager.registerScript(fileName, fileContent, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            scriptManager.registerScript(fileName,
+                                         fileContent,
+                                         new JFtnScriptService(scriptManager,
+                                                               hookInterpreter,
+                                                               commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,7 +77,5 @@ public class TestCommandGroovy {
         String[] param = new String[]{"test", "test2"};
         Object result = command.execute(param);
         TestCase.assertEquals(param, result);
-
     }
-
 }

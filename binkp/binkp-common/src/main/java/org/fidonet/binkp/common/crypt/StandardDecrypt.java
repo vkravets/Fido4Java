@@ -74,7 +74,5 @@ public class StandardDecrypt implements Decrypt {
         } else {
             zipCryptoEngine.initKeys(password);
         }
-
     }
-
 }

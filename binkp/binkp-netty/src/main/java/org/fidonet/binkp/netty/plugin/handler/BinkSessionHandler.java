@@ -28,17 +28,13 @@
 
 package org.fidonet.binkp.netty.plugin.handler;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
-import org.fidonet.binkp.common.codec.DataBulk;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.commands.ADRCommand;
 import org.fidonet.binkp.common.commands.BSYCommand;
 import org.fidonet.binkp.common.commands.CramOPTCommand;
 import org.fidonet.binkp.common.commands.ERRCommand;
-import org.fidonet.binkp.common.commands.GOTCommand;
 import org.fidonet.binkp.common.commands.LOCCommand;
 import org.fidonet.binkp.common.commands.NDLCommand;
 import org.fidonet.binkp.common.commands.OPTCommand;
@@ -53,23 +49,27 @@ import org.fidonet.binkp.common.commands.share.CompositeMessage;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.ReceiveTransfer;
 import org.fidonet.binkp.netty.plugin.commons.NettySession;
 import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 import org.fidonet.events.EventBus;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.socket.DuplexChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -78,8 +78,7 @@ import java.util.List;
  * Date: 9/19/12
  * Time: 1:18 PM
  */
-public class BinkSessionHandler extends
-        SimpleChannelInboundHandler<BinkFrame> {
+public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
 
     protected static final Logger log = LoggerFactory.getLogger(BinkSessionHandler.class.getName());
 
@@ -109,12 +108,14 @@ public class BinkSessionHandler extends
         session.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
 
         SessionContext sessionContext = getSessionContext(session);
-        log.debug("Session is opened with {}", sessionContext.getLinksInfo().getCurLink().toString());
+        log.debug("Session is opened with {}",
+                  sessionContext.getLinksInfo().getCurLink().toString());
 
         sendGreeting(session, sessionContext);
     }
 
-    protected void sendGreeting(ChannelHandlerContext session, SessionContext sessionContext) throws NoSuchAlgorithmException {
+    protected void sendGreeting(ChannelHandlerContext session, SessionContext sessionContext)
+            throws NoSuchAlgorithmException {
         sessionContext.prepareTransfer();
         sessionContext.setReceiveEventBus(eventBus);
         boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
@@ -131,7 +132,21 @@ public class BinkSessionHandler extends
                 log.warn("Node is busy");
             }
             sessionContext.setState(SessionState.STATE_BSY);
-//            session.close(false);
+            // Half-close output after flushing BSY. Closing both directions while
+            // the peer is still sending its greeting can reset TCP and lose BSY.
+            if (session.channel() instanceof DuplexChannel) {
+                session.channel()
+                       .writeAndFlush(Unpooled.EMPTY_BUFFER)
+                       .addListener(future -> ((DuplexChannel) session.channel()).shutdownOutput());
+                ScheduledFuture<?> timeout = session.executor()
+                                                    .schedule(() -> session.close(),
+                                                              5,
+                                                              TimeUnit.SECONDS);
+                session.channel().closeFuture().addListener(future -> timeout.cancel(false));
+            } else {
+                nettySession.close(false);
+            }
+            return;
         }
         final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
         sessionContext.setMessageDigest(messageDigest);
@@ -160,6 +175,10 @@ public class BinkSessionHandler extends
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, BinkFrame data) throws Exception {
         SessionContext sessionContext = getSessionContext(ctx);
+        if (sessionContext.getState() == SessionState.STATE_BSY
+                && sessionContext.getServerRole() == ServerRole.SERVER) {
+            return;
+        }
         Command command = null;
         BinkData binkData = null;
         NettySession nettySession = new NettySession(ctx);
@@ -180,21 +199,26 @@ public class BinkSessionHandler extends
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             ctx.close();
             exceptionCaught(ctx, ex);
+            return;
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
+            log.debug("Command data: {}", new String(binkData.getData(), StandardCharsets.UTF_8));
             try {
-                command.handle(nettySession, sessionContext, new String(binkData.getData(), java.nio.charset.StandardCharsets.UTF_8));
+                command.handle(nettySession,
+                               sessionContext,
+                               new String(binkData.getData(), StandardCharsets.UTF_8));
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
                 exceptionCaught(ctx, e);
             }
         } else {
-            try { org.fidonet.binkp.common.io.ReceiveTransfer.accept(nettySession, sessionContext, binkData.getData()); }
-            catch (Exception e) { exceptionCaught(ctx, e); }
+            try {
+                ReceiveTransfer.accept(nettySession, sessionContext, binkData.getData());
+            } catch (Exception e) {
+                exceptionCaught(ctx, e);
+            }
         }
-
     }
 
     @Override
@@ -202,12 +226,20 @@ public class BinkSessionHandler extends
         SessionContext sessionContext = getSessionContext(ctx);
         log.error(cause.getMessage(), cause);
         sessionContext.setState(SessionState.STATE_ERR);
+        sessionContext.setLastErrorMessage(cause.getMessage());
         ctx.channel().close();
     }
 
-    @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         SessionContext context = getSessionContext(ctx);
-        if (context != null) { context.setState(SessionState.STATE_END); context.closeReceiveStreams(); }
+        if (context != null) {
+            if (context.getState() != SessionState.STATE_ERR
+                    && context.getState() != SessionState.STATE_BSY) {
+                context.setState(SessionState.STATE_END);
+            }
+            context.closeReceiveStreams();
+        }
         super.channelInactive(ctx);
     }
 }

@@ -46,26 +46,26 @@ import java.util.List;
  */
 public class AbstractServerTest {
     protected static final StationConfig config;
+
     static {
-        config = new StationConfig(
-            "Test Station",
-            "Vasya Pupkin",
-            "Odessa, Ukraine",
-            "BINKP",
-            "2:467/10");
+        config = new StationConfig("Test Station",
+                                   "Vasya Pupkin",
+                                   "Odessa, Ukraine",
+                                   "BINKP",
+                                   "2:467/10");
         config.setCryptMode(true);
-//        config.setNRMode(true);
+        //        config.setNRMode(true);
     }
 
     protected static final LinksInfo links = new TestLinksInfo().getLinksInfo();
     protected static final SessionContext sessionContext = new SessionContext(config, links);
 
     public void waitSessionFinish(SessionContext context) throws InterruptedException {
-        for (; ; ) {
+        for (;;) {
             Thread.sleep(500);
-            if (context.isReceivingIsFinish() && context.isSendingIsFinish() ||
-                    context.getState().equals(SessionState.STATE_ERR) ||
-                    context.getState().equals(SessionState.STATE_END)) {
+            if (context.isReceivingIsFinish() && context.isSendingIsFinish()
+                    || context.getState().equals(SessionState.STATE_ERR)
+                    || context.getState().equals(SessionState.STATE_END)) {
                 break;
             }
         }

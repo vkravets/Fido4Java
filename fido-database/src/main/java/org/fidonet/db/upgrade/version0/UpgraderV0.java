@@ -31,8 +31,10 @@ package org.fidonet.db.upgrade.version0;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.Version;
 import org.fidonet.db.upgrade.Upgrader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -51,7 +53,9 @@ public class UpgraderV0 implements Upgrader {
     public boolean upgrade(OrmManager oldManager, OrmManager newManager) {
         try {
             return newManager.inTransaction(() -> {
-                if (!upgradeData(oldManager, newManager)) throw new SQLException("Migration failed");
+                if (!upgradeData(oldManager, newManager)) {
+                    throw new SQLException("Migration failed");
+                }
                 return true;
             });
         } catch (SQLException e) {
@@ -62,36 +66,54 @@ public class UpgraderV0 implements Upgrader {
 
     private boolean upgradeData(OrmManager oldManager, OrmManager newManager) {
         logger.info("Upgrade Links information....");
-        if (!upgradeLinks(oldManager, newManager)) return false;
+        if (!upgradeLinks(oldManager, newManager)) {
+            return false;
+        }
         logger.info("Upgrade Areas information....");
-        if (!upgradeEchoareas(oldManager, newManager)) return false;
+        if (!upgradeEchoareas(oldManager, newManager)) {
+            return false;
+        }
         logger.info("Upgrade Subscriptions information....");
-        if (!upgradeSubcriptions(oldManager, newManager)) return false;
+        if (!upgradeSubcriptions(oldManager, newManager)) {
+            return false;
+        }
         logger.info("Upgrade Netmail information....");
-        if (!upgradeNetmails(oldManager, newManager)) return false;
+        if (!upgradeNetmails(oldManager, newManager)) {
+            return false;
+        }
         logger.info("Upgrade Echomail information....");
-        if (!upgradeEchomails(oldManager, newManager)) return false;
+        if (!upgradeEchomails(oldManager, newManager)) {
+            return false;
+        }
         logger.info("Save upgrade path...");
-        if (!upgradeVersion(oldManager, newManager)) return false;
+        if (!upgradeVersion(oldManager, newManager)) {
+            return false;
+        }
         Version version = new Version();
         version.setVersion(Version.CURRENT_VERSION);
         return newManager.setCurrentVersion(version);
     }
 
     private boolean upgradeVersion(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(Version.class, oldManager, Version.class, newManager, new ObjectUpgrader<Version, Version>() {
-            @Override
-            public void upgrade(Version oldObject, Version newObject) {
-                newObject.setId(oldObject.getId());
-                newObject.setVersion(oldObject.getVersion());
-            }
+        return Helper.upgradeObjects(Version.class,
+                                     oldManager,
+                                     Version.class,
+                                     newManager,
+                                     new ObjectUpgrader<Version, Version>() {
+                                         @Override
+                                         public void upgrade(Version oldObject, Version newObject) {
+                                             newObject.setId(oldObject.getId());
+                                             newObject.setVersion(oldObject.getVersion());
+                                         }
 
-            @Override
-            public void onException(Version oldObject, Exception ex) {
-                logger.error("Error add new version. Details {}", oldObject, ex);
-            }
-        }, true);
-
+                                         @Override
+                                         public void onException(Version oldObject, Exception ex) {
+                                             logger.error("Error add new version. Details {}",
+                                                          oldObject,
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 
     @Override
@@ -100,118 +122,173 @@ public class UpgraderV0 implements Upgrader {
     }
 
     private boolean upgradeEchomails(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(Echomail.class, oldManager, org.fidonet.db.objects.Echomail.class, newManager, new ObjectUpgrader<Echomail, org.fidonet.db.objects.Echomail>() {
-            @Override
-            public void upgrade(Echomail oldObject, org.fidonet.db.objects.Echomail newObject) throws SQLException {
-                newObject.setId(oldObject.getId());
-                newObject.setArea(newManager.<org.fidonet.db.objects.Echoarea, Object>getDao(
-                        org.fidonet.db.objects.Echoarea.class).queryForId(oldObject.getArea().getId()));
-                newObject.setMsgId(oldObject.getMsgId());
-                newObject.setFromName(oldObject.getFromName());
-                newObject.setToName(oldObject.getToName());
-                newObject.setFromAddr(oldObject.getFromAddr());
-                newObject.setToAddr(oldObject.getToAddr());
-                newObject.setDate(oldObject.getDate());
-                newObject.setSubject(oldObject.getSubject());
-                StringBuilder text = new StringBuilder();
-                if (oldObject.getKludges() != null) {
-                    for (Map.Entry<String, String> kludge : oldObject.getKludges().entrySet()) {
-                        String key = kludge.getKey();
-                        if (!key.startsWith("\u0001")) text.append('\u0001');
-                        text.append(key).append(':').append(kludge.getValue()).append('\r');
-                    }
-                }
-                if (oldObject.getText() != null) text.append(oldObject.getText());
-                newObject.setText(text.toString());
-                newObject.setOrigin(oldObject.getOrigin());
-                newObject.setSeenBy(oldObject.getSeenBy());
-                newObject.setPath(oldObject.getPath());
-                newObject.setAttr(oldObject.getAttr());
-            }
+        return Helper.upgradeObjects(Echomail.class,
+                                     oldManager,
+                                     org.fidonet.db.objects.Echomail.class,
+                                     newManager,
+                                     new ObjectUpgrader<Echomail, org.fidonet.db.objects.Echomail>() {
+                                         @Override
+                                         public void upgrade(Echomail oldObject,
+                                                             org.fidonet.db.objects.Echomail newObject)
+                                                 throws SQLException {
+                                             newObject.setId(oldObject.getId());
+                                             newObject.setArea(newManager.<org.fidonet.db.objects.Echoarea, Object>getDao(org.fidonet.db.objects.Echoarea.class)
+                                                                         .queryForId(oldObject.getArea()
+                                                                                              .getId()));
+                                             newObject.setMsgId(oldObject.getMsgId());
+                                             newObject.setFromName(oldObject.getFromName());
+                                             newObject.setToName(oldObject.getToName());
+                                             newObject.setFromAddr(oldObject.getFromAddr());
+                                             newObject.setToAddr(oldObject.getToAddr());
+                                             newObject.setDate(oldObject.getDate());
+                                             newObject.setSubject(oldObject.getSubject());
+                                             StringBuilder text = new StringBuilder();
+                                             if (oldObject.getKludges() != null) {
+                                                 for (Map.Entry<String, String> kludge : oldObject.getKludges()
+                                                                                                  .entrySet()) {
+                                                     String key = kludge.getKey();
+                                                     if (!key.startsWith("\u0001")) {
+                                                         text.append('\u0001');
+                                                     }
+                                                     text.append(key)
+                                                         .append(':')
+                                                         .append(kludge.getValue())
+                                                         .append('\r');
+                                                 }
+                                             }
+                                             if (oldObject.getText() != null) {
+                                                 text.append(oldObject.getText());
+                                             }
+                                             newObject.setText(text.toString());
+                                             newObject.setOrigin(oldObject.getOrigin());
+                                             newObject.setSeenBy(oldObject.getSeenBy());
+                                             newObject.setPath(oldObject.getPath());
+                                             newObject.setAttr(oldObject.getAttr());
+                                         }
 
-            @Override
-            public void onException(Echomail oldObject, Exception ex) {
-                logger.error("Error upgrade echomail. Details {}", oldObject, ex);
-            }
-        }, true);
+                                         @Override
+                                         public void onException(Echomail oldObject, Exception ex) {
+                                             logger.error("Error upgrade echomail. Details {}",
+                                                          oldObject,
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 
     private boolean upgradeNetmails(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(Netmail.class, oldManager, org.fidonet.db.objects.Netmail.class, newManager, new ObjectUpgrader<Netmail, org.fidonet.db.objects.Netmail>() {
-            @Override
-            public void upgrade(Netmail oldObject, org.fidonet.db.objects.Netmail newObject) {
-                newObject.setId(oldObject.getId());
-                newObject.setFromName(oldObject.getFromName());
-                newObject.setToName(oldObject.getToName());
-                newObject.setFromAddr(oldObject.getFromAddr());
-                newObject.setToAddr(oldObject.getToAddr());
-                newObject.setSubject(oldObject.getSubject());
-                newObject.setText(oldObject.getText());
-                newObject.setDate(oldObject.getDate());
-                newObject.setRoute(oldObject.getRoute());
-                newObject.setSend(oldObject.getSend());
-                newObject.setAttr(oldObject.getAttr());
-            }
+        return Helper.upgradeObjects(Netmail.class,
+                                     oldManager,
+                                     org.fidonet.db.objects.Netmail.class,
+                                     newManager,
+                                     new ObjectUpgrader<Netmail, org.fidonet.db.objects.Netmail>() {
+                                         @Override
+                                         public void upgrade(Netmail oldObject,
+                                                             org.fidonet.db.objects.Netmail newObject) {
+                                             newObject.setId(oldObject.getId());
+                                             newObject.setFromName(oldObject.getFromName());
+                                             newObject.setToName(oldObject.getToName());
+                                             newObject.setFromAddr(oldObject.getFromAddr());
+                                             newObject.setToAddr(oldObject.getToAddr());
+                                             newObject.setSubject(oldObject.getSubject());
+                                             newObject.setText(oldObject.getText());
+                                             newObject.setDate(oldObject.getDate());
+                                             newObject.setRoute(oldObject.getRoute());
+                                             newObject.setSend(oldObject.getSend());
+                                             newObject.setAttr(oldObject.getAttr());
+                                         }
 
-            @Override
-            public void onException(Netmail oldObject, Exception ex) {
-                logger.error("Error upgrade mail. Details {}", oldObject, ex);
-            }
-        }, true);
+                                         @Override
+                                         public void onException(Netmail oldObject, Exception ex) {
+                                             logger.error("Error upgrade mail. Details {}",
+                                                          oldObject,
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 
     private boolean upgradeSubcriptions(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(Subscription.class, oldManager, org.fidonet.db.objects.Subscription.class, newManager, new ObjectUpgrader<Subscription, org.fidonet.db.objects.Subscription>() {
-            @Override
-            public void upgrade(Subscription oldObject, org.fidonet.db.objects.Subscription newObject) throws SQLException {
-                newObject.setConfigurationLink(newManager.<org.fidonet.db.objects.ConfigurationLink, Object>getDao(
-                        org.fidonet.db.objects.ConfigurationLink.class).queryForId(oldObject.getConfigurationLink().getId()));
-                newObject.setEchoarea(newManager.<org.fidonet.db.objects.Echoarea, Object>getDao(
-                        org.fidonet.db.objects.Echoarea.class).queryForId(oldObject.getEchoarea().getId()));
-                newObject.setLastMessage(oldObject.getLastMessage());
-                newObject.setAccessLevel(oldObject.getAccessLevel());
-            }
+        return Helper.upgradeObjects(Subscription.class,
+                                     oldManager,
+                                     org.fidonet.db.objects.Subscription.class,
+                                     newManager,
+                                     new ObjectUpgrader<Subscription, org.fidonet.db.objects.Subscription>() {
+                                         @Override
+                                         public void upgrade(Subscription oldObject,
+                                                             org.fidonet.db.objects.Subscription newObject)
+                                                 throws SQLException {
+                                             newObject.setConfigurationLink(newManager.<org.fidonet.db.objects.ConfigurationLink, Object>getDao(org.fidonet.db.objects.ConfigurationLink.class)
+                                                                                      .queryForId(oldObject.getConfigurationLink()
+                                                                                                           .getId()));
+                                             newObject.setEchoarea(newManager.<org.fidonet.db.objects.Echoarea, Object>getDao(org.fidonet.db.objects.Echoarea.class)
+                                                                             .queryForId(oldObject.getEchoarea()
+                                                                                                  .getId()));
+                                             newObject.setLastMessage(oldObject.getLastMessage());
+                                             newObject.setAccessLevel(oldObject.getAccessLevel());
+                                         }
 
-            @Override
-            public void onException(Subscription oldObject, Exception ex) {
-                logger.error("Error subscription mail. Details {}", oldObject, ex);
-            }
-        }, true);
+                                         @Override
+                                         public void onException(Subscription oldObject,
+                                                                 Exception ex) {
+                                             logger.error("Error subscription mail. Details {}",
+                                                          oldObject,
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 
     private boolean upgradeEchoareas(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(Echoarea.class, oldManager, org.fidonet.db.objects.Echoarea.class, newManager, new ObjectUpgrader<Echoarea, org.fidonet.db.objects.Echoarea>() {
-            @Override
-            public void upgrade(Echoarea oldObject, org.fidonet.db.objects.Echoarea newObject) {
-                newObject.setId(oldObject.getId());
-                newObject.setName(oldObject.getName());
-                newObject.setDescription(oldObject.getDescription());
-            }
+        return Helper.upgradeObjects(Echoarea.class,
+                                     oldManager,
+                                     org.fidonet.db.objects.Echoarea.class,
+                                     newManager,
+                                     new ObjectUpgrader<Echoarea, org.fidonet.db.objects.Echoarea>() {
+                                         @Override
+                                         public void upgrade(Echoarea oldObject,
+                                                             org.fidonet.db.objects.Echoarea newObject) {
+                                             newObject.setId(oldObject.getId());
+                                             newObject.setName(oldObject.getName());
+                                             newObject.setDescription(oldObject.getDescription());
+                                         }
 
-            @Override
-            public void onException(Echoarea oldObject, Exception ex) {
-                logger.error("Error upgrade {} area", oldObject.getName(), ex);
-            }
-        }, true);
+                                         @Override
+                                         public void onException(Echoarea oldObject, Exception ex) {
+                                             logger.error("Error upgrade {} area",
+                                                          oldObject.getName(),
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 
     private boolean upgradeLinks(OrmManager oldManager, OrmManager newManager) {
-        return Helper.upgradeObjects(ConfigurationLink.class, oldManager, org.fidonet.db.objects.ConfigurationLink.class, newManager, new ObjectUpgrader<ConfigurationLink, org.fidonet.db.objects.ConfigurationLink>() {
-            @Override
-            public void upgrade(ConfigurationLink oldObject, org.fidonet.db.objects.ConfigurationLink newObject) {
-                newObject.setId(oldObject.getId());
-                newObject.setAddress(oldObject.getAddress());
-                newObject.setHost(oldObject.getHost());
-                newObject.setPort(oldObject.getPort());
-                newObject.setPassword(oldObject.getPassword());
-                newObject.setPacket_password(oldObject.getPacket_password());
-                newObject.setFlags(oldObject.getFlags());
-            }
+        return Helper.upgradeObjects(ConfigurationLink.class,
+                                     oldManager,
+                                     org.fidonet.db.objects.ConfigurationLink.class,
+                                     newManager,
+                                     new ObjectUpgrader<ConfigurationLink, org.fidonet.db.objects.ConfigurationLink>() {
+                                         @Override
+                                         public void upgrade(ConfigurationLink oldObject,
+                                                             org.fidonet.db.objects.ConfigurationLink newObject) {
+                                             newObject.setId(oldObject.getId());
+                                             newObject.setAddress(oldObject.getAddress());
+                                             newObject.setHost(oldObject.getHost());
+                                             newObject.setPort(oldObject.getPort());
+                                             newObject.setPassword(oldObject.getPassword());
+                                             newObject.setPacket_password(oldObject.getPacket_password());
+                                             newObject.setFlags(oldObject.getFlags());
+                                         }
 
-            @Override
-            public void onException(ConfigurationLink oldObject, Exception ex) {
-                logger.error("Error upgrade {} area", oldObject.getAddress(), ex);
-            }
-        }, true);
+                                         @Override
+                                         public void onException(ConfigurationLink oldObject,
+                                                                 Exception ex) {
+                                             logger.error("Error upgrade {} area",
+                                                          oldObject.getAddress(),
+                                                          ex);
+                                         }
+                                     },
+                                     true);
     }
 }

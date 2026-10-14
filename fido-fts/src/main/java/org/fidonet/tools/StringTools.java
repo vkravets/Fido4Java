@@ -55,10 +55,13 @@ public class StringTools {
         result.add(prefix + str);
     }
 
-
     public static List<String> wrap(String str, int wrapLength, String prefix) {
-        if (str == null) return null;
-        if (wrapLength < 1) wrapLength = 1;
+        if (str == null) {
+            return null;
+        }
+        if (wrapLength < 1) {
+            wrapLength = 1;
+        }
         List<String> result = new ArrayList<String>();
         int inputLineLength = str.length();
         int offset = 0;
@@ -82,7 +85,9 @@ public class StringTools {
                 }
             }
         }
-        addWithPrefix(result, str.substring(offset), prefix);
+        if (offset < inputLineLength || result.isEmpty()) {
+            addWithPrefix(result, str.substring(offset), prefix);
+        }
         return result;
     }
 
@@ -101,5 +106,4 @@ public class StringTools {
     public static String join(Collection<String> strings, String prefix) {
         return join(strings, NEW_LINE, prefix);
     }
-
 }

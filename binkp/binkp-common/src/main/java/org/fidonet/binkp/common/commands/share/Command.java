@@ -44,5 +44,6 @@ public interface Command extends Data {
 
     void send(Session session, SessionContext sessionContext) throws Exception;
 
-    void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception;
+    void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception;
 }

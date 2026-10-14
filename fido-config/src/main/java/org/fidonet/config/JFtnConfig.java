@@ -31,6 +31,7 @@ package org.fidonet.config;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.validators.ConfigValidator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,12 +62,9 @@ public class JFtnConfig extends BaseConfig {
 
         @Override
         public boolean isValidate(JFtnConfig config) {
-            return config.getValue("Inbound") != null &&
-                    config.getValue("Tmp") != null &&
-                    config.getValue("EchoPath") != null &&
-                    config.getValue("Link") != null &&
-                    config.getValue("SysOp") != null &&
-                    config.getValue("Outbound") != null;
+            return config.getValue("Inbound") != null && config.getValue("Tmp") != null
+                    && config.getValue("EchoPath") != null && config.getValue("Link") != null
+                    && config.getValue("SysOp") != null && config.getValue("Outbound") != null;
         }
     }
 
@@ -104,7 +102,10 @@ public class JFtnConfig extends BaseConfig {
         boolean created = false;
         File areasFile = new File(areaList);
         if (!areasFile.exists()) {
-            areasFile.getParentFile().mkdirs();
+            File parent = areasFile.getParentFile();
+            if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
+                throw new IOException("Unable to create area-list directory: " + parent);
+            }
             created = areasFile.createNewFile();
         }
         return areaList;
@@ -138,9 +139,9 @@ public class JFtnConfig extends BaseConfig {
                 tmpDir = "./temp";
             }
         }
-//        if (tmpDir == null) {
-//            tmpDir = "temp";
-//        }
+        //        if (tmpDir == null) {
+        //            tmpDir = "temp";
+        //        }
         File tmp = new File(tmpDir);
         if (!tmp.exists()) {
             logger.warn("Temp folder was not exists. Will created...");
@@ -162,5 +163,4 @@ public class JFtnConfig extends BaseConfig {
     public String getInbound() {
         return getValue("inbound");
     }
-
 }

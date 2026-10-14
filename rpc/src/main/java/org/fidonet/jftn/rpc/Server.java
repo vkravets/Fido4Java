@@ -34,7 +34,6 @@ import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TNonblockingServer;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
-import org.apache.thrift.transport.TNonblockingServerTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,13 +47,16 @@ import java.net.InetSocketAddress;
  * Date: 1/24/14
  * Time: 11:29 AM
  */
-public class Server {
+public class Server implements AutoCloseable {
 
     public static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     private int port;
     private TServer server;
     private ServerHandler serverHandler;
+    private TNonblockingServerSocket transport;
+    private Thread worker;
+    private boolean stopped;
 
     private static final int DEFAULT_PORT = 9090;
     private static final String DEFAULT_BIND_IP = "127.0.0.1";
@@ -81,39 +83,69 @@ public class Server {
         Api.Processor<Api.Iface> apiProcessor = new Api.Processor<Api.Iface>(serverHandler.getApiHandler());
         LoginService.Processor<LoginService.Iface> loginProcessor = new LoginService.Processor<LoginService.Iface>(serverHandler.getLoginHandler());
         MessageService.Processor<MessageService.Iface> messageProcessor = new MessageService.Processor<MessageService.Iface>(serverHandler.getMessageHandler());
-        StatisticService.Processor<StatisticService.Iface> statisticProcessor = new StatisticService.Processor<StatisticService.Iface>(serverHandler.getStatisticsHandler());
 
         TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
         multiplexedProcessor.registerProcessor("api", apiProcessor);
         multiplexedProcessor.registerProcessor("login", loginProcessor);
         multiplexedProcessor.registerProcessor("messages", messageProcessor);
-        multiplexedProcessor.registerProcessor("statistics", statisticProcessor);
+        StatisticService.Iface statistics = serverHandler.getStatisticsHandler();
+        if (statistics != null) {
+            multiplexedProcessor.registerProcessor("statistics",
+                                                   new StatisticService.Processor<>(statistics));
+        }
 
         try {
-            TNonblockingServerTransport transport = new TNonblockingServerSocket(new InetSocketAddress(bind_ip, this.port));
+            transport = new TNonblockingServerSocket(new InetSocketAddress(bind_ip, this.port));
             TProtocolFactory factory = new TBinaryProtocol.Factory();
-            server = new TNonblockingServer(new TNonblockingServer.Args(transport).processor(multiplexedProcessor).protocolFactory(factory));
+            server = new TNonblockingServer(new TNonblockingServer.Args(transport).processor(multiplexedProcessor)
+                                                                                  .protocolFactory(factory));
         } catch (TTransportException e) {
-            logger.error(e.getMessage(), e);
+            throw new IllegalStateException("Unable to bind RPC server to " + bind_ip + ":" + port,
+                                            e);
         }
     }
 
+    public synchronized void run() {
+        if (stopped) {
+            throw new IllegalStateException("RPC server has been stopped");
+        }
+        if (worker != null) {
+            throw new IllegalStateException("RPC server is already started");
+        }
+        worker = new Thread(server::serve, "jftn-rpc");
+        worker.start();
+    }
 
-    public void run() {
-        Runnable worker = new Runnable() {
-            @Override
-            public void run() {
-                server.serve();
-            }
-        };
-        new Thread(worker).start();
+    public int getLocalPort() {
+        return transport.getPort();
     }
 
     public void stop() {
-        if (server != null && server.isServing()) {
+        Thread running;
+        synchronized (this) {
+            if (stopped) {
+                return;
+            }
+            stopped = true;
             server.stop();
+            transport.close();
+            running = worker;
+        }
+        if (running != null && running != Thread.currentThread()) {
+            try {
+                running.join(5000);
+                if (running.isAlive()) {
+                    throw new IllegalStateException("RPC server did not stop");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while stopping RPC server", e);
+            }
         }
     }
 
-
+    @Override
+    public void close() {
+        stop();
+    }
 }

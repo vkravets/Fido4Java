@@ -80,5 +80,4 @@ public interface IBase {
     void addSubscription(Link link, String area);
 
     void close();
-
 }

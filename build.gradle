@@ -1,7 +1,16 @@
+plugins {
+    id 'base'
+    id 'com.diffplug.spotless' version '8.10.4'
+}
+
+apply from: "$rootDir/gradle/formatting.gradle"
+
 allprojects {
     group = 'org.fidonet'
     version = '1.0-SNAPSHOT'
 }
+
+apply from: "$rootDir/gradle/coverage.gradle"
 
 subprojects {
     apply plugin: 'java'

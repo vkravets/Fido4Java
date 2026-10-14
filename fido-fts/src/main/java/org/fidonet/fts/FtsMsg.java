@@ -80,5 +80,4 @@ class FtsMsg {
         x.get(tmp, 0, x.remaining());
         Text = new String(tmp);
     }
-
 }

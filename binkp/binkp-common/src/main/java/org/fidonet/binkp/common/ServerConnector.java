@@ -35,4 +35,5 @@ package org.fidonet.binkp.common;
  * Date: 5/5/18
  * Time: 22:55
  */
-public abstract class ServerConnector extends Connector { }
+public abstract class ServerConnector extends Connector {
+}

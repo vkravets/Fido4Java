@@ -28,9 +28,10 @@
 
 package org.fidonet.binkp.mina2;
 
-import junit.framework.TestCase;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
+
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;

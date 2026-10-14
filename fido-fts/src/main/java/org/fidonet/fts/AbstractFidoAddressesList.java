@@ -31,7 +31,11 @@ package org.fidonet.fts;
 import org.fidonet.tools.StringTools;
 import org.fidonet.types.FTNAddr;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,7 +44,6 @@ import java.util.*;
  * Date: 8/5/13
  * Time: 11:50 AM
  */
-
 public abstract class AbstractFidoAddressesList {
 
     protected Set<FTNAddr> addresses;
@@ -53,8 +56,12 @@ public abstract class AbstractFidoAddressesList {
         this.addresses = path;
     }
 
-    protected static <T extends Set<FTNAddr>> T parseAddresses(String addressesString, int defaultZone, T addresses) {
-        if (addressesString == null || addressesString.trim().isEmpty()) return addresses;
+    protected static <T extends Set<FTNAddr>> T parseAddresses(String addressesString,
+                                                               int defaultZone,
+                                                               T addresses) {
+        if (addressesString == null || addressesString.trim().isEmpty()) {
+            return addresses;
+        }
         FTNAddr node = new FTNAddr(defaultZone, 0, 0, 0);
         String[] tokens = addressesString.trim().split("\\s+");
         for (String addr : tokens) {
@@ -75,7 +82,6 @@ public abstract class AbstractFidoAddressesList {
     public void add(FidoPath addr) {
         addresses.addAll(addr.getAddresses());
     }
-
 
     public void addAll(Set<? extends FTNAddr> addresses) {
         this.addresses.addAll(addresses);
@@ -111,10 +117,11 @@ public abstract class AbstractFidoAddressesList {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AbstractFidoAddressesList that = (AbstractFidoAddressesList) o;
         return addresses.equals(that.addresses);
-
     }
 
     @Override
@@ -124,8 +131,9 @@ public abstract class AbstractFidoAddressesList {
 
     @Override
     public String toString() {
-        if (addresses.size() == 0)
+        if (addresses.size() == 0) {
             return "";
+        }
         StringBuilder stringBuilder = new StringBuilder();
         Iterator<FTNAddr> iterator = addresses.iterator();
         FTNAddr first = iterator.next();
@@ -149,8 +157,9 @@ public abstract class AbstractFidoAddressesList {
 
     protected List<String> getWrapStrings(int wrapLength, String prefix) {
         String original = toString();
-        if (original.isEmpty()) return Collections.emptyList();
+        if (original.isEmpty()) {
+            return Collections.emptyList();
+        }
         return StringTools.wrap(original, wrapLength, prefix);
     }
-
 }

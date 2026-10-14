@@ -63,8 +63,9 @@ public class Link {
         addr = new FTNAddr(linkToken[0].trim());
         String addresses = linkToken[1].trim();
         myaddr = convertAddressesToList(addresses);
-        if (linkToken.length > 3)
+        if (linkToken.length >= 3) {
             pass = linkToken[2].trim();
+        }
         if (linkToken.length >= 4) {
             String url = linkToken[3].trim();
             if (url.contains(":")) {
@@ -87,7 +88,6 @@ public class Link {
             } else {
                 logger.warn("FTN address \"{}\" cannot be parsed. Skipped!", addr);
             }
-
         }
         return result;
     }
@@ -106,7 +106,7 @@ public class Link {
 
     @Override
     public String toString() {
-        if (myaddr != null && getAddr() != null) {
+        if (myaddr != null && !myaddr.isEmpty() && getAddr() != null) {
             return myaddr.listIterator().next() + " -> " + getAddr().toString();
         } else {
             return hostAddress;

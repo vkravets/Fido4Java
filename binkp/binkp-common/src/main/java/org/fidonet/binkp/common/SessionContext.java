@@ -31,18 +31,26 @@ package org.fidonet.binkp.common;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FilesSender;
+import org.fidonet.binkp.common.protocol.Session;
 import org.fidonet.events.Event;
+import org.fidonet.events.EventBus;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -79,9 +87,13 @@ public class SessionContext extends HasEventBus {
     // send files number
     // queue send files
     private Deque<FileData<InputStream>> sendFiles;
-    private final java.util.concurrent.ConcurrentMap<FileInfo, FileData<InputStream>> pendingFiles = new java.util.concurrent.ConcurrentHashMap<>();
+    private final ConcurrentMap<FileInfo, FileData<InputStream>> pendingFiles = new ConcurrentHashMap<>();
     private final Deque<FileData<InputStream>> deferredFiles = new LinkedBlockingDeque<>();
-    public Deque<FileData<InputStream>> getDeferredFiles() { return deferredFiles; }
+
+    public Deque<FileData<InputStream>> getDeferredFiles() {
+        return deferredFiles;
+    }
+
     private volatile SessionState state;
     private ServerRole serverRole;
 
@@ -97,41 +109,76 @@ public class SessionContext extends HasEventBus {
     private volatile boolean nrMode = false;
     private boolean cryptMode = false;
     private boolean busy = false;
-    private org.fidonet.events.EventBus receiveEventBus;
-    private org.fidonet.binkp.common.io.FilesSender<?> activeSender;
-    public void setActiveSender(org.fidonet.binkp.common.io.FilesSender<?> sender) { activeSender = sender; }
-    public void setReceiveEventBus(org.fidonet.events.EventBus bus) { receiveEventBus = bus; }
-    public void receiveEvent(Event event) { (receiveEventBus == null ? getEventBus() : receiveEventBus).publish(event); }
+    private EventBus receiveEventBus;
+    private FilesSender<?> activeSender;
+
+    public void setActiveSender(FilesSender<?> sender) {
+        activeSender = sender;
+    }
+
+    public void setReceiveEventBus(EventBus bus) {
+        receiveEventBus = bus;
+    }
+
+    public void receiveEvent(Event event) {
+        (receiveEventBus == null ? getEventBus() : receiveEventBus).publish(event);
+    }
 
     public void closeReceiveStreams() {
-        if (activeSender != null) activeSender.cancel();
+        if (activeSender != null) {
+            activeSender.cancel();
+        }
         for (FileData<OutputStream> file : recvFiles) {
-            try { file.getStream().close(); } catch (java.io.IOException ignored) { }
+            try {
+                file.getStream().close();
+            } catch (IOException ignored) {
+            }
         }
         for (FileData<OutputStream> file : notFinishedFiles) {
-            try { file.getStream().close(); } catch (java.io.IOException ignored) { }
+            try {
+                file.getStream().close();
+            } catch (IOException ignored) {
+            }
         }
-        recvFiles.clear(); notFinishedFiles.clear();
-        synchronized (this) { notifyAll(); }
+        recvFiles.clear();
+        notFinishedFiles.clear();
+        synchronized (this) {
+            notifyAll();
+        }
     }
 
     public void prepareTransfer() {
-        for (FileData<InputStream> deferred : deferredFiles) pendingFiles.putIfAbsent(deferred.getInfo(), deferred);
+        for (FileData<InputStream> deferred : deferredFiles) {
+            pendingFiles.putIfAbsent(deferred.getInfo(), deferred);
+        }
         deferredFiles.clear();
         for (FileData<InputStream> pending : pendingFiles.values()) {
-            pending.getInfo().setFinished(false); pending.getInfo().setSkip(false);
-            pending.getInfo().setOffset(0); pending.getInfo().setCurSize(0);
+            pending.getInfo().setFinished(false);
+            pending.getInfo().setSkip(false);
+            pending.getInfo().setOffset(0);
+            pending.getInfo().setCurSize(0);
             pending.setRewindBeforeSend(true);
             pending.setResumeResponse(false);
-            if (!sendFiles.contains(pending)) sendFiles.addFirst(pending);
+            if (!sendFiles.contains(pending)) {
+                sendFiles.addFirst(pending);
+            }
         }
-        pendingFiles.clear(); sendingIsFinish = false; receivingIsFinish = false;
-        nrMode = false; cryptMode = false; password = null; passwordKey = null; messageDigest = null;
+        pendingFiles.clear();
+        sendingIsFinish = false;
+        receivingIsFinish = false;
+        nrMode = false;
+        cryptMode = false;
+        password = null;
+        passwordKey = null;
+        messageDigest = null;
     }
 
     public SessionContext(SessionContext context) {
-        this(context.getStationConfig(), new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
-        if (context.getLinksInfo().getCurLink() != null) linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
+        this(context.getStationConfig(),
+                new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
+        if (context.getLinksInfo().getCurLink() != null) {
+            linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
+        }
     }
 
     public SessionContext(StationConfig config, LinksInfo linksInfo) {
@@ -211,7 +258,8 @@ public class SessionContext extends HasEventBus {
     }
 
     public void setServerRole(ServerRole serverRole) {
-        this.serverRole = java.util.Objects.requireNonNull(serverRole, "Session role must be CLIENT or SERVER");
+        this.serverRole = Objects.requireNonNull(serverRole,
+                                                 "Session role must be CLIENT or SERVER");
     }
 
     public void setSendingIsFinish(boolean sendingIsFinish) {
@@ -226,18 +274,24 @@ public class SessionContext extends HasEventBus {
         return receivingIsFinish;
     }
 
-    public java.util.concurrent.ConcurrentMap<FileInfo, FileData<InputStream>> getPendingFiles() { return pendingFiles; }
-
-    public boolean isTransferComplete() {
-        return sendingIsFinish && receivingIsFinish && pendingFiles.isEmpty() && sendFiles.isEmpty();
+    public ConcurrentMap<FileInfo, FileData<InputStream>> getPendingFiles() {
+        return pendingFiles;
     }
 
-    public synchronized void finishSessionIfComplete(org.fidonet.binkp.common.protocol.Session session) {
+    public boolean isTransferComplete() {
+        return sendingIsFinish && receivingIsFinish && pendingFiles.isEmpty()
+                && sendFiles.isEmpty();
+    }
+
+    public synchronized void finishSessionIfComplete(Session session) {
         if (isTransferComplete() && state != SessionState.STATE_END) {
-            ServerRole role = java.util.Objects.requireNonNull(serverRole, "Session role must be set before completing a transfer");
+            ServerRole role = Objects.requireNonNull(serverRole,
+                                                     "Session role must be set before completing a transfer");
             setState(SessionState.STATE_END);
-            sendEvent(new org.fidonet.binkp.common.events.DisconnectedEvent(this));
-            if (role == ServerRole.SERVER) session.close(false);
+            sendEvent(new DisconnectedEvent(this));
+            if (role == ServerRole.SERVER) {
+                session.close(false);
+            }
         }
     }
 
@@ -330,10 +384,14 @@ public class SessionContext extends HasEventBus {
 
     public FileData<OutputStream> getNotFinishedFileData(FileInfo info) {
         for (FileData<OutputStream> file : notFinishedFiles) {
-            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) return file;
+            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) {
+                return file;
+            }
         }
         for (FileData<OutputStream> file : recvFiles) {
-            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) return file;
+            if (!file.getInfo().isFinished() && file.getInfo().equals(info)) {
+                return file;
+            }
         }
         return null;
     }

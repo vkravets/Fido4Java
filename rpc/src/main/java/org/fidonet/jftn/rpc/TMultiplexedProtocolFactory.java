@@ -54,4 +54,3 @@ public class TMultiplexedProtocolFactory implements TProtocolFactory {
         return new TMultiplexedProtocol(new TBinaryProtocol(tTransport), serviceName);
     }
 }
-

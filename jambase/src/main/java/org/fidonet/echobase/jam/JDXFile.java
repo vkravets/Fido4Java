@@ -30,11 +30,11 @@ package org.fidonet.echobase.jam;
 
 import org.fidonet.misc.MyCRC;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Closeable;
 
 class JDXFile implements Closeable {
 
@@ -57,7 +57,10 @@ class JDXFile implements Closeable {
     }
 
     public int getLastMessageShift() throws IOException {
-//        int mcrc = 0;
+        if (jdx.length() % 8 != 0) {
+            throw new IOException("Truncated JAM index record");
+        }
+        //        int mcrc = 0;
         int mshift = 0;
 
         long offset = jdx.length() - 8;
@@ -65,7 +68,7 @@ class JDXFile implements Closeable {
             return 0;
         }
         jdx.seek(jdx.length() - 8);
-//        mcrc = (Integer.reverseBytes(jdx.readInt()));
+        //        mcrc = (Integer.reverseBytes(jdx.readInt()));
         jdx.readInt();
         mshift = (Integer.reverseBytes(jdx.readInt()));
         return mshift;

@@ -32,6 +32,7 @@ import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.Version;
 import org.fidonet.db.upgrade.Upgrader;
 import org.fidonet.db.upgrade.version0.UpgraderV0;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,12 +59,17 @@ public class UpgraderTool {
 
     public boolean isNeedToUpgrade(OrmManager dbManager) {
         Long currentVersion = dbManager.getCurrentVersion();
-        return currentVersion != Version.UNKNOWN_VERSION && currentVersion < Version.CURRENT_VERSION;
+        return currentVersion != Version.UNKNOWN_VERSION
+                && currentVersion < Version.CURRENT_VERSION;
     }
 
     public boolean upgrade(OrmManager oldManager, OrmManager newManager) {
         Long currentVersion = oldManager.getCurrentVersion();
         Upgrader upgrader = upgradersMap.get(currentVersion);
+        if (upgrader == null) {
+            logger.error("No upgrader is available for database version {}", currentVersion);
+            return false;
+        }
         return upgrader.upgrade(oldManager, newManager);
     }
 }

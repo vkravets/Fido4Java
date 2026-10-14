@@ -28,8 +28,6 @@
 
 package org.fidonet.tests.toss;
 
-import com.j256.ormlite.dao.Dao;
-import junit.framework.TestCase;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.DatabaseManager;
@@ -39,6 +37,9 @@ import org.fidonet.echobase.EchoMgr;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
+
+import com.j256.ormlite.dao.Dao;
+import junit.framework.TestCase;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -76,16 +77,17 @@ public class TestTosser {
         return new File(root.getParentFile(), "test-data");
     }
 
-
     @BeforeClass
     public static void setUp() throws SQLException {
         File pathDb = computeTestDataRoot(TestTosser.class);
-//        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-//        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
-//        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
+        //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
+        //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+        //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
         ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
         databaseManager = new DatabaseManager(ormManager);
-        if (!databaseManager.open()) Assert.fail();
+        if (!databaseManager.open()) {
+            Assert.fail();
+        }
     }
 
     @AfterClass
@@ -94,11 +96,11 @@ public class TestTosser {
         databaseManager.close();
     }
 
-
     @Test
     public void testFlowToss() {
         JFtnConfig config = new JFtnConfig();
-        InputStream configStream = TestTosser.class.getClassLoader().getResourceAsStream("jftn.conf");
+        InputStream configStream = TestTosser.class.getClassLoader()
+                                                   .getResourceAsStream("jftn.conf");
 
         try {
             config.load(configStream);
@@ -123,7 +125,9 @@ public class TestTosser {
                 System.out.println(message.toString());
                 System.out.println(message.getMessageCharset());
                 Charset charset = CharsetTools.charsetDetect(message.getMessageCharset());
-                CharBuffer b = charset.decode(ByteBuffer.wrap(message.getBody().toString().getBytes(charset)));
+                CharBuffer b = charset.decode(ByteBuffer.wrap(message.getBody()
+                                                                     .toString()
+                                                                     .getBytes(charset)));
                 String body = new String(b.array());
                 System.out.println(body.replaceAll("\\u0001", "@").replaceAll("\\r", "\r\n"));
                 System.out.println("++++++++++++++++++++++++++++++++++++++");

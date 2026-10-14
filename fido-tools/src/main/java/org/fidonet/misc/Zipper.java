@@ -76,5 +76,4 @@ public class Zipper {
         logger.debug("Unpacking takes {}ms", System.currentTimeMillis() - startTime);
         return res;
     }
-
 }

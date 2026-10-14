@@ -63,11 +63,16 @@ public class BinkData {
 
     public static BinkFrame toBinkFrame(BinkData data) {
         int len = data.getData().length;
+        int wireLength = len + (data.isCommand() ? 1 : 0);
+        if (wireLength > 0x7fff) {
+            throw new IllegalArgumentException("Binkp frame exceeds 32767 bytes");
+        }
         ByteBuffer buf;
         if (data.isCommand()) {
             buf = ByteBuffer.allocate(len + 1);
             buf.put(data.getCommand());
-            len = +1;
+            buf.put(data.getData());
+            len += 1;
             len |= 0x8000;
         } else {
             buf = ByteBuffer.allocate(len);

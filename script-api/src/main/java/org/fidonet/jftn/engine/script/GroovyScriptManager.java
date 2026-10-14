@@ -28,8 +28,9 @@
 
 package org.fidonet.jftn.engine.script;
 
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
+
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 
 import javax.script.ScriptContext;
 
@@ -43,10 +44,12 @@ public class GroovyScriptManager extends AbstractScriptManager {
 
     public GroovyScriptManager() throws EngineNotFoundException {
         super();
-        // prevent memory leaks during reloading scripts
+        // Live script callbacks must survive GC. Engines are released on unload.
         GroovyScriptEngineImpl engine = (GroovyScriptEngineImpl) super.getEngine();
         ScriptContext context = engine.getContext();
-        context.setAttribute("#jsr223.groovy.engine.keep.globals", "weak", ScriptContext.ENGINE_SCOPE);
+        context.setAttribute("#jsr223.groovy.engine.keep.globals",
+                             "strong",
+                             ScriptContext.ENGINE_SCOPE);
         engine.setContext(context);
     }
 

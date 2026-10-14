@@ -28,6 +28,9 @@
 
 package org.fidonet.binkp.common.config;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -45,12 +48,21 @@ public class StationConfig {
     private boolean nrMode;
     private boolean nrEnabled = true;
     private boolean cryptMode;
-    private java.nio.file.Path partialDirectory = java.nio.file.Paths.get("inbound", ".binkp-partials");
+    private Path partialDirectory = Paths.get("inbound", ".binkp-partials");
 
-    public java.nio.file.Path getPartialDirectory() { return partialDirectory; }
-    public void setPartialDirectory(java.nio.file.Path directory) { partialDirectory = directory; }
+    public Path getPartialDirectory() {
+        return partialDirectory;
+    }
 
-    public StationConfig(String name, String sysopName, String location, String NDL, String address) {
+    public void setPartialDirectory(Path directory) {
+        partialDirectory = directory;
+    }
+
+    public StationConfig(String name,
+                         String sysopName,
+                         String location,
+                         String NDL,
+                         String address) {
         this.name = name;
         this.sysopName = sysopName;
         this.location = location;
@@ -96,14 +108,22 @@ public class StationConfig {
     }
 
     /** Local policy for NR, independent of whether we request it from the peer. */
-    public boolean isNREnabled() { return nrEnabled; }
+    public boolean isNREnabled() {
+        return nrEnabled;
+    }
 
     /** Set before opening a session. False suppresses OPT NR and ignores peer NR requests. */
-    public void setNREnabled(boolean enabled) { nrEnabled = enabled; }
+    public void setNREnabled(boolean enabled) {
+        nrEnabled = enabled;
+    }
 
-    public boolean isNRRequested() { return nrMode; }
+    public boolean isNRRequested() {
+        return nrMode;
+    }
 
-    public void setNRRequested(boolean requested) { nrMode = requested; }
+    public void setNRRequested(boolean requested) {
+        nrMode = requested;
+    }
 
     public boolean isCryptMode() {
         return cryptMode;

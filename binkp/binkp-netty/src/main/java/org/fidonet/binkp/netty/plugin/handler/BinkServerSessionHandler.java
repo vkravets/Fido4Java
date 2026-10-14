@@ -28,7 +28,6 @@
 
 package org.fidonet.binkp.netty.plugin.handler;
 
-import io.netty.channel.ChannelHandlerContext;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
@@ -36,6 +35,8 @@ import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 import org.fidonet.events.EventBus;
 import org.fidonet.types.FTNAddr;
+
+import io.netty.channel.ChannelHandlerContext;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,7 +53,6 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     private final AtomicInteger userConnected = new AtomicInteger(0);
     private static int MAX_USER_CONNECTED = 30;
 
-
     public BinkServerSessionHandler(EventBus eventBus) {
         super(eventBus);
     }
@@ -64,7 +64,8 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
     @Override
     public void channelActive(ChannelHandlerContext session) throws NoSuchAlgorithmException {
         final SessionContext sessionContext = new SessionContext(this.sessionContext);
-        sessionContext.getLinksInfo().setCurLink(new FTNAddr(sessionContext.getStationConfig().getAddress()));
+        sessionContext.getLinksInfo()
+                      .setCurLink(new FTNAddr(sessionContext.getStationConfig().getAddress()));
         sessionContext.setBusy(this.sessionContext.isBusy());
         sessionContext.setServerRole(ServerRole.SERVER);
         session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).set(sessionContext);
@@ -80,9 +81,11 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext session) throws Exception {
-        final SessionContext sessionContext = session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get();
-        if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
-                sessionContext.getState().equals(SessionState.STATE_BSY)) {
+        final SessionContext sessionContext = session.channel()
+                                                     .attr(SessionKeys.SESSION_CONTEXT_KEY)
+                                                     .get();
+        if (sessionContext.getState().equals(SessionState.STATE_ERR)
+                || sessionContext.getState().equals(SessionState.STATE_BSY)) {
             log.warn("Client close with error: {}", sessionContext.getLastErrorMessage());
         }
         session.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).set(null);
@@ -94,5 +97,4 @@ public class BinkServerSessionHandler extends BinkSessionHandler {
         }
         log.debug("Session closed");
     }
-
 }

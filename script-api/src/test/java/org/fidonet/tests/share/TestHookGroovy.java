@@ -28,7 +28,6 @@
 
 package org.fidonet.tests.share;
 
-import junit.framework.TestCase;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnScriptService;
@@ -38,12 +37,14 @@ import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tools.FileUtils;
 import org.fidonet.tests.tools.ConsoleOutputStream;
+
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.PrintStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -62,7 +63,8 @@ public class TestHookGroovy extends HasEventBus {
     public void setupEnv() throws Exception {
 
         String hookScriptContent;
-        try (InputStream stream = TestHookGroovy.class.getClassLoader().getResourceAsStream(FILE_HOOK_NAME)) {
+        try (InputStream stream = TestHookGroovy.class.getClassLoader()
+                                                      .getResourceAsStream(FILE_HOOK_NAME)) {
             hookScriptContent = FileUtils.getFileContent(stream);
         }
 
@@ -83,17 +85,16 @@ public class TestHookGroovy extends HasEventBus {
 
     @Test
     public void testHookRegistering() throws Exception {
-//        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
+        //        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
 
         getEventBus().subscribe(new NullEventHandler() {
             @Override
             public void onEventHandle(NullEvent event) {
-
             }
         });
 
-//        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
-//        TestCase.assertEquals(1, getEventBus().getAllListeners(NullEvent.class).size());
+        //        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
+        //        TestCase.assertEquals(1, getEventBus().getAllListeners(NullEvent.class).size());
 
         PrintStream console = System.out;
         ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();

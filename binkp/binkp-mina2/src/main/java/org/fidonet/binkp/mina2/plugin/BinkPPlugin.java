@@ -53,7 +53,10 @@ public class BinkPPlugin implements Plugin<Runner> {
 
     @Override
     public PluginInformation getPluginInfo() {
-        return new PluginInformation(BINKP_PLUGIN_ID, 1, 0, "Realization of BinkP protocol. (MINA2)");
+        return new PluginInformation(BINKP_PLUGIN_ID,
+                                     1,
+                                     0,
+                                     "Realization of BinkP protocol. (MINA2)");
     }
 
     @Override
@@ -63,7 +66,7 @@ public class BinkPPlugin implements Plugin<Runner> {
 
     @Override
     public void load() throws PluginException {
-//        System.out.println("Load Binp0");
+        //        System.out.println("Load Binp0");
         runner = new Runner();
         context = new WeakReference<Runner>(runner);
     }
