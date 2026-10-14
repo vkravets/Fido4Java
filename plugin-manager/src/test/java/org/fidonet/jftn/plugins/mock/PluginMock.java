@@ -49,17 +49,14 @@ public abstract class PluginMock implements Plugin<Object> {
 
     @Override
     public void init(PluginManager manager, EventBus eventBus) {
-
     }
 
     @Override
     public void load() throws PluginException {
-
     }
 
     @Override
     public void unload() throws PluginException {
-
     }
 
     @Override

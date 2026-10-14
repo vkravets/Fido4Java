@@ -100,14 +100,24 @@ public class FileInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FileInfo fileInfo = (FileInfo) o;
 
-        if (size != fileInfo.size) return false;
-        if (timestamp != fileInfo.timestamp) return false;
-        if (!name.equals(fileInfo.name)) return false;
+        if (size != fileInfo.size) {
+            return false;
+        }
+        if (timestamp != fileInfo.timestamp) {
+            return false;
+        }
+        if (!name.equals(fileInfo.name)) {
+            return false;
+        }
 
         return true;
     }
@@ -122,14 +132,21 @@ public class FileInfo {
 
     @Override
     public String toString() {
-        return "FileInfo{" +
-                "name='" + name + '\'' +
-                ", curSize=" + curSize +
-                ", size=" + size +
-                ", timestamp=" + timestamp +
-                ", finished=" + finished +
-                ", offset=" + offset +
-                '}';
+        return "FileInfo{"
+               + "name='"
+               + name
+               + '\''
+               + ", curSize="
+               + curSize
+               + ", size="
+               + size
+               + ", timestamp="
+               + timestamp
+               + ", finished="
+               + finished
+               + ", offset="
+               + offset
+               + '}';
     }
 
     public static FileInfo parseFileInfo(String commandArgs) throws Exception {
@@ -139,7 +156,9 @@ public class FileInfo {
             String name = unescapeName(tokens[0]);
             long size = Long.parseLong(tokens[1].trim());
             long timestamp = Long.parseLong(tokens[2].trim());
-            if (name.isEmpty() || size < 0) throw new IllegalArgumentException("Invalid file metadata");
+            if (name.isEmpty() || size < 0) {
+                throw new IllegalArgumentException("Invalid file metadata");
+            }
             FileInfo info = new FileInfo(name, size, timestamp);
             // Check if command args get from M_FILE with offset
             if (tokens.length == 4) {
@@ -160,8 +179,11 @@ public class FileInfo {
     public static String escapeName(String name) {
         StringBuilder out = new StringBuilder();
         for (char c : name.toCharArray()) {
-            if (c <= 32 || c == '\\' || c == 127) out.append(String.format("\\x%02x", (int)c));
-            else out.append(c);
+            if (c <= 32 || c == '\\' || c == 127) {
+                out.append(String.format("\\x%02x", (int) c));
+            } else {
+                out.append(c);
+            }
         }
         return out.toString();
     }
@@ -172,13 +194,22 @@ public class FileInfo {
             char c = name.charAt(i);
             if (c == '\\') {
                 int start = i + 1;
-                if (start < name.length() && name.charAt(start) == 'x') start++;
-                if (start + 2 > name.length()) throw new IllegalArgumentException("Invalid filename escape");
-                try { c = (char)Integer.parseInt(name.substring(start, start + 2), 16); }
-                catch (NumberFormatException e) { throw new IllegalArgumentException("Invalid filename escape", e); }
+                if (start < name.length() && name.charAt(start) == 'x') {
+                    start++;
+                }
+                if (start + 2 > name.length()) {
+                    throw new IllegalArgumentException("Invalid filename escape");
+                }
+                try {
+                    c = (char) Integer.parseInt(name.substring(start, start + 2), 16);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid filename escape", e);
+                }
                 i = start + 1;
             }
-            if (c == 0) throw new IllegalArgumentException("NUL in filename");
+            if (c == 0) {
+                throw new IllegalArgumentException("NUL in filename");
+            }
             out.append(c);
         }
         return out.toString();

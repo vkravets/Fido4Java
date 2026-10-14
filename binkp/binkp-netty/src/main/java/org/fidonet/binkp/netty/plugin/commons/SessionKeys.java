@@ -28,10 +28,11 @@
 
 package org.fidonet.binkp.netty.plugin.commons;
 
-import io.netty.util.AttributeKey;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
+
+import io.netty.util.AttributeKey;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,7 +42,10 @@ import org.fidonet.binkp.common.io.FilesSender;
  * Time: 1:44 AM
  */
 public class SessionKeys {
-    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = AttributeKey.<TrafficCrypter>newInstance(TrafficCrypter.class.getName() + ".KEY");
-    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = AttributeKey.<SessionContext>newInstance(SessionContext.class.getName() + ".CONTEXT");
-    public static final AttributeKey<FilesSender> FILESENDER_KEY = AttributeKey.<FilesSender>newInstance(FilesSender.class.getName() + ".KEY");
+    public static final AttributeKey<TrafficCrypter> TRAFFIC_CRYPTER_KEY = AttributeKey.<TrafficCrypter>newInstance(TrafficCrypter.class.getName()
+            + ".KEY");
+    public static final AttributeKey<SessionContext> SESSION_CONTEXT_KEY = AttributeKey.<SessionContext>newInstance(SessionContext.class.getName()
+            + ".CONTEXT");
+    public static final AttributeKey<FilesSender> FILESENDER_KEY = AttributeKey.<FilesSender>newInstance(FilesSender.class.getName()
+            + ".KEY");
 }

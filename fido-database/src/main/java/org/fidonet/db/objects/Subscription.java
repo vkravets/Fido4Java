@@ -28,10 +28,11 @@
 
 package org.fidonet.db.objects;
 
+import org.fidonet.echobase.AccessLevel;
+
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import org.fidonet.echobase.AccessLevel;
 
 /**
  * Created by IntelliJ IDEA.

@@ -28,24 +28,22 @@
 
 package org.fidonet.jftn.plugins;
 
+import org.fidonet.jftn.plugins.mock.PluginA;
+import org.fidonet.jftn.plugins.mock.PluginB;
+import org.fidonet.jftn.plugins.mock.PluginC;
+import org.fidonet.jftn.plugins.mock.PluginD;
+import org.fidonet.jftn.plugins.mock.PluginE;
+import org.fidonet.jftn.plugins.mock.PluginF;
+import org.fidonet.jftn.plugins.mock.PluginG;
+
 import junit.framework.TestCase;
-import org.fidonet.jftn.plugins.mock.*;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
  * Created by IntelliJ IDEA.
@@ -62,7 +60,8 @@ public class PluginManagerTest {
         PluginManager manager = PluginManager.getInstance();
 
         try {
-            //     private Collection<? extends Plugin> sortDependencies(Collection<? extends Plugin> plugins) {
+            //     private Collection<? extends Plugin> sortDependencies(Collection<? extends
+            // Plugin> plugins) {
             Method sort = manager.getClass().getDeclaredMethod("sortDependencies", Iterable.class);
             sort.setAccessible(true);
 
@@ -76,25 +75,22 @@ public class PluginManagerTest {
             plugins.add(new PluginG());
 
             //noinspection unchecked
-            Collection<? extends Plugin> sortPlugins = (Collection<? extends Plugin>) sort.invoke(manager, plugins);
+            Collection<? extends Plugin> sortPlugins = (Collection<? extends Plugin>) sort.invoke(manager,
+                                                                                                  plugins);
             StringBuilder actual = new StringBuilder();
             for (Plugin plugin : sortPlugins) {
                 actual.append(plugin.getPluginInfo().getId());
             }
             TestCase.assertEquals("GBCDFEA", actual.toString());
-        }
-        catch (NoSuchMethodException e) {
+        } catch (NoSuchMethodException e) {
             e.printStackTrace();
             TestCase.fail();
-        }
-        catch (InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             e.printStackTrace();
             TestCase.fail();
-        }
-        catch (IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
             TestCase.fail();
         }
     }
-
 }

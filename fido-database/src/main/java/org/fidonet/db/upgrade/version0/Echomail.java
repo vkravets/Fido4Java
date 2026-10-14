@@ -28,17 +28,20 @@
 
 package org.fidonet.db.upgrade.version0;
 
-import com.j256.ormlite.field.DataType;
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
 import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
+import com.j256.ormlite.field.DataType;
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
+
+import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
-import java.io.Serializable;
 
 /**
  * Created by IntelliJ IDEA.
@@ -65,7 +68,6 @@ public class Echomail {
     public static final String SEENBY_COLUMN = "seen_by";
     public static final String PATH_COLUMN = "path";
     public static final String ATTR_COLUMN = "attr";
-
 
     @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
@@ -179,12 +181,21 @@ public class Echomail {
         return text;
     }
 
-    public String getOrigin() { return origin; }
-    public void setOrigin(String origin) { this.origin = origin; }
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
     @SuppressWarnings("unchecked")
-    public Map<String, String> getKludges() { return (Map<String, String>) kludges; }
+    public Map<String, String> getKludges() {
+        return (Map<String, String>) kludges;
+    }
+
     public void setKludges(Map<String, String> kludges) {
-        this.kludges = kludges == null ? null : new java.util.LinkedHashMap<>(kludges);
+        this.kludges = kludges == null ? null : new LinkedHashMap<>(kludges);
     }
 
     public void setText(String text) {
@@ -233,24 +244,26 @@ public class Echomail {
             toAddr = new FTNAddr(echomail.getToAddr());
         }
         Message message = new Message(echomail.getFromName(),
-                echomail.getToName(),
-                new FTNAddr(echomail.getFromAddr()),
-                toAddr,
-                echomail.getSubject(),
-                echomail.getText(),
-                echomail.getDate());
+                                      echomail.getToName(),
+                                      new FTNAddr(echomail.getFromAddr()),
+                                      toAddr,
+                                      echomail.getSubject(),
+                                      echomail.getText(),
+                                      echomail.getDate());
         return message;
     }
 
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss");
+        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss",
+                                                                   Locale.US);
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);
         msg.setFromAddr(message.getFAddr().as5D());
-        if (message.getTAddr() != null)
+        if (message.getTAddr() != null) {
             msg.setToAddr(message.getTAddr().as5D());
+        }
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(message.getSubject());
@@ -260,5 +273,4 @@ public class Echomail {
         msg.setMsgId(message.getMsgId());
         return msg;
     }
-
 }

@@ -44,5 +44,4 @@ public class HasEventBus {
         }
         return eventBusinstance;
     }
-
 }

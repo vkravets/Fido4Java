@@ -41,13 +41,32 @@ public class FileData<T> {
     private T stream;
     private boolean rewindBeforeSend;
     private boolean resumeResponse;
-    public boolean isResumeResponse() { return resumeResponse; }
-    public void setResumeResponse(boolean value) { resumeResponse = value; }
+
+    public boolean isResumeResponse() {
+        return resumeResponse;
+    }
+
+    public void setResumeResponse(boolean value) {
+        resumeResponse = value;
+    }
+
     private boolean waitingForHeader;
-    public boolean isWaitingForHeader() { return waitingForHeader; }
-    public void setWaitingForHeader(boolean value) { waitingForHeader = value; }
-    public boolean isRewindBeforeSend() { return rewindBeforeSend; }
-    public void setRewindBeforeSend(boolean value) { rewindBeforeSend = value; }
+
+    public boolean isWaitingForHeader() {
+        return waitingForHeader;
+    }
+
+    public void setWaitingForHeader(boolean value) {
+        waitingForHeader = value;
+    }
+
+    public boolean isRewindBeforeSend() {
+        return rewindBeforeSend;
+    }
+
+    public void setRewindBeforeSend(boolean value) {
+        rewindBeforeSend = value;
+    }
 
     public FileData(FileInfo info) {
         this.info = info;
@@ -69,5 +88,4 @@ public class FileData<T> {
     public void setStream(T stream) {
         this.stream = stream;
     }
-
 }

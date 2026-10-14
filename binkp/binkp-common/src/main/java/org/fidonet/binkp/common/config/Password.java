@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp.common.config;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
@@ -44,7 +45,6 @@ public class Password {
     private MessageDigest md;
     private String key;
 
-
     public Password(String password, Boolean isCrypt, MessageDigest md, String key) {
         this(password);
         this.isCrypt = isCrypt;
@@ -52,9 +52,10 @@ public class Password {
         this.key = key;
     }
 
-
     public Password(String password) {
-        this.password = password == null || password.equals("-") || password.isEmpty() ? "-" : password;
+        this.password = password == null || password.equals("-") || password.isEmpty()
+                ? "-"
+                : password;
         this.isCrypt = false;
         this.md = null;
         this.key = null;
@@ -86,8 +87,10 @@ public class Password {
 
     private String getCryptText() {
         byte[] textKey = new byte[key.length() / 2];
-        byte[] text = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        if (text.length > 64) text = md.digest(text);
+        byte[] text = password.getBytes(StandardCharsets.UTF_8);
+        if (text.length > 64) {
+            text = md.digest(text);
+        }
         byte[] k_ipad = new byte[64];
         byte[] k_opad = new byte[64];
 

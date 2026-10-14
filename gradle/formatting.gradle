@@ -1,0 +1,61 @@
+spotless {
+    java {
+        target fileTree(rootDir) {
+            include '**/src/**/*.java', 'gradle/wrapper/DownloadWrapper.java',
+                    'gradle/formatting/fixtures/*.java'
+            exclude '**/build/**', '**/target/**', '**/gen-src/**', '**/generated/**',
+                    '.gradle/**', '.gradle-user-home/**'
+        }
+        // Eclipse 4.34 runs on JDK 17, including the CircleCI build image.
+        eclipse('4.34').configFile(rootProject.file('gradle/java-formatter.xml'))
+        // JDT uses a block continuation indent for + inside nested arguments.
+        // Restore the operand and nested-selector alignment agreed for JFtn.
+        custom('JFtn expression alignment') { source ->
+            org.fidonet.gradle.JavaLayoutFormatter.format(source)
+        }
+        bumpThisNumberIfACustomStepChanges(1)
+        importOrder('org.fidonet', '', 'java|javax', '#')
+        forbidWildcardImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.register('verifyJavaFormatting') {
+    group = 'verification'
+    description = 'Checks the agreed Java layout examples after Spotless formatting.'
+    dependsOn tasks.named('spotlessJavaCheck')
+    inputs.file(rootProject.file('gradle/formatting/fixtures/JavaStyle.java'))
+    doLast {
+        String fixture = rootProject.file('gradle/formatting/fixtures/JavaStyle.java')
+                .getText('UTF-8').replace('\r\n', '\n')
+        List<String> examples = [
+                '''return passwordString.startsWith("CRAM-"
+                                         + sessionContext.getMessageDigest()
+                                                         .getAlgorithm()
+                                                         .replace("-", "")
+                                         + "-");''',
+                '''for (String address : sessionContext.getStationConfig()
+                                                .getAddress()
+                                                .trim()
+                                                .split("\\\\s+"))''',
+                '''longMethod(String firstParameterWithALongName,
+                             String secondParameterWithALongName,
+                             String thirdParameterWithALongName);''',
+                '''@Deprecated
+    abstract void consume''',
+                ''' * Created by IntelliJ IDEA.
+ * Author: Formatting fixture
+ * Date: 10/15/26'''
+        ]
+        examples.eachWithIndex { example, index ->
+            if (!fixture.contains(example)) {
+                throw new GradleException("Java formatting example ${index + 1} no longer matches the agreed style.")
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyJavaFormatting')
+}

@@ -28,8 +28,9 @@
 
 package org.fidonet.fts;
 
-import junit.framework.TestCase;
 import org.fidonet.types.FTNAddr;
+
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -44,10 +45,10 @@ import java.util.List;
  */
 public class SeenByTest {
 
-
     @Test
     public void testSortedSeenByToString() {
-        String pathString = "467/1313 5020/545 1042 4441 5030/100 102 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042";
+        String pathString = "467/1313 5020/545 1042 4441 5030/100 102 5040/102 5050/103 5060/545 580 5070/69 70"
+                + " 80 5080/1042";
         SeenBy actualPath = new SeenBy();
         actualPath.add(FTNAddr.valueOf("2:5060/545"));
         actualPath.add(FTNAddr.valueOf("2:5060/580"));
@@ -68,8 +69,8 @@ public class SeenByTest {
 
     @Test
     public void testSortedSeenByToMessageString() {
-        String pathString = "SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102\r" +
-                "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042\r";
+        String pathString = "SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102\r"
+                + "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042\r";
         SeenBy actualPath = new SeenBy();
         actualPath.add(FTNAddr.valueOf("2:5060/545"));
         actualPath.add(FTNAddr.valueOf("2:5060/580"));
@@ -98,7 +99,7 @@ public class SeenByTest {
     @Test
     public void testSortedSeenByToMessageStrings() {
         List<String> pathString = Arrays.asList("SEEN-BY: 467/60 68 100 113 150 780 1313 5020/545 1042 4441 5030/100 102",
-                "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042");
+                                                "SEEN-BY: 5040/102 5050/103 5060/545 580 5070/69 70 80 5080/1042");
         SeenBy actualPath = new SeenBy();
         actualPath.add(FTNAddr.valueOf("2:5060/545"));
         actualPath.add(FTNAddr.valueOf("2:5060/580"));

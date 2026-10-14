@@ -28,9 +28,10 @@
 
 package org.fidonet.jftn.tosser;
 
+import org.fidonet.events.AbstractEventHandler;
+
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Invoke;
-import org.fidonet.events.AbstractEventHandler;
 
 /**
  * Created by IntelliJ IDEA.

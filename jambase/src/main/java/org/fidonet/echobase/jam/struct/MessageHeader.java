@@ -73,8 +73,8 @@ public class MessageHeader {
                 result += sub.datalen + 8;
             }
             return result;
-        } else return 0;
-
+        } else {
+            return 0;
+        }
     }
-
 }

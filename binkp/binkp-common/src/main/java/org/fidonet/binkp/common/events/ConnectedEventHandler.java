@@ -28,9 +28,10 @@
 
 package org.fidonet.binkp.common.events;
 
+import org.fidonet.events.AbstractEventHandler;
+
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Invoke;
-import org.fidonet.events.AbstractEventHandler;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,12 +40,10 @@ import org.fidonet.events.AbstractEventHandler;
  * Date: 1/17/14
  * Time: 12:06 AM
  */
-
 public abstract class ConnectedEventHandler extends AbstractEventHandler<ConnectedEvent> {
 
     @Handler(rejectSubtypes = true, delivery = Invoke.Synchronously)
     public void handle(ConnectedEvent event) {
         onEventHandle(event);
     }
-
 }

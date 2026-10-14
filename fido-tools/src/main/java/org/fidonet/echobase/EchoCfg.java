@@ -39,10 +39,19 @@ public class EchoCfg {
     public FTNAddr Link;
 
     public String getEchoString() {
-        String result = "EchoArea " + Name + " " + Path + " -b " + Type + " -a " + AKA.toString() + " ";
-        if (Group != null) result += ("-g " + Group);
+        String result = "EchoArea "
+                        + Name
+                        + " "
+                        + Path
+                        + " -b "
+                        + Type
+                        + " -a "
+                        + AKA.toString()
+                        + " ";
+        if (Group != null) {
+            result += ("-g " + Group + " ");
+        }
         result += Link.toString();
         return result;
     }
-
 }

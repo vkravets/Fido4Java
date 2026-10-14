@@ -44,5 +44,4 @@ public interface EchoBase {
     void delMessage(int id) throws EchoBaseException;
 
     void getMessage(int id) throws EchoBaseException;
-
 }

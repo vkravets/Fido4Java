@@ -51,27 +51,38 @@ public class OPTCommand extends NULCommand {
     @Override
     protected String getArguments(SessionContext sessionContext) {
         String args = "";
-        if (sessionContext.getStationConfig().isNREnabled() && sessionContext.getStationConfig().isNRRequested()) args += "NR ";
-        if (sessionContext.getStationConfig().isCryptMode()) args += "CRYPT ";
+        if (sessionContext.getStationConfig().isNREnabled()
+                && sessionContext.getStationConfig().isNRRequested()) {
+            args += "NR ";
+        }
+        if (sessionContext.getStationConfig().isCryptMode()) {
+            args += "CRYPT ";
+        }
         // TODO Add ND mode
         return args.trim();
     }
 
     @Override
-    protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         String[] tokens = commandArgs.trim().split("\\s+");
         for (String token : tokens) {
-            if (token.startsWith("CRAM")
-                    && sessionContext.getLinksInfo().getCurLink() != null
+            if (token.startsWith("CRAM") && sessionContext.getLinksInfo().getCurLink() != null
                     && sessionContext.getLinksInfo().getCurLink().isMD()) {
                 String[] cramTokens = token.split("-", 3);
-                if (cramTokens.length != 3 || !cramTokens[2].matches("(?i)(?:[0-9a-f]{2})+"))
+                if (cramTokens.length != 3 || !cramTokens[2].matches("(?i)(?:[0-9a-f]{2})+")) {
                     throw new IllegalArgumentException("Invalid CRAM challenge");
+                }
                 String cryptType = null;
                 for (String offered : cramTokens[1].split("/")) {
-                    if (offered.equals("MD5") || offered.equals("SHA1")) { cryptType = offered; break; }
+                    if (offered.equals("MD5") || offered.equals("SHA1")) {
+                        cryptType = offered;
+                        break;
+                    }
                 }
-                if (cryptType == null) continue;
+                if (cryptType == null) {
+                    continue;
+                }
                 MessageDigest md = MessageDigest.getInstance(cryptType);
                 Password password = sessionContext.getPassword();
                 password.setCrypt(true);
@@ -80,13 +91,14 @@ public class OPTCommand extends NULCommand {
                 sessionContext.setMessageDigest(md);
                 sessionContext.setPasswordKey(cramTokens[2]);
             } else if (token.equals("NR")) {
-                if (sessionContext.getStationConfig().isNREnabled()) sessionContext.setNRMode(true);
+                if (sessionContext.getStationConfig().isNREnabled()) {
+                    sessionContext.setNRMode(true);
+                }
             } else if (token.equals("CRYPT")) {
                 if (sessionContext.getStationConfig().isCryptMode()) {
                     sessionContext.setCryptMode(true);
                     log.info("Remote requests CRYPT mode");
-                }
-                else {
+                } else {
                     sessionContext.setCryptMode(false);
                     log.info("Ignore CRYPT mode, doesn't support");
                 }

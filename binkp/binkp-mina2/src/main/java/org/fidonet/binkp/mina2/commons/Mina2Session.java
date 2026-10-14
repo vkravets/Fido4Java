@@ -28,10 +28,11 @@
 
 package org.fidonet.binkp.mina2.commons;
 
-import org.apache.mina.core.session.IoSession;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
+
+import org.apache.mina.core.session.IoSession;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,11 +41,9 @@ import org.fidonet.binkp.common.protocol.Session;
  * Date: 10/14/15
  * Time: 1:00 PM
  */
-
 public class Mina2Session implements Session {
 
     private IoSession session;
-
 
     public Mina2Session(IoSession session) {
         this.session = session;

@@ -37,5 +37,4 @@ package org.fidonet.jftn.share;
 public interface Command<I, R> {
 
     R execute(I argv);
-
 }

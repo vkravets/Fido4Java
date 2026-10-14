@@ -28,18 +28,18 @@
 
 package org.fidonet.binkp.mina2;
 
-import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.mina.core.service.DefaultTransportMetadata;
-import org.apache.mina.core.session.IoSessionConfig;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.codec.ProtocolCodecSession;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.common.events.*;
+import org.fidonet.binkp.common.events.ConnectedEvent;
+import org.fidonet.binkp.common.events.ConnectedEventHandler;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.events.DisconnectedEventHandler;
+import org.fidonet.binkp.common.events.FileReceivedEvent;
+import org.fidonet.binkp.common.events.FileReceivedEventHandler;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
@@ -47,6 +47,12 @@ import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.fidonet.events.EventHandler;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.service.DefaultTransportMetadata;
+import org.apache.mina.core.session.IoSessionConfig;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.codec.ProtocolCodecSession;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -77,11 +83,16 @@ public class Mina2ClientTest {
         public void run(SessionContext sessionContext) throws Exception {
             session = new ProtocolCodecSession();
             session.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
-            session.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
+            session.getFilterChain()
+                   .addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
             session.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
-            session.setTransportMetadata(new DefaultTransportMetadata(
-                    "mina", "dummy", false, true,
-                    SocketAddress.class, IoSessionConfig.class, Object.class));
+            session.setTransportMetadata(new DefaultTransportMetadata("mina",
+                                                                      "dummy",
+                                                                      false,
+                                                                      true,
+                                                                      SocketAddress.class,
+                                                                      IoSessionConfig.class,
+                                                                      Object.class));
             sessionContext.setServerRole(ServerRole.CLIENT);
             session.getHandler().sessionOpened(session);
             sessionContext.setState(SessionState.STATE_IDLE);
@@ -100,12 +111,12 @@ public class Mina2ClientTest {
             int bufSize = 10;
             int size = 0;
             byte[] bytes = new byte[bufSize];
-//            ProtocolDecoder decoder = new BinkDataDecoder();
+            //            ProtocolDecoder decoder = new BinkDataDecoder();
             while ((size = stream.read(bytes)) != -1) {
                 IoBuffer buf = IoBuffer.allocate(size);
                 buf.put(bytes, 0, size);
                 buf.flip();
-                //decoder.decode(session, buf, session.getDecoderOutput());
+                // decoder.decode(session, buf, session.getDecoderOutput());
                 session.getFilterChain().fireMessageReceived(buf);
                 Thread.sleep(100);
             }
@@ -117,7 +128,8 @@ public class Mina2ClientTest {
         public void run() {
             try {
                 run(sessionContext);
-                try (InputStream recvRawData = ClientMock.class.getClassLoader().getResourceAsStream("recv_stream.bin")) {
+                try (InputStream recvRawData = ClientMock.class.getClassLoader()
+                                                               .getResourceAsStream("recv_stream.bin")) {
                     ClientMock.this.writeStreamToSession(recvRawData);
                 }
             } catch (Exception e) {
@@ -139,23 +151,21 @@ public class Mina2ClientTest {
 
     @Test
     public void testBaseFlow() throws InterruptedException {
-        StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        StationConfig config = new StationConfig("Test Station",
+                                                 "Vasya Pupkin",
+                                                 "Odessa, Ukraine",
+                                                 "BINKP",
+                                                 "2:467/110.113");
         final FTNAddr node = new FTNAddr("2:467/110");
-        LinksInfo linksInfo = new LinksInfo(
-                new LinkedList<Link>() {
+        LinksInfo linksInfo = new LinksInfo(new LinkedList<Link>() {
+            {
+                add(new Link(node, new LinkedList<FTNAddr>() {
                     {
-                        add(new Link(node,
-                                        new LinkedList<FTNAddr>() {
-                                            {
-                                                add(new FTNAddr("2:467/110.113"));
-                                            }
-                                        },
-                                        "pass_i_f", "localhost", 24554
-                                )
-                        );
+                        add(new FTNAddr("2:467/110.113"));
                     }
-                }
-        );
+                }, "pass_i_f", "localhost", 24554));
+            }
+        });
         linksInfo.setCurLink(node);
         SessionContext sessionContext = new SessionContext(config, linksInfo);
         sessionContext.getStationConfig().setCryptMode(true);
@@ -194,11 +204,11 @@ public class Mina2ClientTest {
                 FileInfo expectedInfo = new FileInfo("0000FF8F.WE5", 766, 1348664500L);
                 Assert.assertEquals(expectedInfo, event.getFile().getInfo());
                 Assert.assertEquals(true, event.getFile().getInfo().isFinished());
-                ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile().getStream();
+                ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile()
+                                                                               .getStream();
                 Assert.assertEquals(766, outStream.toByteArray().length);
             }
         };
         client.registerEvent(fileReceivedEventHandler);
     }
-
 }

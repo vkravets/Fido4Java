@@ -28,12 +28,19 @@
 
 package org.fidonet.config;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -60,14 +67,13 @@ public abstract class BaseConfig implements IConfig {
                 strnum++;
                 if (str.contains("#")) {
                     str = str.substring(0, str.indexOf('#'));
-                    str = str.trim();
                 }
+                str = str.trim();
                 if (str.length() == 0) {
                     continue;
                 }
                 if (!str.contains("=")) {
-                    logger.debug("Error in config string on {} line", strnum);
-                    break;
+                    throw new ParseConfigException("Missing '=' on configuration line " + strnum);
                 }
                 int separator = str.indexOf('=');
                 String name = str.substring(0, separator).trim();
@@ -78,7 +84,6 @@ public abstract class BaseConfig implements IConfig {
         } catch (IOException e) {
             throw new ParseConfigException(e);
         }
-
     }
 
     @Override
@@ -125,5 +130,4 @@ public abstract class BaseConfig implements IConfig {
             return new ArrayList<String>(values);
         }
     }
-
 }

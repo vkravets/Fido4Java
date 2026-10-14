@@ -31,16 +31,18 @@ package org.fidonet.echobase.jam;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 class JHRFile implements Closeable {
@@ -55,18 +57,20 @@ class JHRFile implements Closeable {
 
     public MessageHeader getMsgHeaderByShift(int shift) throws IOException {
         jhr.seek(shift);
-        if (shift < 1024) return null;
+        if (shift < 1024) {
+            return null;
+        }
         MessageHeader result = new MessageHeader();
 
         ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize);
-        int readed = jhr.read(tmpbuf.array());
-        if (readed != MessageHeader.MessageHeaderSize) {
-            logger.error("Oops! getMsgHeaderByShift() reads MessageHeaderSize with error.");
-        }
+        jhr.readFully(tmpbuf.array());
         tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
         tmpbuf.position(0);
 
         tmpbuf.get(result.signature);
+        if (!Arrays.equals(result.signature, new byte[]{'J', 'A', 'M', 0})) {
+            throw new IOException("Invalid JAM message signature");
+        }
         result.revision = tmpbuf.getShort();
         result.reservedword = tmpbuf.getShort();
         result.SubfieldLen = tmpbuf.getInt();
@@ -86,17 +90,26 @@ class JHRFile implements Closeable {
         result.TxtLen = tmpbuf.getInt();
         result.PasswordCRC = tmpbuf.getInt();
         result.Cost = tmpbuf.getInt();
+        if (result.SubfieldLen < 0 || result.SubfieldLen > jhr.length() - jhr.getFilePointer()) {
+            throw new IOException("Invalid JAM subfield length");
+        }
         if (result.SubfieldLen != 0) {
             tmpbuf = ByteBuffer.allocate(result.SubfieldLen);
-            jhr.read(tmpbuf.array());
+            jhr.readFully(tmpbuf.array());
             tmpbuf.position(0);
             tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
             result.SubFieldList = new LinkedList<SubField>();
             while (tmpbuf.position() < tmpbuf.capacity()) {
+                if (tmpbuf.remaining() < 8) {
+                    throw new IOException("Truncated JAM subfield header");
+                }
                 SubField sf = new SubField();
                 sf.loID = tmpbuf.getShort();
                 sf.hiID = tmpbuf.getShort();
                 sf.datalen = tmpbuf.getInt();
+                if (sf.datalen < 0 || sf.datalen > tmpbuf.remaining()) {
+                    throw new IOException("Invalid JAM subfield data length");
+                }
                 sf.buffer = new byte[sf.datalen];
                 tmpbuf.get(sf.buffer);
                 result.SubFieldList.add(sf);
@@ -106,7 +119,8 @@ class JHRFile implements Closeable {
     }
 
     public int writeHeader(MessageHeader msghdr) throws IOException {
-        ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize + msghdr.SubfieldLen);
+        ByteBuffer tmpbuf = ByteBuffer.allocate(MessageHeader.MessageHeaderSize
+                                                + msghdr.SubfieldLen);
         tmpbuf.position(0);
         tmpbuf.order(ByteOrder.LITTLE_ENDIAN);
         tmpbuf.put(msghdr.signature);
@@ -115,7 +129,7 @@ class JHRFile implements Closeable {
         tmpbuf.putInt(msghdr.SubfieldLen);
         tmpbuf.putInt(msghdr.TimesRead);
         tmpbuf.putInt(msghdr.MSGIDcrc);
-        tmpbuf.putInt(msghdr.REPLYcrc); //TODO!!!
+        tmpbuf.putInt(msghdr.REPLYcrc); // TODO!!!
         tmpbuf.putInt(msghdr.ReplyTo);
         tmpbuf.putInt(msghdr.Reply1st);
         tmpbuf.putInt(msghdr.Replynext);
@@ -148,12 +162,11 @@ class JHRFile implements Closeable {
     public FixedHeaderInfoStruct getFixedHeader() throws IOException {
         byte[] fh = new byte[1024];
         ByteBuffer res = ByteBuffer.allocate(1024);
-        int readed = 0;
         res.order(ByteOrder.LITTLE_ENDIAN);
         jhr.seek(0);
-        readed = jhr.read(fh);
-        if (readed != 1024) {
-            logger.error("Ooops! getFixedHeader() reads not 1024!");
+        jhr.readFully(fh);
+        if (fh[0] != 'J' || fh[1] != 'A' || fh[2] != 'M' || fh[3] != 0) {
+            throw new IOException("Invalid JAM base signature");
         }
         res.put(fh);
         FixedHeaderInfoStruct result = new FixedHeaderInfoStruct();
@@ -171,5 +184,4 @@ class JHRFile implements Closeable {
     public void close() throws IOException {
         jhr.close();
     }
-
 }

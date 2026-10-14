@@ -28,12 +28,13 @@
 
 package org.fidonet.db;
 
-import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.QueryBuilder;
-import junit.framework.TestCase;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.QueryBuilder;
+import junit.framework.TestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,9 +61,9 @@ public class CreateDatabaseTest {
 
     @BeforeClass
     public static void setUp() throws SQLException {
-//        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-//        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
-//        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
+        //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
+        //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
+        //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
         ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();
@@ -88,7 +89,10 @@ public class CreateDatabaseTest {
 
             QueryBuilder<ConfigurationLink, Long> linkQueryBuilder = daoLinks.queryBuilder();
 
-            List<ConfigurationLink> address = linkQueryBuilder.where().eq("address", "2:467/110.1@fidonet.org").query();
+            List<ConfigurationLink> address = linkQueryBuilder.where()
+                                                              .eq("address",
+                                                                  "2:467/110.1@fidonet.org")
+                                                              .query();
             TestCase.assertEquals(1, address.size());
         } catch (SQLException e) {
             e.printStackTrace();
@@ -119,7 +123,11 @@ public class CreateDatabaseTest {
         addTestSubscription(configurationLink.toLink(), "test1");
         addTestSubscription(configurationLink.toLink(), "test111");
 
-        Link link2 = new Link(new FTNAddr("2:467/110.23@fidonet.org"), null, "pass", "localhost", 1010);
+        Link link2 = new Link(new FTNAddr("2:467/110.23@fidonet.org"),
+                              null,
+                              "pass",
+                              "localhost",
+                              1010);
         ConfigurationLink configurationLink2 = new ConfigurationLink();
         configurationLink2.setAddress(link2.getAddr().as5D());
         configurationLink2.setPacket_password(link2.getPass());
@@ -141,8 +149,5 @@ public class CreateDatabaseTest {
         List<String> subscriptions2 = databaseManager.getSubscriptions(link2);
         TestCase.assertEquals(1, subscriptions2.size());
         TestCase.assertEquals(Arrays.asList("test4"), subscriptions2);
-
     }
-
-
 }

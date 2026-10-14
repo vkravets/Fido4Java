@@ -28,9 +28,6 @@
 
 package org.fidonet.tests.share;
 
-import groovy.lang.GroovyClassLoader;
-import junit.framework.TestCase;
-import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnScriptService;
 import org.fidonet.jftn.engine.script.ScriptEngine;
@@ -38,6 +35,10 @@ import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
+
+import groovy.lang.GroovyClassLoader;
+import junit.framework.TestCase;
+import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -53,37 +54,19 @@ import java.util.List;
  */
 public class TestReloadScript {
 
-    public static final String script1 = "import org.fidonet.jftn.share.Command\n" +
-            "\n" +
-            "class TossCommand implements Command<String[], String[]> {\n" +
-            "    public static final String test_static = \"test\"\n" +
+    public static final String script1 = "import org.fidonet.jftn.share.Command\n" + "\n"
+            + "class TossCommand implements Command<String[], String[]> {\n"
+            + "    public static final String test_static = \"test\"\n" + "    @Override\n"
+            + "    String[] execute(String[] argv) {\n" + "        return [test_static]\n"
+            + "    }\n" + "}\n" + "\n" + "\n" + "def register(serviceApi) {\n"
+            + "    serviceApi.registerCommand(\"test\", new TossCommand())\n" + "}";
 
-            "    @Override\n" +
-            "    String[] execute(String[] argv) {\n" +
-            "        return [test_static]\n" +
-            "    }\n" +
-            "}\n" +
-            "\n" +
-            "\n" +
-            "def register(serviceApi) {\n" +
-            "    serviceApi.registerCommand(\"test\", new TossCommand())\n" +
-            "}";
-
-    public static final String script2 = "import org.fidonet.jftn.share.Command\n" +
-            "\n" +
-            "class TossCommand implements Command<String[], String[]> {\n" +
-            "    public static final String test_static = \"test_modify\"\n" +
-
-            "    @Override\n" +
-            "    String[] execute(String[] argv) {\n" +
-            "        return [test_static]\n" +
-            "    }\n" +
-            "}\n" +
-            "\n" +
-            "\n" +
-            "def register(serviceApi) {\n" +
-            "    serviceApi.registerCommand(\"test\", new TossCommand())\n" +
-            "}";
+    public static final String script2 = "import org.fidonet.jftn.share.Command\n" + "\n"
+            + "class TossCommand implements Command<String[], String[]> {\n"
+            + "    public static final String test_static = \"test_modify\"\n" + "    @Override\n"
+            + "    String[] execute(String[] argv) {\n" + "        return [test_static]\n"
+            + "    }\n" + "}\n" + "\n" + "\n" + "def register(serviceApi) {\n"
+            + "    serviceApi.registerCommand(\"test\", new TossCommand())\n" + "}";
 
     @Test
     public void testReload() throws Exception {
@@ -95,7 +78,11 @@ public class TestReloadScript {
         CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
         // Add to script scope "jftn" variable which have all above data
         try {
-            scriptManager.registerScript("script1", script1, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            scriptManager.registerScript("script1",
+                                         script1,
+                                         new JFtnScriptService(scriptManager,
+                                                               hookInterpreter,
+                                                               commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -124,15 +111,23 @@ public class TestReloadScript {
         TestCase.assertNotNull(test_static);
         TestCase.assertEquals("test", test_static.get(null));
 
-        scriptManager.unregisterScript("script1", new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
-
+        scriptManager.unregisterScript("script1",
+                                       new JFtnScriptService(scriptManager,
+                                                             hookInterpreter,
+                                                             commandInterpreter));
 
         try {
-            scriptManager.registerScript("script1", script2, new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter));
+            scriptManager.registerScript("script1",
+                                         script2,
+                                         new JFtnScriptService(scriptManager,
+                                                               hookInterpreter,
+                                                               commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        loadedClasses = groovyClassLoader.getLoadedClasses();
+        GroovyClassLoader reloadedClassLoader = ((GroovyScriptEngineImpl) scriptManager.getEngine()).getClassLoader();
+        TestCase.assertNotSame(groovyClassLoader, reloadedClassLoader);
+        loadedClasses = reloadedClassLoader.getLoadedClasses();
         loadedClass = null;
         for (Class clazz : loadedClasses) {
             System.out.println("\"" + clazz.getCanonicalName() + "\"");
@@ -150,8 +145,11 @@ public class TestReloadScript {
             loadedClassesNames.add(clazz.getCanonicalName());
         }
 
-        TestCase.assertEquals(3, loadedClassesNames.size());
+        for (Class<?> oldClass : groovyClassLoader.getLoadedClasses()) {
+            for (Class<?> newClass : loadedClasses) {
+                TestCase.assertNotSame(oldClass, newClass);
+            }
+        }
         TestCase.assertEquals(true, loadedClassesNames.contains("TossCommand"));
     }
-
 }

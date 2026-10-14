@@ -28,27 +28,25 @@
 
 package org.fidonet.binkp.mina2;
 
-import org.apache.mina.core.service.IoService;
-import org.apache.mina.core.service.IoServiceListener;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.fidonet.binkp.common.ServerConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.ServerRole;
-import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
+
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -61,6 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Server extends ServerConnector {
 
     private NioSocketAcceptor acceptor;
+    private final AtomicBoolean stopping = new AtomicBoolean();
     private int port = BINK_PORT;
     private final AtomicInteger userConnected = new AtomicInteger(0);
     private static int MAX_USER_CONNECTED = 30;
@@ -77,72 +76,63 @@ public class Server extends ServerConnector {
 
     @Override
     public void run(final SessionContext context) throws Exception {
+        if (acceptor != null) {
+            throw new IllegalStateException("Server has already been started");
+        }
         acceptor = new NioSocketAcceptor();
         acceptor.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
-        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
-        acceptor.setHandler(new BinkSessionHandler(getEventBus()));
-        acceptor.addListener(new IoServiceListener() {
-            @Override
-            public void serviceActivated(IoService ioService) throws Exception {
-            }
-
-            @Override
-            public void serviceIdle(IoService ioService, IdleStatus idleStatus) throws Exception {
-            }
-
-            @Override
-            public void serviceDeactivated(IoService ioService) throws Exception {
-                Server.this.stop();
-            }
-
+        acceptor.getFilterChain()
+                .addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
+        acceptor.setHandler(new BinkSessionHandler(getEventBus()) {
             @Override
             public void sessionCreated(IoSession session) throws Exception {
                 // got new connection to server
                 SessionContext sessionContext = new SessionContext(context);
-                sessionContext.setBusy(context.isBusy());
+                int connected = userConnected.incrementAndGet();
+                sessionContext.setBusy(context.isBusy() || connected > MAX_USER_CONNECTED);
                 sessionContext.setServerRole(ServerRole.SERVER);
                 session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, sessionContext);
                 session.setAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY, new TrafficCrypter());
-                //session.getRemoteAddress()
-                synchronized (userConnected) {
-                    userConnected.set(userConnected.incrementAndGet());
-                }
-                if (!context.isBusy() && userConnected.get() > MAX_USER_CONNECTED) {
-                    synchronized (context) {
-                        context.setBusy(true);
-                    }
-                }
-            }
-
-            @Override
-            public void sessionDestroyed(IoSession session) throws Exception {
             }
 
             @Override
             public void sessionClosed(IoSession session) throws Exception {
+                super.sessionClosed(session);
                 SessionContext sessionContext = (SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY);
-                if (sessionContext.getState().equals(SessionState.STATE_ERR) ||
-                        sessionContext.getState().equals(SessionState.STATE_BSY)) {
-                    logger.warn("Client close with error: {}", sessionContext.getLastErrorMessage());
+                if (sessionContext == null) {
+                    return;
+                }
+                if (sessionContext.getState() == SessionState.STATE_ERR
+                        || sessionContext.getState() == SessionState.STATE_BSY) {
+                    logger.warn("Client close with error: {}",
+                                sessionContext.getLastErrorMessage());
                 }
                 session.removeAttribute(SessionKeys.SESSION_CONTEXT_KEY);
-                synchronized (userConnected) {
-                    userConnected.set(userConnected.decrementAndGet());
-                }
-                if (context.isBusy() && userConnected.get() < MAX_USER_CONNECTED) {
-                    synchronized (context) {
-                        context.setBusy(false);
-                    }
-                }
+                userConnected.decrementAndGet();
             }
         });
         SocketAddress address = new InetSocketAddress(port);
-        acceptor.bind(address);
+        try {
+            acceptor.bind(address);
+        } catch (Exception failure) {
+            stop();
+            throw failure;
+        }
     }
 
     @Override
     public void stop() {
+        if (acceptor == null || !stopping.compareAndSet(false, true)) {
+            return;
+        }
         acceptor.unbind();
         acceptor.dispose();
+    }
+
+    public int getLocalPort() {
+        if (acceptor == null || !acceptor.isActive()) {
+            throw new IllegalStateException("Server is not listening");
+        }
+        return ((InetSocketAddress) acceptor.getLocalAddress()).getPort();
     }
 }

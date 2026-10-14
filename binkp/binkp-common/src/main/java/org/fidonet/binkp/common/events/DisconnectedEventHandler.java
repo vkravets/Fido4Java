@@ -28,9 +28,10 @@
 
 package org.fidonet.binkp.common.events;
 
+import org.fidonet.events.AbstractEventHandler;
+
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Invoke;
-import org.fidonet.events.AbstractEventHandler;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,5 +46,4 @@ public abstract class DisconnectedEventHandler extends AbstractEventHandler<Disc
     public void handle(DisconnectedEvent event) {
         onEventHandle(event);
     }
-
 }

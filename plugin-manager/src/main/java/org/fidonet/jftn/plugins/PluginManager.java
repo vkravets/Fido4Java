@@ -29,11 +29,19 @@
 package org.fidonet.jftn.plugins;
 
 import org.fidonet.events.HasEventBus;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -57,19 +65,22 @@ public class PluginManager extends HasEventBus {
     private static final Map<String, Plugin> plugins = new HashMap<String, Plugin>();
 
     private PluginManager() {
-
     }
 
     public void loadPlugins() {
-        Iterable<? extends Plugin> plugins = ServiceLoader.load(Plugin.class);
+        loadPlugins(ServiceLoader.load(Plugin.class));
+    }
 
-        // Register all plugins before it's loading 
+    void loadPlugins(Iterable<? extends Plugin> plugins) {
+        // Validate dependencies before exposing a partially registered plugin set.
+        Collection<? extends Plugin> sortedPlugins = sortDependencies(plugins);
+
+        // Register all plugins before loading.
         for (Plugin plugin : plugins) {
             addPlugin(plugin.getPluginInfo().getId(), plugin);
         }
 
-        // sort plugins for loading according to its dependencies 
-        Collection<? extends Plugin> sortedPlugins = sortDependencies(plugins);
+        // Load dependencies before their dependants.
 
         // After loading all plugins, try to init and load it
         for (Plugin plugin : sortedPlugins) {
@@ -80,11 +91,12 @@ public class PluginManager extends HasEventBus {
                 plugin.init(this, getEventBus());
                 plugin.load();
                 logger.info("Plugin {} was successfully loaded", pluginId);
-                logger.debug("Plugin {} loading time is {}ms", pluginId, System.currentTimeMillis() - startTime);
+                logger.debug("Plugin {} loading time is {}ms",
+                             pluginId,
+                             System.currentTimeMillis() - startTime);
             } catch (PluginException e) {
                 logger.error("Unable to load {} plugin", pluginId, e);
             }
-
         }
     }
 
@@ -99,7 +111,9 @@ public class PluginManager extends HasEventBus {
         Set<Plugin> firstPlugins = new LinkedHashSet<>();
         Set<Plugin> pluginsWithDeps = new LinkedHashSet<>();
         for (Plugin plugin : plugins) {
-            Collection<? extends Plugin> dependencies = buildDependencies(plugin, mapPlugins, firstPlugins);
+            Collection<? extends Plugin> dependencies = buildDependencies(plugin,
+                                                                          mapPlugins,
+                                                                          firstPlugins);
             if (!dependencies.isEmpty()) {
                 pluginsWithDeps.addAll(dependencies);
                 pluginsWithDeps.add(plugin);
@@ -113,20 +127,46 @@ public class PluginManager extends HasEventBus {
         return result;
     }
 
-    private Collection<? extends Plugin> buildDependencies(Plugin plugin, Map<String, Plugin> pluginMap, Set<Plugin> firstPlugins) {
-        LinkedHashSet<Plugin> result = new LinkedHashSet<>();
-        List<String> dependencies = plugin.getPluginInfo().getDependencies();
-        for (String dependency : dependencies) {
-            Plugin depPlugin = pluginMap.get(dependency);
-            Collection<? extends Plugin> depPlugins = buildDependencies(depPlugin, pluginMap, firstPlugins);
-            if (!depPlugins.isEmpty()) {
-                result.addAll(depPlugins);
-                result.add(depPlugin);
-            } else {
-                firstPlugins.add(depPlugin);
-            }
+    private Collection<? extends Plugin> buildDependencies(Plugin plugin,
+                                                           Map<String, Plugin> pluginMap,
+                                                           Set<Plugin> firstPlugins) {
+        return buildDependencies(plugin, pluginMap, firstPlugins, new HashSet<>());
+    }
+
+    private Collection<? extends Plugin> buildDependencies(Plugin plugin,
+                                                           Map<String, Plugin> pluginMap,
+                                                           Set<Plugin> firstPlugins,
+                                                           Set<String> visiting) {
+        String id = plugin.getPluginInfo().getId();
+        if (!visiting.add(id)) {
+            throw new IllegalArgumentException("Circular plugin dependency: " + id);
         }
-        return result;
+        try {
+            LinkedHashSet<Plugin> result = new LinkedHashSet<>();
+            List<String> dependencies = plugin.getPluginInfo().getDependencies();
+            for (String dependency : dependencies) {
+                Plugin depPlugin = pluginMap.get(dependency);
+                if (depPlugin == null) {
+                    throw new IllegalArgumentException("Missing dependency "
+                                                       + dependency
+                                                       + " for plugin "
+                                                       + id);
+                }
+                Collection<? extends Plugin> depPlugins = buildDependencies(depPlugin,
+                                                                            pluginMap,
+                                                                            firstPlugins,
+                                                                            visiting);
+                if (!depPlugins.isEmpty()) {
+                    result.addAll(depPlugins);
+                    result.add(depPlugin);
+                } else {
+                    firstPlugins.add(depPlugin);
+                }
+            }
+            return result;
+        } finally {
+            visiting.remove(id);
+        }
     }
 
     public void unloadPlugins() {
@@ -155,7 +195,9 @@ public class PluginManager extends HasEventBus {
 
     public <T> WeakReference<T> getContext(String id) throws PluginException {
         Plugin plugin = plugins.get(id);
-        if (plugin == null) throw new PluginException("Plugin \"" + id + "\" is not found or is not loaded");
+        if (plugin == null) {
+            throw new PluginException("Plugin \"" + id + "\" is not found or is not loaded");
+        }
         WeakReference<T> context = (WeakReference<T>) plugin.getContext();
         return context;
     }

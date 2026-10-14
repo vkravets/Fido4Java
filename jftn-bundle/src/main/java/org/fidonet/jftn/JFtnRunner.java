@@ -32,8 +32,8 @@ import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.binkp.netty.plugin.NettyPlugin;
+import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.plugins.PluginManager;
@@ -41,110 +41,151 @@ import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 public class JFtnRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(JFtnRunner.class.getName());
-    private static Boolean keepRun = true;
 
     private static void Help() {
-//        System.out.println("java ftn usage:");
-//        System.out.println("jftn <action>:");
-//        System.out.println("    help - show this help");
-//        System.out.println("    toss - toss incoming echomail");
+        //        System.out.println("java ftn usage:");
+        //        System.out.println("jftn <action>:");
+        //        System.out.println("    help - show this help");
+        //        System.out.println("    toss - toss incoming echomail");
     }
 
     public static void main(String[] args) throws Exception {
 
         logger.info("Starting JFtnNode...");
         final long starttime = System.currentTimeMillis();
-        JFtnConfig config = new JFtnConfig();
+        final PluginManager pluginManager = PluginManager.getInstance();
         try {
-            config.load("jftn.conf");
+            withShutdownHook(waiter -> runApplication("jftn.conf",
+                                                      pluginManager::loadPlugins,
+                                                      pluginManager::getContext,
+                                                      pluginManager::unloadPlugins,
+                                                      waiter));
         } catch (ParseConfigException e) {
             logger.error("Error during parsing config.", e);
             System.exit(1);
         }
+        logger.debug("Finish working (time: {} sec)",
+                     (System.currentTimeMillis() - starttime) / 1000.0);
+    }
 
-        final PluginManager pluginManager = PluginManager.getInstance();
-        pluginManager.loadPlugins();
+    interface PluginContexts {
+        WeakReference<?> getContext(String name) throws Exception;
+    }
 
-        final WeakReference<Runner> binkpRunner = pluginManager.getContext(NettyPlugin.BINKP_PLUGIN_ID);
-        LinksInfo linksInfo = new LinksInfo(new ArrayList<Link>());
-        linksInfo.getLinks().add(new Link(FTNAddr.valueOf("2:467/70.0"),
-                new LinkedList<FTNAddr>() {
-                    {
-                        add(FTNAddr.valueOf("2:467/1313.0"));
-                        add(FTNAddr.valueOf("2:467/70.113"));
-                    }
-                },
-                "mypassword",
-                "f70n467.asuscomm.com",
-                24554));
-        final SessionContext binkpSession = new SessionContext(new StationConfig("Sly's Home", "Vladimir Kravets", "Ukraine, Odessa", "BINKP", "2:467/1313.0"), linksInfo);
-        final Runner runner = binkpRunner.get();
-        if (runner == null) {
-            logger.error("Unable to load binkp plugin", new RuntimeException("Unable to load binkp plugin"));
-            System.exit(1);
+    static void runApplication(String configFile,
+                               Runnable loadPlugins,
+                               PluginContexts plugins,
+                               Runnable unloadPlugins,
+                               ShutdownWaiter waiter)
+            throws Exception {
+        JFtnConfig config = new JFtnConfig();
+        config.load(configFile);
+        Runner runner;
+        Scheduler scheduler;
+        SessionContext context;
+        try {
+            loadPlugins.run();
+            runner = Runner.class.cast(requireContext(plugins.getContext(NettyPlugin.BINKP_PLUGIN_ID),
+                                                      "binkp"));
+            scheduler = Scheduler.class.cast(requireContext(plugins.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID),
+                                                            "scheduler"));
+            context = createSessionContext(config);
+        } catch (Exception failure) {
+            unloadPlugins.run();
+            throw failure;
         }
-        runner.bindServer(binkpSession, Connector.BINK_PORT);
+        runNode(runner, scheduler, context, Connector.BINK_PORT, waiter, unloadPlugins);
+    }
 
-        WeakReference<Scheduler> scheduler = pluginManager.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID);
-        Scheduler schedulerObject = scheduler.get();
-        if (schedulerObject == null) {
-            logger.error("Unable to load scheduler plugin", new RuntimeException("Unable to load schedular plugin"));
-            System.exit(1);
+    static SessionContext createSessionContext(JFtnConfig config) {
+        List<Link> links = new ArrayList<>();
+        Set<String> addresses = new LinkedHashSet<>();
+        for (String value : config.getValuesAsList("Link")) {
+            Link link = new Link(value);
+            links.add(link);
+            for (FTNAddr address : link.getMyaddr()) {
+                addresses.add(address.toString());
+            }
         }
-        schedulerObject.start();
-        schedulerObject.schedule("*/10 * * * *", new Runnable() {
-            @Override
-            public void run() {
-                poolLinks(binkpSession, runner);
+        StationConfig station = new StationConfig(config.getValue("System", "JFtn"),
+                                                  config.getValue("SysOp"),
+                                                  config.getValue("Location", ""),
+                                                  config.getValue("NDL", "BINKP"),
+                                                  String.join(" ", addresses));
+        return new SessionContext(station, new LinksInfo(links));
+    }
+
+    interface ApplicationTask {
+        void run(ShutdownWaiter waiter) throws Exception;
+    }
+
+    static void withShutdownHook(ApplicationTask task) throws Exception {
+        CountDownLatch stopRequested = new CountDownLatch(1);
+        CountDownLatch stopped = new CountDownLatch(1);
+        Thread hook = new Thread(() -> {
+            stopRequested.countDown();
+            try {
+                stopped.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        }, true);
-
-        final Thread mainThread = Thread.currentThread();
-
-        // locked thread
-        final Thread lockThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (keepRun) {
-                    logger.debug("It's alive!");
-                    try {
-                        Thread.sleep(300000); // every 5 min
-                    } catch (InterruptedException ignored) {
-                        break;
-                    }
-                }
+        }, "jftn-shutdown");
+        Runtime.getRuntime().addShutdownHook(hook);
+        try {
+            task.run(stopRequested::await);
+        } finally {
+            stopped.countDown();
+            try {
+                Runtime.getRuntime().removeShutdownHook(hook);
+            } catch (IllegalStateException shutdownInProgress) {
             }
-        });
-        lockThread.setDaemon(true);
-        lockThread.start();
+        }
+    }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    pluginManager.unloadPlugins();
-                    lockThread.interrupt();
-                    mainThread.join();
-                } catch (InterruptedException ignored) {
+    static <T> T requireContext(WeakReference<T> context, String name) {
+        T service = context == null ? null : context.get();
+        if (service == null) {
+            throw new IllegalStateException("Unable to load " + name + " plugin");
+        }
+        return service;
+    }
 
-                }
-                logger.debug("Finish working (time: {} sec)", (int) (System.currentTimeMillis() - starttime) / 1000.0);
-                keepRun = false;
-            }
-        }));
+    interface ShutdownWaiter {
+        void await() throws InterruptedException;
+    }
 
-
-        lockThread.join();
+    static void runNode(Runner runner,
+                        Scheduler scheduler,
+                        SessionContext context,
+                        int port,
+                        ShutdownWaiter waitForShutdown,
+                        Runnable shutdown)
+            throws InterruptedException {
+        try {
+            runner.bindServer(context, port);
+            scheduler.start();
+            scheduler.schedule("*/10 * * * *", () -> poolLinks(context, runner), true);
+            waitForShutdown.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } finally {
+            shutdown.run();
+        }
     }
 
     public static void poolLinks(SessionContext binkpSession, Runner runner) {

@@ -53,7 +53,10 @@ public class SchedulerPlugin implements Plugin<Scheduler> {
 
     @Override
     public PluginInformation getPluginInfo() {
-        return new PluginInformation(SCHEDULER_PLUGIN_ID, 1, 0, "Cron-like scheduler functionality plugin");
+        return new PluginInformation(SCHEDULER_PLUGIN_ID,
+                                     1,
+                                     0,
+                                     "Cron-like scheduler functionality plugin");
     }
 
     @Override
@@ -72,7 +75,9 @@ public class SchedulerPlugin implements Plugin<Scheduler> {
             scheduler.stop();
         }
         scheduler = null;
-        context.clear();
+        if (context != null) {
+            context.clear();
+        }
     }
 
     @Override

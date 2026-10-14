@@ -29,7 +29,25 @@
 package org.fidonet.binkp.common.commands.share;
 
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.commands.*;
+import org.fidonet.binkp.common.commands.ADRCommand;
+import org.fidonet.binkp.common.commands.BSYCommand;
+import org.fidonet.binkp.common.commands.EOBCommand;
+import org.fidonet.binkp.common.commands.ERRCommand;
+import org.fidonet.binkp.common.commands.FILECommand;
+import org.fidonet.binkp.common.commands.GETCommand;
+import org.fidonet.binkp.common.commands.GOTCommand;
+import org.fidonet.binkp.common.commands.LOCCommand;
+import org.fidonet.binkp.common.commands.LogCommand;
+import org.fidonet.binkp.common.commands.NDLCommand;
+import org.fidonet.binkp.common.commands.OKCommand;
+import org.fidonet.binkp.common.commands.OPTCommand;
+import org.fidonet.binkp.common.commands.PWDCommand;
+import org.fidonet.binkp.common.commands.SKIPCommand;
+import org.fidonet.binkp.common.commands.SYSCommand;
+import org.fidonet.binkp.common.commands.TIMECommand;
+import org.fidonet.binkp.common.commands.TRFCommand;
+import org.fidonet.binkp.common.commands.VERCommand;
+import org.fidonet.binkp.common.commands.ZYZCommand;
 import org.fidonet.binkp.common.io.BinkData;
 
 import java.io.IOException;
@@ -47,17 +65,20 @@ public class CommandFactory {
 
     private List<Command> commands;
 
-    public Command createCommand(SessionContext sessionContext, BinkData data) throws IOException, UnknownCommandException {
+    public Command createCommand(SessionContext sessionContext, BinkData data)
+            throws IOException, UnknownCommandException {
         if (data.isCommand()) {
             String argsStr = new String(data.getData());
             BinkCommand command = BinkCommand.findCommand(data.getCommand());
-            if (command != null)
+            if (command != null) {
                 return createCommand(sessionContext, command, argsStr);
+            }
         }
         return null;
     }
 
-    public Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args) throws UnknownCommandException {
+    public Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args)
+            throws UnknownCommandException {
         for (Command command : getCommandsList()) {
             if (command.isHandle(sessionContext, cmd, args)) {
                 return command;

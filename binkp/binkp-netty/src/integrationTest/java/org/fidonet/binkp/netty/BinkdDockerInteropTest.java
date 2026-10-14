@@ -10,7 +10,8 @@ public class BinkdDockerInteropTest extends AbstractBinkdInteropTest {
         super(role, requestNr);
     }
 
-    @Override protected JftnPeer createPeer(ServerRole role, boolean requestNr, ExchangeFiles files) {
+    @Override
+    protected JftnPeer createPeer(ServerRole role, boolean requestNr, ExchangeFiles files) {
         return new JftnTestPeer(role, requestNr, files);
     }
 }

@@ -52,7 +52,8 @@ public abstract class NULCommand extends MessageCommand {
 
     protected abstract String getArguments(SessionContext sessionContext);
 
-    protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
     }
 
     @Override
@@ -70,7 +71,8 @@ public abstract class NULCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         String args = "";
         if (getPrefix() != null) {
             String safePrefix = Pattern.quote(getPrefix());

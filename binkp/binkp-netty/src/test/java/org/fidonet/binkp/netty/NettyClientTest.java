@@ -28,9 +28,6 @@
 
 package org.fidonet.binkp.netty;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.embedded.EmbeddedChannel;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -38,7 +35,12 @@ import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.common.events.*;
+import org.fidonet.binkp.common.events.ConnectedEvent;
+import org.fidonet.binkp.common.events.ConnectedEventHandler;
+import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.events.DisconnectedEventHandler;
+import org.fidonet.binkp.common.events.FileReceivedEvent;
+import org.fidonet.binkp.common.events.FileReceivedEventHandler;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
 import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
@@ -49,6 +51,10 @@ import org.fidonet.events.EventHandler;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -72,24 +78,22 @@ public class NettyClientTest extends HasEventBus {
 
     @Before
     public void setUp() throws Exception {
-        final StationConfig config = new StationConfig("Test Station", "Vasya Pupkin", "Odessa, Ukraine", "BINKP", "2:467/110.113");
+        final StationConfig config = new StationConfig("Test Station",
+                                                       "Vasya Pupkin",
+                                                       "Odessa, Ukraine",
+                                                       "BINKP",
+                                                       "2:467/110.113");
         config.setCryptMode(true);
         final FTNAddr node = new FTNAddr("2:467/110");
-        LinksInfo linksInfo = new LinksInfo(
-                new LinkedList<Link>() {
+        LinksInfo linksInfo = new LinksInfo(new LinkedList<Link>() {
+            {
+                add(new Link(node, new LinkedList<FTNAddr>() {
                     {
-                        add(new Link(node,
-                                        new LinkedList<FTNAddr>() {
-                                            {
-                                                add(new FTNAddr("2:467/110.113"));
-                                            }
-                                        },
-                                        "pass_i_f", "localhost", 24554
-                                ).withMD(true)
-                        );
+                        add(new FTNAddr("2:467/110.113"));
                     }
-                }
-        );
+                }, "pass_i_f", "localhost", 24554).withMD(true));
+            }
+        });
         linksInfo.setCurLink(node);
         sessionContext = new SessionContext(config, linksInfo);
     }
@@ -109,10 +113,11 @@ public class NettyClientTest extends HasEventBus {
             session = new EmbeddedChannel();
             BinkDataDecoder decoder = new BinkDataDecoder();
             decoder.setSingleDecode(true);
-            session.pipeline().addLast(new TrafficCrypterCodec())
-                    .addLast(decoder)
-                    .addLast(new BinkDataEncoder())
-                    .addLast(new BinkSessionHandler(sessionContext, getEventBus()));
+            session.pipeline()
+                   .addLast(new TrafficCrypterCodec())
+                   .addLast(decoder)
+                   .addLast(new BinkDataEncoder())
+                   .addLast(new BinkSessionHandler(sessionContext, getEventBus()));
             sessionContext.setState(SessionState.STATE_IDLE);
             session.attr(SessionKeys.SESSION_CONTEXT_KEY).set(sessionContext);
             session.attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
@@ -147,7 +152,8 @@ public class NettyClientTest extends HasEventBus {
         public void run() {
             try {
                 run(sessionContext);
-                try (InputStream recvRawData = ClientMock.class.getClassLoader().getResourceAsStream("recv_stream.bin")) {
+                try (InputStream recvRawData = ClientMock.class.getClassLoader()
+                                                               .getResourceAsStream("recv_stream.bin")) {
                     ClientMock.this.writeStreamToSession(recvRawData);
                 }
             } catch (Exception e) {
@@ -209,11 +215,11 @@ public class NettyClientTest extends HasEventBus {
                 FileInfo expectedInfo = new FileInfo("0000FF8F.WE5", 766, 1348664500L);
                 Assert.assertEquals(expectedInfo, event.getFile().getInfo());
                 Assert.assertEquals(true, event.getFile().getInfo().isFinished());
-                ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile().getStream();
+                ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile()
+                                                                               .getStream();
                 Assert.assertEquals(766, outStream.toByteArray().length);
             }
         };
         client.registerEvent(fileReceivedEventHandler);
     }
-
 }

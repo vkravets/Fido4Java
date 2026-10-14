@@ -62,24 +62,25 @@ public class FtsPkt {
     private int destZone;
     private int origPoint;
     private int destPoint;
-    private byte[] achData; //4!!!
+    private byte[] achData; // 4!!!
     private FtsPackMsg[] ftsMsgs;
 
     private FTNAddr origaddr;
 
     public FtsPkt() {
-
     }
 
     public FtsPkt(ByteBuffer x) {
         x.order(ByteOrder.LITTLE_ENDIAN);
-        if (x.remaining() < 60) throw new IllegalArgumentException("Truncated packet header or missing terminator");
-//        final ByteBuffer x = ByteBuffer.allocate(arr.length);
-//        x.put(arr);
-//        x.rewind();
-//        x.order(ByteOrder.LITTLE_ENDIAN);
-        origNode = x.getShort();
-        destNode = x.getShort();
+        if (x.remaining() < 60) {
+            throw new IllegalArgumentException("Truncated packet header or missing terminator");
+        }
+        //        final ByteBuffer x = ByteBuffer.allocate(arr.length);
+        //        x.put(arr);
+        //        x.rewind();
+        //        x.order(ByteOrder.LITTLE_ENDIAN);
+        origNode = Short.toUnsignedInt(x.getShort());
+        destNode = Short.toUnsignedInt(x.getShort());
         year = x.getShort();
         month = x.getShort();
         day = x.getShort();
@@ -88,65 +89,83 @@ public class FtsPkt {
         sec = x.getShort();
         boud = x.getShort();
         type = x.getShort();
-        origNet = x.getShort();
-        destNet = x.getShort();
+        origNet = Short.toUnsignedInt(x.getShort());
+        destNet = Short.toUnsignedInt(x.getShort());
         prodCodeLow = x.get();
         prodCodeMaj = x.get();
         byte[] tmp = new byte[8];
         x.get(tmp, 0, 8);
         int passwordLength = 0;
-        while (passwordLength < tmp.length && tmp[passwordLength] != 0) passwordLength++;
+        while (passwordLength < tmp.length && tmp[passwordLength] != 0) {
+            passwordLength++;
+        }
         pass = new String(tmp, 0, passwordLength, StandardCharsets.US_ASCII);
-        origZone0 = x.getShort();
-        destZone0 = x.getShort();
-        auxNet = x.getShort();
+        origZone0 = Short.toUnsignedInt(x.getShort());
+        destZone0 = Short.toUnsignedInt(x.getShort());
+        auxNet = Short.toUnsignedInt(x.getShort());
         capWordCopy = x.getShort();
         prodCodeH = x.get();
         prodCodeMin = x.get();
         capWord = x.getShort();
-        origZone = x.getShort();
-        destZone = x.getShort();
+        origZone = Short.toUnsignedInt(x.getShort());
+        destZone = Short.toUnsignedInt(x.getShort());
         origPoint = x.getShort();
         destPoint = x.getShort();
         tmp = new byte[4];
         x.get(tmp, 0, 4);
         achData = tmp;
-        if (type != 2) throw new IllegalArgumentException("Unsupported packet type: " + type);
-        boolean extended = Short.toUnsignedInt((short)capWordCopy) == Short.toUnsignedInt(Short.reverseBytes((short)capWord)) && (capWord & 1) != 0;
+        if (type != 2) {
+            throw new IllegalArgumentException("Unsupported packet type: " + type);
+        }
+        boolean extended = Short.toUnsignedInt((short) capWordCopy) == Short.toUnsignedInt(Short.reverseBytes((short) capWord))
+                && (capWord & 1) != 0;
         if (extended) {
-            origPoint = Short.toUnsignedInt((short)origPoint);
-            destPoint = Short.toUnsignedInt((short)destPoint);
-            if (origPoint != 0 && origNet == -1) origNet = Short.toUnsignedInt((short)auxNet);
-            if (origZone == 0) origZone = origZone0;
-            if (destZone == 0) destZone = destZone0;
+            origPoint = Short.toUnsignedInt((short) origPoint);
+            destPoint = Short.toUnsignedInt((short) destPoint);
+            if (origPoint != 0 && origNet == 0xffff) {
+                origNet = auxNet;
+            }
+            if (origZone == 0) {
+                origZone = origZone0;
+            }
+            if (destZone == 0) {
+                destZone = destZone0;
+            }
         } else {
-            origZone = origZone0; destZone = destZone0;
-            origPoint = 0; destPoint = 0;
+            origZone = origZone0;
+            destZone = destZone0;
+            origPoint = 0;
+            destPoint = 0;
         }
         ftsMsgs = getMsgPack(x);
         origaddr = new FTNAddr(origZone, origNet, origNode, origPoint);
     }
 
     private static FtsPackMsg[] getMsgPack(ByteBuffer b) {
-        //final Vector<ftsPackMsg> tmp = new Vector<ftsPackMsg>(5);
+        // final Vector<ftsPackMsg> tmp = new Vector<ftsPackMsg>(5);
         LinkedList<FtsPackMsg> tmp = new LinkedList<FtsPackMsg>();
 
         boolean terminated = false;
         while (b.remaining() >= 2) {
             if (b.getShort(b.position()) == 0) {
-                b.getShort(); terminated = true; break;
+                b.getShort();
+                terminated = true;
+                break;
             }
             final FtsPackMsg m = new FtsPackMsg(b);
-            if (!m.isValid()) throw new IllegalArgumentException("Invalid packed message type");
+            if (!m.isValid()) {
+                throw new IllegalArgumentException("Invalid packed message type");
+            }
             tmp.add(m);
         }
-        if (!terminated || b.hasRemaining()) throw new IllegalArgumentException("Invalid packet terminator");
+        if (!terminated || b.hasRemaining()) {
+            throw new IllegalArgumentException("Invalid packet terminator");
+        }
         FtsPackMsg[] result = new FtsPackMsg[tmp.size()];
 
         result = tmp.toArray(result);
         return result;
     }
-
 
     public byte[] getAchData() {
         return achData.clone();

@@ -71,7 +71,8 @@ public class LinksInfo {
     }
 
     public void setLinks(List<Link> links) {
-        if (links != null)
+        if (links != null) {
             this.links = links;
+        }
     }
 }

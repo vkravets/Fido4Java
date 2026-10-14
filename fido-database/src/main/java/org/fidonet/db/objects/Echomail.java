@@ -28,14 +28,15 @@
 
 package org.fidonet.db.objects;
 
-import com.j256.ormlite.field.DataType;
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
 import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
+
+import com.j256.ormlite.field.DataType;
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -65,7 +66,6 @@ public class Echomail {
     public static final String PATH_COLUMN = "path";
     public static final String ATTR_COLUMN = "attr";
     public static final String ORIGIN_COLUMN = "origin";
-
 
     @DatabaseField(generatedId = true, allowGeneratedIdInsert = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
@@ -232,22 +232,28 @@ public class Echomail {
     public static Message toMessage(Echomail echomail) {
         String text = echomail.getText() == null ? "" : echomail.getText();
         String areaName = echomail.getArea() == null ? null : echomail.getArea().getName();
-        if (areaName != null && !text.startsWith("AREA:")) text = "AREA:" + areaName + "\r" + text;
+        if (areaName != null && !text.startsWith("AREA:")) {
+            text = "AREA:" + areaName + "\r" + text;
+        }
         if (echomail.getMsgId() != null && !text.contains("\1MSGID:")) {
             int areaEnd = text.startsWith("AREA:") ? text.indexOf('\r') + 1 : 0;
-            text = text.substring(0, areaEnd) + "\1MSGID: " + echomail.getMsgId() + "\r" + text.substring(areaEnd);
+            text = text.substring(0, areaEnd)
+                   + "\1MSGID: "
+                   + echomail.getMsgId()
+                   + "\r"
+                   + text.substring(areaEnd);
         }
         FTNAddr toAddr = null;
         if (echomail.getToAddr() != null) {
             toAddr = new FTNAddr(echomail.getToAddr());
         }
         Message message = new Message(echomail.getFromName(),
-                echomail.getToName(),
-                new FTNAddr(echomail.getFromAddr()),
-                toAddr,
-                echomail.getSubject(),
-                text,
-                echomail.getDate());
+                                      echomail.getToName(),
+                                      new FTNAddr(echomail.getFromAddr()),
+                                      toAddr,
+                                      echomail.getSubject(),
+                                      text,
+                                      echomail.getDate());
         message.getBody().setOrigin(echomail.getOrigin());
         // FIXME: default zone
         int zone = message.getFAddr().getZone();
@@ -259,12 +265,14 @@ public class Echomail {
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
-        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss", new Locale("en", "US"));
+        SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss",
+                                                                   new Locale("en", "US"));
         Date msgDate = dateFormat.parse(message.getMsgDate());
         msg.setDate(msgDate);
         msg.setFromAddr(message.getFAddr().as5D());
-        if (message.getTAddr() != null)
+        if (message.getTAddr() != null) {
             msg.setToAddr(message.getTAddr().as5D());
+        }
         msg.setMsgId(message.getMsgId());
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
@@ -275,5 +283,4 @@ public class Echomail {
         msg.setPath(message.getBody().getPath().toString());
         return msg;
     }
-
 }

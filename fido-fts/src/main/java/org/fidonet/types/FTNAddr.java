@@ -104,7 +104,6 @@ public class FTNAddr implements Comparable<FTNAddr> {
         return toString();
     }
 
-
     public String toHex() {
         String hexnet = String.format("%04x", net);
         String hexnode = String.format("%04x", node);
@@ -117,15 +116,27 @@ public class FTNAddr implements Comparable<FTNAddr> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FTNAddr addr = (FTNAddr) o;
 
-        if (net != null ? !net.equals(addr.net) : addr.net != null) return false;
-        if (node != null ? !node.equals(addr.node) : addr.node != null) return false;
-        if (pnt != null ? !pnt.equals(addr.pnt) : addr.pnt != null) return false;
-        if (zone != null ? !zone.equals(addr.zone) : addr.zone != null) return false;
+        if (net != null ? !net.equals(addr.net) : addr.net != null) {
+            return false;
+        }
+        if (node != null ? !node.equals(addr.node) : addr.node != null) {
+            return false;
+        }
+        if (pnt != null ? !pnt.equals(addr.pnt) : addr.pnt != null) {
+            return false;
+        }
+        if (zone != null ? !zone.equals(addr.zone) : addr.zone != null) {
+            return false;
+        }
 
         return true;
     }
@@ -175,6 +186,4 @@ public class FTNAddr implements Comparable<FTNAddr> {
     public static FTNAddr valueOf(String addr) {
         return new FTNAddr(addr);
     }
-
-
 }

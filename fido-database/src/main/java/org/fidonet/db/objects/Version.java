@@ -69,5 +69,4 @@ public class Version {
     public void setVersion(Long version) {
         this.version = version;
     }
-
 }

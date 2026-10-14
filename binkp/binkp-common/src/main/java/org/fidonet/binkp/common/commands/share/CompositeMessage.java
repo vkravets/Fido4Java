@@ -31,6 +31,7 @@ package org.fidonet.binkp.common.commands.share;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.protocol.Session;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

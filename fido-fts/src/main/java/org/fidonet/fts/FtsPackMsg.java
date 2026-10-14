@@ -29,6 +29,7 @@
 package org.fidonet.fts;
 
 import org.fidonet.tools.CharsetTools;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,12 +60,13 @@ public class FtsPackMsg {
     private boolean isValid = true;
 
     public FtsPackMsg() {
-
     }
 
     public FtsPackMsg(ByteBuffer buf) {
         buf.order(ByteOrder.LITTLE_ENDIAN);
-        if (buf.remaining() < 34) throw new IllegalArgumentException("Truncated packed message header");
+        if (buf.remaining() < 34) {
+            throw new IllegalArgumentException("Truncated packed message header");
+        }
         type = buf.getShort();
         if (type != 2) {
             logger.debug("Seems like not a packet!");
@@ -94,11 +96,15 @@ public class FtsPackMsg {
     private static byte[] readString(ByteBuffer buf, int maxBytes) {
         int start = buf.position();
         while (buf.hasRemaining()) {
-            if (buf.position() - start >= maxBytes) throw new IllegalArgumentException("Packed message field exceeds its maximum size");
+            if (buf.position() - start >= maxBytes) {
+                throw new IllegalArgumentException("Packed message field exceeds its maximum size");
+            }
             if (buf.get() == 0) {
                 int end = buf.position();
                 byte[] value = new byte[end - start - 1];
-                buf.position(start); buf.get(value); buf.position(end);
+                buf.position(start);
+                buf.get(value);
+                buf.position(end);
                 return value;
             }
         }
@@ -107,8 +113,10 @@ public class FtsPackMsg {
 
     public static Charset detectCharset(byte[] text) {
         Matcher matcher = Pattern.compile("(?:^|\\r)\\n?\\u0001(?:CHRS|CHARSET):\\s*([^\\s\\r]+)")
-                .matcher(new String(text, StandardCharsets.ISO_8859_1));
-        return CharsetTools.charsetDetect(matcher.find() ? matcher.group(1) : CharsetTools.DEFAULT_ENCODING);
+                                 .matcher(new String(text, StandardCharsets.ISO_8859_1));
+        return CharsetTools.charsetDetect(matcher.find()
+                ? matcher.group(1)
+                : CharsetTools.DEFAULT_ENCODING);
     }
 
     public boolean isValid() {

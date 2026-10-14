@@ -39,11 +39,12 @@ import org.fidonet.jftn.tools.SafeSimpleDateFormat;
 import org.fidonet.misc.MyCRC;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,8 +80,11 @@ public class JAMEchoBase implements EchoBase {
         this.echoList = echoList;
     }
 
-    void setFileNames(String name) {
+    void setFileNames(String name) throws EchoBaseException {
         EchoCfg echo = echoList.getEcho(name);
+        if (echo == null) {
+            throw new EchoBaseException("Unknown area: " + name);
+        }
         headerfilename = echo.Path + ".jhr";
         textfilename = echo.Path + ".jdt";
         indexfilename = echo.Path + ".jdx";
@@ -103,11 +107,11 @@ public class JAMEchoBase implements EchoBase {
             indexfile.createNewFile();
             lastrfile.createNewFile();
         } catch (IOException e) {
-            throw new EchoBaseException("Unable to create " + name + "area");
+            throw new EchoBaseException("Unable to create " + name + " area", e);
         }
 
         FixedHeaderInfoStruct hdr = new FixedHeaderInfoStruct();
-        hdr.setDatecreated((int) System.currentTimeMillis() / 1000);
+        hdr.setDatecreated((int) (System.currentTimeMillis() / 1000L));
         hdr.setActivemsg(0);
         hdr.setBasemsgnum(1);
         hdr.setModcounter(1);
@@ -152,15 +156,22 @@ public class JAMEchoBase implements EchoBase {
         lastread = null;
         IOException failure = null;
         for (Closeable file : files) {
-            if (file == null) continue;
+            if (file == null) {
+                continue;
+            }
             try {
                 file.close();
             } catch (IOException e) {
-                if (failure == null) failure = e;
-                else failure.addSuppressed(e);
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
             }
         }
-        if (failure != null) throw new EchoBaseException(failure.getMessage(), failure);
+        if (failure != null) {
+            throw new EchoBaseException(failure.getMessage(), failure);
+        }
     }
 
     @Override
@@ -169,7 +180,7 @@ public class JAMEchoBase implements EchoBase {
         try {
             shiftoflast = index.getLastMessageShift();
         } catch (IOException e) {
-            shiftoflast = 0;
+            throw new EchoBaseException("Unable to read JAM index", e);
         }
         int mesnum;
         MessageHeader msgheader = null;
@@ -180,8 +191,9 @@ public class JAMEchoBase implements EchoBase {
         }
         if (msgheader == null) {
             mesnum = 0;
-        } else
+        } else {
             mesnum = msgheader.MessageNumber;
+        }
 
         MessageHeader newmsg = new MessageHeader();
         newmsg.MessageNumber = mesnum + 1;
@@ -195,7 +207,9 @@ public class JAMEchoBase implements EchoBase {
         newmsg.MSGIDcrc = MyCRC.CRC(MSGID.getBytes());
 
         String REPLY = msg.getBody().getKludges().get("REPLY");
-        if (REPLY != null) newmsg.REPLYcrc = MyCRC.CRC(REPLY.getBytes());
+        if (REPLY != null) {
+            newmsg.REPLYcrc = MyCRC.CRC(REPLY.getBytes());
+        }
 
         newmsg.Attribute |= 0x01000000; // MSG_TYPEECHO
 
@@ -209,7 +223,7 @@ public class JAMEchoBase implements EchoBase {
         }
 
         newmsg.DateWritten = (int) (date.getTime() / 1000L);
-        newmsg.DateReceived = 0; //(int) (System.currentTimeMillis() / 1000L);
+        newmsg.DateReceived = 0; // (int) (System.currentTimeMillis() / 1000L);
         newmsg.DateProcessed = (int) (System.currentTimeMillis() / 1000L);
         newmsg.PasswordCRC = 0xFFFFFFFF;
 
@@ -225,7 +239,7 @@ public class JAMEchoBase implements EchoBase {
         ToName.datalen = ToName.buffer.length;
         newmsg.SubFieldList.add(ToName);
 
-/*        SubField FromAdd = new SubField();
+        /*        SubField FromAdd = new SubField();
         FromAdd.LoID = 0;
         FromAdd.Buffer = msg.getFAddr().toString().getBytes();
         FromAdd.datalen = FromAdd.Buffer.length;
@@ -236,7 +250,6 @@ public class JAMEchoBase implements EchoBase {
         Subject.buffer = msg.getSubject().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
         Subject.datalen = Subject.buffer.length;
         newmsg.SubFieldList.add(Subject);
-
 
         if (msg.getTAddr() != null) {
             SubField ToAdd = new SubField();
@@ -276,9 +289,7 @@ public class JAMEchoBase implements EchoBase {
                 tid.datalen = tid.buffer.length;
                 newmsg.SubFieldList.add(tid);
             }
-
         }
-
 
         SubField path = new SubField();
         path.loID = 2002;
@@ -290,12 +301,14 @@ public class JAMEchoBase implements EchoBase {
         SubField seen = new SubField();
         seen.loID = 2001;
         seen.buffer = msg.getBody().getSeenBy().toSeenByString().getBytes();
-        
+
         seen.datalen = seen.buffer.length;
         newmsg.SubFieldList.add(seen);
         newmsg.SubfieldLen = newmsg.getSubLen();
 
-        byte[] msgtext = msg.getBody().toString().getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
+        byte[] msgtext = msg.getBody()
+                            .toString()
+                            .getBytes(Charset.forName(CharsetTools.DEFAULT_ENCODING));
 
         newmsg.TxtLen = msgtext.length;
         int headeroffset = 0;
@@ -314,12 +327,10 @@ public class JAMEchoBase implements EchoBase {
 
     @Override
     public void delMessage(int id) throws EchoBaseException {
-
     }
 
     @Override
     public void getMessage(int id) throws EchoBaseException {
-
     }
 
     boolean isExists() {

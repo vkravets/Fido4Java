@@ -45,5 +45,4 @@ public class FileReceivedEvent extends FileEvent<OutputStream> {
     public FileReceivedEvent(SessionContext sessionContext, FileData<OutputStream> file) {
         super(sessionContext, file);
     }
-
 }

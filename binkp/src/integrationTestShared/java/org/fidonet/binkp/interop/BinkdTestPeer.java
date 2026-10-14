@@ -1,11 +1,15 @@
 package org.fidonet.binkp.interop;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.images.builder.Transferable;
+
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,9 +17,11 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /** Owns the external process, container files and container diagnostics. */
 final class BinkdTestPeer implements AutoCloseable {
@@ -29,11 +35,13 @@ final class BinkdTestPeer implements AutoCloseable {
     BinkdTestPeer(ExchangeFiles files) {
         this.files = files;
         // Image building and Docker access are deferred until start().
-        container = new GenericContainer<>(new ImageFromDockerfile()
-                .withFileFromClasspath("Dockerfile", "binkd/Dockerfile"))
-                .withCopyToContainer(Transferable.of(files.toJftn, 0644), "/data/outbox/" + ExchangeFiles.FROM_BINKD)
-                .withStartupTimeout(Duration.ofSeconds(90))
-                .withLogConsumer(frame -> console.add(frame.getUtf8String()));
+        container = new GenericContainer<>(new ImageFromDockerfile().withFileFromClasspath("Dockerfile",
+                                                                                           "binkd/Dockerfile")).withCopyToContainer(Transferable.of(files.toJftn,
+                                                                                                                                                    0644),
+                                                                                                                                    "/data/outbox/"
+                                                                                                                                            + ExchangeFiles.FROM_BINKD)
+                                                                                                               .withStartupTimeout(Duration.ofSeconds(90))
+                                                                                                               .withLogConsumer(frame -> console.add(frame.getUtf8String()));
     }
 
     void startServer(Path artifacts) throws Exception {
@@ -47,13 +55,18 @@ final class BinkdTestPeer implements AutoCloseable {
         String endpoint = "host.testcontainers.internal:" + jftnPort;
         copyConfiguration(endpoint);
         container.withAccessToHost(true)
-                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("/bin/sh", "-c"))
-                .withCommand(new String[] {"echo binkd-client-ready; exec sleep infinity"})
-                .waitingFor(Wait.forLogMessage(".*binkd-client-ready.*\\n", 1)).start();
+                 .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("/bin/sh", "-c"))
+                 .withCommand(new String[]{"echo binkd-client-ready; exec sleep infinity"})
+                 .waitingFor(Wait.forLogMessage(".*binkd-client-ready.*\\n", 1))
+                 .start();
         saveEndpoint(artifacts, endpoint);
         caller = Executors.newSingleThreadExecutor();
-        clientProcess = caller.submit(() -> container.execInContainer("/usr/sbin/binkd", "-p", "-m",
-                "-P", "1:500/101@fidonet.org", "/data/binkd.cfg"));
+        clientProcess = caller.submit(() -> container.execInContainer("/usr/sbin/binkd",
+                                                                      "-p",
+                                                                      "-m",
+                                                                      "-P",
+                                                                      "1:500/101@fidonet.org",
+                                                                      "/data/binkd.cfg"));
     }
 
     String host() {
@@ -65,25 +78,33 @@ final class BinkdTestPeer implements AutoCloseable {
     }
 
     void assertClientFinished(Path artifacts) throws Exception {
-        if (clientProcess == null) return;
+        if (clientProcess == null) {
+            return;
+        }
         Container.ExecResult result = clientProcess.get(30, TimeUnit.SECONDS);
-        Files.writeString(artifacts.resolve("binkd-client.log"), result.getStdout() + result.getStderr());
+        Files.writeString(artifacts.resolve("binkd-client.log"),
+                          result.getStdout() + result.getStderr());
         assertEquals("binkd client must exit successfully", 0, result.getExitCode());
     }
 
     void assertTransferredFiles() throws Exception {
-        byte[] received = container.copyFileFromContainer("/data/inbound/" + ExchangeFiles.FROM_JFTN,
-                InputStream::readAllBytes);
+        byte[] received = container.copyFileFromContainer("/data/inbound/"
+                + ExchangeFiles.FROM_JFTN, InputStream::readAllBytes);
         assertArrayEquals(files.toBinkd, received);
-        assertEquals("binkd must remove the acknowledged outbound file", 0,
-                container.execInContainer("sh", "-c", "test ! -e /data/outbox/" + ExchangeFiles.FROM_BINKD).getExitCode());
+        assertEquals("binkd must remove the acknowledged outbound file",
+                     0,
+                     container.execInContainer("sh",
+                                               "-c",
+                                               "test ! -e /data/outbox/" + ExchangeFiles.FROM_BINKD)
+                              .getExitCode());
     }
 
     void saveDiagnostics(Path artifacts) {
         try {
             Files.writeString(artifacts.resolve("binkd-console.log"), String.join("", console));
             if (container.isRunning()) {
-                container.copyFileFromContainer("/data/binkd.log", artifacts.resolve("binkd.log").toString());
+                container.copyFileFromContainer("/data/binkd.log",
+                                                artifacts.resolve("binkd.log").toString());
             }
         } catch (Exception failure) {
             // Preserve the original startup/assertion failure, while still running cleanup.
@@ -93,22 +114,27 @@ final class BinkdTestPeer implements AutoCloseable {
 
     private void copyConfiguration(String endpoint) throws Exception {
         try (InputStream in = getClass().getClassLoader().getResourceAsStream("binkd/binkd.cfg")) {
-            String config = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8)
-                    .replace("@PEER_ENDPOINT@", endpoint);
-            container.withCopyToContainer(Transferable.of(config.getBytes(StandardCharsets.UTF_8), 0644), "/data/binkd.cfg");
+            String config = new String(Objects.requireNonNull(in).readAllBytes(),
+                                       StandardCharsets.UTF_8).replace("@PEER_ENDPOINT@", endpoint);
+            container.withCopyToContainer(Transferable.of(config.getBytes(StandardCharsets.UTF_8),
+                                                          0644),
+                                          "/data/binkd.cfg");
         }
     }
 
     private void saveEndpoint(Path artifacts, String endpoint) throws Exception {
-        Files.writeString(artifacts.resolve("container.txt"), "id=" + container.getContainerId()
-                + "\nendpoint=" + endpoint + "\n");
+        Files.writeString(artifacts.resolve("container.txt"),
+                          "id=" + container.getContainerId() + "\nendpoint=" + endpoint + "\n");
     }
 
-    @Override public void close() {
+    @Override
+    public void close() {
         try {
             container.stop();
         } finally {
-            if (caller != null) caller.shutdownNow();
+            if (caller != null) {
+                caller.shutdownNow();
+            }
         }
     }
 }

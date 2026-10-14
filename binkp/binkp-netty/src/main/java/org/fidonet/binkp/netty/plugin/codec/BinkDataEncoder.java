@@ -28,13 +28,12 @@
 
 package org.fidonet.binkp.netty.plugin.codec;
 
+import org.fidonet.binkp.common.io.BinkFrame;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import org.fidonet.binkp.common.io.BinkFrame;
-
-import java.nio.ByteBuffer;
 
 /**
  * Created by IntelliJ IDEA.

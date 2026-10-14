@@ -32,14 +32,15 @@ import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
+import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.protocol.Session;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -61,7 +62,8 @@ public class ADRCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
             final Command pwd = new PWDCommand();
             pwd.send(session, sessionContext);
@@ -93,7 +95,6 @@ public class ADRCommand extends MessageCommand {
                 traffic.send(session, sessionContext);
             }
         }
-
     }
 
     private Link findLink(FTNAddr linkAddr, List<Link> links) {
@@ -110,7 +111,19 @@ public class ADRCommand extends MessageCommand {
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
         StringBuilder sb = new StringBuilder();
-        for (FTNAddr addr : sessionContext.getLinksInfo().getCurLink().getMyaddr()) {
+        Link link = sessionContext.getLinksInfo().getCurLink();
+        List<FTNAddr> addresses = new ArrayList<>();
+        if (link != null) {
+            addresses.addAll(link.getMyaddr());
+        } else {
+            for (String address : sessionContext.getStationConfig()
+                                                .getAddress()
+                                                .trim()
+                                                .split("\\s+")) {
+                addresses.add(new FTNAddr(address));
+            }
+        }
+        for (FTNAddr addr : addresses) {
             sb.append(addr.as5D()).append(" ");
         }
         return sb.toString().trim();

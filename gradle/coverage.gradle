@@ -1,0 +1,50 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
+allprojects {
+    plugins.withId('java') {
+        apply plugin: 'jacoco'
+        jacoco { toolVersion = '0.8.15' }
+    }
+}
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.apply plugin: 'jacoco'
+    root.repositories { mavenCentral() }
+    root.jacoco { toolVersion = '0.8.15' }
+    def modules = root.subprojects.findAll { it.plugins.hasPlugin('java') }
+    def withBinkd = root.hasProperty('coverageWithBinkd')
+    def scope = withBinkd ? 'all' : 'unit'
+    root.tasks.register('coverageStatistics', JacocoReport) {
+        dependsOn modules.collect { it.tasks.named('test') }
+        executionData.from(root.provider {
+            modules.collect { it.layout.buildDirectory.file('jacoco/test.exec').get().asFile }.findAll { it.exists() }
+        })
+        if (withBinkd) {
+            def backends = modules.findAll { it.tasks.findByName('binkdDockerTest') != null }
+            dependsOn backends.collect { it.tasks.named('binkdDockerTest') }
+            executionData.from(root.provider {
+                backends.collect { it.layout.buildDirectory.file('jacoco/binkdDockerTest.exec').get().asFile }.findAll { it.exists() }
+            })
+        }
+        sourceDirectories.from(modules.collect { it.sourceSets.main.allSource.srcDirs })
+        classDirectories.from(modules.collect { module ->
+            def generated = module.fileTree('build/gen-src').matching { include '**/*.java' }.files.collect { source ->
+                module.file('build/gen-src').toPath().relativize(source.toPath()).toString()
+                        .replace('\\', '/').replaceAll(/\.java$/, '')
+            }
+            module.sourceSets.main.output.classesDirs.asFileTree.matching {
+                generated.each { name ->
+                    exclude name + '.class'
+                    exclude name + '$*.class'
+                }
+            }
+        })
+        reports {
+            html.required = true
+            xml.required = true
+            html.outputLocation = root.layout.buildDirectory.dir("reports/coverage/$scope")
+            xml.outputLocation = root.layout.buildDirectory.file("reports/coverage/${scope}.xml")
+        }
+    }
+}

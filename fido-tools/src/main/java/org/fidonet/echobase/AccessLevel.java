@@ -36,7 +36,5 @@ package org.fidonet.echobase;
  * Time: 12:18 AM
  */
 public enum AccessLevel {
-    READ,
-    WRITE,
-    BOTH
+    READ, WRITE, BOTH
 }

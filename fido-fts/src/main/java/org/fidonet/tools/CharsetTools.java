@@ -28,8 +28,8 @@
 
 package org.fidonet.tools;
 
-
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,14 +45,13 @@ public class CharsetTools {
 
     public static final String DEFAULT_ENCODING = "CP866";
 
-
     public static Charset charsetDetect(String messageCharset) {
         Map<String, Charset> fidoToJavaCharsetMap = new HashMap<String, Charset>();
         fidoToJavaCharsetMap.put("IBMPC", Charset.forName(DEFAULT_ENCODING));
         fidoToJavaCharsetMap.put("+7_FIDO", Charset.forName(DEFAULT_ENCODING));
         try {
             return Charset.forName(messageCharset);
-        } catch (UnsupportedCharsetException | java.nio.charset.IllegalCharsetNameException e) {
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
             Charset charset = fidoToJavaCharsetMap.get(messageCharset);
             if (charset == null) {
                 charset = Charset.forName(DEFAULT_ENCODING);

@@ -28,11 +28,12 @@
 
 package org.fidonet.tests.share;
 
+import org.fidonet.events.AbstractEventHandler;
+
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Invoke;
 import net.engio.mbassy.listener.Listener;
 import net.engio.mbassy.listener.References;
-import org.fidonet.events.AbstractEventHandler;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,5 +48,4 @@ public abstract class TestEventHandler extends AbstractEventHandler<TestEvent> {
     public void handle(TestEvent event) {
         onEventHandle(event);
     }
-
 }

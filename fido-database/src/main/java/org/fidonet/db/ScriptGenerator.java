@@ -51,18 +51,17 @@ import java.util.List;
  */
 public class ScriptGenerator {
 
-    private static List<String> getDropTableStatement(DatabaseType dbType, BaseDaoImpl<?, ?> dao) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private static List<String> getDropTableStatement(DatabaseType dbType, BaseDaoImpl<?, ?> dao)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         List<String> statements = new ArrayList<String>();
         Method dropIndex = TableUtils.class.getDeclaredMethod("addDropIndexStatements",
-                DatabaseType.class,
-                dao.getTableInfo().getClass(),
-                List.class
-        );
+                                                              DatabaseType.class,
+                                                              dao.getTableInfo().getClass(),
+                                                              List.class);
         Method dropTables = TableUtils.class.getDeclaredMethod("addDropTableStatements",
-                DatabaseType.class,
-                dao.getTableInfo().getClass(),
-                List.class
-        );
+                                                               DatabaseType.class,
+                                                               dao.getTableInfo().getClass(),
+                                                               List.class);
         dropIndex.setAccessible(true);
         dropTables.setAccessible(true);
         dropIndex.invoke(null, dbType, dao.getTableInfo(), statements);
@@ -73,20 +72,27 @@ public class ScriptGenerator {
     private static String listToString(List<?> list, String sep) {
         StringBuilder sb = new StringBuilder();
         for (Object item : list) {
-            sb.append(item).append(sep);
+            sb.append(item).append(';').append(sep);
         }
         return sb.toString();
     }
 
-    public static String generateCreateScript(ConnectionSource connectionSource, BaseDaoImpl<?, ?> dao) throws SQLException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static String generateCreateScript(ConnectionSource connectionSource,
+                                              BaseDaoImpl<?, ?> dao)
+            throws SQLException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
         StringBuilder sb = new StringBuilder();
-        String tableStatement = listToString(TableUtils.getCreateTableStatements(connectionSource, dao.getDataClass()), "\r\n");
+        String tableStatement = listToString(TableUtils.getCreateTableStatements(connectionSource,
+                                                                                 dao.getDataClass()),
+                                             "\r\n");
         sb.append(tableStatement);
         return sb.toString();
     }
 
-
-    public static String generateCreateScript(ConnectionSource connectionSource, List<BaseDaoImpl<?, ?>> daos) throws SQLException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static String generateCreateScript(ConnectionSource connectionSource,
+                                              List<BaseDaoImpl<?, ?>> daos)
+            throws SQLException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
         StringBuilder sb = new StringBuilder();
         for (BaseDaoImpl<?, ?> dao : daos) {
             String tableStatement = generateCreateScript(connectionSource, dao);
@@ -95,14 +101,22 @@ public class ScriptGenerator {
         return sb.toString();
     }
 
-    public static String generateDropScript(ConnectionSource connectionSource, BaseDaoImpl<?, ?> dao) throws SQLException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static String generateDropScript(ConnectionSource connectionSource,
+                                            BaseDaoImpl<?, ?> dao)
+            throws SQLException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
         StringBuilder sb = new StringBuilder();
-        String tableStatement = listToString(getDropTableStatement(connectionSource.getDatabaseType(), dao), "\r\n");
+        String tableStatement = listToString(getDropTableStatement(connectionSource.getDatabaseType(),
+                                                                   dao),
+                                             "\r\n");
         sb.append(tableStatement);
         return sb.toString();
     }
 
-    public static String generateDropScript(ConnectionSource connectionSource, List<BaseDaoImpl<?, ?>> daos) throws SQLException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static String generateDropScript(ConnectionSource connectionSource,
+                                            List<BaseDaoImpl<?, ?>> daos)
+            throws SQLException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
         StringBuilder sb = new StringBuilder();
 
         for (BaseDaoImpl<?, ?> dao : daos) {
@@ -128,8 +142,8 @@ public class ScriptGenerator {
         }
     }
 
-
-    public static void main(String[] argv) throws IOException, SQLException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static void main(String[] argv) throws IOException, SQLException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
         OrmManagerEx ormManager = new OrmManagerEx(argv[0]);
         try {
             ormManager.connect();
@@ -137,12 +151,14 @@ public class ScriptGenerator {
             daos.addAll(ormManager.<BaseDaoImpl<?, ?>>getAllDaos());
 
             try (OutputStream createTablesStream = new FileOutputStream("createTables.sql")) {
-                String createTablesScriptContent = generateCreateScript(ormManager.getConnectionSource(), daos);
+                String createTablesScriptContent = generateCreateScript(ormManager.getConnectionSource(),
+                                                                        daos);
                 createTablesStream.write(createTablesScriptContent.getBytes());
             }
 
             try (OutputStream dropTablesStream = new FileOutputStream("dropTables.sql")) {
-                String dropTablesScriptContent = generateDropScript(ormManager.getConnectionSource(), daos);
+                String dropTablesScriptContent = generateDropScript(ormManager.getConnectionSource(),
+                                                                    daos);
                 dropTablesStream.write(dropTablesScriptContent.getBytes());
             }
         } finally {

@@ -28,12 +28,13 @@
 
 package org.fidonet.binkp.netty.plugin.codec;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ReplayingDecoder;
 import org.fidonet.binkp.common.codec.DataInfo;
 import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ReplayingDecoder;
 
 import java.util.List;
 
@@ -53,26 +54,26 @@ public class BinkDataDecoder extends ReplayingDecoder<BinkDataDecoder.State> {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
+            throws Exception {
         switch (state()) {
-            case READ_LENGTH:
+            case READ_LENGTH :
                 dataInfoRaw = in.readShort();
                 checkpoint(State.READ_CONTENT);
                 break;
-            case READ_CONTENT:
+            case READ_CONTENT :
                 final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
                 byte[] buf = new byte[dataInfo.getSize()];
                 in.readBytes(buf);
                 checkpoint(State.READ_LENGTH);
                 out.add(new BinkFrame(dataInfoRaw, buf));
                 break;
-            default:
-                    throw new Error("Shouldn't reach here!");
+            default :
+                throw new Error("Shouldn't reach here!");
         }
     }
 
     public enum State {
-        READ_LENGTH,
-        READ_CONTENT
+        READ_LENGTH, READ_CONTENT
     }
 }

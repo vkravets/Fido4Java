@@ -1,9 +1,11 @@
 package org.fidonet.binkp.interop;
 
 import org.fidonet.binkp.common.config.ServerRole;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,10 +17,8 @@ import java.util.Collection;
 public abstract class AbstractBinkdInteropTest {
     @Parameterized.Parameters(name = "JFtn role={0}, requests NR={1}")
     public static Collection<Object[]> modes() {
-        return Arrays.asList(new Object[][] {
-                {ServerRole.CLIENT, false}, {ServerRole.CLIENT, true},
-                {ServerRole.SERVER, false}, {ServerRole.SERVER, true}
-        });
+        return Arrays.asList(new Object[][]{{ServerRole.CLIENT, false}, {ServerRole.CLIENT, true},
+                {ServerRole.SERVER, false}, {ServerRole.SERVER, true}});
     }
 
     private final ServerRole role;
@@ -36,7 +36,7 @@ public abstract class AbstractBinkdInteropTest {
         Path artifacts = artifactDirectory();
         ExchangeFiles files = new ExchangeFiles();
         try (JftnPeer jftn = createPeer(role, requestNr, files);
-             BinkdTestPeer binkd = new BinkdTestPeer(files)) {
+                BinkdTestPeer binkd = new BinkdTestPeer(files)) {
             try {
                 if (role == ServerRole.SERVER) {
                     binkd.startClient(jftn.listen(), artifacts);
@@ -60,8 +60,8 @@ public abstract class AbstractBinkdInteropTest {
 
     private Path artifactDirectory() throws Exception {
         Path path = Paths.get(System.getProperty("binkd.artifactsDir"),
-                role == ServerRole.SERVER ? "jftn-server" : "jftn-client",
-                requestNr ? "nr" : "ordinary");
+                              role == ServerRole.SERVER ? "jftn-server" : "jftn-client",
+                              requestNr ? "nr" : "ordinary");
         return Files.createDirectories(path);
     }
 }

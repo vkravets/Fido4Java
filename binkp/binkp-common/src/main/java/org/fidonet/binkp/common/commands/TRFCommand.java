@@ -43,7 +43,9 @@ public class TRFCommand extends NULCommand {
     @Override
     public String getArguments(SessionContext sessionContext) {
         final long total = sessionContext.getSendMailSize() + sessionContext.getSendFilesSize();
-        return String.format("%s %s", sessionContext.getSendMailSize(), sessionContext.getSendFilesSize());
+        return String.format("%s %s",
+                             sessionContext.getSendMailSize(),
+                             sessionContext.getSendFilesSize());
     }
 
     @Override
@@ -52,10 +54,12 @@ public class TRFCommand extends NULCommand {
     }
 
     @Override
-    public void handleCommand(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handleCommand(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         String[] token = commandArgs.split(" ");
-        if (token.length != 2)
+        if (token.length != 2) {
             throw new UnsupportedOperationException("Invalid TRF command arguments");
+        }
         sessionContext.setRecvMailSize(Long.parseLong(token[0]));
         sessionContext.setRecvFilesSize(Long.parseLong(token[1]));
     }

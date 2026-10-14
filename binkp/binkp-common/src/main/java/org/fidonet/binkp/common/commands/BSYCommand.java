@@ -52,7 +52,8 @@ public class BSYCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         sessionContext.setState(SessionState.STATE_BSY);
     }
 

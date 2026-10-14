@@ -31,8 +31,16 @@ package org.fidonet;
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,11 +59,19 @@ public class Body {
     private String area;
     private List<String> controlLines = Collections.emptyList();
 
-    public void setControlLines(List<String> lines) { controlLines = new ArrayList<>(lines); }
+    public void setControlLines(List<String> lines) {
+        controlLines = new ArrayList<>(lines);
+    }
 
-    public void setArea(String area) { this.area = area; }
+    public void setArea(String area) {
+        this.area = area;
+    }
 
-    public Body(String body, Map<String, String> kludges, String origin, SeenBy seenBy, FidoPath path) {
+    public Body(String body,
+                Map<String, String> kludges,
+                String origin,
+                SeenBy seenBy,
+                FidoPath path) {
         this.kludges = kludges;
         this.origin = origin;
         this.seenBy = seenBy;
@@ -102,27 +118,41 @@ public class Body {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (area != null && !area.isEmpty()) sb.append("AREA:").append(area).append("\r");
+        if (area != null && !area.isEmpty()) {
+            sb.append("AREA:").append(area).append("\r");
+        }
         // insert kludges
         Map<String, String> originalValues = new LinkedHashMap<>();
         Set<String> emitted = new HashSet<>();
         for (String line : controlLines) {
-            java.util.regex.Matcher match = java.util.regex.Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(line);
-            if (!match.matches()) continue;
+            Matcher match = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(line);
+            if (!match.matches()) {
+                continue;
+            }
             String key = match.group(1);
             originalValues.putIfAbsent(key, match.group(2));
-            if (!kludges.containsKey(key)) continue;
+            if (!kludges.containsKey(key)) {
+                continue;
+            }
             if (Objects.equals(kludges.get(key), originalValues.get(key))) {
-                sb.append(line).append('\r'); emitted.add(key);
-            } else if (emitted.add(key)) appendControl(sb, key, kludges.get(key));
+                sb.append(line).append('\r');
+                emitted.add(key);
+            } else if (emitted.add(key)) {
+                appendControl(sb, key, kludges.get(key));
+            }
         }
-        for (Map.Entry<String, String> kludge : kludges.entrySet())
-            if (emitted.add(kludge.getKey())) appendControl(sb, kludge.getKey(), kludge.getValue());
+        for (Map.Entry<String, String> kludge : kludges.entrySet()) {
+            if (emitted.add(kludge.getKey())) {
+                appendControl(sb, kludge.getKey(), kludge.getValue());
+            }
+        }
         // insert text
         sb.append(body);
         // insert origin
         if (origin != null) {
-            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\r') sb.append('\r');
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\r') {
+                sb.append('\r');
+            }
             sb.append(origin).append("\r");
         }
         // insert seen
@@ -138,10 +168,13 @@ public class Body {
 
     private static void appendControl(StringBuilder sb, String key, String value) {
         sb.append('\1').append(key);
-        if (key.equals("INTL") || key.equals("FMPT") || key.equals("TOPT")) sb.append(' ').append(value.trim());
-        else {
+        if (key.equals("INTL") || key.equals("FMPT") || key.equals("TOPT")) {
+            sb.append(' ').append(value.trim());
+        } else {
             sb.append(':');
-            if (!value.isEmpty() && !Character.isWhitespace(value.charAt(0))) sb.append(' ');
+            if (!value.isEmpty() && !Character.isWhitespace(value.charAt(0))) {
+                sb.append(' ');
+            }
             sb.append(value);
         }
         sb.append('\r');

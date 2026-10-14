@@ -29,7 +29,6 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.io.FileData;
@@ -39,7 +38,6 @@ import org.fidonet.binkp.common.protocol.Session;
 
 import java.io.OutputStream;
 import java.util.Deque;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -60,7 +58,8 @@ public class GETCommand extends MessageCommand {
     }
 
     @Override
-    public void handle(Session session, SessionContext sessionContext, String commandArgs) throws Exception {
+    public void handle(Session session, SessionContext sessionContext, String commandArgs)
+            throws Exception {
         final FilesSender<Session> filesSender = session.getFileSender();
         if (filesSender != null) {
             final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);

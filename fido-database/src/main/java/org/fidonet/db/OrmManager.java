@@ -28,14 +28,19 @@
 
 package org.fidonet.db;
 
+import org.fidonet.db.objects.ConfigurationLink;
+import org.fidonet.db.objects.Echoarea;
+import org.fidonet.db.objects.Echomail;
+import org.fidonet.db.objects.Netmail;
+import org.fidonet.db.objects.Subscription;
+import org.fidonet.db.objects.Version;
+
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.misc.TransactionManager;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
-import com.j256.ormlite.misc.TransactionManager;
-import java.util.concurrent.Callable;
-import org.fidonet.db.objects.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +49,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Created by IntelliJ IDEA.
@@ -124,7 +130,6 @@ public class OrmManager {
         return TransactionManager.callInTransaction(connectionSource, work);
     }
 
-
     public void createTables() throws SQLException {
         for (Dao<?, ?> dao : daoMap.values()) {
             if (!dao.isTableExists()) {
@@ -157,21 +162,25 @@ public class OrmManager {
     }
 
     public void disconnect() {
-        if (connectionSource != null)
+        if (connectionSource != null) {
             try {
                 connectionSource.close();
             } catch (SQLException e) {
                 logger.error(e.getMessage(), e);
             }
+        }
     }
-
 
     public Long getCurrentVersion() {
         Dao<Version, Object> dao = getDao(Version.class);
         try {
-            Version curVersion = dao.queryBuilder().orderBy(Version.ID_COLUMN, false).limit(1L).queryForFirst();
+            Version curVersion = dao.queryBuilder()
+                                    .orderBy(Version.ID_COLUMN, false)
+                                    .limit(1L)
+                                    .queryForFirst();
             if (curVersion == null) {
-                logger.error("Any version cannot be found, cannot continue", new Throwable("Version table is corrupted"));
+                logger.error("Any version cannot be found, cannot continue",
+                             new Throwable("Version table is corrupted"));
                 return Version.UNKNOWN_VERSION;
             }
             return curVersion.getVersion();

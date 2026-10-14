@@ -61,10 +61,11 @@ public class Scheduler {
     }
 
     public String schedule(String cronSchedule, Runnable task, Boolean immediately) {
-        if (immediately) launch(task);
+        if (immediately) {
+            launch(task);
+        }
         return scheduler.schedule(cronSchedule, task);
     }
-
 
     public void deschedule(String taskId) {
         scheduler.deschedule(taskId);

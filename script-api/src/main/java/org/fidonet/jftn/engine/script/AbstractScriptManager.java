@@ -31,17 +31,19 @@ package org.fidonet.jftn.engine.script;
 import org.fidonet.jftn.engine.script.exception.EngineNotFoundException;
 import org.fidonet.jftn.engine.script.exception.NotSupportedScriptEngine;
 import org.fidonet.jftn.tools.FileUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,8 +66,10 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
         String fileExtension = getFileExtension();
         javax.script.ScriptEngine scriptEngine = scriptEngineManager.getEngineByExtension(fileExtension);
-        if (scriptEngine == null)
-            throw new EngineNotFoundException(String.format("Engine for \"%s\" file extension was not found", fileExtension));
+        if (scriptEngine == null) {
+            throw new EngineNotFoundException(String.format("Engine for \"%s\" file extension was not found",
+                                                            fileExtension));
+        }
         setScriptEngine(scriptEngine);
     }
 
@@ -80,38 +84,68 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         this.engine = engine;
     }
 
-    public synchronized void registerScript(String name, String script, Object... params) throws Exception {
-        if (loadedScripts.containsKey(name)) unregisterScript(name, params);
-        javax.script.ScriptEngine scriptEngine = scriptEngines.isEmpty() ? engine
-                : new ScriptEngineManager().getEngineByExtension(getFileExtension());
-        Object globals = engine.getContext().getAttribute("#jsr223.groovy.engine.keep.globals");
-        if (globals != null) scriptEngine.getContext().setAttribute("#jsr223.groovy.engine.keep.globals",
-                globals, javax.script.ScriptContext.ENGINE_SCOPE);
-        scriptEngine.eval(script);
-        scriptCallFunctions(scriptEngine, REGISTER_FUNC_NAME, params);
+    public synchronized void registerScript(String name, String script, Object... params)
+            throws Exception {
+        if (loadedScripts.containsKey(name)) {
+            unregisterScript(name, params);
+        }
+        javax.script.ScriptEngine scriptEngine = scriptEngines.isEmpty()
+                ? engine
+                : createConfiguredEngine();
+        try {
+            scriptEngine.eval(script);
+            scriptCallFunctions(scriptEngine, REGISTER_FUNC_NAME, params);
+        } catch (Exception failure) {
+            // A failed registration must not retain closures or pollute the next script.
+            if (scriptEngine == engine) {
+                engine = createConfiguredEngine();
+            }
+            throw failure;
+        }
         scriptEngines.put(name, scriptEngine);
         updateCache(name, script);
     }
 
+    private javax.script.ScriptEngine createConfiguredEngine() {
+        javax.script.ScriptEngine scriptEngine = engine.getFactory().getScriptEngine();
+        Object globals = engine.getContext().getAttribute("#jsr223.groovy.engine.keep.globals");
+        if (globals != null) {
+            scriptEngine.getContext()
+                        .setAttribute("#jsr223.groovy.engine.keep.globals",
+                                      globals,
+                                      ScriptContext.ENGINE_SCOPE);
+        }
+        return scriptEngine;
+    }
+
     public synchronized void unregisterScript(String name, Object... params) throws Exception {
         String cache = getFromCache(name);
-        if (cache == null || cache.isEmpty()) {
+        if (cache == null) {
             logger.warn("Something wrong. {} script is empty", name);
             return;
         }
-        scriptCallFunctions(scriptEngines.get(name), UNREGISTER_FUNC_NAME, params);
+        javax.script.ScriptEngine scriptEngine = scriptEngines.get(name);
+        scriptCallFunctions(scriptEngine, UNREGISTER_FUNC_NAME, params);
         loadedScripts.remove(name);
         scriptEngines.remove(name);
+        // The primary engine would otherwise keep the unloaded script alive and
+        // accumulate obsolete classes on every reload.
+        if (scriptEngine == engine) {
+            engine = createConfiguredEngine();
+        }
     }
 
-    private void scriptCallFunctions(javax.script.ScriptEngine scriptEngine, String funcName, Object... params) throws ScriptException, NotSupportedScriptEngine {
+    private void scriptCallFunctions(javax.script.ScriptEngine scriptEngine,
+                                     String funcName,
+                                     Object... params)
+            throws ScriptException, NotSupportedScriptEngine {
         try {
             Invocable invocableEngine = (Invocable) scriptEngine;
             invocableEngine.invokeFunction(funcName, params);
         } catch (ClassCastException ex) {
             throw new NotSupportedScriptEngine("This script engine is not supported", ex);
         } catch (NoSuchMethodException ex) {
-            logger.warn("Script doesn't have register function. Skip");
+            logger.warn("Script doesn't have {} function. Skip", funcName);
         }
     }
 
@@ -119,7 +153,9 @@ public abstract class AbstractScriptManager implements ScriptEngine {
         reloadScripts(scriptsContent, false, params);
     }
 
-    public synchronized void reloadScripts(Map<String, String> scriptsContent, Boolean forceReload, Object... params) {
+    public synchronized void reloadScripts(Map<String, String> scriptsContent,
+                                           Boolean forceReload,
+                                           Object... params) {
         if (scriptsContent.size() > 0) {
             for (Map.Entry<String, String> script : scriptsContent.entrySet()) {
                 String fileName = script.getKey();
@@ -139,7 +175,10 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                         logger.debug("{} successfully registered", fileName);
 
                     } catch (Exception e) {
-                        logger.error("Error during loading {} script. Details: {}", fileName, e.getMessage(), e);
+                        logger.error("Error during loading {} script. Details: {}",
+                                     fileName,
+                                     e.getMessage(),
+                                     e);
                     }
                 }
             }
@@ -153,7 +192,6 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     private void updateCache(String name, String scriptContent) {
         loadedScripts.put(name, scriptContent);
     }
-
 
     @Override
     public javax.script.ScriptEngine getEngine() {
@@ -169,5 +207,4 @@ public abstract class AbstractScriptManager implements ScriptEngine {
             throw new ScriptException(exp);
         }
     }
-
 }

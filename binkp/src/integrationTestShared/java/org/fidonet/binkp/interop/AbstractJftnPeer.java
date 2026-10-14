@@ -1,16 +1,28 @@
 package org.fidonet.binkp.interop;
 
-import org.fidonet.binkp.common.*;
-import org.fidonet.binkp.common.config.*;
-import org.fidonet.binkp.common.events.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import org.fidonet.binkp.common.LinksInfo;
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.config.StationConfig;
+import org.fidonet.binkp.common.events.FileReceivedEvent;
+import org.fidonet.binkp.common.events.FileReceivedEventHandler;
 import org.fidonet.events.EventBus;
-import org.fidonet.types.*;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
+
 import java.io.ByteArrayOutputStream;
-import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import static org.junit.Assert.*;
 
 /** Shared session configuration, receive checks and protocol assertions. */
 public abstract class AbstractJftnPeer implements JftnPeer {
@@ -31,6 +43,7 @@ public abstract class AbstractJftnPeer implements JftnPeer {
     }
 
     protected abstract boolean awaitClosed() throws Exception;
+
     protected abstract void closeTransport() throws Exception;
 
     public void awaitConnection() throws InterruptedException {
@@ -38,7 +51,8 @@ public abstract class AbstractJftnPeer implements JftnPeer {
     }
 
     public void assertReceivedFile() throws InterruptedException {
-        assertTrue("binkd must send its file within 30 seconds", receiver.received.await(30, TimeUnit.SECONDS));
+        assertTrue("binkd must send its file within 30 seconds",
+                   receiver.received.await(30, TimeUnit.SECONDS));
         assertNull("Receive event failed", receiver.failure.get());
         assertArrayEquals(files.toJftn, receiver.bytes.get());
     }
@@ -46,7 +60,9 @@ public abstract class AbstractJftnPeer implements JftnPeer {
     public void assertSessionFinished() throws Exception {
         assertTrue("TCP session must close normally", awaitClosed());
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
-        while (!session.isTransferComplete() && System.nanoTime() < deadline) Thread.sleep(10);
+        while (!session.isTransferComplete() && System.nanoTime() < deadline) {
+            Thread.sleep(10);
+        }
         assertTrue("EOB and all file acknowledgements are required", session.isTransferComplete());
     }
 
@@ -63,12 +79,19 @@ public abstract class AbstractJftnPeer implements JftnPeer {
     }
 
     private static SessionContext createContext(ServerRole role, boolean requestNr) {
-        StationConfig config = new StationConfig("JFtn integration test", "Test", "localhost", "BINKP", "1:500/101");
+        StationConfig config = new StationConfig("JFtn integration test",
+                                                 "Test",
+                                                 "localhost",
+                                                 "BINKP",
+                                                 "1:500/101");
         config.setPartialDirectory(null);
         config.setNREnabled(true);
         config.setNRRequested(requestNr);
-        Link link = new Link(new FTNAddr("1:500/102"), Collections.singletonList(new FTNAddr("1:500/101")),
-                "docker-secret", "127.0.0.1", 0);
+        Link link = new Link(new FTNAddr("1:500/102"),
+                             Collections.singletonList(new FTNAddr("1:500/101")),
+                             "docker-secret",
+                             "127.0.0.1",
+                             0);
         LinksInfo links = new LinksInfo(new ArrayList<>(Collections.singletonList(link)));
         links.setCurLink(link.getAddr());
         SessionContext context = new SessionContext(config, links);
@@ -76,9 +99,14 @@ public abstract class AbstractJftnPeer implements JftnPeer {
         return context;
     }
 
-    @Override public final void close() throws Exception {
-        try { closeTransport(); }
-        finally { bus.unsubscribe(receiver); bus.shutdown(); }
+    @Override
+    public final void close() throws Exception {
+        try {
+            closeTransport();
+        } finally {
+            bus.unsubscribe(receiver);
+            bus.shutdown();
+        }
     }
 
     private static final class ReceiveProbe extends FileReceivedEventHandler {
@@ -86,7 +114,8 @@ public abstract class AbstractJftnPeer implements JftnPeer {
         final AtomicReference<byte[]> bytes = new AtomicReference<>();
         final AtomicReference<Throwable> failure = new AtomicReference<>();
 
-        @Override public void onEventHandle(FileReceivedEvent event) {
+        @Override
+        public void onEventHandle(FileReceivedEvent event) {
             try {
                 assertEquals(ExchangeFiles.FROM_BINKD, event.getFile().getInfo().getName());
                 bytes.set(((ByteArrayOutputStream) event.getFile().getStream()).toByteArray());

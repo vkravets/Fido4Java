@@ -29,7 +29,6 @@
 package org.fidonet.events;
 
 import net.engio.mbassy.bus.MBassador;
-import net.engio.mbassy.bus.config.BusConfiguration;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,5 +40,4 @@ public class EventBus extends MBassador<Event> {
     public EventBus() {
         super();
     }
-
 }

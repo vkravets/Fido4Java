@@ -28,12 +28,13 @@
 
 package org.fidonet.binkp.mina2.codec;
 
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.core.write.WriteRequest;
-import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.mina2.commons.SessionKeys;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,13 +45,14 @@ import org.fidonet.binkp.mina2.commons.SessionKeys;
  */
 
 /**
- * This class control decrypt process for received data,
- * crypt process during sending data controls by last encoder
+ * This class control decrypt process for received data, crypt process during sending data controls
+ * by last encoder
  */
 public class TrafficCrypterCodecFilter extends IoFilterAdapter {
 
     @Override
-    public void messageReceived(NextFilter nextFilter, IoSession session, Object message) throws Exception {
+    public void messageReceived(NextFilter nextFilter, IoSession session, Object message)
+            throws Exception {
         IoBuffer in = (IoBuffer) message;
         TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);
         byte[] array = new byte[in.limit()];
@@ -63,7 +65,8 @@ public class TrafficCrypterCodecFilter extends IoFilterAdapter {
     }
 
     @Override
-    public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest writeRequest) throws Exception {
+    public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest writeRequest)
+            throws Exception {
         IoBuffer in = (IoBuffer) writeRequest.getMessage();
         if (in.limit() > 0) {
             TrafficCrypter trafficCrypter = (TrafficCrypter) session.getAttribute(SessionKeys.TRAFFIC_CRYPTER_KEY);

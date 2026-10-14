@@ -28,10 +28,6 @@
 
 package org.fidonet.binkp.mina2;
 
-import org.apache.mina.core.future.ConnectFuture;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.Connector;
 import org.fidonet.binkp.common.SessionContext;
@@ -41,6 +37,11 @@ import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.fidonet.types.Link;
+
+import org.apache.mina.core.future.ConnectFuture;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.transport.socket.nio.NioSocketConnector;
 
 import java.net.InetSocketAddress;
 
@@ -71,12 +72,15 @@ public class Client extends ClientConnector {
 
     public void run(SessionContext sessionContext) throws Exception {
         sessionContext.setServerRole(ServerRole.CLIENT);
-        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) throw new IllegalArgumentException("Remote link is not configured");
+        if (!sessionContext.getLinksInfo().setCurLink(link.getAddr())) {
+            throw new IllegalArgumentException("Remote link is not configured");
+        }
         sessionContext.setState(SessionState.STATE_IDLE);
         connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(connectionTimeout);
         connector.getFilterChain().addLast("crypt", new TrafficCrypterCodecFilter());
-        connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
+        connector.getFilterChain()
+                 .addLast("codec", new ProtocolCodecFilter(new BinkDataCodecFactory()));
         connector.setHandler(new BinkSessionHandler(sessionContext, getEventBus()));
         String hostname = link.getHostAddress();
         int port = link.getPort() != 0 ? link.getPort() : Connector.BINK_PORT;
@@ -89,12 +93,11 @@ public class Client extends ClientConnector {
             connected = false;
             System.out.println("Cannot connect to target host");
         }
-
     }
 
     public void stop() {
         if (session != null) {
-            session.getCloseFuture().awaitUninterruptibly();
+            session.closeNow().awaitUninterruptibly();
         }
         if (connector != null) {
             connector.dispose();

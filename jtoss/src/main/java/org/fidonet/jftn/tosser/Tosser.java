@@ -40,17 +40,19 @@ import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
@@ -83,7 +85,7 @@ public class Tosser extends HasEventBus {
         if (files == null) {
             throw new TosserException("Directory " + dirname + " not found!");
         }
-        //TODO: We should make some checks!
+        // TODO: We should make some checks!
         long startTime = System.currentTimeMillis();
         if (files.length != 0) {
             for (File file : files) {
@@ -98,14 +100,20 @@ public class Tosser extends HasEventBus {
                             }
                         }
                         if (config.isDeleteTossedFiles() != 0) {
-                            if (file.delete()) {
+                            if (!file.delete()) {
                                 logger.error("Error while deleting tossed boundle!");
                             }
                         }
                     } catch (IOException e) {
-                        logger.error("Failed to unpack {}. Details: {}", file.getAbsolutePath(), e.getMessage(), e);
+                        logger.error("Failed to unpack {}. Details: {}",
+                                     file.getAbsolutePath(),
+                                     e.getMessage(),
+                                     e);
                     } catch (TosserException e) {
-                        logger.error("Failed to toss {}. Details: {}", file.getAbsolutePath(), e.getMessage(), e);
+                        logger.error("Failed to toss {}. Details: {}",
+                                     file.getAbsolutePath(),
+                                     e.getMessage(),
+                                     e);
                     }
                 }
             }
@@ -119,8 +127,9 @@ public class Tosser extends HasEventBus {
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
             throw new TosserException("Absolute packet path is not allowed");
         }
-        String badName = name.toLowerCase(java.util.Locale.ROOT).endsWith(".pkt")
-                ? name.substring(0, name.length() - 4) + ".bad" : name + ".bad";
+        String badName = name.toLowerCase(Locale.ROOT).endsWith(".pkt")
+                ? name.substring(0, name.length() - 4) + ".bad"
+                : name + ".bad";
         Path badPath = root.resolve(badName).normalize();
         if (!badPath.startsWith(root) || badPath.equals(root)
                 || !badPath.getParent().toRealPath().startsWith(root)) {
@@ -133,7 +142,9 @@ public class Tosser extends HasEventBus {
             // TODO: need to throw exception?
             return;
         }
-        try (OutputStream out = Files.newOutputStream(badPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+        try (OutputStream out = Files.newOutputStream(badPath,
+                                                      StandardOpenOption.CREATE_NEW,
+                                                      StandardOpenOption.WRITE)) {
             pkt.getPkt().position(0);
             ByteBuffer buffer = pkt.getPkt().duplicate();
             byte[] bytes = new byte[buffer.remaining()];
@@ -142,8 +153,7 @@ public class Tosser extends HasEventBus {
         }
     }
 
-
-/*    private static void tosspkt(String filename) {
+    /*    private static void tosspkt(String filename) {
         Logger.Log("Tossing file " + filename);
         final FileInputStream ins;
         final File inf = new File(filename);
@@ -186,8 +196,11 @@ public class Tosser extends HasEventBus {
 
     private boolean tosspkt(ByteBuffer buf) throws IOException, EchoBaseException {
         final FtsPkt q;
-        try { q = new FtsPkt(buf); }
-        catch (IllegalArgumentException e) { throw new IOException("Invalid FTN packet", e); }
+        try {
+            q = new FtsPkt(buf);
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Invalid FTN packet", e);
+        }
         Link origlink = config.getLink(q.getOrigaddr());
         if (origlink == null) {
             logger.error("Unknown Link! Drop it.");
@@ -206,7 +219,9 @@ public class Tosser extends HasEventBus {
             if (msg.isEchomail()) {
                 // Call onTossEchoMsg hook
                 getEventBus().publish(new TossEchoMailEvent(msg, areamgr));
-                if (msg.isValid()) processEchoMail(msg);
+                if (msg.isValid()) {
+                    processEchoMail(msg);
+                }
             } else {
                 // Call onTossNetMail hook
                 getEventBus().publish(new TossNetmailEvent(msg));

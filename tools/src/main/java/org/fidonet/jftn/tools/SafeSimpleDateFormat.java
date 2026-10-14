@@ -48,7 +48,6 @@ import java.util.Map;
  */
 public class SafeSimpleDateFormat {
 
-
     private static final ThreadLocal<Map<DateFormatInfo, DateFormat>> safeDateFormatCache = new ThreadLocal<Map<DateFormatInfo, DateFormat>>() {
         @Override
         protected Map<DateFormatInfo, DateFormat> initialValue() {
@@ -95,7 +94,7 @@ public class SafeSimpleDateFormat {
 
         public DateFormatInfo(String format, Locale locale) {
             this.format = format;
-            this.locale = locale;
+            this.locale = locale == null ? Locale.getDefault() : locale;
         }
 
         public String getFormat() {
@@ -103,18 +102,26 @@ public class SafeSimpleDateFormat {
         }
 
         public Locale getLocale() {
-            return locale == null ? Locale.getDefault() : locale;
+            return locale;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             DateFormatInfo that = (DateFormatInfo) o;
 
-            if (!format.equals(that.format)) return false;
-            if (locale != null ? !locale.equals(that.locale) : that.locale != null) return false;
+            if (!format.equals(that.format)) {
+                return false;
+            }
+            if (!locale.equals(that.locale)) {
+                return false;
+            }
 
             return true;
         }
@@ -122,7 +129,7 @@ public class SafeSimpleDateFormat {
         @Override
         public int hashCode() {
             int result = format.hashCode();
-            result = 31 * result + (locale != null ? locale.hashCode() : 0);
+            result = 31 * result + locale.hashCode();
             return result;
         }
     }
