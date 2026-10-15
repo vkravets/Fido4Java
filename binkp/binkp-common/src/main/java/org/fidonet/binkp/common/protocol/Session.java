@@ -31,6 +31,8 @@ package org.fidonet.binkp.common.protocol;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
 import org.fidonet.binkp.common.io.FilesSender;
 
+import java.io.IOException;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -41,6 +43,10 @@ import org.fidonet.binkp.common.io.FilesSender;
 public interface Session {
 
     void write(Object message);
+
+    /** Drains writes from the file sender thread; never called by command handlers. */
+    default void awaitWrites() throws IOException, InterruptedException {
+    }
 
     void close(boolean close);
 

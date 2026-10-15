@@ -31,7 +31,6 @@ package org.fidonet.binkp.netty.plugin.codec;
 import org.fidonet.binkp.common.io.BinkFrame;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
@@ -46,9 +45,7 @@ public class BinkDataEncoder extends MessageToByteEncoder<BinkFrame> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, BinkFrame msg, ByteBuf out) throws Exception {
-        ByteBuf buf = Unpooled.buffer(msg.getData().length + 2);
-        buf.writeShort(msg.getDataInfo());
-        buf.writeBytes(msg.getData());
-        out.writeBytes(buf);
+        out.writeShort(msg.getDataInfo());
+        out.writeBytes(msg.getData());
     }
 }
