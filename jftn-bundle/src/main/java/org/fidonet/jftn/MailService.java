@@ -8,9 +8,10 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.tosser.MailExtensionFactory;
+import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
-import org.fidonet.jftn.tosser.jam.JamBridge;
 import org.fidonet.misc.LazyFileInputStream;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -27,9 +28,11 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,7 +47,7 @@ public final class MailService implements AutoCloseable {
     private final JFtnConfig config;
     private final Tosser tosser;
     private final OutboundSpool spool;
-    private final JamBridge jam;
+    private final List<MailProcessingExtension> extensions;
     private final Path stateDirectory;
     private final FileChannel lockChannel;
     private final FileLock lock;
@@ -57,13 +60,30 @@ public final class MailService implements AutoCloseable {
     private final ProcessingTrigger trigger;
 
     public MailService(JFtnConfig config, DatabaseManager base) throws IOException {
-        this(config, base,
-                () -> Executors.newSingleThreadScheduledExecutor(task -> new Thread(task,
-                                                                                    "jftn-tosser")));
+        this(config, base, MailService::createWorker);
     }
 
     MailService(JFtnConfig config,
                 DatabaseManager base,
+                Supplier<ScheduledExecutorService> workerFactory)
+            throws IOException {
+        this(config, base, ServiceLoader.load(MailExtensionFactory.class), workerFactory);
+    }
+
+    public MailService(JFtnConfig config,
+                       DatabaseManager base,
+                       Iterable<MailExtensionFactory> factories)
+            throws IOException {
+        this(config, base, factories, MailService::createWorker);
+    }
+
+    private static ScheduledExecutorService createWorker() {
+        return Executors.newSingleThreadScheduledExecutor(task -> new Thread(task, "jftn-tosser"));
+    }
+
+    MailService(JFtnConfig config,
+                DatabaseManager base,
+                Iterable<MailExtensionFactory> factories,
                 Supplier<ScheduledExecutorService> workerFactory)
             throws IOException {
         this.config = config;
@@ -74,6 +94,7 @@ public final class MailService implements AutoCloseable {
                                        StandardOpenOption.CREATE,
                                        StandardOpenOption.WRITE);
         FileLock acquired = null;
+        List<MailProcessingExtension> created = new ArrayList<>();
         try {
             try {
                 acquired = lockChannel.tryLock();
@@ -86,9 +107,16 @@ public final class MailService implements AutoCloseable {
             configure(base);
             tosser = new Tosser(config, base);
             spool = new OutboundSpool(config);
-            jam = new JamBridge(config, base, base);
+            for (MailExtensionFactory factory : factories) {
+                factory.create(config, base).ifPresent(created::add);
+            }
+            extensions = created;
             worker = workerFactory.get();
         } catch (IOException | RuntimeException e) {
+            IOException extensionFailure = closeExtensions(created);
+            if (extensionFailure != null) {
+                e.addSuppressed(extensionFailure);
+            }
             if (acquired != null) {
                 acquired.release();
             }
@@ -177,18 +205,30 @@ public final class MailService implements AutoCloseable {
                 tosser.runFast(directory.toString(), link.getAddr());
             }
         }
-        try {
-            jam.importOutgoing(tosser);
-        } catch (IOException e) {
-            logger.warn("JAM submission scan deferred", e);
-        }
+        runExtensions(true);
         tosser.exportPendingNetmail();
         tosser.exportEchomail();
+        runExtensions(false);
+    }
+
+    private void runExtensions(boolean beforeExport) {
+        for (MailProcessingExtension extension : extensions) {
+            runExtension(extension, beforeExport);
+        }
+    }
+
+    private void runExtension(MailProcessingExtension extension, boolean beforeExport) {
         try {
-            jam.exportMessages();
-            jam.reconcileDeliveries();
+            if (beforeExport) {
+                extension.beforeExport(tosser);
+            } else {
+                extension.afterExport();
+            }
         } catch (IOException e) {
-            logger.warn("JAM synchronization deferred; SQL mail processing completed", e);
+            logger.warn("Mail extension {} deferred during {} export",
+                        extension.getClass().getName(),
+                        beforeExport ? "before" : "after",
+                        e);
         }
     }
 
@@ -376,9 +416,29 @@ public final class MailService implements AutoCloseable {
         for (SessionContext context : claims.values()) {
             release(context);
         }
+        IOException extensionFailure = closeExtensions(extensions);
         lock.release();
         lockChannel.close();
         ACTIVE.remove(stateDirectory, this);
         resourcesClosed = true;
+        if (extensionFailure != null) {
+            throw extensionFailure;
+        }
+    }
+
+    private static IOException closeExtensions(List<MailProcessingExtension> extensions) {
+        IOException failure = null;
+        for (int index = extensions.size() - 1; index >= 0; index--) {
+            try {
+                extensions.get(index).close();
+            } catch (IOException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        return failure;
     }
 }

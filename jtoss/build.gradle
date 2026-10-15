@@ -15,3 +15,7 @@ dependencies {
 }
 
 apply from: "$rootDir/gradle/hpt-integration.gradle"
+
+dependencies {
+    integrationTestImplementation project(':jam-bridge')
+}

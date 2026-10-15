@@ -50,6 +50,9 @@ public class PluginLifecycleTest {
         assertEquals("test plugin", info.getDescription());
         manager.unloadPlugins();
         assertNull(context.get());
+        assertEquals(Arrays.asList("unload child", "unload dependency"),
+                     calls.subList(calls.size() - 2, calls.size()));
+        assertTrue(manager.findContexts(String.class).isEmpty());
         try {
             manager.getContext("child");
             fail("Unloaded plugin still registered");
@@ -65,6 +68,7 @@ public class PluginLifecycleTest {
         TestPlugin working = new TestPlugin("working");
         manager.loadPlugins(Arrays.asList(broken, working));
         assertTrue(calls.contains("load working"));
+        assertEquals(Collections.singletonList("working"), manager.findContexts(String.class));
         manager.unloadPlugins();
         assertTrue(calls.contains("unload working"));
         try {

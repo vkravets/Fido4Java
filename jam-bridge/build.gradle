@@ -1,0 +1,12 @@
+apply plugin: 'java-library'
+
+description = 'Optional JAM editor synchronization plugin'
+
+dependencies {
+    api project(':jtoss')
+    implementation project(':plugin-manager')
+    implementation 'org.slf4j:slf4j-api:1.7.21'
+    testImplementation 'junit:junit:4.12'
+    testRuntimeOnly 'com.h2database:h2:1.4.192'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+}

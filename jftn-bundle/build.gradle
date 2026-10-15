@@ -24,6 +24,7 @@ dependencies {
     implementation project(':plugin-manager')
     implementation project(':scheduler')
     implementation project(':jtoss')
+    runtimeOnly project(':jam-bridge')
     implementation project(':binkp-root:binkp-common')
     implementation project(':binkp-root:binkp-netty')
     implementation project(':rpc')
