@@ -5,6 +5,7 @@ import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.jftn.tosser.MessageIds;
+import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.MailIdentity;
 import org.fidonet.tools.CharsetTools;
@@ -96,7 +97,7 @@ public final class JamBridge {
                     existing.add(MailIdentity.of(entry.getMessage()));
                 }
                 if (binding.name == null) {
-                    for (Message message : netmail.getLocalNetmail(binding.aka)) {
+                    for (Message message : netmail.getEditorNetmail(binding.aka)) {
                         export(message, access, existing, state);
                     }
                 } else {
@@ -173,7 +174,14 @@ public final class JamBridge {
         if (previous != null && !previous.equals(fingerprint)) {
             throw new IllegalStateException("Message changed after submission; create a new message instead");
         }
-        if ("ACCEPTED".equals(state.get("stage." + identity))) {
+        String stage = state.get("stage." + identity);
+        if ("DELIVERED".equals(stage)) {
+            throw new IllegalStateException("Already delivered; create a new message for resending");
+        }
+        if ((entry.getAttributes() & JamArea.LOCKED) != 0 && previous == null) {
+            return;
+        }
+        if ("ACCEPTED".equals(stage)) {
             access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
             return;
         }
@@ -181,6 +189,13 @@ public final class JamBridge {
             throw new IllegalStateException("This MSGID already exists; edited mail is not automatically resent");
         }
         state.put("import." + identity, fingerprint);
+        if (state.get("targets." + identity) == null) {
+            List<String> targets = new ArrayList<>();
+            for (FTNAddr address : tosser.submissionTargets(message)) {
+                targets.add(address.toString());
+            }
+            state.put("targets." + identity, String.join(",", targets));
+        }
         state.put("stage." + identity, "PREPARED");
         if (binding.name == null) {
             tosser.submitNetmail(message, "jam:" + identity);
@@ -190,6 +205,48 @@ public final class JamBridge {
         state.put("stage." + identity, "ACCEPTED");
         access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
         logger.info("Accepted JAM submission {} from {}", identity, binding.area.getPath());
+    }
+
+    public void reconcileDeliveries() throws IOException {
+        OutboundSpool spool = new OutboundSpool(config);
+        for (Binding binding : bindings) {
+            JamState state = state(binding);
+            binding.area.locked(access -> {
+                for (JamArea.Entry entry : access.read()) {
+                    Message message = entry.getMessage();
+                    String identity = MailIdentity.of(message);
+                    String stage = state.get("stage." + identity);
+                    if (!"ACCEPTED".equals(stage) && !"DELIVERED".equals(stage)) {
+                        continue;
+                    }
+                    if (!JamFingerprint.of(message, entry.getAttributes())
+                                       .equals(state.get("import." + identity))) {
+                        logger.error("JAM message {} changed while queued; delivery flags were retained",
+                                     identity);
+                        continue;
+                    }
+                    String targets = state.get("targets." + identity);
+                    if (targets == null) {
+                        throw new IOException("Missing JAM delivery targets for " + identity);
+                    }
+                    boolean delivered = true;
+                    for (String target : targets.isEmpty() ? new String[0] : targets.split(",")) {
+                        String key = binding.name == null
+                                ? "netmail:jam:" + identity
+                                : "echo:" + binding.name + ":" + identity + ":"
+                                        + new FTNAddr(target);
+                        delivered &= spool.isAcknowledged(key, new FTNAddr(target));
+                    }
+                    if (delivered) {
+                        state.put("stage." + identity, "DELIVERED");
+                        if ((entry.getAttributes() & JamArea.SENT) == 0) {
+                            access.attributes(entry.getNumber(), JamArea.SENT, JamArea.LOCKED);
+                        }
+                    }
+                }
+                return null;
+            });
+        }
     }
 
     private void export(Message message,

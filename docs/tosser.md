@@ -151,6 +151,15 @@ preserved. Import receipts survive restarts; accepted posts are locked against
 editing while queued. SENT is not set merely because SQL accepted a post.
 Changing content under a previously submitted MSGID is a conflict, not a resend.
 
+For accepted submissions the bridge records the next hop (netmail) or recipient
+set (echomail). It sets JAM SENT and releases its edit lock only after durable
+binkp acknowledgement receipts exist for every recorded recipient. Local
+netmail to another local AKA completes on SQL acceptance. Missing recipients
+defer an echo submission. Delivery means transfer to the configured next hop,
+not proof that the final reader received the message. Receipts repair JAM flags
+after restart, including KillSent netmail removed from SQL after acknowledgement.
+The netmail view includes incoming, queued and retained sent mail for its AKA.
+
 The AKA must be configured locally in both applications. JAM file locks are
 implemented, but compatibility with an actual GoldED+ process has not yet been
 certified on either Windows or Linux.

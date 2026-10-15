@@ -7,7 +7,9 @@ import static org.junit.Assert.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.jam.JamArea;
+import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -49,7 +51,8 @@ public class JamBridgeTest {
                       + "/outbound\nEchoPath="
                       + directory
                       + "/echo\nSysOp=Test\n"
-                      + "Link=2:500/101,2:500/102,secret,localhost\nDefaultRoute=2:500/101\n"
+                      + "Link=2:500/101,2:500/102,secret,localhost\n"
+                      + "Link=2:500/103,2:500/102,secret,localhost\nDefaultRoute=2:500/101\n"
                       + "JamEcho=TEST,"
                       + directory
                       + "/jam/test\nJamNetmail="
@@ -60,6 +63,10 @@ public class JamBridgeTest {
         base = new DatabaseManager(new OrmManager("jdbc:h2:mem:jam" + System.nanoTime()));
         assertTrue(base.open());
         assertTrue(base.createArea("test"));
+        base.configureLink(config.getLink(new FTNAddr("2:500/101")), "secret");
+        base.configureSubscription(config.getLink(new FTNAddr("2:500/101")),
+                                   "test",
+                                   AccessLevel.BOTH);
         bridge = new JamBridge(config, base, base);
         echo = new JamArea(root.resolve("jam/test"), "test", new FTNAddr("2:500/102"));
         netmail = new JamArea(root.resolve("jam/netmail"), null, new FTNAddr("2:500/102"));
@@ -174,5 +181,58 @@ public class JamBridgeTest {
         new JamBridge(config, base, base).importOutgoing(new Tosser(config, base));
         assertEquals(1, base.getMessageSize("test"));
         assertTrue((echo.read().get(0).getAttributes() & JamArea.LOCKED) != 0);
+    }
+
+    @Test
+    public void marksSentOnlyAfterReceiptAndRecoversFlagsAfterRestart() throws Exception {
+        bridge.exportMessages();
+        netmail.append(local(false, true), JamArea.NET | JamArea.LOCAL);
+        Tosser tosser = new Tosser(config, base);
+        bridge.importOutgoing(tosser);
+        tosser.exportPendingNetmail();
+        bridge.reconcileDeliveries();
+        assertEquals(0, netmail.read().get(0).getAttributes() & JamArea.SENT);
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.acknowledge(spool.pending(config.getLink(new FTNAddr("2:500/101")), true).get(0));
+        new JamBridge(config, base, base).reconcileDeliveries();
+        assertTrue((netmail.read().get(0).getAttributes() & JamArea.SENT) != 0);
+        assertEquals(0, netmail.read().get(0).getAttributes() & JamArea.LOCKED);
+    }
+
+    @Test
+    public void waitsForAllEchoRecipients() throws Exception {
+        base.configureLink(config.getLink(new FTNAddr("2:500/103")), "secret");
+        base.configureSubscription(config.getLink(new FTNAddr("2:500/103")),
+                                   "test",
+                                   AccessLevel.BOTH);
+        bridge.exportMessages();
+        echo.append(local(true, true), JamArea.ECHO | JamArea.LOCAL);
+        Tosser tosser = new Tosser(config, base);
+        bridge.importOutgoing(tosser);
+        tosser.exportEchomail();
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.acknowledge(spool.pending(config.getLink(new FTNAddr("2:500/101")), true).get(0));
+        bridge.reconcileDeliveries();
+        assertEquals(0, echo.read().get(0).getAttributes() & JamArea.SENT);
+        spool.acknowledge(spool.pending(config.getLink(new FTNAddr("2:500/103")), true).get(0));
+        bridge.reconcileDeliveries();
+        assertTrue((echo.read().get(0).getAttributes() & JamArea.SENT) != 0);
+    }
+
+    @Test
+    public void detectsExternalEditsOfQueuedContentWithoutSendingAnotherVersion() throws Exception {
+        bridge.exportMessages();
+        netmail.append(local(false, true), JamArea.NET | JamArea.LOCAL);
+        Tosser tosser = new Tosser(config, base);
+        bridge.importOutgoing(tosser);
+        tosser.exportPendingNetmail();
+        Path text = Path.of(netmail.getPath() + ".jdt");
+        Files.writeString(text, "Other\r", StandardCharsets.US_ASCII);
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.acknowledge(spool.pending(config.getLink(new FTNAddr("2:500/101")), true).get(0));
+        bridge.reconcileDeliveries();
+        bridge.importOutgoing(tosser);
+        assertEquals(0, netmail.read().get(0).getAttributes() & JamArea.SENT);
+        assertEquals(1, base.getQueuedNetmail().size());
     }
 }
