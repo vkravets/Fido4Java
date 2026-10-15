@@ -2,6 +2,7 @@ package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.IncrementalEchoStore;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
@@ -28,35 +29,69 @@ final class EchoExporter {
 
     void export() throws IOException {
         for (String area : base.getAreas()) {
-            MessageIteration.forEach(base.getMessages(area), this::export);
+            exportArea(area);
         }
     }
 
-    private void export(Message message) throws IOException {
+    private void exportArea(String area) throws IOException {
+        List<Link> readers = readers(area);
+        if (!(base instanceof IncrementalEchoStore)) {
+            MessageIteration.forEach(base.getMessages(area), message -> export(message, readers));
+            return;
+        }
+        for (Link link : readers) {
+            ((IncrementalEchoStore) base).visitNewEcho(area,
+                                                       "outbound:" + link.getAddr(),
+                                                       message -> exportForLink(message,
+                                                                                link,
+                                                                                readers));
+        }
+    }
+
+    private void exportForLink(Message message, Link link, List<Link> readers) throws IOException {
         if (base.isArchived(message)) {
             return;
         }
-        List<Link> recipients = recipients(message);
+        List<Link> recipients = recipients(message, readers);
+        if (recipients.contains(link)) {
+            export(message, link, recipients);
+        }
+    }
+
+    private void export(Message message, List<Link> readers) throws IOException {
+        if (base.isArchived(message)) {
+            return;
+        }
+        List<Link> recipients = recipients(message, readers);
         for (Link link : recipients) {
             export(message, link, recipients);
         }
     }
 
-    List<Link> recipients(Message message) {
-        List<Link> recipients = new ArrayList<>();
+    private List<Link> readers(String area) {
+        List<Link> readers = new ArrayList<>();
         for (Link link : config.getConfiguredLinks()) {
-            if (base.canReadEcho(link, message.getArea())
-                    && !link.getAddr().equals(message.getUpLink())
-                    && (link.getAddr().getPnt() != 0 || !message.getBody()
-                                                                .getSeenBy()
-                                                                .getAddresses()
-                                                                .contains(link.getAddr()))) {
+            if (base.canReadEcho(link, area)) {
+                readers.add(link);
+            }
+        }
+        return readers;
+    }
+
+    List<Link> recipients(Message message) {
+        return recipients(message, readers(message.getArea()));
+    }
+
+    private List<Link> recipients(Message message, List<Link> readers) {
+        List<Link> recipients = new ArrayList<>();
+        for (Link link : readers) {
+            if (!link.getAddr().equals(message.getUpLink()) && (link.getAddr().getPnt() != 0
+                    || !message.getBody().getSeenBy().getAddresses().contains(link.getAddr()))) {
                 recipients.add(link);
             }
         }
         return recipients;
     }
-
     private void export(Message message, Link link, List<Link> recipients) throws IOException {
         if (link.getMyaddr() == null || link.getMyaddr().isEmpty()) {
             throw new IOException("Missing local echo AKA");

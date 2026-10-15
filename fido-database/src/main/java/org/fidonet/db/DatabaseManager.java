@@ -40,6 +40,7 @@ import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.ArchiveStore;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.IncrementalEchoStore;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
@@ -71,7 +72,13 @@ import java.util.Locale;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
+public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, IncrementalEchoStore {
+
+    @Override
+    public void visitNewEcho(String area, String consumer, MessageIteration.Handler handler)
+            throws IOException {
+        new EchoRepository(dbManager).visitNew(area, consumer, handler);
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
