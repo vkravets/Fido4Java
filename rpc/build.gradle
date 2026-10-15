@@ -3,6 +3,31 @@ apply plugin: 'java-library'
 dependencies {
     api 'org.apache.thrift:libthrift:0.25.0'
     api 'org.slf4j:slf4j-api:2.0.20'
+    implementation 'com.yubico:webauthn-server-core:2.10.1'
+    implementation platform('com.yubico:webauthn-server-parent:2.10.1')
+    implementation enforcedPlatform('com.fasterxml.jackson:jackson-bom:2.22.3')
+    implementation 'com.fasterxml.jackson.core:jackson-core'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    runtimeOnly 'com.h2database:h2:2.5.252'
+
+    // Yubico publishes broad dependency ranges; keep runtime resolution on tested GA releases.
+    constraints {
+        implementation('org.apache.httpcomponents.client5:httpclient5') {
+            version { strictly '5.6.5' }
+        }
+        implementation('org.apache.httpcomponents.core5:httpcore5') {
+            version { strictly '5.4.4' }
+        }
+        implementation('org.apache.httpcomponents.core5:httpcore5-h2') {
+            version { strictly '5.4.4' }
+        }
+        implementation('com.google.guava:guava') {
+            version { strictly '33.7.2-jre' }
+        }
+        implementation('com.upokecenter:cbor') {
+            version { strictly '4.5.6' }
+        }
+    }
 
     compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }

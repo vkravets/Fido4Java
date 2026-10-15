@@ -46,3 +46,16 @@ Outbound = /home/toch/ftn/var/spool/outbound
 # NodeDirectoryPath=./database/nodelist/catalog
 # DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|1:500/101|1|500
 # DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/points.lst|1:500/101
+
+# Optional sysop UI RPC (framed binary Thrift, local listener).
+# RpcEnabled=true
+# RpcBind=127.0.0.1
+# RpcPort=9090
+# RpcUser=sysop
+# RpcPassword=replace-with-a-private-password
+# RpcSessionSeconds=3600
+# RpcAuthPath=./database/rpc-auth
+# RpcPasskeysEnabled=true
+# RpcWebAuthnRpId=node.example
+# RpcWebAuthnOrigin=https://node.example
+# RpcLogFile=./logs/jftn.log

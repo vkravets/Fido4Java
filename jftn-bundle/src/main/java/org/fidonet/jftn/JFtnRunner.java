@@ -41,6 +41,7 @@ import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
+import org.fidonet.jftn.ui.NodeRpc;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -121,6 +122,7 @@ public class JFtnRunner {
         Scheduler scheduler;
         SessionContext context;
         MailService mail = null;
+        NodeRpc rpc = null;
         try {
             loadPlugins.run();
             runner = Runner.class.cast(requireContext(plugins.getContext(NettyPlugin.BINKP_PLUGIN_ID),
@@ -133,7 +135,11 @@ public class JFtnRunner {
             mail = new MailService(config, database, plugins.mailExtensions());
             mail.attach(context);
             mail.start();
+            rpc = NodeRpc.open(config, database, mail, context);
         } catch (Exception failure) {
+            if (rpc != null) {
+                rpc.close();
+            }
             if (mail != null) {
                 try {
                     mail.close();
@@ -145,22 +151,33 @@ public class JFtnRunner {
             throw failure;
         }
         MailService activeMail = mail;
+        NodeRpc activeRpc = rpc;
         runNode(runner,
                 scheduler,
                 context,
                 Integer.parseInt(config.getValue("BinkpPort",
                                                  Integer.toString(Connector.BINK_PORT))),
                 waiter,
-                () -> stopServices(scheduler, runner, activeMail, unloadPlugins));
+                () -> stopServices(scheduler, runner, activeMail, activeRpc, unloadPlugins));
     }
 
     private static void stopServices(Scheduler scheduler,
                                      Runner runner,
                                      MailService mail,
+                                     NodeRpc rpc,
                                      Runnable unloadPlugins) {
         try (mail) {
-            scheduler.stop();
-            runner.shutdown();
+            try {
+                if (rpc != null) {
+                    rpc.close();
+                }
+            } finally {
+                try {
+                    scheduler.stop();
+                } finally {
+                    runner.shutdown();
+                }
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {

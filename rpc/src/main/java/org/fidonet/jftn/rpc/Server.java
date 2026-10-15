@@ -31,7 +31,7 @@ package org.fidonet.jftn.rpc;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.server.TNonblockingServer;
+import org.apache.thrift.server.THsHaServer;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TTransportException;
@@ -87,7 +87,15 @@ public class Server implements AutoCloseable {
         TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
         multiplexedProcessor.registerProcessor("api", apiProcessor);
         multiplexedProcessor.registerProcessor("login", loginProcessor);
+        if (serverHandler.getAuthHandler() != null) {
+            multiplexedProcessor.registerProcessor("auth",
+                                                   new AuthService.Processor<>(serverHandler.getAuthHandler()));
+        }
         multiplexedProcessor.registerProcessor("messages", messageProcessor);
+        if (serverHandler.getUiHandler() != null) {
+            multiplexedProcessor.registerProcessor("ui",
+                                                   new UiService.Processor<>(serverHandler.getUiHandler()));
+        }
         StatisticService.Iface statistics = serverHandler.getStatisticsHandler();
         if (statistics != null) {
             multiplexedProcessor.registerProcessor("statistics",
@@ -97,8 +105,11 @@ public class Server implements AutoCloseable {
         try {
             transport = new TNonblockingServerSocket(new InetSocketAddress(bind_ip, this.port));
             TProtocolFactory factory = new TBinaryProtocol.Factory();
-            server = new TNonblockingServer(new TNonblockingServer.Args(transport).processor(multiplexedProcessor)
-                                                                                  .protocolFactory(factory));
+            THsHaServer.Args args = new THsHaServer.Args(transport);
+            args.minWorkerThreads(2).maxWorkerThreads(8);
+            args.maxReadBufferBytes = 2L * 1024 * 1024;
+            args.processor(multiplexedProcessor).protocolFactory(factory);
+            server = new THsHaServer(args);
         } catch (TTransportException e) {
             throw new IllegalStateException("Unable to bind RPC server to " + bind_ip + ":" + port,
                                             e);

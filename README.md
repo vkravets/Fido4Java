@@ -154,6 +154,10 @@ The optional [node and point directory plugin](docs/nodelist.md) imports FTSC
 nodelists and pointlists from local files or ZIP archives into its own catalog.
 Bundled [Groovy mail scripts](docs/mail-scripts.md) provide AreaFix, FileFix,
 TIC file distribution and automatic directory imports with NODEDIFF support.
+The optional authenticated [UI RPC service](docs/rpc-ui.md) exposes mail reading,
+drafts and submission, echo subscriptions, manual polls, queues and node logs.
+RPC accounts are stored separately with hashed passwords and optional WebAuthn
+passkeys as an additional login method.
 
 The RPC module requires the Apache Thrift 0.25.0 compiler on `PATH`.
 Run the full build, including tests:
