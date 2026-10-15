@@ -6,7 +6,7 @@ import org.fidonet.types.Message;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
-/** Search keys kept separately so legacy message tables need no destructive migration. */
+/** Indexed identities and addresses used to find stored netmail. */
 @DatabaseTable(tableName = "netmail_index")
 public class NetmailIndex {
     @DatabaseField(id = true, columnName = "message_id")

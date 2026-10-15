@@ -1,8 +1,5 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
 import org.fidonet.types.FTNAddr;
@@ -13,10 +10,12 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.Locale;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 public class MessageRoundTripTest {
     @Test
-    public void legacyConversionUsesProtocolDateLocaleAndSupportsMissingRecipient()
-            throws Exception {
+    public void conversionUsesProtocolDateLocaleAndSupportsMissingRecipient() throws Exception {
         Locale previous = Locale.getDefault();
         try {
             Locale.setDefault(Locale.FRANCE);
@@ -27,14 +26,6 @@ public class MessageRoundTripTest {
                                            "subject",
                                            "body\r",
                                            new Date(1700000000000L));
-            org.fidonet.db.upgrade.version0.Echomail legacy = org.fidonet.db.upgrade.version0.Echomail.fromMessage(original,
-                                                                                                                   null);
-            assertEquals(original.getFAddr(), legacy.toMessage().getFAddr());
-            assertNull(legacy.toMessage().getTAddr());
-            legacy.setToAddr("2:500/2");
-            assertEquals(new FTNAddr("2:500/2"), legacy.toMessage().getTAddr());
-            legacy.setKludges(null);
-            assertNull(legacy.getKludges());
             Echomail current = Echomail.fromMessage(original, null);
             assertNull(current.toMessage().getTAddr());
         } finally {

@@ -81,11 +81,6 @@ public class ConfigurationLink {
         return id;
     }
 
-    /** Preserve original identities when migrating a database. */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getAddress() {
         return address;
     }

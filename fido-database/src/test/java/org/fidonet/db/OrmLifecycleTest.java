@@ -1,13 +1,7 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Version;
-import org.fidonet.db.upgrade.tools.UpgraderTool;
 
 import com.j256.ormlite.dao.Dao;
 import org.junit.Test;
@@ -15,26 +9,12 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
-public class OrmLifecycleTest {
-    @Test
-    public void unknownAndUnsupportedVersionsDoNotProduceNullPointerInUpgradeTool()
-            throws Exception {
-        OrmManager manager = new OrmManager(url());
-        try {
-            manager.connect();
-            UpgraderTool tool = new UpgraderTool();
-            assertFalse(tool.isNeedToUpgrade(manager));
-            assertFalse(tool.upgrade(manager, manager));
-            Version version = new Version();
-            version.setVersion(999L);
-            manager.setCurrentVersion(version);
-            assertFalse(tool.isNeedToUpgrade(manager));
-            assertFalse(tool.upgrade(manager, manager));
-        } finally {
-            manager.disconnect();
-        }
-    }
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+public class OrmLifecycleTest {
     private String url() {
         return "jdbc:h2:mem:lifecycle" + System.nanoTime();
     }

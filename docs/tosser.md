@@ -102,12 +102,10 @@ MSGIDs. Keep `Tmp`, the SQL database and `Outbound/jftn-mail` together when
 backing up or restoring a node. Do not reuse an old progress journal with a
 new, empty database. Receipt/journal retention is currently manual.
 
-On opening an existing SQL database, missing netmail delivery records are
-created without replacing the original messages. Previously sent mail stays
-sent, unsent mail without a route becomes local, and unsent mail with a valid
-route is queued. Invalid legacy route strings are retained in a BLOCKED state
-for operator repair. The incorrect unique Boolean index on netmail `send` is
-removed, and the echo ingress column is added when missing.
+The current SQL schema is the baseline. New databases are created directly in
+this format. Opening an existing database does not migrate old tables, alter
+indexes or columns, or rebuild delivery records and netmail search keys.
+Databases from older schemas must be converted separately before use.
 
 Outgoing Type-2+ packets contain next-hop envelope addresses and independent
 final message addresses. Netmail exports INTL/FMPT/TOPT and appends a UTC Via
@@ -241,8 +239,8 @@ document or independent-tosser certification.
   discovery, DNS node discovery or automatic zonegate selection.
 - FTN addresses currently use the project's existing 4D model. Distinct domains
   sharing the same zone/net/node/point cannot be represented independently.
-- SQL migrations are exercised against H2. Other database drivers require their
-  own migration verification before production use.
+- SQL storage is exercised against H2. Other database drivers require their
+  own compatibility verification before production use.
 - SQL echo export uses independent persistent checkpoints for each configured link
   and JAM view. Checkpoints advance after durable preparation, not acknowledgement;
   pending packets remain in the outbound spool until binkp confirms them. A new
@@ -262,8 +260,8 @@ disk space up to the bundle limit is required while processing an archive.
 JAM scans stream messages and skip unchanged areas using their modification counter,
 file identity, lengths and timestamps. Delivery receipts are still checked while
 submitted messages await acknowledgement. An external editor must follow JAM's
-locking and modification-counter rules. SQL netmail search keys are backfilled into
-`netmail_index` when an existing database is opened; message rows are retained.
+locking and modification-counter rules. SQL netmail search keys are written to
+`netmail_index` together with new messages and retained across database restarts.
 
 JAM bridge updates append checksummed, forced records to `*.properties.log` alongside
 legacy `*.properties` receipts. Preserve both kinds of files in backups. A truncated
@@ -275,7 +273,7 @@ from session bookkeeping, and repeated receive-triggered scans are coalesced.
 ## Validation and specifications
 
 Tests cover partial failure/restart, quarantine conflicts, loose PKT intake,
-destination/password checks, local netmail, SQL migration, routing and Hold,
+destination/password checks, local netmail, SQL persistence, routing and Hold,
 acknowledgement recovery, subscriber access, echo fan-out, control-line ordering,
 legacy MSGID-free messages, JAM UTF-8 storage, receive publication failure and
 real TCP exchange of both message kinds between two production Netty peers.

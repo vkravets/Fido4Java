@@ -39,27 +39,19 @@ import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
-import org.fidonet.types.FTNAddr;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
-import com.j256.ormlite.jdbc.JdbcDatabaseConnection;
 import com.j256.ormlite.misc.TransactionManager;
 import com.j256.ormlite.support.ConnectionSource;
-import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -127,12 +119,6 @@ public class OrmManager {
                 daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
             }
             createTables();
-            if (daoClasses.contains(Netmail.class)) {
-                removeLegacyNetmailSendIndex();
-                addEchoIngressColumn();
-                migrateLegacyNetmailDeliveries();
-                new NetmailRepository(this).indexExisting();
-            }
         } catch (SQLException | RuntimeException e) {
             try {
                 connectionSource.close();
@@ -150,155 +136,6 @@ public class OrmManager {
         return connectionSource != null && connectionSource.isOpen();
     }
 
-    /** Upgrade the legacy, incorrectly unique Boolean index without rebuilding mail rows. */
-    private void removeLegacyNetmailSendIndex() throws SQLException {
-        DatabaseConnection database = connectionSource.getReadWriteConnection();
-        try {
-            Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
-            Set<String> indexes = legacySendIndexes(jdbc);
-            String quote = jdbc.getMetaData().getIdentifierQuoteString().trim();
-            for (String name : indexes) {
-                dropIndex(jdbc, name, quote);
-            }
-        } finally {
-            connectionSource.releaseConnection(database);
-        }
-    }
-
-    private Set<String> legacySendIndexes(Connection jdbc) throws SQLException {
-        Set<String> indexes = new HashSet<>();
-        try (ResultSet tables = jdbc.getMetaData()
-                                    .getTables(null, null, null, new String[]{"TABLE"})) {
-            while (tables.next()) {
-                if (!"netmail".equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
-                    continue;
-                }
-                indexes.addAll(sendOnlyIndexes(jdbc,
-                                               tables.getString("TABLE_SCHEM"),
-                                               tables.getString("TABLE_NAME")));
-            }
-        }
-        return indexes;
-    }
-
-    private Set<String> sendOnlyIndexes(Connection jdbc, String schema, String table)
-            throws SQLException {
-        Map<String, Set<String>> columns = uniqueIndexColumns(jdbc, schema, table);
-        Set<String> indexes = new HashSet<>();
-        for (Map.Entry<String, Set<String>> index : columns.entrySet()) {
-            if (index.getValue().equals(Collections.singleton("send"))) {
-                indexes.add(index.getKey());
-            }
-        }
-        return indexes;
-    }
-
-    private Map<String, Set<String>> uniqueIndexColumns(Connection jdbc,
-                                                        String schema,
-                                                        String table)
-            throws SQLException {
-        Map<String, Set<String>> columns = new HashMap<>();
-        try (ResultSet rows = jdbc.getMetaData().getIndexInfo(null, schema, table, true, false)) {
-            while (rows.next()) {
-                String name = rows.getString("INDEX_NAME");
-                String column = rows.getString("COLUMN_NAME");
-                if (name != null && column != null) {
-                    columns.computeIfAbsent(name, ignored -> new HashSet<>())
-                           .add(column.toLowerCase(Locale.ROOT));
-                }
-            }
-        }
-        return columns;
-    }
-
-    private void dropIndex(Connection jdbc, String name, String quote) throws SQLException {
-        try (Statement statement = jdbc.createStatement()) {
-            statement.executeUpdate("DROP INDEX "
-                                    + quote
-                                    + name.replace(quote, quote + quote)
-                                    + quote);
-        }
-    }
-
-    private void addEchoIngressColumn() throws SQLException {
-        DatabaseConnection database = connectionSource.getReadWriteConnection();
-        try {
-            Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
-            addEchoIngressColumns(jdbc);
-        } finally {
-            connectionSource.releaseConnection(database);
-        }
-    }
-
-    private void addEchoIngressColumns(Connection jdbc) throws SQLException {
-        try (ResultSet tables = jdbc.getMetaData()
-                                    .getTables(null, null, null, new String[]{"TABLE"})) {
-            while (tables.next()) {
-                String table = tables.getString("TABLE_NAME");
-                if ("echomail".equalsIgnoreCase(table)) {
-                    ensureEchoIngressColumn(jdbc, tables.getString("TABLE_SCHEM"), table);
-                }
-            }
-        }
-    }
-
-    private void ensureEchoIngressColumn(Connection jdbc, String schema, String table)
-            throws SQLException {
-        if (!hasEchoIngressColumn(jdbc, schema, table)) {
-            getDao(Echomail.class).executeRaw("ALTER TABLE "
-                                              + table
-                                              + " ADD received_from VARCHAR(255)");
-        }
-    }
-
-    private boolean hasEchoIngressColumn(Connection jdbc, String schema, String table)
-            throws SQLException {
-        boolean found = false;
-        try (ResultSet columns = jdbc.getMetaData().getColumns(null, schema, table, null)) {
-            while (columns.next()) {
-                found |= "received_from".equalsIgnoreCase(columns.getString("COLUMN_NAME"));
-            }
-        }
-        return found;
-    }
-
-    private void migrateLegacyNetmailDeliveries() throws SQLException {
-        inTransaction(() -> {
-            Dao<NetmailDelivery, String> deliveries = getDao(NetmailDelivery.class);
-            Dao<Netmail, Long> messages = getDao(Netmail.class);
-            for (Netmail message : messages.queryBuilder()
-                                           .where()
-                                           .notIn("id",
-                                                  deliveries.queryBuilder()
-                                                            .selectColumns("message_id"))
-                                           .query()) {
-                deliveries.create(legacyDelivery(message));
-            }
-            return null;
-        });
-    }
-
-    private NetmailDelivery legacyDelivery(Netmail message) {
-        String route = message.getRoute();
-        if (route != null && route.trim().isEmpty()) {
-            route = null;
-        }
-        NetmailDelivery delivery = new NetmailDelivery("legacy:" + message.getId(), message, route);
-        if (Boolean.TRUE.equals(message.getSend())) {
-            delivery.setState("SENT");
-        } else if (route != null && !isValidLegacyRoute(route)) {
-            delivery.setState("BLOCKED");
-        }
-        return delivery;
-    }
-
-    private boolean isValidLegacyRoute(String route) {
-        try {
-            return new FTNAddr(route).isValid();
-        } catch (RuntimeException invalidRoute) {
-            return false;
-        }
-    }
     public <T> T inTransaction(Callable<T> work) throws SQLException {
         return TransactionManager.callInTransaction(connectionSource, work);
     }
