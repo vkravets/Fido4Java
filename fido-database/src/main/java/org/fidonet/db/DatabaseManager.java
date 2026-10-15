@@ -208,10 +208,8 @@ public class DatabaseManager implements IBase {
             // TODO: if my point - check access level, if it's not allow to post - sent to him
             // netmail with such info
             echomailDao.create(echomail);
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        } catch (ParseException e) {
-            logger.error(e.getMessage(), e);
+        } catch (SQLException | ParseException e) {
+            throw new IllegalStateException("Unable to save message in " + areaname, e);
         }
     }
 
@@ -300,9 +298,8 @@ public class DatabaseManager implements IBase {
                                       .eq(Echomail.MSGID_COLUMN, message.getMsgId());
             return daoEchomail.countOf(echomailObjectQueryBuilder.prepare()) != 0;
         } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
+            throw new IllegalStateException("Unable to check duplicates", e);
         }
-        return false;
     }
 
     @Override

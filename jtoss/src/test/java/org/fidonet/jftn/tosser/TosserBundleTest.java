@@ -158,4 +158,54 @@ public class TosserBundleTest {
         assertTrue(Files.exists(packet));
         assertEquals(0, base.getMessageSize("test"));
     }
+
+    @Test
+    public void quarantinesUnhandledNetmailBeforeDeletingItsBundle() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        byte[] bytes = packet("secret", "Netmail\r");
+        Path source = bundle(inbound, "mail.mo0", bytes);
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertArrayEquals(bytes, Files.readAllBytes(bad.resolve("message.bad")));
+        assertFalse(Files.exists(source));
+    }
+
+    @Test
+    public void retainsBundleWhenQuarantineNameContainsAnotherPacket() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        Files.writeString(bad.resolve("message.bad"), "previous packet");
+        Path source = bundle(inbound, "mail.mo0", packet("wrong"));
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertTrue(Files.exists(source));
+        assertEquals("previous packet", Files.readString(bad.resolve("message.bad")));
+    }
+
+    @Test
+    public void resumesPartialImportAfterStorageFailureAndTosserRestart() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        DatabaseManager normal = base;
+        base = new DatabaseManager(orm) {
+            @Override
+            public void addMessage(Message message, String area) {
+                if (message.getMsgId().endsWith("second")) {
+                    throw new IllegalStateException("Simulated storage outage");
+                }
+                super.addMessage(message, area);
+            }
+        };
+        Path source = bundle(inbound,
+                             "mail.mo0",
+                             packet("secret",
+                                    "AREA:TEST\r\1MSGID: 2:500/101 first\rFirst\r",
+                                    "AREA:TEST\r\1MSGID: 2:500/101 second\rSecond\r"));
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertTrue(Files.exists(source));
+        assertEquals(1, base.getMessageSize("test"));
+        base = normal;
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertEquals(2, base.getMessageSize("test"));
+        assertFalse(Files.exists(source));
+    }
 }
