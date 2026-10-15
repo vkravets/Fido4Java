@@ -6,12 +6,12 @@ dependencies {
   api project(':event-bus')
   api project(':fido-config')
   api project(':fido-tools')
-    implementation 'org.slf4j:slf4j-api:1.7.21'
-    testImplementation 'junit:junit:4.12'
-    compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+    implementation 'org.slf4j:slf4j-api:2.0.20'
+    testImplementation 'junit:junit:4.13.2'
+    compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
   api project(':fido-database')
   api project(':jambase')
-    testRuntimeOnly 'com.h2database:h2:1.4.192'
+    testRuntimeOnly 'com.h2database:h2:2.5.252'
 }
 
 apply from: "$rootDir/gradle/hpt-integration.gradle"

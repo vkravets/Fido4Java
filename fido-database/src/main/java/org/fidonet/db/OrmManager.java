@@ -124,7 +124,7 @@ public class OrmManager {
         } catch (SQLException | RuntimeException e) {
             try {
                 connectionSource.close();
-            } catch (SQLException closeError) {
+            } catch (Exception closeError) {
                 e.addSuppressed(closeError);
             } finally {
                 connectionSource = null;
@@ -135,7 +135,7 @@ public class OrmManager {
     }
 
     public boolean isConnect() {
-        return connectionSource != null && connectionSource.isOpen();
+        return connectionSource != null && connectionSource.isOpen(null);
     }
 
     public <T> T inTransaction(Callable<T> work) throws SQLException {
@@ -177,7 +177,7 @@ public class OrmManager {
         if (connectionSource != null) {
             try {
                 connectionSource.close();
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
         }

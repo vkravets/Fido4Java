@@ -11,12 +11,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-thrift-0.14.2-{{ arch }}
+            - v1-thrift-0.25.0-{{ arch }}
       - run:
           name: Install Apache Thrift compiler
           command: |
-            thrift_cached_bin="$HOME/.cache/thrift/0.14.2/bin/thrift"
-            if [ -x "$thrift_cached_bin" ] && [ "$("$thrift_cached_bin" -version)" = "Thrift version 0.14.2" ]; then
+            thrift_cached_bin="$HOME/.cache/thrift/0.25.0/bin/thrift"
+            if [ -x "$thrift_cached_bin" ] && [ "$("$thrift_cached_bin" -version)" = "Thrift version 0.25.0" ]; then
               echo "Using cached Thrift compiler"
             else
               sudo apt-get update
@@ -24,12 +24,12 @@ jobs:
               thrift_build_dir=$(mktemp -d)
               (
                 cd "$thrift_build_dir"
-                curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.14.2/thrift-0.14.2.tar.gz
+                curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.25.0/thrift-0.25.0.tar.gz
                 tar -xzf thrift.tar.gz
-                cd thrift-0.14.2
+                cd thrift-0.25.0
                 ./configure --disable-libs --disable-tests --disable-tutorial
                 make -C compiler/cpp -j2
-                test "$(compiler/cpp/thrift -version)" = "Thrift version 0.14.2"
+                test "$(compiler/cpp/thrift -version)" = "Thrift version 0.25.0"
                 mkdir -p "$(dirname "$thrift_cached_bin")"
                 install compiler/cpp/thrift "$thrift_cached_bin"
               )
@@ -37,9 +37,9 @@ jobs:
             sudo install "$thrift_cached_bin" /usr/local/bin/thrift
             thrift -version
       - save_cache:
-          key: v1-thrift-0.14.2-{{ arch }}
+          key: v1-thrift-0.25.0-{{ arch }}
           paths:
-            - ~/.cache/thrift/0.14.2/bin/thrift
+            - ~/.cache/thrift/0.25.0/bin/thrift
       - run:
           name: Build, test and package integration runtimes
           command: |

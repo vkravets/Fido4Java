@@ -1,5 +1,8 @@
 package org.fidonet.db;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
 import org.fidonet.types.FTNAddr;
@@ -9,9 +12,6 @@ import org.junit.Test;
 
 import java.util.Date;
 import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class MessageRoundTripTest {
     @Test

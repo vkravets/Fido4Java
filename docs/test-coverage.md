@@ -10,7 +10,7 @@ whole feature is correct.
 
 Run `./gradlew coverageStatistics` for unit tests and real TCP tests. Add
 `-PcoverageWithBinkd` to run the Docker interoperability scenarios for both Netty
-and MINA2. On Windows use `gradlew.bat`. RPC compilation requires Thrift 0.14.2:
+and MINA2. On Windows use `gradlew.bat`. RPC compilation requires Thrift 0.25.0:
 add `-PthriftExecutable=/path/to/thrift` if it is not on PATH.
 
 Reports: `build/reports/coverage/unit/index.html` and `unit.xml`, or

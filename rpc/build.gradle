@@ -1,10 +1,10 @@
 apply plugin: 'java-library'
 
 dependencies {
-    api 'org.apache.thrift:libthrift:0.14.2'
-    api 'org.slf4j:slf4j-api:1.7.21'
-    testImplementation 'junit:junit:4.12'
-    compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+    api 'org.apache.thrift:libthrift:0.25.0'
+    api 'org.slf4j:slf4j-api:2.0.20'
+    testImplementation 'junit:junit:4.13.2'
+    compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }
 
 // The old Thrift plugin uses IncrementalTaskInputs, removed in Gradle 8.
@@ -22,7 +22,7 @@ def compileThrift = tasks.register('compileThrift', Exec) {
         outputDir.mkdirs()
         commandLine thriftExecutable.get(), '--nowarn', '--strict', '--recurse',
                 '--allow-neg-keys', '--allow-64bit-consts',
-                '--gen', 'java:private-members', '-out', outputDir.absolutePath,
+                '--gen', 'java:private-members,generated_annotations=suppress', '-out', outputDir.absolutePath,
                 file('src/main/thrift/main.thrift').absolutePath
     }
 }

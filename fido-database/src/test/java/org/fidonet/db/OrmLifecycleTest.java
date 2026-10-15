@@ -32,7 +32,6 @@ public class OrmLifecycleTest {
             assertEquals(12, manager.getAllDaos().size());
             assertEquals(Long.valueOf(Version.UNKNOWN_VERSION), manager.getCurrentVersion());
             Version version = new Version();
-            version.setId(1L);
             version.setVersion(10L);
             assertTrue(manager.setCurrentVersion(version));
             version.setVersion(11L);

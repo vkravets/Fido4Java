@@ -2,12 +2,12 @@ group = 'org.fidonet.binkp'
 description = 'BinkP Common'
 dependencies {
   implementation project(':event-bus')
-    implementation 'org.slf4j:slf4j-api:1.7.21'
+    implementation 'org.slf4j:slf4j-api:2.0.20'
   implementation project(':fido-fts')
   implementation project(':tools')
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
   compileOnly project(':plugin-manager')
-    compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+    compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }
 
 task packageTests(type: Jar) {

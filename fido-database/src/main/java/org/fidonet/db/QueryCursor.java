@@ -6,7 +6,7 @@ import com.j256.ormlite.stmt.QueryBuilder;
 import java.sql.SQLException;
 import java.util.Iterator;
 
-/** Adapts the legacy ORM cursor to structured resource ownership. */
+/** Adapts an ORM cursor to structured resource ownership. */
 final class QueryCursor<T> implements Iterator<T>, AutoCloseable {
     private final CloseableIterator<T> rows;
 
@@ -26,6 +26,16 @@ final class QueryCursor<T> implements Iterator<T>, AutoCloseable {
 
     @Override
     public void close() throws SQLException {
-        rows.close();
+        closeRows(rows);
+    }
+
+    static void closeRows(CloseableIterator<?> rows) throws SQLException {
+        try {
+            rows.close();
+        } catch (SQLException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SQLException("Unable to close database iterator", e);
+        }
     }
 }

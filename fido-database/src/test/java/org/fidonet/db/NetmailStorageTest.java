@@ -1,5 +1,8 @@
 package org.fidonet.db;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
@@ -9,9 +12,6 @@ import org.fidonet.types.Message;
 import org.junit.Test;
 
 import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class NetmailStorageTest {
     @Test

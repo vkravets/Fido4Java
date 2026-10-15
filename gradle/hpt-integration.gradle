@@ -11,8 +11,8 @@ configurations {
 }
 
 dependencies {
-    integrationTestImplementation 'org.testcontainers:testcontainers:1.21.4'
-    integrationTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+    integrationTestImplementation 'org.testcontainers:testcontainers:2.0.5'
+    integrationTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }
 
 def workerJar = tasks.register('hptInteropWorkerJar', Jar) {

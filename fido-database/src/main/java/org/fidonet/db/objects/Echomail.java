@@ -68,7 +68,7 @@ public class Echomail {
     public static final String ATTR_COLUMN = "attr";
     public static final String ORIGIN_COLUMN = "origin";
 
-    @DatabaseField(generatedId = true, allowGeneratedIdInsert = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(generatedId = true, columnName = ID_COLUMN, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = MSGID_COLUMN, canBeNull = false, index = true)

@@ -49,9 +49,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runners.MethodSorters;
 
-import java.io.File;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -74,21 +72,9 @@ public class TestTosser {
     private static OrmManager ormManager;
     private static DatabaseManager databaseManager;
 
-    private static File computeTestDataRoot(Class anyTestClass) {
-        final String clsUri = anyTestClass.getName().replace('.', '/') + ".class";
-        final URL url = anyTestClass.getClassLoader().getResource(clsUri);
-        final String clsPath = url.getPath();
-        final File root = new File(clsPath.substring(0, clsPath.length() - clsUri.length()));
-        return new File(root.getParentFile(), "test-data");
-    }
-
     @BeforeClass
     public static void setUp() throws SQLException {
-        File pathDb = computeTestDataRoot(TestTosser.class);
-        //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-        //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
-        //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
-        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
+        ormManager = new OrmManager("jdbc:h2:mem:tosser" + System.nanoTime());
         databaseManager = new DatabaseManager(ormManager);
         if (!databaseManager.open()) {
             Assert.fail();
