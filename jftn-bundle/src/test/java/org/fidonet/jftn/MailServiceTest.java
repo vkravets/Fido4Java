@@ -33,8 +33,70 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class MailServiceTest {
+    @Test
+    public void closingASessionDoesNotWaitForTheTosserScan() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:mailLocks"
+                                                                  + System.nanoTime())) {
+            @Override
+            public List<String> getAreas() {
+                entered.countDown();
+                awaitResume(resume);
+                return Collections.emptyList();
+            }
+        };
+        assertTrue(base.open());
+        ExecutorService tasks = Executors.newFixedThreadPool(2);
+        try (MailService service = new MailService(config("2:500/102", "2:500/101"), base)) {
+            verifyIndependentSessionClose(service, tasks, entered, resume);
+        } finally {
+            resume.countDown();
+            tasks.shutdownNow();
+            base.close();
+        }
+    }
+
+    private void verifyIndependentSessionClose(MailService service,
+                                               ExecutorService tasks,
+                                               CountDownLatch entered,
+                                               CountDownLatch resume)
+            throws Exception {
+        Future<?> processing = tasks.submit(() -> {
+            service.processPending();
+            return null;
+        });
+        try {
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            SessionContext context = JFtnRunner.createSessionContext(config("2:500/102",
+                                                                            "2:500/101"));
+            service.attach(context);
+            tasks.submit(context::closeReceiveStreams).get(2, TimeUnit.SECONDS);
+        } finally {
+            resume.countDown();
+            processing.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private void awaitResume(CountDownLatch resume) {
+        try {
+            if (!resume.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Test scan timed out");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
 
