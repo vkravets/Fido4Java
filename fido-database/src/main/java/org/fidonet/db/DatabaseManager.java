@@ -31,9 +31,13 @@ package org.fidonet.db;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
+import org.fidonet.db.objects.Netmail;
+import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.NetmailStore;
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
@@ -58,7 +62,7 @@ import java.util.List;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager implements IBase {
+public class DatabaseManager implements IBase, NetmailStore {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
@@ -66,6 +70,40 @@ public class DatabaseManager implements IBase {
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;
+    }
+
+    @Override
+    public synchronized void saveNetmail(Message message, String deliveryKey, String nextHop) {
+        Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
+        try {
+            dbManager.inTransaction(() -> {
+                if (deliveries.queryForId(deliveryKey) == null) {
+                    Netmail stored = Netmail.fromMessage(message);
+                    stored.setRoute(nextHop);
+                    dbManager.getDao(Netmail.class).create(stored);
+                    deliveries.create(new NetmailDelivery(deliveryKey, stored, nextHop));
+                }
+                return null;
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to save netmail", e);
+        }
+    }
+
+    @Override
+    public List<Message> getLocalNetmail(FTNAddr address) {
+        try {
+            List<Message> result = new ArrayList<>();
+            for (NetmailDelivery delivery : dbManager.<NetmailDelivery, String>getDao(NetmailDelivery.class)
+                                                     .queryForEq("state", "LOCAL")) {
+                if (address.equals(new FTNAddr(delivery.getMessage().getToAddr()))) {
+                    result.add(delivery.getMessage().toMessage());
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to read netmail", e);
+        }
     }
 
     @Override

@@ -32,21 +32,29 @@ import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
 import org.fidonet.db.objects.Netmail;
+import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.jdbc.JdbcDatabaseConnection;
 import com.j256.ormlite.misc.TransactionManager;
 import com.j256.ormlite.support.ConnectionSource;
+import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -78,6 +86,7 @@ public class OrmManager {
         daoClasses.add(Echomail.class);
         daoClasses.add(ConfigurationLink.class);
         daoClasses.add(Netmail.class);
+        daoClasses.add(NetmailDelivery.class);
         daoClasses.add(Subscription.class);
         daoClasses.add(Version.class);
     }
@@ -109,6 +118,9 @@ public class OrmManager {
                 daoMap.put(daoClass, DaoManager.createDao(connectionSource, daoClass));
             }
             createTables();
+            if (daoClasses.contains(Netmail.class)) {
+                removeLegacyNetmailSendIndex();
+            }
         } catch (SQLException | RuntimeException e) {
             try {
                 connectionSource.close();
@@ -124,6 +136,55 @@ public class OrmManager {
 
     public boolean isConnect() {
         return connectionSource != null && connectionSource.isOpen();
+    }
+
+    /** Upgrade the legacy, incorrectly unique Boolean index without rebuilding mail rows. */
+    private void removeLegacyNetmailSendIndex() throws SQLException {
+        DatabaseConnection database = connectionSource.getReadWriteConnection();
+        try {
+            Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
+            Set<String> indexes = new HashSet<>();
+            try (ResultSet tables = jdbc.getMetaData()
+                                        .getTables(null, null, null, new String[]{"TABLE"})) {
+                while (tables.next()) {
+                    if (!"netmail".equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
+                        continue;
+                    }
+                    Map<String, Set<String>> columns = new HashMap<>();
+                    try (ResultSet rows = jdbc.getMetaData()
+                                              .getIndexInfo(null,
+                                                            tables.getString("TABLE_SCHEM"),
+                                                            tables.getString("TABLE_NAME"),
+                                                            true,
+                                                            false)) {
+                        while (rows.next()) {
+                            String name = rows.getString("INDEX_NAME");
+                            String column = rows.getString("COLUMN_NAME");
+                            if (name != null && column != null) {
+                                columns.computeIfAbsent(name, ignored -> new HashSet<>())
+                                       .add(column.toLowerCase(Locale.ROOT));
+                            }
+                        }
+                    }
+                    for (Map.Entry<String, Set<String>> index : columns.entrySet()) {
+                        if (index.getValue().equals(Collections.singleton("send"))) {
+                            indexes.add(index.getKey());
+                        }
+                    }
+                }
+            }
+            String quote = jdbc.getMetaData().getIdentifierQuoteString().trim();
+            for (String name : indexes) {
+                try (Statement statement = jdbc.createStatement()) {
+                    statement.executeUpdate("DROP INDEX "
+                                            + quote
+                                            + name.replace(quote, quote + quote)
+                                            + quote);
+                }
+            }
+        } finally {
+            connectionSource.releaseConnection(database);
+        }
     }
 
     public <T> T inTransaction(Callable<T> work) throws SQLException {

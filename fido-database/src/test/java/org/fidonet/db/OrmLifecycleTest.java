@@ -49,7 +49,7 @@ public class OrmLifecycleTest {
             manager.connect();
             manager.createTables();
             assertTrue(manager.isConnect());
-            assertEquals(6, manager.getAllDaos().size());
+            assertEquals(7, manager.getAllDaos().size());
             assertEquals(Long.valueOf(Version.UNKNOWN_VERSION), manager.getCurrentVersion());
             Version version = new Version();
             version.setId(1L);

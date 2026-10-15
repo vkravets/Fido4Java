@@ -1,0 +1,68 @@
+package org.fidonet.db;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.fidonet.db.objects.Netmail;
+import org.fidonet.db.objects.NetmailDelivery;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Message;
+
+import org.junit.Test;
+
+import java.util.Date;
+
+public class NetmailStorageTest {
+    private Message message(String body) {
+        Message message = new Message("Author",
+                                      "Reader",
+                                      new FTNAddr("2:500/101.1"),
+                                      new FTNAddr("2:500/102.2"),
+                                      "Subject",
+                                      body,
+                                      new Date(1000000));
+        message.setAttributes(1);
+        return message;
+    }
+
+    @Test
+    public void storesIdempotentlyAndPreservesPointsAttributesAndControlLines() throws Exception {
+        OrmManager orm = new OrmManager("jdbc:h2:mem:netmail" + System.nanoTime());
+        DatabaseManager base = new DatabaseManager(orm);
+        assertTrue(base.open());
+        try {
+            Message message = message("\1MSGID: 2:500/101.1 unique\rHello\r");
+            base.saveNetmail(message, "first", null);
+            base.saveNetmail(message, "first", null);
+            base.saveNetmail(message("Second\r"), "second", null);
+            assertEquals(2, orm.getDao(Netmail.class).countOf());
+            assertEquals(2, orm.getDao(NetmailDelivery.class).countOf());
+            Message restored = base.getLocalNetmail(new FTNAddr("2:500/102.2")).get(0);
+            assertEquals(message.getBody().toString(), restored.getBody().toString());
+            assertEquals(message.getFAddr(), restored.getFAddr());
+            assertEquals(1, restored.getAttributes());
+            assertEquals(0, base.getLocalNetmail(new FTNAddr("2:500/102")).size());
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
+    public void removesLegacyUniqueSendIndexWhenOpeningExistingDatabase() throws Exception {
+        String url = "jdbc:h2:mem:legacyNetmail" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
+        OrmManager first = new OrmManager(url);
+        first.connect();
+        first.getDao(Netmail.class)
+             .executeRaw("CREATE UNIQUE INDEX legacy_netmail_send ON netmail(send)");
+        first.disconnect();
+        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
+        assertTrue(reopened.open());
+        try {
+            reopened.saveNetmail(message("One\r"), "one", null);
+            reopened.saveNetmail(message("Two\r"), "two", null);
+            assertEquals(2, reopened.getLocalNetmail(new FTNAddr("2:500/102.2")).size());
+        } finally {
+            reopened.close();
+        }
+    }
+}

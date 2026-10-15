@@ -28,11 +28,17 @@
 
 package org.fidonet.db.objects;
 
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Message;
+
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by IntelliJ IDEA.
@@ -71,13 +77,40 @@ public class Netmail {
     @DatabaseField(columnName = "route_via")
     private String route;
 
-    @DatabaseField(columnName = "send", canBeNull = false, uniqueIndex = true)
+    @DatabaseField(columnName = "send", canBeNull = false)
     private Boolean send;
 
     @DatabaseField(columnName = "attr", canBeNull = false)
     private Integer attr;
 
     public Netmail() {
+    }
+
+    public static Netmail fromMessage(Message message) throws ParseException {
+        Netmail stored = new Netmail();
+        stored.fromName = message.getFrom();
+        stored.toName = message.getTo();
+        stored.fromAddr = message.getFAddr().toString();
+        stored.toAddr = message.getTAddr().toString();
+        stored.subject = message.getSubject();
+        stored.text = message.getBody().toString();
+        stored.date = new SimpleDateFormat("dd MMM yy  HH:mm:ss",
+                                           Locale.US).parse(message.getMsgDate());
+        stored.attr = message.getAttributes();
+        stored.send = false;
+        return stored;
+    }
+
+    public Message toMessage() {
+        Message message = new Message(fromName,
+                                      toName,
+                                      new FTNAddr(fromAddr),
+                                      new FTNAddr(toAddr),
+                                      subject,
+                                      text,
+                                      date);
+        message.setAttributes(attr);
+        return message;
     }
 
     public Long getId() {
