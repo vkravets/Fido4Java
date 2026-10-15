@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -45,8 +46,12 @@ import java.util.zip.ZipFile;
 public class Zipper {
 
     public static final int MAX_PACKET_BYTES = 64 * 1024 * 1024;
-    private static final long MAX_BUNDLE_BYTES = 256L * 1024 * 1024;
-    private static final int MAX_ENTRIES = 4096;
+    static final long MAX_BUNDLE_BYTES = 256L * 1024 * 1024;
+    static final int MAX_ENTRIES = 4096;
+
+    public static PacketArchive unpackToDisk(String path) throws IOException {
+        return new PacketArchive(Path.of(path));
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
