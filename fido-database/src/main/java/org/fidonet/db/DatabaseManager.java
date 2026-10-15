@@ -143,6 +143,12 @@ public class DatabaseManager
     }
 
     @Override
+    public void visitRecentEcho(String area, int count, MessageIteration.Handler handler)
+            throws IOException {
+        new EchoRepository(dbManager).visitRecent(area, count, handler);
+    }
+
+    @Override
     public List<NetmailRoute> getNetmailRoutes() {
         try {
             List<NetmailRoute> result = new ArrayList<>();
