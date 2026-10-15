@@ -1,15 +1,15 @@
 package org.fidonet.tests.share;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,8 +21,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 public class ScriptReloadRegressionTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void emptyMissingAndSyntacticallyInvalidScriptsDoNotBlockValidScripts()
@@ -35,7 +35,7 @@ public class ScriptReloadRegressionTest {
         ScriptEngine emptyEngine = manager.getEngine();
         manager.unregisterScript("empty", calls);
         assertNotSame(emptyEngine, manager.getEngine());
-        Path invalid = temporary.newFile("invalid.groovy").toPath();
+        Path invalid = Files.createFile(temporary.toPath().resolve("invalid.groovy"));
         Files.writeString(invalid, "def register( {");
         manager.reloadScripts(Collections.singletonMap(invalid.toString(), ""), calls);
         manager.reloadScripts(Collections.singletonMap(invalid + ".missing.groovy", ""), calls);
@@ -140,7 +140,7 @@ public class ScriptReloadRegressionTest {
 
     @Test
     public void loadsGroovyFilesPreservesParamsAndReloadsOnlyWhenNeeded() throws Exception {
-        Path file = temporary.newFile("script.groovy").toPath();
+        Path file = Files.createFile(temporary.toPath().resolve("script.groovy"));
         GroovyScriptManager manager = new GroovyScriptManager();
         List<String> calls = new ArrayList<>();
         Map<String, String> files = Collections.singletonMap(file.toString(), "");
@@ -164,8 +164,8 @@ public class ScriptReloadRegressionTest {
 
     @Test
     public void cachesAndScriptStateAreIsolatedByManagerAndFile() throws Exception {
-        Path first = temporary.newFile("first.groovy").toPath();
-        Path second = temporary.newFile("second.groovy").toPath();
+        Path first = Files.createFile(temporary.toPath().resolve("first.groovy"));
+        Path second = Files.createFile(temporary.toPath().resolve("second.groovy"));
         Files.writeString(first, script("first"));
         Files.writeString(second, script("second"));
         GroovyScriptManager manager = new GroovyScriptManager();
@@ -188,7 +188,7 @@ public class ScriptReloadRegressionTest {
 
     @Test
     public void failedRegistrationCanBeRetriedAndWrongExtensionIsIgnored() throws Exception {
-        Path file = temporary.newFile("retry.groovy").toPath();
+        Path file = Files.createFile(temporary.toPath().resolve("retry.groovy"));
         GroovyScriptManager manager = new GroovyScriptManager();
         List<String> calls = new ArrayList<>();
         Map<String, String> files = Collections.singletonMap(file.toString(), "");

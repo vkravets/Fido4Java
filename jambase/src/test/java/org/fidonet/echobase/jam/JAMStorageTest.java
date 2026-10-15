@@ -1,10 +1,10 @@
 package org.fidonet.echobase.jam;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
@@ -15,9 +15,8 @@ import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,14 +30,16 @@ import java.util.Arrays;
 import java.util.Date;
 
 public class JAMStorageTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private EchoList areas() throws Exception {
-        EchoList areas = new EchoList(temporary.newFile().getAbsolutePath());
+        EchoList areas = new EchoList(Files.createTempFile(temporary.toPath(), "test-", ".tmp")
+                                           .toFile()
+                                           .getAbsolutePath());
         areas.load();
         FTNAddr address = new FTNAddr("1:500/100");
-        areas.addArea("test", temporary.getRoot().getAbsolutePath(), address, address);
+        areas.addArea("test", temporary.getAbsolutePath(), address, address);
         return areas;
     }
 
@@ -140,7 +141,7 @@ public class JAMStorageTest {
 
     @Test
     public void headerWithoutSubfieldsRoundTripsAndEmptyIndexHasNoMessage() throws Exception {
-        File file = temporary.newFile();
+        File file = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
         try (JHRFile header = new JHRFile(file)) {
             FixedHeaderInfoStruct fixed = new FixedHeaderInfoStruct();
             fixed.setBasemsgnum(1);
@@ -157,7 +158,8 @@ public class JAMStorageTest {
             assertEquals(1700000000, restored.DateWritten);
             assertTrue(restored.SubFieldList.isEmpty());
         }
-        try (JDXFile index = new JDXFile(temporary.newFile())) {
+        try (JDXFile index = new JDXFile(Files.createTempFile(temporary.toPath(), "test-", ".tmp")
+                                              .toFile())) {
             assertEquals(0, index.getLastMessageShift());
             index.writeIndex("Reader", 1024);
             index.writeIndex("Reader", 1100);
@@ -167,7 +169,7 @@ public class JAMStorageTest {
 
     @Test
     public void rejectsTruncatedHeadersAndMalformedSubfields() throws Exception {
-        File file = temporary.newFile();
+        File file = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
         try (JHRFile header = new JHRFile(file)) {
             expectIOException(header::getFixedHeader);
             header.setFixedHeader(new FixedHeaderInfoStruct());
@@ -206,7 +208,7 @@ public class JAMStorageTest {
         int[][] corruptions = {{0, 0}, {8, -1}, {8, Integer.MAX_VALUE}, {8, 4},
                 {MessageHeader.MessageHeaderSize + 4, 2}};
         for (int[] corruption : corruptions) {
-            File file = temporary.newFile();
+            File file = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
             try (JHRFile header = new JHRFile(file)) {
                 header.setFixedHeader(new FixedHeaderInfoStruct());
                 MessageHeader message = new MessageHeader();
@@ -223,7 +225,7 @@ public class JAMStorageTest {
                 expectIOException(() -> header.getMsgHeaderByShift(offset));
             }
         }
-        File file = temporary.newFile();
+        File file = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
         Files.write(file.toPath(), new byte[1024]);
         try (JHRFile header = new JHRFile(file)) {
             expectIOException(header::getFixedHeader);

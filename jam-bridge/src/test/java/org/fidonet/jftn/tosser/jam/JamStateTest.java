@@ -1,15 +1,15 @@
 package org.fidonet.jftn.tosser.jam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,7 +18,7 @@ import java.nio.file.StandardOpenOption;
 public class JamStateTest {
     @Test
     public void detectsAnotherWritersReceiptsAndTracksPendingDeliveries() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("shared-state");
+        Path path = temporary.toPath().resolve("shared-state");
         JamState cached = new JamState(path);
         assertTrue(cached.isCurrent());
         JamState writer = new JamState(path);
@@ -33,7 +33,7 @@ public class JamStateTest {
 
     @Test
     public void doesNotAdvanceStateWhenDurableWritingFails() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("failed-state");
+        Path path = temporary.toPath().resolve("failed-state");
         JamState state = new JamState(path, (log, length, bytes) -> {
             throw new IOException("Disk failure");
         });
@@ -48,12 +48,12 @@ public class JamStateTest {
         assertNull(new JamState(path).stage("message"));
     }
 
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void recoversCommittedRecordsAndDropsAnIncompleteTail() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("receipts.properties");
+        Path path = temporary.toPath().resolve("receipts.properties");
         Files.writeString(path, "legacy=retained\n");
         JamState state = new JamState(path);
         state.prepare("message", "fingerprint", "2:500/1");
@@ -71,7 +71,7 @@ public class JamStateTest {
 
     @Test
     public void writtenBytesGrowLinearlyAndUnchangedValuesDoNotWrite() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("state");
+        Path path = temporary.toPath().resolve("state");
         JamState state = new JamState(path);
         appendReceipts(state, 0, 100);
         Path log = Path.of(path + ".log");

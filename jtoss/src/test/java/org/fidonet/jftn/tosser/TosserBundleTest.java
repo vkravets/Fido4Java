@@ -1,9 +1,9 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -12,13 +12,13 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -30,12 +30,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class TosserBundleTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
     private OrmManager orm;
     private DatabaseManager base;
 
-    @Before
+    @BeforeEach
     public void open() throws Exception {
         orm = new OrmManager("jdbc:h2:mem:toss" + System.nanoTime());
         orm.connect();
@@ -43,7 +43,7 @@ public class TosserBundleTest {
         assertTrue(base.createArea("test"));
     }
 
-    @After
+    @AfterEach
     public void close() {
         base.close();
     }
@@ -125,8 +125,8 @@ public class TosserBundleTest {
 
     @Test
     public void tossesEchomailSkipsDuplicatesAndLeavesNetmailOutOfEchoDatabase() throws Exception {
-        Path inbound = temporary.newFolder("inbound").toPath();
-        Path bad = temporary.newFolder("bad").toPath();
+        Path inbound = Files.createDirectory(temporary.toPath().resolve("inbound"));
+        Path bad = Files.createDirectory(temporary.toPath().resolve("bad"));
         String echo = "AREA:TEST\r\1MSGID: 2:500/101 unique\rHello\r";
         Path bundle = bundle(inbound, "mail.mo0", packet("secret", echo, echo, "Netmail\r"));
         Tosser tosser = tosser(bad, 0, true);
@@ -143,8 +143,8 @@ public class TosserBundleTest {
     @Test
     public void savesRejectedPacketsAndDeletesProcessedBundleOnlyWhenConfigured() throws Exception {
         for (boolean known : new boolean[]{false, true}) {
-            Path inbound = temporary.newFolder().toPath();
-            Path bad = temporary.newFolder().toPath();
+            Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+            Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
             byte[] bytes = packet("wrong");
             Path bundle = bundle(inbound, "mail.fr0", bytes);
             tosser(bad, 1, known).runFast(inbound.toString());
@@ -156,8 +156,8 @@ public class TosserBundleTest {
 
     @Test
     public void corruptArchiveOrPacketIsRetainedForDiagnosis() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         Path archive = inbound.resolve("broken.we0");
         Files.writeString(archive, "not a zip");
         Path packet = bundle(inbound, "packet.sa0", new byte[]{1, 2});
@@ -169,8 +169,8 @@ public class TosserBundleTest {
 
     @Test
     public void quarantinesUnhandledNetmailBeforeDeletingItsBundle() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         byte[] bytes = packet("secret", "\1INTL 2:500/999 2:500/101\rNetmail\r");
         Path source = bundle(inbound, "mail.mo0", bytes);
         tosser(bad, 1, true).runFast(inbound.toString());
@@ -180,8 +180,8 @@ public class TosserBundleTest {
 
     @Test
     public void retainsBundleWhenQuarantineNameContainsAnotherPacket() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         Files.writeString(bad.resolve("message.bad"), "previous packet");
         Path source = bundle(inbound, "mail.mo0", packet("wrong"));
         tosser(bad, 1, true).runFast(inbound.toString());
@@ -191,8 +191,8 @@ public class TosserBundleTest {
 
     @Test
     public void resumesPartialImportAfterStorageFailureAndTosserRestart() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         DatabaseManager normal = base;
         base = new DatabaseManager(orm) {
             @Override
@@ -219,8 +219,8 @@ public class TosserBundleTest {
 
     @Test
     public void importsLoosePacketAndQuarantinesPacketsForAnotherStation() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         byte[] bytes = packet("secret", "AREA:TEST\r\1MSGID: 2:500/101 loose\rHello\r");
         Path accepted = inbound.resolve("accepted.PKT");
         Files.write(accepted, bytes);
@@ -234,8 +234,8 @@ public class TosserBundleTest {
 
     @Test
     public void preservesBundleContainingUnexpectedFiles() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         Path source = inbound.resolve("mail.mo0");
         try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(source))) {
             zip.putNextEntry(new ZipEntry("notes.txt"));
@@ -248,8 +248,8 @@ public class TosserBundleTest {
 
     @Test
     public void deliversMultipleLocalNetmailsAndKeepsThemOutOfEchoAreas() throws Exception {
-        Path inbound = temporary.newFolder().toPath();
-        Path bad = temporary.newFolder().toPath();
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
         Path source = bundle(inbound,
                              "mail.mo0",
                              packet("secret", "First netmail\r", "Second netmail\r"));

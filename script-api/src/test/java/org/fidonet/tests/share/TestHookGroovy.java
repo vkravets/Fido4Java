@@ -38,10 +38,10 @@ import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tools.FileUtils;
 import org.fidonet.tests.tools.ConsoleOutputStream;
 
-import junit.framework.TestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -59,7 +59,7 @@ public class TestHookGroovy extends HasEventBus {
     private ScriptEngine scriptManager;
     private JFtnScriptService serviceAPI;
 
-    @Before
+    @BeforeEach
     public void setupEnv() throws Exception {
 
         String hookScriptContent;
@@ -78,14 +78,14 @@ public class TestHookGroovy extends HasEventBus {
         scriptManager.registerScript(FILE_HOOK_NAME, hookScriptContent.intern(), serviceAPI);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         scriptManager.unregisterScript(FILE_HOOK_NAME, serviceAPI);
     }
 
     @Test
     public void testHookRegistering() throws Exception {
-        //        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
+        //        Assertions.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
 
         getEventBus().subscribe(new NullEventHandler() {
             @Override
@@ -93,8 +93,8 @@ public class TestHookGroovy extends HasEventBus {
             }
         });
 
-        //        TestCase.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
-        //        TestCase.assertEquals(1, getEventBus().getAllListeners(NullEvent.class).size());
+        //        Assertions.assertEquals(1, getEventBus().getAllListeners(TestEvent.class).size());
+        //        Assertions.assertEquals(1, getEventBus().getAllListeners(NullEvent.class).size());
 
         PrintStream console = System.out;
         ConsoleOutputStream consoleMonitor = new ConsoleOutputStream();
@@ -105,7 +105,7 @@ public class TestHookGroovy extends HasEventBus {
         } finally {
             System.setOut(console);
         }
-        TestCase.assertEquals("", consoleMonitor.getBuffer());
+        Assertions.assertEquals("", consoleMonitor.getBuffer());
     }
 
     @Test
@@ -120,6 +120,6 @@ public class TestHookGroovy extends HasEventBus {
         } finally {
             System.setOut(console);
         }
-        TestCase.assertEquals("TestHook test", consoleMonitor.getBuffer());
+        Assertions.assertEquals("TestHook test", consoleMonitor.getBuffer());
     }
 }

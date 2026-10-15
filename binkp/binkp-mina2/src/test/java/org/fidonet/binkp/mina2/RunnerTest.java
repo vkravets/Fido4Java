@@ -1,15 +1,16 @@
 package org.fidonet.binkp.mina2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.types.Link;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RunnerTest {
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void stopsConnectedClientForEachTerminalSessionCondition() throws Exception {
         SessionContext ended = context();
         SessionContext failed = context();
@@ -50,7 +52,8 @@ public class RunnerTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void keepsClientOpenUntilSessionCompletesEvenWithUnsetState() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
         ControlledClient client = new ControlledClient(false);
@@ -76,7 +79,8 @@ public class RunnerTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void cancelledPollClosesClientAndPreservesInterruption() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
         ControlledClient client = new ControlledClient(false);
@@ -106,7 +110,8 @@ public class RunnerTest {
         };
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void concurrentPollsStopOnlyTheirOwnClient() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
         ControlledClient first = new ControlledClient(false);
@@ -126,8 +131,8 @@ public class RunnerTest {
 
             first.release.countDown();
             executor.tasks.get(0).get(5, TimeUnit.SECONDS);
-            assertEquals("First poll must stop its own client", 1, first.stops.get());
-            assertEquals("Second client must remain open", 0, second.stops.get());
+            assertEquals(1, first.stops.get(), "First poll must stop its own client");
+            assertEquals(0, second.stops.get(), "Second client must remain open");
 
             second.release.countDown();
             executor.tasks.get(1).get(5, TimeUnit.SECONDS);
@@ -142,7 +147,8 @@ public class RunnerTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void failedConnectionStillStopsItsClient() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
         ControlledClient client = new ControlledClient(true);
@@ -164,7 +170,8 @@ public class RunnerTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void clientCreationFailureDoesNotCauseCleanupNullPointerException() throws Exception {
         RecordingExecutor executor = new RecordingExecutor();
         Runner runner = new Runner(executor) {

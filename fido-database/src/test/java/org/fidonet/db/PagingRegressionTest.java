@@ -1,16 +1,16 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.db.objects.Echoarea;
 
 import com.j256.ormlite.dao.Dao;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,7 +20,7 @@ public class PagingRegressionTest {
     private OrmManager database;
     private Dao<Echoarea, Object> dao;
 
-    @Before
+    @BeforeEach
     public void open() throws Exception {
         database = new OrmManager("jdbc:h2:mem:paging" + System.nanoTime());
         database.connect();
@@ -32,7 +32,7 @@ public class PagingRegressionTest {
         }
     }
 
-    @After
+    @AfterEach
     public void close() {
         database.disconnect();
     }

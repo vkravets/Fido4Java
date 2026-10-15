@@ -1,10 +1,10 @@
 package org.fidonet.jftn.tosser.jam;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -18,19 +18,19 @@ import org.fidonet.packet.MailIdentity;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
 public class JamArchiveImporterTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private Message message(boolean echo, boolean id) {
         return new Message("Old Sysop",
@@ -46,7 +46,7 @@ public class JamArchiveImporterTest {
 
     @Test
     public void importsHistoricalMailWithoutChangingSourceOrSchedulingDelivery() throws Exception {
-        Path root = temporary.getRoot().toPath();
+        Path root = temporary.toPath();
         JFtnConfig config = new JFtnConfig();
         String directory = root.toString().replace('\\', '/');
         config.load(new ByteArrayInputStream(("Inbound=" + directory + "/in\nTmp=" + directory
@@ -104,7 +104,7 @@ public class JamArchiveImporterTest {
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));
-            JamArea source = new JamArea(temporary.getRoot().toPath().resolve("partial"),
+            JamArea source = new JamArea(temporary.toPath().resolve("partial"),
                                          "test",
                                          new FTNAddr("2:500/102"));
             source.create();

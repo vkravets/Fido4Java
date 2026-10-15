@@ -1,8 +1,8 @@
 package org.fidonet.jftn.tosser.jam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -14,13 +14,13 @@ import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.Date;
 
 public class JamBridgeTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
     private DatabaseManager base;
     private JFtnConfig config;
     private JamBridge bridge;
@@ -37,9 +37,9 @@ public class JamBridgeTest {
     private JamArea netmail;
     private Path root;
 
-    @Before
+    @BeforeEach
     public void open() throws Exception {
-        root = temporary.getRoot().toPath();
+        root = temporary.toPath();
         String directory = root.toString().replace('\\', '/');
         String text = "Inbound="
                       + directory
@@ -72,7 +72,7 @@ public class JamBridgeTest {
         netmail = new JamArea(root.resolve("jam/netmail"), null, new FTNAddr("2:500/102"));
     }
 
-    @After
+    @AfterEach
     public void close() {
         base.close();
     }

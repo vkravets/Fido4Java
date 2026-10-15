@@ -36,8 +36,8 @@ import org.fidonet.jftn.plugins.mock.PluginE;
 import org.fidonet.jftn.plugins.mock.PluginF;
 import org.fidonet.jftn.plugins.mock.PluginG;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -81,16 +81,16 @@ public class PluginManagerTest {
             for (Plugin plugin : sortPlugins) {
                 actual.append(plugin.getPluginInfo().getId());
             }
-            TestCase.assertEquals("GBCDFEA", actual.toString());
+            Assertions.assertEquals("GBCDFEA", actual.toString());
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
-            TestCase.fail();
+            Assertions.fail();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
-            TestCase.fail();
+            Assertions.fail();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
-            TestCase.fail();
+            Assertions.fail();
         }
     }
 }

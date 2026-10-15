@@ -1,16 +1,15 @@
 package org.fidonet.echobase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.types.FTNAddr;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,11 +18,11 @@ import java.nio.file.Files;
 import java.util.List;
 
 public class EchoListTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private File config(String text) throws IOException {
-        File file = temporary.newFile();
+        File file = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
         Files.write(file.toPath(), text.getBytes(StandardCharsets.UTF_8));
         return file;
     }
@@ -62,8 +61,8 @@ public class EchoListTest {
         assertTrue(list.getEchoList().isEmpty());
         FTNAddr link = new FTNAddr("2:500/2");
         FTNAddr aka = new FTNAddr("2:500/1");
-        list.addArea("FIRST", temporary.getRoot().getPath(), link, aka);
-        list.addArea("SECOND", temporary.getRoot().getPath(), link, aka);
+        list.addArea("FIRST", temporary.getPath(), link, aka);
+        list.addArea("SECOND", temporary.getPath(), link, aka);
         String content = Files.readString(file.toPath());
         assertTrue(content.startsWith("# existing content\n"));
         EchoList reopened = new EchoList(file.getPath());
@@ -71,7 +70,7 @@ public class EchoListTest {
         assertEquals(2, reopened.getEchoList().size());
         for (String name : new String[]{"FIRST", "SECOND"}) {
             EchoCfg echo = reopened.getEcho(name);
-            assertEquals(new File(temporary.getRoot(), name).getPath(), echo.Path);
+            assertEquals(new File(temporary, name).getPath(), echo.Path);
             assertEquals("JAM", echo.Type);
             assertEquals(link, echo.Link);
             assertEquals(aka, echo.AKA);
@@ -145,7 +144,7 @@ public class EchoListTest {
 
     @Test
     public void failedAppendDoesNotPublishAreaInMemory() throws Exception {
-        EchoList list = new EchoList(new File(temporary.getRoot(), "missing/areas.cfg").getPath());
+        EchoList list = new EchoList(new File(temporary, "missing/areas.cfg").getPath());
         try {
             list.addArea("FAILED", "/echo", new FTNAddr("2:500/2"), new FTNAddr("2:500/1"));
             fail("Missing parent directory was accepted");

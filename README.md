@@ -34,6 +34,14 @@ Starting from the command line. The first parameter must be action. Action can b
     pull - start pulling the node via binkp.
 
 ### DEVELOPERS
+All tests use JUnit Jupiter 5.14.4 directly through Gradle's JUnit Platform
+support. The shared BOM, Jupiter dependencies and platform launcher are declared
+in the root `build.gradle` and inherited by integration tests. JUnit 4, Vintage
+and the migration-support module are not used. Use `@TempDir` for temporary
+storage, Jupiter lifecycle annotations and `assertThrows` for expected failures.
+Diagnostic assertion messages are the final argument. Parameterized transport
+scenarios use Jupiter's `@ParameterizedClass` with `@MethodSource`.
+
 Java sources follow Google Java formatting with four-space indentation
 and a 100-character line limit. `.editorconfig` defines the editor settings.
 Formatting is managed by Gradle through Spotless 8.10.4 and Eclipse JDT 4.34

@@ -1,8 +1,8 @@
 package org.fidonet.binkp.mina2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -18,7 +18,7 @@ import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.fidonet.events.HasEventBus;
 
 import org.apache.mina.core.session.DummySession;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

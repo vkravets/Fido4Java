@@ -1,7 +1,7 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -14,11 +14,11 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,15 +27,15 @@ import java.util.Collections;
 import java.util.Date;
 
 public class EchoExportTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private JFtnConfig config() throws Exception {
         return config("");
     }
 
     private JFtnConfig config(String extra) throws Exception {
-        String root = temporary.getRoot().getAbsolutePath().replace('\\', '/');
+        String root = temporary.getAbsolutePath().replace('\\', '/');
         String text = "Inbound="
                       + root
                       + "/inbound\nTmp="

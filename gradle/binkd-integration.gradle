@@ -23,7 +23,7 @@ tasks.register('binkdDockerTest', Test) {
     group = 'verification'
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-    useJUnit()
+    useJUnitPlatform()
     maxParallelForks = 1
     outputs.upToDateWhen { false }
     testLogging {

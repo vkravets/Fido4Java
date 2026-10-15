@@ -37,8 +37,8 @@ import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tools.FileUtils;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 
@@ -73,9 +73,9 @@ public class TestCommandGroovy {
         }
         //noinspection unchecked
         Command<String[], Object> command = commands.findCommandByName("test");
-        TestCase.assertNotNull(command);
+        Assertions.assertNotNull(command);
         String[] param = new String[]{"test", "test2"};
         Object result = command.execute(param);
-        TestCase.assertEquals(param, result);
+        Assertions.assertEquals(param, result);
     }
 }

@@ -4,8 +4,13 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.20'
   implementation project(':fido-config')
   implementation project(':event-bus')
-    implementation 'org.apache.groovy:groovy-all:5.1.3'
+    implementation('org.apache.groovy:groovy-all:5.1.3') {
+        // Embedded hooks do not need Groovy's test framework adapters.
+        exclude group: 'org.apache.groovy', module: 'groovy-test'
+        exclude group: 'org.apache.groovy', module: 'groovy-test-junit5'
+        exclude group: 'org.apache.groovy', module: 'groovy-testng'
+    }
   implementation project(':tools')
-    testImplementation 'junit:junit:4.13.2'
+
     compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }

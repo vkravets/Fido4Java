@@ -32,8 +32,8 @@ import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.ref.WeakReference;
 
@@ -54,7 +54,7 @@ public class NettyPluginTest {
         WeakReference<Runner> binkp = null;
         try {
             binkp = manager.getContext("binkp_netty");
-            TestCase.assertNotNull(binkp.get());
+            Assertions.assertNotNull(binkp.get());
         } catch (PluginException ex) {
             exception = true;
             ex.printStackTrace();
@@ -64,7 +64,7 @@ public class NettyPluginTest {
         } finally {
             PluginManager.getInstance().unloadPlugins();
         }
-        TestCase.assertEquals(false, exception);
-        TestCase.assertNull(binkp.get());
+        Assertions.assertEquals(false, exception);
+        Assertions.assertNull(binkp.get());
     }
 }

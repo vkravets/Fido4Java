@@ -1,13 +1,13 @@
 package org.fidonet.misc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,8 +15,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class PacketArchiveTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void stagesBeforeProcessingAndPreservesPacketOrderWithoutRetainingPayloads()
@@ -44,7 +44,7 @@ public class PacketArchiveTest {
     }
 
     private Path bundle(String secondName) throws IOException {
-        Path source = temporary.getRoot().toPath().resolve("mail.zip");
+        Path source = temporary.toPath().resolve("mail.zip");
         try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(source))) {
             entry(zip, "nested/first.pkt");
             entry(zip, secondName);

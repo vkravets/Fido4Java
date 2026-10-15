@@ -1,7 +1,7 @@
 package org.fidonet.binkp.interop;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.io.BinkFrame;
@@ -18,24 +18,24 @@ public final class ProtocolTrace {
     private final List<String> lines = new CopyOnWriteArrayList<>();
 
     public void assertExchange(boolean requestNr) throws Exception {
-        assertTrue("JFtn must receive M_GOT", has(incoming, BinkCommand.M_GOT));
-        assertTrue("JFtn must send M_GOT", has(outgoing, BinkCommand.M_GOT));
-        assertTrue("binkd must send M_EOB", has(incoming, BinkCommand.M_EOB));
-        assertTrue("JFtn must send M_EOB", has(outgoing, BinkCommand.M_EOB));
-        assertTrue("binkd must finish both file batches and the final empty batch",
-                   incoming.stream()
+        assertTrue(has(incoming, BinkCommand.M_GOT), "JFtn must receive M_GOT");
+        assertTrue(has(outgoing, BinkCommand.M_GOT), "JFtn must send M_GOT");
+        assertTrue(has(incoming, BinkCommand.M_EOB), "binkd must send M_EOB");
+        assertTrue(has(outgoing, BinkCommand.M_EOB), "JFtn must send M_EOB");
+        assertTrue(incoming.stream()
                            .filter(frame -> frame.getData()[0] == BinkCommand.M_EOB.getCmd())
-                           .count() >= 3);
-        assertTrue("JFtn must finish both file batches and the final empty batch",
-                   outgoing.stream()
+                           .count() >= 3,
+                   "binkd must finish both file batches and the final empty batch");
+        assertTrue(outgoing.stream()
                            .filter(frame -> frame.getData()[0] == BinkCommand.M_EOB.getCmd())
-                           .count() >= 3);
-        assertEquals("binkd must honor JFtn's NR request",
-                     requestNr ? -1 : 0,
-                     firstIncomingFileOffset());
-        assertEquals("JFtn must issue M_GET for NR reception",
-                     requestNr,
-                     has(outgoing, BinkCommand.M_GET));
+                           .count() >= 3,
+                   "JFtn must finish both file batches and the final empty batch");
+        assertEquals(requestNr ? -1 : 0,
+                     firstIncomingFileOffset(),
+                     "binkd must honor JFtn's NR request");
+        assertEquals(requestNr,
+                     has(outgoing, BinkCommand.M_GET),
+                     "JFtn must issue M_GET for NR reception");
     }
 
     public String log() {

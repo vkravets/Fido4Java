@@ -1,10 +1,10 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.tosser.exception.TosserException;
@@ -12,10 +12,10 @@ import org.fidonet.misc.PktTemp;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -26,8 +26,8 @@ import java.nio.file.Path;
 import java.util.Collections;
 
 public class TosserSecurityTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private Tosser tosser(String password, Path root) throws Exception {
         Link link = new Link(new FTNAddr("2:467/1"),
@@ -58,7 +58,7 @@ public class TosserSecurityTest {
         packet.position(0);
         Method method = Tosser.class.getDeclaredMethod("tosspkt", ByteBuffer.class);
         method.setAccessible(true);
-        return (Boolean) method.invoke(tosser(expected, temporary.getRoot().toPath()), packet);
+        return (Boolean) method.invoke(tosser(expected, temporary.toPath()), packet);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TosserSecurityTest {
 
     @Test
     public void rejectsTraversalAndAbsolutePacketNames() throws Exception {
-        Path root = temporary.newFolder("inbound").toPath();
+        Path root = Files.createDirectory(temporary.toPath().resolve("inbound"));
         for (String name : new String[]{"../escape.pkt", "..\\escape.pkt", "/escape.pkt",
                 "C:\\escape.pkt"}) {
             try {
@@ -91,12 +91,12 @@ public class TosserSecurityTest {
             } catch (TosserException expected) {
             }
         }
-        assertFalse(Files.exists(temporary.getRoot().toPath().resolve("escape.bad")));
+        assertFalse(Files.exists(temporary.toPath().resolve("escape.bad")));
     }
 
     @Test
     public void writesInsideDirectoryWithoutTrailingSeparator() throws Exception {
-        Path root = temporary.newFolder("bad").toPath();
+        Path root = Files.createDirectory(temporary.toPath().resolve("bad"));
         save(tosser("", root), "message.pkt");
         assertArrayEquals(new byte[]{1, 2, 3}, Files.readAllBytes(root.resolve("message.bad")));
         save(tosser("", root), "message.pkt");
@@ -105,7 +105,7 @@ public class TosserSecurityTest {
 
     @Test
     public void validatesInboundAndIgnoresDirectoriesAndUnrelatedFiles() throws Exception {
-        Path root = temporary.newFolder("input").toPath();
+        Path root = Files.createDirectory(temporary.toPath().resolve("input"));
         Tosser tosser = tosser("", root);
         for (String invalid : new String[]{null, root.resolve("missing").toString()}) {
             try {
@@ -124,7 +124,7 @@ public class TosserSecurityTest {
 
     @Test
     public void badPacketWithoutPktExtensionIsSavedWithoutOverwriting() throws Exception {
-        Path root = temporary.newFolder("bad-other").toPath();
+        Path root = Files.createDirectory(temporary.toPath().resolve("bad-other"));
         save(tosser("", root), "message.bin");
         assertArrayEquals(new byte[]{1, 2, 3}, Files.readAllBytes(root.resolve("message.bin.bad")));
     }

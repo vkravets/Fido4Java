@@ -3,7 +3,7 @@ apply plugin: 'java-library'
 dependencies {
     api 'org.apache.thrift:libthrift:0.25.0'
     api 'org.slf4j:slf4j-api:2.0.20'
-    testImplementation 'junit:junit:4.13.2'
+
     compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }
 
@@ -29,8 +29,3 @@ def compileThrift = tasks.register('compileThrift', Exec) {
 
 sourceSets.main.java.srcDir(generatedThriftSources)
 tasks.named('compileJava') { dependsOn compileThrift }
-
-// The RPC test sources currently contain mocks and commented-out tests only.
-test {
-    failOnNoDiscoveredTests = false
-}

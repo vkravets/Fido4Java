@@ -1,12 +1,12 @@
 package org.fidonet.binkp.common.io;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -27,16 +27,17 @@ import org.fidonet.binkp.common.protocol.Session;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -52,8 +53,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 public class NrCompatibilityTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private SessionContext context() {
         StationConfig config = new StationConfig("station", "sysop", "city", "BINKP", "1:500/101");
@@ -89,18 +90,17 @@ public class NrCompatibilityTest {
                                           + " peer="
                                           + peerRequested;
                         new OPTCommand().send(session, context);
-                        assertEquals(scenario,
-                                     enabled && requested,
+                        assertEquals(enabled && requested,
                                      Arrays.asList(session.arguments(0).trim().split("\\s+"))
-                                           .contains("NR"));
+                                           .contains("NR"),
+                                     scenario);
                         new OPTCommand().handle(session, context, peerRequested ? "OPT NR" : "OPT");
-                        assertEquals(scenario, enabled && peerRequested, context.isNRMode());
+                        assertEquals(enabled && peerRequested, context.isNRMode(), scenario);
                         context.getSendFiles()
                                .add(new FileData<>(info(0), new ByteArrayInputStream(new byte[6])));
-                        assertEquals(scenario,
-                                     enabled && peerRequested,
-                                     new FILECommand().getCommandArguments(context)
-                                                      .endsWith(" -1"));
+                        assertEquals(enabled && peerRequested,
+                                     new FILECommand().getCommandArguments(context).endsWith(" -1"),
+                                     scenario);
                     }
                 }
             }
@@ -300,7 +300,7 @@ public class NrCompatibilityTest {
 
     @Test
     public void resumesFromDiskInANewContextAndAcknowledgesOnlyAfterCompletion() throws Exception {
-        Path directory = temporary.newFolder().toPath();
+        Path directory = Files.createTempDirectory(temporary.toPath(), "test-");
         SessionContext first = context();
         first.getStationConfig().setPartialDirectory(directory);
         RecordingSession session = new RecordingSession();
@@ -330,7 +330,7 @@ public class NrCompatibilityTest {
 
     @Test
     public void isolatesPartialsByRemoteAndAllFileMetadata() throws Exception {
-        Path directory = temporary.newFolder().toPath();
+        Path directory = Files.createTempDirectory(temporary.toPath(), "test-");
         SessionContext first = context();
         first.getStationConfig().setPartialDirectory(directory);
         FileData<OutputStream> file = ReceiveTransfer.open(first, info(0));
@@ -566,8 +566,8 @@ public class NrCompatibilityTest {
         while (session.frames.size() < count && System.nanoTime() < deadline) {
             Thread.sleep(5);
         }
-        assertTrue("Expected " + count + " frames, got " + session.frames.size(),
-                   session.frames.size() >= count);
+        assertTrue(session.frames.size() >= count,
+                   "Expected " + count + " frames, got " + session.frames.size());
     }
 
     private static class RecordingSession implements Session {

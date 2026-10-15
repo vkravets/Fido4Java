@@ -1,10 +1,10 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -16,13 +16,13 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,8 +31,8 @@ import java.util.Date;
 import java.util.List;
 
 public class EchoPolicyTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
     private DatabaseManager base;
     private JFtnConfig config;
     private Tosser tosser;
@@ -40,7 +40,7 @@ public class EchoPolicyTest {
     private String url;
 
     private JFtnConfig settings(String extra) throws Exception {
-        String root = temporary.getRoot().getPath().replace('\\', '/');
+        String root = temporary.getPath().replace('\\', '/');
         String text = "Inbound="
                       + root
                       + "/in\nOutbound="
@@ -60,7 +60,7 @@ public class EchoPolicyTest {
         return result;
     }
 
-    @Before
+    @BeforeEach
     public void open() throws Exception {
         config = settings("");
         url = "jdbc:h2:mem:echoPolicy" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
@@ -74,7 +74,7 @@ public class EchoPolicyTest {
         spool = new OutboundSpool(config);
     }
 
-    @After
+    @AfterEach
     public void close() {
         base.close();
     }

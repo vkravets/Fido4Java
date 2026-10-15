@@ -1,6 +1,6 @@
 package org.fidonet.binkp.common.commands;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -8,7 +8,7 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 

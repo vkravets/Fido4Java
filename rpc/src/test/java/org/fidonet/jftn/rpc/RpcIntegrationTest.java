@@ -1,21 +1,24 @@
 package org.fidonet.jftn.rpc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.layered.TFramedTransport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.net.ServerSocket;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 public class RpcIntegrationTest {
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void dispatchesAllServicesOverRealTcp() throws Exception {
         try (Server server = new Server(0, "127.0.0.1", new ServerHandlerTestMock())) {
             server.run();
@@ -41,7 +44,8 @@ public class RpcIntegrationTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void defaultHandlersExposeApiAndRejectUnavailableStatistics() throws Exception {
         try (Server server = new Server(0)) {
             server.run();
@@ -70,7 +74,8 @@ public class RpcIntegrationTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void closingBeforeStartReleasesPortAndStopIsIdempotent() throws Exception {
         Server server = new Server(0);
         int port = server.getLocalPort();
@@ -86,7 +91,8 @@ public class RpcIntegrationTest {
         }
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void reportsOccupiedPortAndRejectsDuplicateStart() throws Exception {
         try (Server server = new Server(0)) {
             try {

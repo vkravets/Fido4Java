@@ -1,6 +1,6 @@
 package org.fidonet.binkp.mina2;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.interop.AbstractJftnPeer;
@@ -35,7 +35,7 @@ final class JftnTestPeer extends AbstractJftnPeer {
         connector.setConnectTimeoutMillis(5000);
         configure(connector);
         var future = connector.connect(new InetSocketAddress(host, port));
-        assertTrue("MINA2 connection timeout", future.await(10, TimeUnit.SECONDS));
+        assertTrue(future.await(10, TimeUnit.SECONDS), "MINA2 connection timeout");
         if (!future.isConnected()) {
             throw new IllegalStateException("MINA2 connection failed", future.getException());
         }

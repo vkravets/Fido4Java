@@ -1,12 +1,12 @@
 package org.fidonet.jftn.scheduler;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.ref.WeakReference;
 

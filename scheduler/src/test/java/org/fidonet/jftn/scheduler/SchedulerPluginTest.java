@@ -31,8 +31,8 @@ package org.fidonet.jftn.scheduler;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginManager;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.ref.WeakReference;
 
@@ -60,8 +60,8 @@ public class SchedulerPluginTest {
             exception = true;
             ex.printStackTrace();
         }
-        TestCase.assertEquals(false, exception);
-        TestCase.assertNotNull(schedule.get());
+        Assertions.assertEquals(false, exception);
+        Assertions.assertNotNull(schedule.get());
         schedule.get().start();
         final Boolean[] taskExecute = {false};
         schedule.get().schedule("* * * * *", () -> taskExecute[0] = true);
@@ -72,7 +72,7 @@ public class SchedulerPluginTest {
         } finally {
             PluginManager.getInstance().unloadPlugins();
         }
-        TestCase.assertEquals(Boolean.TRUE, taskExecute[0]);
-        TestCase.assertNull(schedule.get());
+        Assertions.assertEquals(Boolean.TRUE, taskExecute[0]);
+        Assertions.assertNull(schedule.get());
     }
 }

@@ -37,9 +37,9 @@ import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 
 import groovy.lang.GroovyClassLoader;
-import junit.framework.TestCase;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -88,11 +88,11 @@ public class TestReloadScript {
         }
         //noinspection unchecked
         Command<String[], Object> command = commands.findCommandByName("test");
-        TestCase.assertNotNull(command);
+        Assertions.assertNotNull(command);
         String[] param = new String[]{"test"};
         Object result = command.execute(param);
-        TestCase.assertEquals(1, ((String[]) result).length);
-        TestCase.assertEquals("test", ((String[]) result)[0]);
+        Assertions.assertEquals(1, ((String[]) result).length);
+        Assertions.assertEquals("test", ((String[]) result)[0]);
 
         // Check static field in the script
         GroovyScriptEngineImpl engine = (GroovyScriptEngineImpl) scriptManager.getEngine();
@@ -106,10 +106,10 @@ public class TestReloadScript {
             }
         }
 
-        TestCase.assertNotNull(loadedClass);
+        Assertions.assertNotNull(loadedClass);
         Field test_static = loadedClass.getField("test_static");
-        TestCase.assertNotNull(test_static);
-        TestCase.assertEquals("test", test_static.get(null));
+        Assertions.assertNotNull(test_static);
+        Assertions.assertEquals("test", test_static.get(null));
 
         scriptManager.unregisterScript("script1",
                                        new JFtnScriptService(scriptManager,
@@ -126,7 +126,7 @@ public class TestReloadScript {
             e.printStackTrace();
         }
         GroovyClassLoader reloadedClassLoader = ((GroovyScriptEngineImpl) scriptManager.getEngine()).getClassLoader();
-        TestCase.assertNotSame(groovyClassLoader, reloadedClassLoader);
+        Assertions.assertNotSame(groovyClassLoader, reloadedClassLoader);
         loadedClasses = reloadedClassLoader.getLoadedClasses();
         loadedClass = null;
         for (Class clazz : loadedClasses) {
@@ -135,10 +135,10 @@ public class TestReloadScript {
                 loadedClass = clazz;
             }
         }
-        TestCase.assertNotNull(loadedClass);
+        Assertions.assertNotNull(loadedClass);
         test_static = loadedClass.getField("test_static");
-        TestCase.assertNotNull(test_static);
-        TestCase.assertEquals("test_modify", test_static.get(null));
+        Assertions.assertNotNull(test_static);
+        Assertions.assertEquals("test_modify", test_static.get(null));
 
         List<String> loadedClassesNames = new ArrayList<String>();
         for (Class clazz : loadedClasses) {
@@ -147,9 +147,9 @@ public class TestReloadScript {
 
         for (Class<?> oldClass : groovyClassLoader.getLoadedClasses()) {
             for (Class<?> newClass : loadedClasses) {
-                TestCase.assertNotSame(oldClass, newClass);
+                Assertions.assertNotSame(oldClass, newClass);
             }
         }
-        TestCase.assertEquals(true, loadedClassesNames.contains("TossCommand"));
+        Assertions.assertEquals(true, loadedClassesNames.contains("TossCommand"));
     }
 }

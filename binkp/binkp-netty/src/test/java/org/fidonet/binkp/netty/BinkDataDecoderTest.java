@@ -1,16 +1,16 @@
 package org.fidonet.binkp.netty;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +45,7 @@ public class BinkDataDecoderTest {
                 channel.writeInbound(Unpooled.wrappedBuffer(Arrays.copyOfRange(wire, start, end)));
                 while (frameIndex < frames.size() && nextBoundary <= end) {
                     BinkFrame actual = channel.readInbound();
-                    assertNotNull("Complete frame must be emitted", actual);
+                    assertNotNull(actual, "Complete frame must be emitted");
                     BinkFrame expected = frames.get(frameIndex);
                     assertEquals(expected.getDataInfo(), actual.getDataInfo());
                     assertArrayEquals(expected.getData(), actual.getData());
@@ -54,8 +54,8 @@ public class BinkDataDecoderTest {
                         nextBoundary += frames.get(frameIndex).getData().length + 2;
                     }
                 }
-                assertNull("No incomplete or duplicate frames may be emitted",
-                           channel.readInbound());
+                assertNull(channel.readInbound(),
+                           "No incomplete or duplicate frames may be emitted");
             }
             assertEquals(frames.size(), frameIndex);
         } finally {
