@@ -1,10 +1,10 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
@@ -14,31 +14,31 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
 
 public class DatabaseOperationsTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
     private OrmManager database;
     private DatabaseManager manager;
 
-    @Before
+    @BeforeEach
     public void open() {
         database = new OrmManager("jdbc:h2:mem:operations" + System.nanoTime());
         manager = new DatabaseManager(database);
         assertTrue(manager.open());
     }
 
-    @After
+    @AfterEach
     public void close() {
         manager.close();
     }
@@ -150,7 +150,7 @@ public class DatabaseOperationsTest {
 
     @Test
     public void inaccessibleDatabasePathReportsOpenFailure() throws Exception {
-        File blocked = temporary.newFile("parent-is-file");
+        File blocked = Files.createFile(temporary.toPath().resolve("parent-is-file")).toFile();
         OrmManager invalid = new OrmManager("jdbc:h2:"
                                             + new File(blocked, "database").getAbsolutePath());
         DatabaseManager failed = new DatabaseManager(invalid);

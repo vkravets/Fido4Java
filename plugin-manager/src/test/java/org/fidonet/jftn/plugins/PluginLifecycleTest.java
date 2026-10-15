@@ -1,15 +1,15 @@
 package org.fidonet.jftn.plugins;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.events.EventBus;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -21,12 +21,12 @@ public class PluginLifecycleTest {
     private final PluginManager manager = PluginManager.getInstance();
     private final List<String> calls = new ArrayList<>();
 
-    @Before
+    @BeforeEach
     public void reset() {
         manager.unloadPlugins();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         manager.unloadPlugins();
     }

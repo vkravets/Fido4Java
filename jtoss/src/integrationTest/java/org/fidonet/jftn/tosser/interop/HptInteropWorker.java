@@ -1,9 +1,9 @@
 package org.fidonet.jftn.tosser.interop;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.fts.FtsPackMsg;
@@ -190,9 +190,9 @@ public final class HptInteropWorker {
         Map<Path, byte[]> after = snapshotJam(scenario.root.resolve("jam"));
         assertEquals(snapshot.keySet(), after.keySet());
         for (Map.Entry<Path, byte[]> entry : snapshot.entrySet()) {
-            assertArrayEquals(entry.getKey().toString(),
-                              entry.getValue(),
-                              after.get(entry.getKey()));
+            assertArrayEquals(entry.getValue(),
+                              after.get(entry.getKey()),
+                              entry.getKey().toString());
         }
     }
 

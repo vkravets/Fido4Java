@@ -1,28 +1,28 @@
 package org.fidonet.binkp.common.io;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.RecordingSession;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionTestFixtures;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DurableCompletionTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void doesNotAcknowledgeWhenDurablePublicationFails() throws Exception {
@@ -52,8 +52,8 @@ public class DurableCompletionTest {
     @Test
     public void repeatedPublicationKeepsCompletedDataAndRefusesDifferentExistingContents()
             throws Exception {
-        Path source = temporary.getRoot().toPath().resolve("mail.part");
-        Path destination = temporary.getRoot().toPath().resolve("mail.pkt");
+        Path source = temporary.toPath().resolve("mail.part");
+        Path destination = temporary.toPath().resolve("mail.pkt");
         PartialFileOutputStream stream = new PartialFileOutputStream(source, 3);
         stream.write(new byte[]{1, 2, 3});
         stream.close();

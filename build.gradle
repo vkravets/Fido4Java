@@ -16,6 +16,18 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
 
+    dependencies {
+        testImplementation enforcedPlatform('org.junit:junit-bom:5.14.4')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform {
+            includeEngines 'junit-jupiter'
+        }
+    }
+
     // VS Code's Java extension imports the Eclipse/Buildship model.
     // Keep IDE output separate from Gradle output and inside the build directory.
     eclipse {

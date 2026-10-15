@@ -1,9 +1,9 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -12,20 +12,20 @@ import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class NetmailPolicyTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private JFtnConfig config(String extra) throws Exception {
-        String root = temporary.getRoot().getPath().replace('\\', '/');
+        String root = temporary.getPath().replace('\\', '/');
         String text = "Inbound="
                       + root
                       + "/in\nOutbound="

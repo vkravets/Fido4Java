@@ -30,8 +30,8 @@ package org.fidonet.fts;
 
 import org.fidonet.types.FTNAddr;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +58,7 @@ public class FidoPathTest {
         expectedPath.add(FTNAddr.valueOf("2:5050/103"));
 
         FidoPath actualPath = FidoPath.valueOf(pathString, 2);
-        TestCase.assertEquals(expectedPath, actualPath);
+        Assertions.assertEquals(expectedPath, actualPath);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class FidoPathTest {
         actualPath.add(FTNAddr.valueOf("2:5040/102"));
         actualPath.add(FTNAddr.valueOf("2:5050/103"));
 
-        TestCase.assertEquals(pathString, actualPath.toString());
+        Assertions.assertEquals(pathString, actualPath.toString());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class FidoPathTest {
         actualPath.add(FTNAddr.valueOf("2:462/53824823"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
         actualPath.add(FTNAddr.valueOf("2:467/7070"));
-        TestCase.assertEquals(pathString, actualPath.toPathString());
+        Assertions.assertEquals(pathString, actualPath.toPathString());
     }
 
     @Test
@@ -123,6 +123,6 @@ public class FidoPathTest {
         actualPath.add(FTNAddr.valueOf("2:462/53824823"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
         actualPath.add(FTNAddr.valueOf("2:467/7070"));
-        TestCase.assertEquals(pathString, Arrays.asList(actualPath.toPathStrings()));
+        Assertions.assertEquals(pathString, Arrays.asList(actualPath.toPathStrings()));
     }
 }

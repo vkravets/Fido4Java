@@ -1,9 +1,9 @@
 package org.fidonet.jftn;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.netty.plugin.NettyPlugin;
@@ -18,9 +18,9 @@ import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.Link;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -35,12 +35,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RunnerStartupTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private File config() throws Exception {
-        File file = temporary.newFile("jftn.conf");
-        String root = temporary.getRoot().getAbsolutePath().replace('\\', '/');
+        File file = Files.createFile(temporary.toPath().resolve("jftn.conf")).toFile();
+        String root = temporary.getAbsolutePath().replace('\\', '/');
         Files.writeString(file.toPath(),
                           "Inbound="
                           + root
@@ -164,8 +164,7 @@ public class RunnerStartupTest {
     public void configurationFailureDoesNotLoadPlugins() throws Exception {
         List<String> calls = new ArrayList<>();
         try {
-            JFtnRunner.runApplication(new File(temporary.getRoot(),
-                                               "missing.conf").getAbsolutePath(),
+            JFtnRunner.runApplication(new File(temporary, "missing.conf").getAbsolutePath(),
                                       () -> calls.add("load"),
                                       id -> {
                                           throw new AssertionError("No lookup expected");
@@ -210,7 +209,8 @@ public class RunnerStartupTest {
         assertEquals(Arrays.asList("load", "unload"), calls);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS)
     public void interruptedShutdownWaitFinishesAndRemovesHook() throws Exception {
         CountDownLatch waiting = new CountDownLatch(1);
         AtomicReference<Throwable> outcome = new AtomicReference<>();

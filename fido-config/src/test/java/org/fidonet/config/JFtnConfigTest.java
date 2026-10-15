@@ -1,15 +1,14 @@
 package org.fidonet.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.types.FTNAddr;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -21,14 +20,14 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class JFtnConfigTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private String validConfig() {
         return "Inbound=incoming\nTmp="
-               + new File(temporary.getRoot(), "tmp")
+               + new File(temporary, "tmp")
                + "\nEchoPath="
-               + new File(temporary.getRoot(), "echo")
+               + new File(temporary, "echo")
                + "\n"
                + "Link=1:500/101,1:500/100,secret,localhost\n"
                + "SysOp=Test User\n"
@@ -86,7 +85,7 @@ public class JFtnConfigTest {
 
     @Test
     public void createsNestedAreaListAndKeepsExistingContents() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("nested/areas");
+        Path path = temporary.toPath().resolve("nested/areas");
         JFtnConfig config = load(validConfig() + "AreaListFile=" + path + "\n");
         assertEquals(path.toString(), config.getArealistFile());
         assertTrue(Files.isRegularFile(path));
@@ -109,7 +108,7 @@ public class JFtnConfigTest {
 
     @Test
     public void reportsAreaListDirectoryBlockedByAFile() throws Exception {
-        File parent = temporary.newFile("blocked");
+        File parent = Files.createFile(temporary.toPath().resolve("blocked")).toFile();
         JFtnConfig config = load(validConfig()
                                  + "AreaListFile="
                                  + new File(parent, "areas")

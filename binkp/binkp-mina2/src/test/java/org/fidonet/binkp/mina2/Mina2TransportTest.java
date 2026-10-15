@@ -1,10 +1,10 @@
 package org.fidonet.binkp.mina2;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
@@ -15,7 +15,8 @@ import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.events.HasEventBus;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,7 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Mina2TransportTest extends HasEventBus {
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS)
     public void productionClientAndServerExchangeAFileOnRandomTcpPort() throws Exception {
         SessionContext serverContext = context("1:500/100", "1:500/101", "secret", 0);
         Server server = new Server(0);
@@ -73,7 +75,8 @@ public class Mina2TransportTest extends HasEventBus {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS)
     public void invalidPasswordEndsSessionAndReleasesConnection() throws Exception {
         Server server = new Server(0);
         Client client = null;
@@ -95,7 +98,8 @@ public class Mina2TransportTest extends HasEventBus {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
     public void stoppingAnUnstartedServerIsSafe() {
         Server server = new Server(0);
         server.stop();

@@ -1,7 +1,7 @@
 package org.fidonet.binkp.interop;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.Container;
@@ -84,7 +84,7 @@ final class BinkdTestPeer implements AutoCloseable {
         Container.ExecResult result = clientProcess.get(30, TimeUnit.SECONDS);
         Files.writeString(artifacts.resolve("binkd-client.log"),
                           result.getStdout() + result.getStderr());
-        assertEquals("binkd client must exit successfully", 0, result.getExitCode());
+        assertEquals(0, result.getExitCode(), "binkd client must exit successfully");
     }
 
     void assertTransferredFiles() throws Exception {
@@ -94,12 +94,12 @@ final class BinkdTestPeer implements AutoCloseable {
         byte[] second = container.copyFileFromContainer("/data/inbound/"
                 + ExchangeFiles.SECOND_FROM_JFTN, InputStream::readAllBytes);
         assertArrayEquals(files.toBinkd, second);
-        assertEquals("binkd must remove the acknowledged outbound file",
-                     0,
+        assertEquals(0,
                      container.execInContainer("sh",
                                                "-c",
                                                "test ! -e /data/outbox/" + ExchangeFiles.FROM_BINKD)
-                              .getExitCode());
+                              .getExitCode(),
+                     "binkd must remove the acknowledged outbound file");
     }
 
     void saveDiagnostics(Path artifacts) {

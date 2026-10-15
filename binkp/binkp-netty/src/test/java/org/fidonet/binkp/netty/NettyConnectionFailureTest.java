@@ -1,8 +1,8 @@
 package org.fidonet.binkp.netty;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
@@ -10,7 +10,8 @@ import org.fidonet.binkp.common.SessionTestFixtures;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,12 +20,14 @@ public class NettyConnectionFailureTest {
         return SessionTestFixtures.loopbackContext(own, peer, password, port);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS)
     public void busyServerRefusesSessionWithoutStartingTransfer() throws Exception {
         rejected(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS)
     public void wrongPasswordPreservesErrorWhenTcpCloses() throws Exception {
         rejected(false);
     }

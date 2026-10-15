@@ -1,7 +1,7 @@
 package org.fidonet.jftn;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
@@ -9,21 +9,21 @@ import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
 public class JamArchiveImportTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void commandImportsIntoFileDatabaseWithoutStartingTransport() throws Exception {
-        Path root = temporary.getRoot().toPath();
+        Path root = temporary.toPath();
         String directory = root.toString().replace('\\', '/');
         Path configuration = root.resolve("node.conf");
         Files.writeString(configuration,

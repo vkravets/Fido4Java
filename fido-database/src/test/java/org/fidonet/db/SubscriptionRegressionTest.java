@@ -1,7 +1,7 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
@@ -11,9 +11,9 @@ import org.fidonet.echobase.AccessLevel;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +27,7 @@ public class SubscriptionRegressionTest {
     private DatabaseManager manager;
     private Link link;
 
-    @Before
+    @BeforeEach
     public void open() throws Exception {
         database = new OrmManager("jdbc:h2:mem:subscriptions" + System.nanoTime());
         database.connect();
@@ -48,7 +48,7 @@ public class SubscriptionRegressionTest {
         subscribe(configuration, b, lastB);
     }
 
-    @After
+    @AfterEach
     public void close() {
         database.disconnect();
     }

@@ -1,25 +1,25 @@
 package org.fidonet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.misc.LazyFileInputStream;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class LazyFileInputStreamTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void opensOnlyWhenSendingAndSeeksForResume() throws Exception {
-        Path path = temporary.getRoot().toPath().resolve("queued.bin");
+        Path path = temporary.toPath().resolve("queued.bin");
         try (LazyFileInputStream input = new LazyFileInputStream(path)) {
             Files.write(path, new byte[]{1, 2, 3, 4});
             input.mark(Integer.MAX_VALUE);
@@ -38,9 +38,7 @@ public class LazyFileInputStreamTest {
 
     @Test
     public void closingUnusedStreamDoesNotOpenTheFile() throws Exception {
-        LazyFileInputStream input = new LazyFileInputStream(temporary.getRoot()
-                                                                     .toPath()
-                                                                     .resolve("missing"));
+        LazyFileInputStream input = new LazyFileInputStream(temporary.toPath().resolve("missing"));
         input.close();
         input.close();
         try {

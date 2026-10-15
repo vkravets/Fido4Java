@@ -1,9 +1,9 @@
 package org.fidonet.binkp.interop;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -52,26 +52,26 @@ public abstract class AbstractJftnPeer implements JftnPeer {
     protected abstract void closeTransport() throws Exception;
 
     public void awaitConnection() throws InterruptedException {
-        assertTrue("binkd must connect to JFtn", accepted.await(30, TimeUnit.SECONDS));
+        assertTrue(accepted.await(30, TimeUnit.SECONDS), "binkd must connect to JFtn");
     }
 
     public void assertReceivedFile() throws InterruptedException {
-        assertTrue("binkd must send its file within 30 seconds",
-                   receiver.received.await(30, TimeUnit.SECONDS));
-        assertNull("Receive event failed", receiver.failure.get());
+        assertTrue(receiver.received.await(30, TimeUnit.SECONDS),
+                   "binkd must send its file within 30 seconds");
+        assertNull(receiver.failure.get(), "Receive event failed");
         assertArrayEquals(files.toJftn, receiver.bytes.get());
     }
 
     public void assertSessionFinished() throws Exception {
-        assertTrue("TCP session must close normally", awaitClosed());
+        assertTrue(awaitClosed(), "TCP session must close normally");
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         while (!session.isTransferComplete() && System.nanoTime() < deadline) {
             Thread.sleep(10);
         }
-        assertTrue("EOB and all file acknowledgements are required", session.isTransferComplete());
-        assertTrue("binkp 1.1 must be negotiated", session.isBinkp11());
-        assertTrue("Both file batches must complete before the empty batch",
-                   session.getBatchNumber() >= 2);
+        assertTrue(session.isTransferComplete(), "EOB and all file acknowledgements are required");
+        assertTrue(session.isBinkp11(), "binkp 1.1 must be negotiated");
+        assertTrue(session.getBatchNumber() >= 2,
+                   "Both file batches must complete before the empty batch");
     }
 
     public void assertProtocol() throws Exception {

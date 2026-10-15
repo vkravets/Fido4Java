@@ -2,9 +2,9 @@ package org.fidonet.binkp.interop;
 
 import org.fidonet.binkp.common.config.ServerRole;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,9 +13,10 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /** Exchanges real files with an independent binkd process over TCP. */
-@RunWith(Parameterized.class)
+@ParameterizedClass(name = "JFtn role={0}, requests NR={1}")
+@MethodSource("modes")
 public abstract class AbstractBinkdInteropTest {
-    @Parameterized.Parameters(name = "JFtn role={0}, requests NR={1}")
+
     public static Collection<Object[]> modes() {
         return Arrays.asList(new Object[][]{{ServerRole.CLIENT, false}, {ServerRole.CLIENT, true},
                 {ServerRole.SERVER, false}, {ServerRole.SERVER, true}});

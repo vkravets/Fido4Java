@@ -34,10 +34,10 @@ import org.fidonet.types.Link;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
-import junit.framework.TestCase;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public class CreateDatabaseTest {
     private static Dao<ConfigurationLink, Long> daoLinks;
     private static ConfigurationLink configurationLink;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws SQLException {
         ormManager = new OrmManager("jdbc:h2:mem:createDatabase" + System.nanoTime());
         databaseManager = new DatabaseManager(ormManager);
@@ -72,7 +72,7 @@ public class CreateDatabaseTest {
         daoLinks.create(configurationLink);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws SQLException {
         ormManager.dropTables();
         databaseManager.close();
@@ -88,10 +88,10 @@ public class CreateDatabaseTest {
                                                               .eq("address",
                                                                   "2:467/110.1@fidonet.org")
                                                               .query();
-            TestCase.assertEquals(1, address.size());
+            Assertions.assertEquals(1, address.size());
         } catch (SQLException e) {
             e.printStackTrace();
-            TestCase.fail();
+            Assertions.fail();
         }
     }
 
@@ -133,16 +133,16 @@ public class CreateDatabaseTest {
             daoLinks.create(configurationLink2);
         } catch (SQLException e) {
             e.printStackTrace();
-            TestCase.fail("Error during creating link: " + e.getMessage());
+            Assertions.fail("Error during creating link: " + e.getMessage());
         }
         addTestSubscription(link2, "test4");
 
         List<String> subscriptions1 = databaseManager.getSubscriptions(configurationLink.toLink());
-        TestCase.assertEquals(2, subscriptions1.size());
-        TestCase.assertEquals(Arrays.asList("test1", "test111"), subscriptions1);
+        Assertions.assertEquals(2, subscriptions1.size());
+        Assertions.assertEquals(Arrays.asList("test1", "test111"), subscriptions1);
 
         List<String> subscriptions2 = databaseManager.getSubscriptions(link2);
-        TestCase.assertEquals(1, subscriptions2.size());
-        TestCase.assertEquals(Arrays.asList("test4"), subscriptions2);
+        Assertions.assertEquals(1, subscriptions2.size());
+        Assertions.assertEquals(Arrays.asList("test4"), subscriptions2);
     }
 }

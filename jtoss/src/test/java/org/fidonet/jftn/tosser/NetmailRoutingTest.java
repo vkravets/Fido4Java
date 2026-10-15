@@ -1,8 +1,8 @@
 package org.fidonet.jftn.tosser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
@@ -13,11 +13,11 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +27,14 @@ import java.util.Collections;
 import java.util.Date;
 
 public class NetmailRoutingTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     JFtnConfig config(boolean transit) throws Exception {
-        String root = temporary.newFolder().getAbsolutePath().replace('\\', '/');
+        String root = Files.createTempDirectory(temporary.toPath(), "test-")
+                           .toFile()
+                           .getAbsolutePath()
+                           .replace('\\', '/');
         String text = "Inbound="
                       + root
                       + "/inbound\nTmp="

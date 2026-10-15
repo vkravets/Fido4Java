@@ -28,8 +28,8 @@
 
 package org.fidonet.jftn.rpc;
 
-import junit.framework.TestCase;
 import org.apache.thrift.TException;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,14 +65,14 @@ public class ServerHandlerTestMock implements ServerHandler {
         return new LoginService.Iface() {
             @Override
             public LoginResponse login(Credential cred) throws TException {
-                TestCase.assertEquals(new Credential("test", "test"), cred);
+                Assertions.assertEquals(new Credential("test", "test"), cred);
                 System.out.println("[SERVER] LoginService.login()");
                 return new LoginResponse(Response.OK, "session_id_test_1");
             }
 
             @Override
             public void logout(String session_id) throws TException {
-                TestCase.assertEquals("session_id_test_1", session_id);
+                Assertions.assertEquals("session_id_test_1", session_id);
                 System.out.println("[SERVER] LoginService.logout()");
             }
         };
@@ -83,7 +83,7 @@ public class ServerHandlerTestMock implements ServerHandler {
         return new MessageService.Iface() {
             @Override
             public List<Message> getMessages(String area) throws TException {
-                TestCase.assertEquals("test_area", area);
+                Assertions.assertEquals("test_area", area);
                 System.out.println("[SERVER] MessageService.getMessages()");
                 return new ArrayList<Message>();
             }

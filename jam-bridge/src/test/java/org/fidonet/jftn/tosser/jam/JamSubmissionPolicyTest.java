@@ -1,10 +1,12 @@
 package org.fidonet.jftn.tosser.jam;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Date;
@@ -17,15 +19,18 @@ public class JamSubmissionPolicyTest {
                                                Collections.singleton(new FTNAddr("2:500/1")));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void rejectsAForeignSenderWithoutOpeningAnyStorage() {
-        JamSubmissionPolicy.requireLocalSender(message(),
-                                               Collections.singleton(new FTNAddr("2:500/3")));
+        assertThrows(IllegalArgumentException.class,
+                     () -> JamSubmissionPolicy.requireLocalSender(message(),
+                                                                  Collections.singleton(new FTNAddr("2:500/3"))));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void rejectsFileOperationsBeforeSubmission() {
-        JamSubmissionPolicy.requireSupportedOperations(JamArea.LOCAL | JamArea.FILE_OPERATIONS);
+        assertThrows(UnsupportedOperationException.class,
+                     () -> JamSubmissionPolicy.requireSupportedOperations(JamArea.LOCAL
+                             | JamArea.FILE_OPERATIONS));
     }
 
     private Message message() {

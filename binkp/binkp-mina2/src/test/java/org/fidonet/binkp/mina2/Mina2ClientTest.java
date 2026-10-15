@@ -53,8 +53,8 @@ import org.apache.mina.core.service.DefaultTransportMetadata;
 import org.apache.mina.core.session.IoSessionConfig;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.ProtocolCodecSession;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -174,10 +174,10 @@ public class Mina2ClientTest {
         Thread thread = new Thread(clientMock);
         thread.start();
         thread.join();
-        Assert.assertTrue(sessionContext.getRecvFiles().isEmpty());
-        Assert.assertEquals(true, connected);
-        Assert.assertEquals(true, disconnected);
-        Assert.assertEquals(true, fileReceived);
+        Assertions.assertTrue(sessionContext.getRecvFiles().isEmpty());
+        Assertions.assertEquals(true, connected);
+        Assertions.assertEquals(true, disconnected);
+        Assertions.assertEquals(true, fileReceived);
     }
 
     private void registerEvents(ClientMock client) {
@@ -202,11 +202,11 @@ public class Mina2ClientTest {
             public void onEventHandle(FileReceivedEvent event) {
                 fileReceived = true;
                 FileInfo expectedInfo = new FileInfo("0000FF8F.WE5", 766, 1348664500L);
-                Assert.assertEquals(expectedInfo, event.getFile().getInfo());
-                Assert.assertEquals(true, event.getFile().getInfo().isFinished());
+                Assertions.assertEquals(expectedInfo, event.getFile().getInfo());
+                Assertions.assertEquals(true, event.getFile().getInfo().isFinished());
                 ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile()
                                                                                .getStream();
-                Assert.assertEquals(766, outStream.toByteArray().length);
+                Assertions.assertEquals(766, outStream.toByteArray().length);
             }
         };
         client.registerEvent(fileReceivedEventHandler);

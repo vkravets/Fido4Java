@@ -39,16 +39,15 @@ import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
 
 import com.j256.ormlite.dao.Dao;
-import junit.framework.TestCase;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -63,25 +62,25 @@ import java.util.List;
  * Date: 9/2/11
  * Time: 5:42 PM
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestTosser {
 
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private static OrmManager ormManager;
     private static DatabaseManager databaseManager;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws SQLException {
         ormManager = new OrmManager("jdbc:h2:mem:tosser" + System.nanoTime());
         databaseManager = new DatabaseManager(ormManager);
         if (!databaseManager.open()) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws SQLException {
         ormManager.dropTables();
         databaseManager.close();
@@ -92,7 +91,7 @@ public class TestTosser {
         JFtnConfig config = new JFtnConfig() {
             @Override
             public String getTmpDir() {
-                return temporary.getRoot().getAbsolutePath();
+                return temporary.getAbsolutePath();
             }
         };
         InputStream configStream = TestTosser.class.getClassLoader()
@@ -101,7 +100,7 @@ public class TestTosser {
         try {
             config.load(configStream);
         } catch (ParseConfigException e) {
-            TestCase.fail(e.getMessage());
+            Assertions.fail(e.getMessage());
         }
 
         try {
@@ -110,10 +109,10 @@ public class TestTosser {
             EchoMgr echoMgr = tosser.getAreamgr();
             List<String> list = echoMgr.getEchos();
             System.out.println(list);
-            TestCase.assertEquals(8, list.size());
-            TestCase.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
-            TestCase.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
-            TestCase.assertEquals(4, databaseManager.getMessageSize("ru.anime"));
+            Assertions.assertEquals(8, list.size());
+            Assertions.assertEquals(true, echoMgr.isEchoExists("ru.anime"));
+            Assertions.assertEquals(false, echoMgr.isEchoExists("ru.cracks"));
+            Assertions.assertEquals(4, databaseManager.getMessageSize("ru.anime"));
             Iterator<Message> messages = databaseManager.getMessages("ru.anime");
             while (messages.hasNext()) {
                 Message message = messages.next();
@@ -131,7 +130,7 @@ public class TestTosser {
         } catch (Exception e) {
             System.out.println("Test Failed. Details: " + e.getMessage());
             e.printStackTrace(System.out);
-            TestCase.fail();
+            Assertions.fail();
         }
     }
 
@@ -162,7 +161,7 @@ public class TestTosser {
 
         System.out.println("Link don't have any subscription");
         System.out.println("Checking that there no any messages for link.");
-        TestCase.assertEquals(0, num);
+        Assertions.assertEquals(0, num);
 
         databaseManager.addSubscription(link.toLink(), "ru.anime");
         System.out.println("Subscribed to ru.anime successfully.");
@@ -175,7 +174,7 @@ public class TestTosser {
         }
         System.out.println("Checking correctness of messages number...");
 
-        TestCase.assertEquals(4, num);
+        Assertions.assertEquals(4, num);
 
         databaseManager.addSubscription(link.toLink(), "ru.golded");
         System.out.println("Subscribed to ru.golded successfully.");
@@ -187,7 +186,7 @@ public class TestTosser {
             num++;
         }
         System.out.println("Checking correctness of messages number...");
-        TestCase.assertEquals(5, num);
+        Assertions.assertEquals(5, num);
 
         databaseManager.addSubscription(link.toLink(), "ru.computerra");
         System.out.println("Subscribed to ru.computerra successfully.");
@@ -199,7 +198,7 @@ public class TestTosser {
             num++;
         }
         System.out.println("Checking correctness of messages number...");
-        TestCase.assertEquals(43, num);
+        Assertions.assertEquals(43, num);
 
         System.out.println("Checking behavior with last message id algorithm...");
         databaseManager.setLinkLastMessage(link.toLink(), "ru.anime", 10L);
@@ -213,7 +212,7 @@ public class TestTosser {
             num++;
         }
         System.out.println("Checking correctness of messages number...");
-        TestCase.assertEquals(36, num);
+        Assertions.assertEquals(36, num);
 
         System.out.println("SUCCESS");
     }

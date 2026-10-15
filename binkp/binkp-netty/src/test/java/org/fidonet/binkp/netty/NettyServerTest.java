@@ -34,15 +34,17 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.binkp.test.AbstractServerTest;
-import org.fidonet.binkp.test.ServerRule;
 import org.fidonet.types.Link;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,10 +57,18 @@ public class NettyServerTest extends AbstractServerTest {
 
     private static final Server server = new Server(0);
 
-    @ClassRule
-    public static ServerRule SERVER = new ServerRule(server, sessionContext, true);
+    @BeforeAll
+    public static void startServer() throws Exception {
+        server.run(sessionContext);
+    }
 
-    @Test(timeout = 30000)
+    @AfterAll
+    public static void stopServer() {
+        server.stop();
+    }
+
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void test1() throws Exception {
         final Link uplink = new Link("2:467/10,2:467/10.1,client_password,localhost:"
                                      + server.getLocalPort());
@@ -79,7 +89,8 @@ public class NettyServerTest extends AbstractServerTest {
         runAndWait(client, sessionContext);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void test2() throws Exception {
         final Link uplink = new Link("2:467/10,2:467/10.999,client_password999,localhost:"
                                      + server.getLocalPort());
@@ -100,14 +111,15 @@ public class NettyServerTest extends AbstractServerTest {
         runAndWait(client, sessionContext);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void serversUseDifferentPortsWhenStartedTogether() throws Exception {
         Server other = new Server(0);
         try {
             other.run(sessionContext);
-            Assert.assertTrue(server.getLocalPort() > 0);
-            Assert.assertTrue(other.getLocalPort() > 0);
-            Assert.assertNotEquals(server.getLocalPort(), other.getLocalPort());
+            Assertions.assertTrue(server.getLocalPort() > 0);
+            Assertions.assertTrue(other.getLocalPort() > 0);
+            Assertions.assertNotEquals(server.getLocalPort(), other.getLocalPort());
         } finally {
             other.stop();
         }

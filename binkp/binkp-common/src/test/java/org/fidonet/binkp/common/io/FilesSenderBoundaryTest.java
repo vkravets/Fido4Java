@@ -1,22 +1,21 @@
 package org.fidonet.binkp.common.io;
 
 import static org.fidonet.binkp.common.SessionTestFixtures.context;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.RecordingSession;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.protocol.Session;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,8 +31,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class FilesSenderBoundaryTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private FileData<InputStream> file(InputStream input, long size, long offset) {
         FileInfo info = new FileInfo("file", size, 123);
@@ -57,7 +56,7 @@ public class FilesSenderBoundaryTest {
 
     @Test
     public void resumesFromFileChannelAndRewindsForRetransmission() throws Exception {
-        File path = temporary.newFile();
+        File path = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
         Files.write(path.toPath(), new byte[]{1, 2, 3});
         RecordingSession session = new RecordingSession();
         try (FileInputStream input = new FileInputStream(path)) {

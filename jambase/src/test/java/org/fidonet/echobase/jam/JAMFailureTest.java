@@ -1,8 +1,8 @@
 package org.fidonet.echobase.jam;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.exceptions.EchoBaseException;
@@ -10,9 +10,8 @@ import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class JAMFailureTest {
     @Test
     public void rejectsEachCorruptedSignatureByte() throws Exception {
         for (int index = 0; index < 4; index++) {
-            File path = temporary.newFile();
+            File path = Files.createTempFile(temporary.toPath(), "test-", ".tmp").toFile();
             try (JHRFile header = new JHRFile(path)) {
                 header.setFixedHeader(new FixedHeaderInfoStruct());
                 try (RandomAccessFile corrupt = new RandomAccessFile(path, "rw")) {
@@ -43,7 +42,7 @@ public class JAMFailureTest {
 
     @Test
     public void appendsEchomailWithoutRecipientAddress() throws Exception {
-        EchoList list = areas(temporary.getRoot().getPath());
+        EchoList list = areas(temporary.getPath());
         JAMEchoBase base = new JAMEchoBase(list);
         Message echo = new Message("Author",
                                    "All",
@@ -61,11 +60,13 @@ public class JAMFailureTest {
         assertTrue(new File(list.getEcho("test").Path + ".jdt").length() > 0);
     }
 
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private EchoList areas(String root) throws Exception {
-        EchoList list = new EchoList(temporary.newFile().getPath());
+        EchoList list = new EchoList(Files.createTempFile(temporary.toPath(), "test-", ".tmp")
+                                          .toFile()
+                                          .getPath());
         list.addArea("test", root, new FTNAddr("2:500/1"), new FTNAddr("2:500/1"));
         return list;
     }
@@ -82,15 +83,18 @@ public class JAMFailureTest {
 
     @Test
     public void unknownAreaAndMissingDirectoryHaveUsefulExceptions() throws Exception {
-        JAMEchoBase empty = new JAMEchoBase(new EchoList(temporary.newFile().getPath()));
+        JAMEchoBase empty = new JAMEchoBase(new EchoList(Files.createTempFile(temporary.toPath(),
+                                                                              "test-",
+                                                                              ".tmp")
+                                                              .toFile()
+                                                              .getPath()));
         try {
             empty.openArea("missing");
             fail("Unknown area accepted");
         } catch (EchoBaseException expected) {
             assertTrue(expected.getMessage().contains("missing"));
         }
-        JAMEchoBase inaccessible = new JAMEchoBase(areas(new File(temporary.getRoot(),
-                                                                  "missing").getPath()));
+        JAMEchoBase inaccessible = new JAMEchoBase(areas(new File(temporary, "missing").getPath()));
         try {
             inaccessible.createArea("test");
             fail("Missing directory accepted");
@@ -101,7 +105,7 @@ public class JAMFailureTest {
 
     @Test
     public void truncatedIndexPreventsAppendWithoutWritingMessageFiles() throws Exception {
-        EchoList list = areas(temporary.getRoot().getPath());
+        EchoList list = areas(temporary.getPath());
         JAMEchoBase base = new JAMEchoBase(list);
         base.openArea("test");
         try {
@@ -122,7 +126,7 @@ public class JAMFailureTest {
 
     @Test
     public void malformedDateIsReportedBeforeAppend() throws Exception {
-        EchoList list = areas(temporary.getRoot().getPath());
+        EchoList list = areas(temporary.getPath());
         JAMEchoBase base = new JAMEchoBase(list);
         Message invalid = new Message("Author",
                                       "Reader",

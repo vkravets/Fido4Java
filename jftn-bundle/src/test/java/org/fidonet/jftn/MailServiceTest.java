@@ -1,9 +1,9 @@
 package org.fidonet.jftn;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.ServerRole;
@@ -26,11 +26,12 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -77,7 +78,7 @@ public class MailServiceTest {
     @Test
     public void disabledJamDoesNotValidateBindingsOrCreateFilesAndStillExportsPackets()
             throws Exception {
-        Path jam = temporary.getRoot().toPath().resolve("disabled-jam");
+        Path jam = temporary.toPath().resolve("disabled-jam");
         JFtnConfig config = config("2:500/102",
                                    "2:500/101",
                                    "JamBridgeEnabled=false\nJamEcho=invalid\nJamNetmail="
@@ -99,7 +100,7 @@ public class MailServiceTest {
 
     @Test
     public void discoversJamPluginAndExportsOnlyWhenEnabled() throws Exception {
-        Path jam = temporary.getRoot().toPath().resolve("enabled-jam/netmail");
+        Path jam = temporary.toPath().resolve("enabled-jam/netmail");
         JFtnConfig config = config("2:500/102", "2:500/101", "JamNetmail=" + jam + "\n");
         DatabaseManager base = database();
         try (MailService service = new MailService(config, base)) {
@@ -239,15 +240,18 @@ public class MailServiceTest {
         }
     }
 
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     private JFtnConfig config(String own, String peer) throws Exception {
         return config(own, peer, "");
     }
 
     private JFtnConfig config(String own, String peer, String extra) throws Exception {
-        String root = temporary.newFolder().getAbsolutePath().replace('\\', '/');
+        String root = Files.createTempDirectory(temporary.toPath(), "test-")
+                           .toFile()
+                           .getAbsolutePath()
+                           .replace('\\', '/');
         String text = "Inbound="
                       + root
                       + "/inbound\nTmp="
@@ -288,7 +292,8 @@ public class MailServiceTest {
                            new Date());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS)
     public void deliversNetmailAndEchomailInBothDirectionsThroughRealTcp() throws Exception {
         JFtnConfig clientConfig = config("2:500/101", "2:500/102");
         JFtnConfig serverConfig = config("2:500/102", "2:500/101");
@@ -318,8 +323,8 @@ public class MailServiceTest {
                                         server.getLocalPort());
             client = new Client(destination);
             client.run(clientContext);
-            assertTrue("Messages and acknowledgements must reach both databases",
-                       awaitDelivery(clientBase, serverBase, clientConfig, serverConfig));
+            assertTrue(awaitDelivery(clientBase, serverBase, clientConfig, serverConfig),
+                       "Messages and acknowledgements must reach both databases");
             assertEquals("Текст сообщения\r",
                          clientBase.getLocalNetmail(new FTNAddr("2:500/101"))
                                    .get(0)

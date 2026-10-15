@@ -1,32 +1,34 @@
 package org.fidonet.echobase.jam;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.types.FTNAddr;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 
 public class JAMEchoBaseResourceTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void releasesAlreadyOpenedFilesWhenNextFileCannotOpen() throws Exception {
-        EchoList areas = new EchoList(temporary.newFile("areas").getAbsolutePath());
+        EchoList areas = new EchoList(Files.createFile(temporary.toPath().resolve("areas"))
+                                           .toFile()
+                                           .getAbsolutePath());
         areas.load();
         FTNAddr address = new FTNAddr("2:467/1");
-        areas.addArea("test", temporary.getRoot().getAbsolutePath(), address, address);
+        areas.addArea("test", temporary.getAbsolutePath(), address, address);
         String path = areas.getEcho("test").Path;
         assertTrue(new File(path + ".jhr").createNewFile());
         assertTrue(new File(path + ".jdt").mkdir());
@@ -45,7 +47,8 @@ public class JAMEchoBaseResourceTest {
     public void attemptsRemainingClosesAfterOneFileCloseFails() throws Exception {
         boolean[] closed = new boolean[2];
         JAMEchoBase base = new JAMEchoBase(null);
-        JHRFile header = new JHRFile(temporary.newFile("header")) {
+        JHRFile header = new JHRFile(Files.createFile(temporary.toPath().resolve("header"))
+                                          .toFile()) {
             @Override
             public void close() throws IOException {
                 super.close();
@@ -53,7 +56,7 @@ public class JAMEchoBaseResourceTest {
                 throw new IOException("header close failure");
             }
         };
-        JDTFile text = new JDTFile(temporary.newFile("text")) {
+        JDTFile text = new JDTFile(Files.createFile(temporary.toPath().resolve("text")).toFile()) {
             @Override
             public void close() throws IOException {
                 super.close();

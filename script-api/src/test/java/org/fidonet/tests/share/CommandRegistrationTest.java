@@ -1,8 +1,8 @@
 package org.fidonet.tests.share;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.fidonet.jftn.engine.script.JFtnScriptService;
 import org.fidonet.jftn.share.Command;
@@ -10,7 +10,7 @@ import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CommandRegistrationTest {
     @Test

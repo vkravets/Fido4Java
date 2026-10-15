@@ -1,13 +1,14 @@
 package org.fidonet.packet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -53,7 +54,7 @@ public class PacketWriterTest {
         assertEquals(original.getMsgDate(), restored.getMsgDate());
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void enforcesEncodedByteLimitsInsteadOfCharacterCounts() throws Exception {
         Message message = new Message("я".repeat(18),
                                       "Reader",
@@ -62,9 +63,10 @@ public class PacketWriterTest {
                                       "Subject",
                                       "\1CHRS: UTF-8 4\rBody\r",
                                       new Date());
-        PacketWriter.write(message.getFAddr(),
-                           message.getTAddr(),
-                           "",
-                           Collections.singletonList(message));
+        assertThrows(IOException.class,
+                     () -> PacketWriter.write(message.getFAddr(),
+                                              message.getTAddr(),
+                                              "",
+                                              Collections.singletonList(message)));
     }
 }

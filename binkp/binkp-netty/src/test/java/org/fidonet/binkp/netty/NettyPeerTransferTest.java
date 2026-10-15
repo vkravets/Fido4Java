@@ -1,11 +1,11 @@
 package org.fidonet.binkp.netty;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -43,9 +43,10 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -67,9 +68,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Runs the production handlers and codecs over real loopback TCP sockets. */
-@RunWith(Parameterized.class)
+@ParameterizedClass(name = "{0}")
+@MethodSource("modes")
 public class NettyPeerTransferTest {
-    @Parameterized.Parameters(name = "{0}")
+
     public static Collection<Object[]> modes() {
         return Arrays.asList(new Object[][]{{"ordinary", true, false, true, false},
                 {"NR both directions", true, true, true, true},
@@ -118,12 +120,14 @@ public class NettyPeerTransferTest {
                               new ByteArrayInputStream(bytes));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void exchangesFilesInBothDirectionsThroughRealTcpConnection() throws Exception {
         exchangeFiles(false);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void exchangesAdditionalBatchesThroughTheSameTcpConnection() throws Exception {
         assumeTrue(clientEnabled && serverEnabled);
         exchangeFiles(true);
@@ -133,7 +137,8 @@ public class NettyPeerTransferTest {
         exchangeFiles(additionalBatch, false);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     public void retainsEncryptionAcrossBatches() throws Exception {
         assumeTrue(clientEnabled && serverEnabled && !clientRequests && !serverRequests);
         exchangeFiles(true, true);
@@ -243,16 +248,16 @@ public class NettyPeerTransferTest {
                                         .connect("127.0.0.1", port)
                                         .sync()
                                         .channel();
-            assertTrue("Both peers must receive a file", received.await(10, TimeUnit.SECONDS));
-            assertNull("Receive event must complete without errors", eventFailure.get());
+            assertTrue(received.await(10, TimeUnit.SECONDS), "Both peers must receive a file");
+            assertNull(eventFailure.get(), "Receive event must complete without errors");
             assertArrayEquals(clientBytes, contents.get("client file.pkt"));
             assertArrayEquals(serverBytes, contents.get("server file.pkt"));
             if (additionalBatch) {
                 assertArrayEquals(clientBytes, contents.get("client second.pkt"));
                 assertArrayEquals(serverBytes, contents.get("server second.pkt"));
             }
-            assertTrue("The protocol must finish and close TCP",
-                       connection.closeFuture().await(10, TimeUnit.SECONDS));
+            assertTrue(connection.closeFuture().await(10, TimeUnit.SECONDS),
+                       "The protocol must finish and close TCP");
             SessionContext server = accepted.get();
             assertNotNull(server);
             assertEquals(Arrays.asList("connected", "disconnected"),
@@ -272,10 +277,10 @@ public class NettyPeerTransferTest {
                     && System.nanoTime() < completionDeadline) {
                 Thread.sleep(5);
             }
-            assertTrue("Client must receive EOB and all acknowledgements",
-                       client.isTransferComplete());
-            assertTrue("Server must receive EOB and all acknowledgements",
-                       server.isTransferComplete());
+            assertTrue(client.isTransferComplete(),
+                       "Client must receive EOB and all acknowledgements");
+            assertTrue(server.isTransferComplete(),
+                       "Server must receive EOB and all acknowledgements");
             int batches = additionalBatch ? 2 : 1;
             assertEquals(batches * clientBytes.length, client.getSendFilesSize());
             assertEquals(batches * serverBytes.length, server.getSendFilesSize());

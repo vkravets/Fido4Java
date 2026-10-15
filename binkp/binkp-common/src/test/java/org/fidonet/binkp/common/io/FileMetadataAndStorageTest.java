@@ -1,16 +1,16 @@
 package org.fidonet.binkp.common.io;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.OverlappingFileLockException;
@@ -19,8 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileMetadataAndStorageTest {
-    @Rule
-    public TemporaryFolder temporary = new TemporaryFolder();
+    @TempDir
+    public File temporary;
 
     @Test
     public void escapedFilenamesRoundTripThroughWireMetadata() throws Exception {
@@ -55,7 +55,7 @@ public class FileMetadataAndStorageTest {
 
     @Test
     public void partialOutputPersistsAndAppendsAcrossReopen() throws Exception {
-        Path path = temporary.newFile().toPath();
+        Path path = Files.createTempFile(temporary.toPath(), "test-", ".tmp");
         try (PartialFileOutputStream output = new PartialFileOutputStream(path, 10)) {
             output.write('a');
             output.write(new byte[]{'b', 'c'});
@@ -90,7 +90,7 @@ public class FileMetadataAndStorageTest {
     @Test
     public void refusesOversizedOrAlreadyLockedPartialFilesAndReleasesFailedLocks()
             throws Exception {
-        Path path = temporary.newFile().toPath();
+        Path path = Files.createTempFile(temporary.toPath(), "test-", ".tmp");
         Files.write(path, new byte[3]);
         try {
             new PartialFileOutputStream(path, 2);

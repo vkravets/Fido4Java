@@ -28,7 +28,7 @@
 //
 // package org.fidonet.jftn.rpc;
 //
-// import junit.framework.TestCase;
+// import org.junit.jupiter.api.Assertions;
 // import org.apache.thrift.TException;
 // import org.apache.thrift.async.AsyncMethodCallback;
 // import org.apache.thrift.async.TAsyncClientManager;
@@ -39,9 +39,9 @@
 // import org.apache.thrift.transport.TNonblockingSocket;
 // import org.apache.thrift.transport.TSocket;
 // import org.apache.thrift.transport.TTransport;
-// import org.junit.After;
-// import org.junit.Before;
-// import org.junit.Test;
+// import org.junit.jupiter.api.AfterEach;
+// import org.junit.jupiter.api.BeforeEach;
+// import org.junit.jupiter.api.Test;
 //
 // import java.io.IOException;
 // import java.util.concurrent.atomic.AtomicInteger;
@@ -63,7 +63,7 @@
 //    private final static AtomicInteger loginCurIndex = new AtomicInteger(0);
 //    private String bind_ip;
 //
-//    @Before
+//    @BeforeEach
 //    public void setUp() {
 //
 //        bind_ip = System.getenv("RPC_BIND_IP");
@@ -74,7 +74,7 @@
 //        System.out.println("Server Started");
 //    }
 //
-//    @After
+//    @AfterEach
 //    public void tearDown() {
 //        server.stop();
 //        try {
@@ -98,19 +98,19 @@
 //            LoginService.Client logClient = new LoginService.Client(loginProtocol);
 //            transport.open();
 //            System.out.println("[CLIENT] Api.getVersion");
-//            TestCase.assertEquals(new VersionResponse(Response.OK, "1.0.1"),
+//            Assertions.assertEquals(new VersionResponse(Response.OK, "1.0.1"),
 // apiClient.getVersion());
-//            TestCase.assertEquals(Response.OK, apiClient.ping());
+//            Assertions.assertEquals(Response.OK, apiClient.ping());
 //            System.out.println("[CLIENT] LoginService.login()");
 //            LoginResponse login = logClient.login(new Credential("test", "test"));
-//            TestCase.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login);
+//            Assertions.assertEquals(new LoginResponse(Response.OK, "session_id_test_1"), login);
 //            System.out.println("[CLIENT] LoginService.logout()");
 //            logClient.logout("session_id_test_1");
 //
 //        }
 //        catch (TException e) {
 //            e.printStackTrace();
-//            TestCase.fail(e.getMessage());
+//            Assertions.fail(e.getMessage());
 //        }
 //    }
 //
@@ -131,7 +131,7 @@
 //                    @Override
 //                    public void onComplete(Response response) {
 //                        System.out.println("[CLIENT] Async Api.ping() " + i);
-//                        TestCase.assertEquals(Response.OK, response);
+//                        Assertions.assertEquals(Response.OK, response);
 //                        synchronized (pingCurIndex) {
 //                            pingCurIndex.set(pingCurIndex.incrementAndGet());
 //                        }
@@ -139,7 +139,7 @@
 //
 //                    @Override
 //                    public void onError(Exception exception) {
-//                        TestCase.fail(exception.getMessage());
+//                        Assertions.fail(exception.getMessage());
 //                    }
 //                });
 //
@@ -158,7 +158,7 @@
 //                            @Override
 //                            public void onComplete(LoginResponse loginResponse) {
 //                                System.out.println("[CLIENT] Async LoginService.login() " + i);
-//                                TestCase.assertEquals(
+//                                Assertions.assertEquals(
 //                                        new LoginResponse(Response.OK, "session_id_test_1"),
 //                                        loginResponse);
 //                                synchronized (loginCurIndex) {
@@ -169,27 +169,27 @@
 //                            @Override
 //                            public void onError(Exception e) {
 //                                e.printStackTrace();
-//                                TestCase.fail(e.getMessage());
+//                                Assertions.fail(e.getMessage());
 //                            }
 //                        });
 //
 //                Thread.sleep(10);
 //            }
 //            Thread.sleep(1000);
-//            TestCase.assertEquals(loginCurIndex.get(), TEST_THREAD_NUMBER);
-//            TestCase.assertEquals(pingCurIndex.get(), TEST_THREAD_NUMBER);
+//            Assertions.assertEquals(loginCurIndex.get(), TEST_THREAD_NUMBER);
+//            Assertions.assertEquals(pingCurIndex.get(), TEST_THREAD_NUMBER);
 //        }
 //        catch (TException e) {
 //            e.printStackTrace();
-//            TestCase.fail(e.getMessage());
+//            Assertions.fail(e.getMessage());
 //        }
 //        catch (InterruptedException e) {
 //            e.printStackTrace();
-//            TestCase.fail(e.getMessage());
+//            Assertions.fail(e.getMessage());
 //        }
 //        catch (IOException e) {
 //            e.printStackTrace();
-//            TestCase.fail(e.getMessage());
+//            Assertions.fail(e.getMessage());
 //        }
 //
 //    }

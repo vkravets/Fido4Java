@@ -1,14 +1,14 @@
 package org.fidonet.jftn.tosser.jam;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.ref.WeakReference;
 

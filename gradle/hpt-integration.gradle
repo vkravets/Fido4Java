@@ -35,7 +35,7 @@ tasks.register('hptInteropTest', Test) {
     }
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-    useJUnit()
+    useJUnitPlatform()
     maxParallelForks = 1
     outputs.upToDateWhen { false }
     systemProperty 'hpt.workerFiles', layout.buildDirectory.dir('hpt-worker').get().asFile.absolutePath

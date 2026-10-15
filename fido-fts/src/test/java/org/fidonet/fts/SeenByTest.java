@@ -30,8 +30,8 @@ package org.fidonet.fts;
 
 import org.fidonet.types.FTNAddr;
 
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -64,7 +64,7 @@ public class SeenByTest {
         actualPath.add(FTNAddr.valueOf("2:5050/103"));
         actualPath.add(FTNAddr.valueOf("2:5040/102"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
-        TestCase.assertEquals(pathString, actualPath.toString());
+        Assertions.assertEquals(pathString, actualPath.toString());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SeenByTest {
         actualPath.add(FTNAddr.valueOf("2:467/68"));
         actualPath.add(FTNAddr.valueOf("2:467/780"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
-        TestCase.assertEquals(pathString, actualPath.toSeenByString());
+        Assertions.assertEquals(pathString, actualPath.toSeenByString());
     }
 
     @Test
@@ -122,6 +122,6 @@ public class SeenByTest {
         actualPath.add(FTNAddr.valueOf("2:467/68"));
         actualPath.add(FTNAddr.valueOf("2:467/780"));
         actualPath.add(FTNAddr.valueOf("2:467/1313"));
-        TestCase.assertEquals(pathString, Arrays.asList(actualPath.toSeenByStrings()));
+        Assertions.assertEquals(pathString, Arrays.asList(actualPath.toSeenByStrings()));
     }
 }
