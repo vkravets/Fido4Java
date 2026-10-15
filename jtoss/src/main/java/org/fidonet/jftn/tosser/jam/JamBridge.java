@@ -108,7 +108,7 @@ public final class JamBridge {
 
     private void exportAreaMessages(Binding binding, JamArea.Access access, JamState state)
             throws IOException {
-        Set<String> existing = existingIdentities(access);
+        ExistingMessages existing = new ExistingMessages(access);
         if (binding.name == null) {
             for (Message message : netmail.getEditorNetmail(binding.aka)) {
                 export(message, access, existing, state);
@@ -117,14 +117,6 @@ public final class JamBridge {
         }
         MessageIteration.forEach(base.getMessages(binding.name),
                                  message -> export(message, access, existing, state));
-    }
-
-    private Set<String> existingIdentities(JamArea.Access access) throws IOException {
-        Set<String> existing = new HashSet<>();
-        for (JamArea.Entry entry : access.read()) {
-            existing.add(MailIdentity.of(entry.getMessage()));
-        }
-        return existing;
     }
 
     /** Only local unsent posts are submissions. Ordinary stored mail is never submitted. */
@@ -148,18 +140,10 @@ public final class JamBridge {
                                JamState state,
                                Tosser tosser)
             throws IOException {
-        for (JamArea.Entry entry : access.read()) {
-            if (isOutgoing(entry)) {
-                importEntrySafely(tosser, binding, access, entry, state);
-            }
-        }
+        access.forEach(attributes -> (attributes
+                & (JamArea.LOCAL | JamArea.SENT | JamArea.TYPE_LOCAL)) == JamArea.LOCAL,
+                       entry -> importEntrySafely(tosser, binding, access, entry, state));
     }
-
-    private boolean isOutgoing(JamArea.Entry entry) {
-        return (entry.getAttributes()
-                & (JamArea.LOCAL | JamArea.SENT | JamArea.TYPE_LOCAL)) == JamArea.LOCAL;
-    }
-
     private void importEntrySafely(Tosser tosser,
                                    Binding binding,
                                    JamArea.Access access,
@@ -240,12 +224,7 @@ public final class JamBridge {
         access.assignMsgId(entry.getNumber(),
                            message.getMsgId(),
                            CharsetTools.charsetDetect(message.getMessageCharset()));
-        for (JamArea.Entry updated : access.read()) {
-            if (updated.getNumber() == entry.getNumber()) {
-                return updated.getMessage();
-            }
-        }
-        return message;
+        return access.get(entry.getNumber()).getMessage();
     }
 
     private void ensureLocked(JamArea.Access access, JamArea.Entry entry) throws IOException {
@@ -277,9 +256,7 @@ public final class JamBridge {
     private void reconcileArea(Binding binding, OutboundSpool spool) throws IOException {
         JamState state = state(binding);
         binding.area.locked(access -> {
-            for (JamArea.Entry entry : access.read()) {
-                reconcileEntry(binding, access, entry, state, spool);
-            }
+            access.forEach(entry -> reconcileEntry(binding, access, entry, state, spool));
             return null;
         });
     }
@@ -335,7 +312,7 @@ public final class JamBridge {
 
     private void export(Message message,
                         JamArea.Access access,
-                        Set<String> existing,
+                        ExistingMessages existing,
                         JamState state)
             throws IOException {
         String identity = MailIdentity.of(message);
@@ -357,6 +334,26 @@ public final class JamBridge {
         return new JamState(Path.of(config.getTmpDir(), "jam-bridge", id + ".properties"));
     }
 
+    private static final class ExistingMessages {
+        private final JamArea.Access access;
+        private Set<String> identities;
+
+        private ExistingMessages(JamArea.Access access) {
+            this.access = access;
+        }
+
+        private boolean contains(String identity) throws IOException {
+            if (identities == null) {
+                identities = new HashSet<>();
+                access.forEach(entry -> identities.add(MailIdentity.of(entry.getMessage())));
+            }
+            return identities.contains(identity);
+        }
+
+        private void add(String identity) {
+            identities.add(identity);
+        }
+    }
     private static final class Binding {
         private final String name;
         private final FTNAddr aka;
