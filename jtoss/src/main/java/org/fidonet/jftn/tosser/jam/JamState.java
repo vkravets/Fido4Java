@@ -12,12 +12,21 @@ import java.util.zip.CRC32;
 
 /** Durable receipt records. An incomplete final record is discarded before the next append. */
 final class JamState {
+    enum Stage {
+        PREPARED, ACCEPTED, DELIVERED
+    }
     private static final int MAX_RECORD_BYTES = 16 * 1024 * 1024;
     private final Path log;
     private final Properties values = new Properties();
     private long validLength;
+    private final RecordWriter writer;
 
     JamState(Path path) throws IOException {
+        this(path, JamState::writeRecord);
+    }
+
+    JamState(Path path, RecordWriter writer) throws IOException {
+        this.writer = writer;
         log = Path.of(path + ".log");
         loadLegacy(path);
         if (Files.exists(log)) {
@@ -68,6 +77,19 @@ final class JamState {
         return values.getProperty(key);
     }
 
+    Stage stage(String identity) throws IOException {
+        String stored = get("stage." + identity);
+        try {
+            return stored == null ? null : Stage.valueOf(stored);
+        } catch (IllegalArgumentException failure) {
+            throw new IOException("Invalid JAM submission stage: " + stored, failure);
+        }
+    }
+
+    void stage(String identity, Stage stage) throws IOException {
+        put("stage." + identity, stage.name());
+    }
+
     void put(String key, String value) throws IOException {
         if (value.equals(values.getProperty(key))) {
             return;
@@ -81,7 +103,7 @@ final class JamState {
         Properties changes = new Properties();
         changes.setProperty("import." + identity, fingerprint);
         changes.setProperty("targets." + identity, targets);
-        changes.setProperty("stage." + identity, "PREPARED");
+        changes.setProperty("stage." + identity, Stage.PREPARED.name());
         append(changes);
     }
 
@@ -93,6 +115,15 @@ final class JamState {
             throw new IOException("JAM receipt record exceeds size limit");
         }
         Files.createDirectories(log.getParent());
+        validLength = writer.write(log, validLength, bytes);
+        values.putAll(changes);
+    }
+
+    interface RecordWriter {
+        long write(Path log, long validLength, byte[] bytes) throws IOException;
+    }
+
+    private static long writeRecord(Path log, long validLength, byte[] bytes) throws IOException {
         try (RandomAccessFile file = new RandomAccessFile(log.toFile(), "rw")) {
             file.setLength(validLength);
             file.seek(validLength);
@@ -100,9 +131,8 @@ final class JamState {
             file.write(bytes);
             file.writeInt(checksum(bytes));
             file.getChannel().force(true);
-            validLength = file.getFilePointer();
+            return file.getFilePointer();
         }
-        values.putAll(changes);
     }
 
     private static int checksum(byte[] bytes) {

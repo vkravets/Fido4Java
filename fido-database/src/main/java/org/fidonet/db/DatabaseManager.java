@@ -84,10 +84,14 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
 
     private OrmManager dbManager;
     private final NetmailRepository netmailRepository;
+    private final AreaRepository areas;
+    private final SubscriptionRepository subscriptions;
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;
         netmailRepository = new NetmailRepository(manager);
+        areas = new AreaRepository(manager);
+        subscriptions = new SubscriptionRepository(manager, areas);
     }
 
     public synchronized void configureLink(Link link, String packetPassword) {
@@ -141,7 +145,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
     }
 
     private void storeArchiveEcho(Message message) throws SQLException, ParseException {
-        Echoarea area = findEchoareaByName(message.getArea().toLowerCase(Locale.ROOT));
+        Echoarea area = areas.findByName(message.getArea().toLowerCase(Locale.ROOT));
         if (area == null) {
             throw new IllegalArgumentException("Create the target SQL area before archive import");
         }
@@ -178,8 +182,8 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
         }
         addSubscription(link, name);
         try {
-            ConfigurationLink configured = findConfigurationLinkByLink(link);
-            Echoarea echo = findEchoareaByName(name);
+            ConfigurationLink configured = subscriptions.findLink(link);
+            Echoarea echo = areas.findByName(name);
             UpdateBuilder<Subscription, Object> update = dbManager.<Subscription, Object>getDao(Subscription.class)
                                                                   .updateBuilder();
             update.updateColumnValue(Subscription.ACCESS_LEVEL_COLUMN, access);
@@ -324,19 +328,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
 
     @Override
     public boolean createArea(String areaName, String description) {
-        Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
-        Echoarea echoarea = new Echoarea();
-        echoarea.setName(areaName);
-        if (description != null) {
-            echoarea.setDescription(description);
-        }
-        try {
-            echoareas.create(echoarea);
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-            return false;
-        }
-        return true;
+        return areas.createArea(areaName, description);
     }
 
     @Override
@@ -372,7 +364,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         try {
-            Echoarea echoarea = findEchoareaByName(area);
+            Echoarea echoarea = areas.findByName(area);
             if (echoarea == null) {
                 return null;
             }
@@ -414,7 +406,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
     public long getMessageSize(String areaname) {
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         try {
-            Echoarea echoarea = findEchoareaByName(areaname);
+            Echoarea echoarea = areas.findByName(areaname);
             if (echoarea == null) {
                 return -1;
             }
@@ -438,7 +430,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
                 if (receipts.queryForId(identity) != null) {
                     return null;
                 }
-                Echoarea area = findEchoareaByName(areaname);
+                Echoarea area = areas.findByName(areaname);
                 if (area == null) {
                     // TODO: Check autocreate flag
                     area = new Echoarea();
@@ -458,73 +450,16 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
     }
 
     public List<String> getAreas() {
-        Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
-        List<String> result = new ArrayList<String>();
-        try {
-            List<Echoarea> echoareaList = echoareasDao.queryBuilder()
-                                                      .selectColumns(Echoarea.NAME_COLUMN)
-                                                      .query();
-            for (Echoarea echo : echoareaList) {
-                result.add(echo.getName());
-            }
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return result;
+        return areas.getAreas();
     }
 
     public boolean isAreaExists(String name) {
-        Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
-        try {
-            QueryBuilder<Echoarea, Long> echoareaQueryBuilder = echoareasDao.queryBuilder();
-            echoareaQueryBuilder.setCountOf(true).where().eq(Echoarea.NAME_COLUMN, name);
-            return echoareasDao.countOf(echoareaQueryBuilder.prepare()) == 1;
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return false;
+        return areas.isAreaExists(name);
     }
 
     @Override
     public void setLinkLastMessage(Link link, String areaname, Long id) {
-        Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
-        QueryBuilder<Subscription, Object> subscriptionsQueryBuilder = subscriptionsDao.queryBuilder();
-
-        try {
-            ConfigurationLink configurationLink = findConfigurationLinkByLink(link);
-            if (configurationLink == null) {
-                logger.warn("Link {} is not found, skip adding subscription",
-                            link.getAddr().as5D());
-                return;
-            }
-
-            Echoarea echoarea = findEchoareaByName(areaname);
-            if (echoarea == null) {
-                logger.warn("Trying to change last message id for non-existing area ({}) for {} link",
-                            areaname,
-                            link.getAddr().as5D());
-                return;
-            }
-
-            Where<Subscription, Object> subscriptionObjectWhere = subscriptionsQueryBuilder.where()
-                                                                                           .eq(Subscription.ID_AREA_COLUMN,
-                                                                                               echoarea.getId())
-                                                                                           .and()
-                                                                                           .eq(Subscription.ID_LINK_COLUMN,
-                                                                                               configurationLink.getId());
-            List<Subscription> subscriptionList = subscriptionObjectWhere.query();
-            if (subscriptionList.size() > 0) {
-                UpdateBuilder<Subscription, Object> subscriptionUpdateBuilder = subscriptionsDao.updateBuilder();
-                subscriptionUpdateBuilder.updateColumnValue(Subscription.LASTMESSAGE_ID_COLUMN, id);
-                subscriptionUpdateBuilder.setWhere(subscriptionObjectWhere);
-                subscriptionsDao.update(subscriptionUpdateBuilder.prepare());
-            } else {
-                logger.warn("{} link don't subscribe to {} area", link.getAddr().as5D(), areaname);
-            }
-
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        }
+        subscriptions.setLinkLastMessage(link, areaname, id);
     }
 
     @Override
@@ -557,72 +492,12 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
 
     @Override
     public List<String> getSubscriptions(Link link) {
-        Dao<ConfigurationLink, Object> linksDao = dbManager.getDao(ConfigurationLink.class);
-        Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
-        Dao<Echoarea, Object> echoareasDao = dbManager.getDao(Echoarea.class);
-
-        QueryBuilder<ConfigurationLink, Object> linksQueryBuilder = linksDao.queryBuilder()
-                                                                            .selectColumns(ConfigurationLink.ID_COLUMN,
-                                                                                           ConfigurationLink.ADDRESS_COLUMN);
-        QueryBuilder<Echoarea, Object> echoareasQueryBuilder = echoareasDao.queryBuilder()
-                                                                           .selectColumns(Echoarea.ID_COLUMN,
-                                                                                          Echoarea.NAME_COLUMN);
-
-        try {
-            linksQueryBuilder.selectColumns(ConfigurationLink.ID_COLUMN)
-                             .where()
-                             .eq(ConfigurationLink.ADDRESS_COLUMN, link.getAddr().as5D());
-
-            QueryBuilder<Subscription, Object> joinLinks = subscriptionsDao.queryBuilder()
-                                                                           .join(linksQueryBuilder);
-            QueryBuilder<Echoarea, Object> joinArea = echoareasQueryBuilder.join(joinLinks);
-
-            List<Echoarea> subscriptionList = joinArea.query();
-            List<String> arrayList = new ArrayList<String>();
-            for (Echoarea subscription : subscriptionList) {
-                arrayList.add(subscription.getName());
-            }
-
-            return arrayList;
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return Collections.emptyList();
+        return subscriptions.getSubscriptions(link);
     }
 
     @Override
     public void addSubscription(Link link, String area) {
-        List<String> subscriptions = getSubscriptions(link);
-        if (subscriptions.contains(area.toLowerCase(Locale.ROOT))) {
-            return;
-        }
-
-        Dao<Subscription, Object> subscriptionsDao = dbManager.getDao(Subscription.class);
-        try {
-            ConfigurationLink configurationLink = findConfigurationLinkByLink(link);
-            if (configurationLink == null) {
-                logger.warn("Link {} is not found, skip adding subscription",
-                            link.getAddr().as5D());
-                return;
-            }
-
-            Echoarea echoarea = findEchoareaByName(area);
-            if (echoarea == null) {
-                logger.warn("Trying adding subscription to {} link for non-existing are ({})",
-                            link.getAddr().as5D(),
-                            area);
-                return;
-            }
-
-            Subscription subscription = new Subscription();
-            subscription.setConfigurationLink(configurationLink);
-            subscription.setEchoarea(echoarea);
-            subscription.setLastMessage(0L);
-            subscription.setAccessLevel(AccessLevel.BOTH);
-            subscriptionsDao.create(subscription);
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-        }
+        subscriptions.addSubscription(link, area);
     }
 
     @Override
@@ -632,30 +507,12 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
 
     @Override
     public boolean canReadEcho(Link link, String area) {
-        return hasEchoAccess(link, area, AccessLevel.READ);
+        return subscriptions.hasAccess(link, area, AccessLevel.READ);
     }
 
     @Override
     public boolean canWriteEcho(Link link, String area) {
-        return hasEchoAccess(link, area, AccessLevel.WRITE);
-    }
-
-    private boolean hasEchoAccess(Link link, String area, AccessLevel requested) {
-        try {
-            ConfigurationLink configured = findConfigurationLinkByLink(link);
-            if (configured == null) {
-                return false;
-            }
-            for (Subscription subscription : getSubscriptionsForLink(configured)) {
-                if (subscription.getEchoarea().getName().equalsIgnoreCase(area)) {
-                    return subscription.getAccessLevel() == AccessLevel.BOTH
-                            || subscription.getAccessLevel() == requested;
-                }
-            }
-            return false;
-        } catch (SQLException e) {
-            throw new IllegalStateException("Unable to check echo access", e);
-        }
+        return subscriptions.hasAccess(link, area, AccessLevel.WRITE);
     }
 
     /** * Private stuff *** */
@@ -679,44 +536,6 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
         };
     }
 
-    private List<Subscription> getSubscriptionsForLink(ConfigurationLink confLink)
-            throws SQLException {
-        Dao<Subscription, Object> dao = dbManager.getDao(Subscription.class);
-        QueryBuilder<Subscription, Object> queryBuilder = dao.queryBuilder();
-        //                selectColumns(Subscription.ID_AREA_COLUMN,
-        // Subscription.ID_LINK_COLUMN, Subscription.LASTMESSAGE_ID_COLUMN).
-        return queryBuilder.where().eq(Subscription.ID_LINK_COLUMN, confLink.getId()).query();
-    }
-
-    private ConfigurationLink findConfigurationLinkByLink(Link link) throws SQLException {
-        Dao<ConfigurationLink, Object> dao = dbManager.getDao(ConfigurationLink.class);
-        QueryBuilder<ConfigurationLink, Object> queryBuilder = dao.queryBuilder();
-        List<ConfigurationLink> query = queryBuilder.selectColumns(ConfigurationLink.ID_COLUMN,
-                                                                   ConfigurationLink.ADDRESS_COLUMN)
-                                                    .where()
-                                                    .eq(ConfigurationLink.ADDRESS_COLUMN,
-                                                        link.getAddr().as5D())
-                                                    .query();
-        if (query.size() > 0) {
-            return query.get(0);
-        }
-        return null;
-    }
-
-    private Echoarea findEchoareaByName(String areaname) throws SQLException {
-        Dao<Echoarea, Object> echoareas = dbManager.getDao(Echoarea.class);
-        QueryBuilder<Echoarea, Object> echoareaQueryBuilder = echoareas.queryBuilder();
-        List<Echoarea> query = echoareaQueryBuilder.selectColumns(Echoarea.ID_COLUMN,
-                                                                  Echoarea.NAME_COLUMN)
-                                                   .where()
-                                                   .eq(Echoarea.NAME_COLUMN, areaname)
-                                                   .query();
-        if (query.size() > 0) {
-            return query.get(0);
-        }
-        return null;
-    }
-
     public Iterator<Message> getMessages(String areaname,
                                          long startMessage,
                                          long bundleSize,
@@ -724,7 +543,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
         Dao<Echomail, Object> echomails = dbManager.getDao(Echomail.class);
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomails.queryBuilder();
         try {
-            Echoarea echoarea = findEchoareaByName(areaname);
+            Echoarea echoarea = areas.findByName(areaname);
             if (echoarea == null) {
                 logger.warn("{} area is not exists! Skipping getting messages...",
                             areaname,
@@ -754,14 +573,14 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, Incre
         QueryBuilder<Echomail, Object> echomailQueryBuilder = echomailsDao.queryBuilder();
 
         try {
-            ConfigurationLink configurationLink = findConfigurationLinkByLink(link);
+            ConfigurationLink configurationLink = subscriptions.findLink(link);
             if (configurationLink == null) {
                 logger.warn("{} link is not found! Skipping getting messages...",
                             link.getAddr().as5D());
                 return Collections.emptyIterator();
             }
 
-            List<Subscription> subscriptionList = getSubscriptionsForLink(configurationLink);
+            List<Subscription> subscriptionList = subscriptions.forLink(configurationLink);
             if (subscriptionList.size() == 0) {
                 logger.warn("{} link haven't any subscription! Skipping getting messages...",
                             link.getAddr().as5D());

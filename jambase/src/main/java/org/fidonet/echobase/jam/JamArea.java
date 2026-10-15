@@ -22,12 +22,14 @@ import java.util.function.IntPredicate;
 /** A JAM area. Every operation reopens and locks the base, allowing external editors. */
 public final class JamArea {
     public static final int LOCAL = 1;
+    public static final int READ = 8;
     public static final int SENT = 16;
     public static final int TYPE_LOCAL = 0x00800000;
     public static final int ECHO = 0x01000000;
     public static final int NET = 0x02000000;
     public static final int LOCKED = 0x40000000;
     public static final int DELETED = 0x80000000;
+    public static final int FILE_OPERATIONS = 0xf000;
     private final Path path;
     private final String area;
     private final FTNAddr aka;
