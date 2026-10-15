@@ -51,6 +51,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -62,21 +63,19 @@ public class Tosser extends HasEventBus {
     private EchoMgr areamgr;
     private Pattern bunlderegex;
     private JFtnConfig config;
-    private DupeDetector dupeDetector;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
         this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
-        dupeDetector = new DupeDetector();
-        getEventBus().subscribe(dupeDetector);
     }
 
     private boolean isBunldeName(String str) {
         return bunlderegex.matcher(str).find();
     }
 
-    public void runFast(String dirname) throws TosserException, IOException, EchoBaseException {
+    public synchronized void runFast(String dirname)
+            throws TosserException, IOException, EchoBaseException {
         if (dirname == null) {
             throw new TosserException("Error opening directory as inbound. Dirname is null.");
         }
@@ -104,7 +103,7 @@ public class Tosser extends HasEventBus {
                                 logger.error("Error while deleting tossed boundle!");
                             }
                         }
-                    } catch (IOException e) {
+                    } catch (IOException | RuntimeException | EchoBaseException e) {
                         logger.error("Failed to unpack {}. Details: {}",
                                      file.getAbsolutePath(),
                                      e.getMessage(),
@@ -138,9 +137,14 @@ public class Tosser extends HasEventBus {
         File bad = badPath.toFile();
 
         if (bad.exists()) {
-            logger.warn("Bad {} already exists.", pkt.getName());
-            // TODO: need to throw exception?
-            return;
+            ByteBuffer copy = pkt.getPkt().duplicate();
+            copy.position(0);
+            byte[] bytes = new byte[copy.remaining()];
+            copy.get(bytes);
+            if (Arrays.equals(bytes, Files.readAllBytes(badPath))) {
+                return;
+            }
+            throw new IOException("A different rejected packet already exists: " + badPath);
         }
         try (OutputStream out = Files.newOutputStream(badPath,
                                                       StandardOpenOption.CREATE_NEW,
@@ -213,20 +217,33 @@ public class Tosser extends HasEventBus {
         }
 
         final FtsPackMsg[] msgs = q.getMsgs();
+        TossJournal journal = new TossJournal(new File(config.getTmpDir()).toPath(), buf);
         logger.debug("Find {} messages in the bundle", msgs.length);
-        for (FtsPackMsg msg1 : msgs) {
+        for (int index = 0; index < msgs.length; index++) {
+            if (journal.contains(index)) {
+                continue;
+            }
+            FtsPackMsg msg1 = msgs[index];
             final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
             if (msg.isEchomail()) {
+                if (areamgr.isDupe(msg)) {
+                    journal.complete(index);
+                    continue;
+                }
                 // Call onTossEchoMsg hook
                 getEventBus().publish(new TossEchoMailEvent(msg, areamgr));
                 if (msg.isValid()) {
                     processEchoMail(msg);
+                } else {
+                    return false;
                 }
             } else {
                 // Call onTossNetMail hook
                 getEventBus().publish(new TossNetmailEvent(msg));
-                logger.debug("Netmail was found");
+                logger.warn("Netmail has no durable delivery handler; retaining packet");
+                return false;
             }
+            journal.complete(index);
         }
         return true;
     }

@@ -114,11 +114,21 @@ public class DatabaseOperationsTest {
         assertNull(manager.getMessage("one", "unknown"));
         assertNull(manager.getMessage("unknown"));
         assertEquals(0, manager.getMessageSize("one"));
-        assertFalse(manager.isDupe(message("one", "id", "test")));
+        try {
+            manager.isDupe(message("one", "id", "test"));
+            fail("Duplicate-check failure must be reported");
+        } catch (IllegalStateException expected) {
+            assertTrue(expected.getCause() instanceof SQLException);
+        }
         assertTrue(manager.getSubscriptions(link).isEmpty());
         assertFalse(manager.getMessages(link).hasNext());
         assertFalse(manager.getMessages("one").hasNext());
-        manager.addMessage(message("one", "id", "test"), "one");
+        try {
+            manager.addMessage(message("one", "id", "test"), "one");
+            fail("Write failure must be reported");
+        } catch (IllegalStateException expected) {
+            assertTrue(expected.getCause() instanceof SQLException);
+        }
         manager.addSubscription(link, "one");
         manager.setLinkLastMessage(link, "one", 10L);
         database.createTables();
