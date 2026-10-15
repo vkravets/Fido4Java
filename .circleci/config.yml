@@ -110,8 +110,56 @@ jobs:
           path: build/binkd-integration
           destination: binkd-integration
 
+  hpt-integration:
+    machine:
+      image: ubuntu-2404:2026.05.1
+    resource_class: medium
+    environment:
+      LANG: C.UTF-8
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    steps:
+      - checkout
+      - run:
+          name: Prepare Java 17 and Docker
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends openjdk-17-jdk-headless
+            echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> "$BASH_ENV"
+            docker info
+      - restore_cache:
+          keys:
+            - v1-hpt-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "gradle/hpt-integration.gradle" }}
+      - run:
+          name: Build pinned HPT and test JAM interoperability
+          no_output_timeout: 20m
+          command: |
+            set -euo pipefail
+            mkdir -p build/hpt-integration
+            docker build -t jftn-hpt-interop:ci jtoss/src/integrationTest/resources/hpt \
+              2>&1 | tee build/hpt-integration/image-build.log
+            bash ./gradlew :jtoss:hptInteropTest -Dhpt.image=jftn-hpt-interop:ci \
+              --warning-mode fail --no-daemon --console=plain \
+              2>&1 | tee build/hpt-integration/gradle.log
+      - save_cache:
+          key: v1-hpt-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "gradle/hpt-integration.gradle" }}
+          paths:
+            - ~/.gradle/caches
+            - ~/.gradle/wrapper
+      - store_test_results:
+          path: jtoss/build/test-results/hptInteropTest
+      - store_artifacts:
+          path: jtoss/build/reports/hptInteropTest
+          destination: hpt-diagnostics
+      - store_artifacts:
+          path: jtoss/build/reports/tests/hptInteropTest
+          destination: hpt-test-report
+      - store_artifacts:
+          path: build/hpt-integration
+          destination: hpt-build
+
 workflows:
   build-and-test:
     jobs:
       - build
       - binkd-integration
+      - hpt-integration

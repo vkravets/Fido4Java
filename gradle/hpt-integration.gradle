@@ -1,0 +1,48 @@
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+dependencies {
+    integrationTestImplementation 'org.testcontainers:testcontainers:1.21.4'
+    integrationTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
+}
+
+def workerJar = tasks.register('hptInteropWorkerJar', Jar) {
+    archiveClassifier = 'hpt-worker'
+    from sourceSets.integrationTest.output
+}
+
+def workerFiles = tasks.register('hptInteropWorkerFiles', Sync) {
+    into layout.buildDirectory.dir('hpt-worker')
+    from tasks.named('jar')
+    from workerJar
+    from configurations.integrationTestRuntimeClasspath
+}
+
+tasks.register('hptInteropTest', Test) {
+    description = 'Checks JAM and SQL interoperability with real HPT processes.'
+    group = 'verification'
+    dependsOn workerFiles
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnit()
+    maxParallelForks = 1
+    outputs.upToDateWhen { false }
+    systemProperty 'hpt.workerFiles', layout.buildDirectory.dir('hpt-worker').get().asFile.absolutePath
+    systemProperty 'hpt.artifactsDir', layout.buildDirectory.dir('reports/hptInteropTest').get().asFile.absolutePath
+    if (providers.systemProperty('hpt.image').isPresent()) {
+        systemProperty 'hpt.image', providers.systemProperty('hpt.image').get()
+    }
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+}

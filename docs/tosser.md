@@ -164,6 +164,37 @@ The AKA must be configured locally in both applications. JAM file locks are
 implemented, but compatibility with an actual GoldED+ process has not yet been
 certified on either Windows or Linux.
 
+### Real HPT interoperability tests
+
+Run `./gradlew :jtoss:hptInteropTest` with a Docker-compatible engine. This is an
+explicit integration task; regular `test` and `build` do not start containers.
+The first run builds HPT and Husky libraries from the commits in
+`jtoss/src/integrationTest/resources/hpt/revisions.txt`. A prebuilt matching image
+can be selected with `-Dhpt.image=your-image-tag`.
+
+The host JUnit test controls a container with both HPT and Java 17. Java worker
+processes use production JAM, SQL and tosser code. All database operations run
+on the container's filesystem, without Windows bind mounts or host/VM locking
+assumptions. Each scenario has its own SQL database, JAM areas and outbound.
+
+Scenarios cover SQL-to-JAM export read by HPT and packed to a real PKT, HPT-posted
+echo and point netmail imported into SQL across Java process restarts, and
+historical HPT archives imported without modifying the source or redistributing
+mail. The export test first proves an editor view does not scan as local mail,
+then explicitly hands the fixture to HPT by setting LOCAL. HPT alone owns the
+outbound in that phase; this does not change the production adapter policy.
+A separate test holds the JAM header lock in a Java process, verifies that HPT's
+write waits for it, and checks successful posting after release. Archive import
+compares every JAM file before and after the operation.
+
+Command output, pinned revisions, configuration, JAM files, SQL and packets are
+saved in `jtoss/build/reports/hptInteropTest`; the JUnit HTML report is in
+`jtoss/build/reports/tests/hptInteropTest`. CircleCI runs a separate
+`hpt-integration` job. Interactive GoldED+ testing remains separate.
+
+On Windows with Podman, use the Docker compatibility API and the WSL host override
+described in `binkp/src/integrationTestShared/README.md`. Ryuk remains enabled.
+
 ### Historical archive import
 
 Stop the Runner before running the offline command. It acquires the same mail
