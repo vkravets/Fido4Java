@@ -52,6 +52,14 @@ public class TosserBundleTest {
         Link link = new Link("2:500/101, 2:500/102, secret, localhost");
         JFtnConfig config = new JFtnConfig() {
             @Override
+            public String getValue(String key, String defaultValue) {
+                if (key.equals("EnforceEchoAccess")) {
+                    return "false";
+                }
+                return super.getValue(key, defaultValue);
+            }
+
+            @Override
             public Link getLink(FTNAddr address) {
                 return known ? link : null;
             }

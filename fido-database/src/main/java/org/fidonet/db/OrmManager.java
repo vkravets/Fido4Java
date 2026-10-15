@@ -120,6 +120,7 @@ public class OrmManager {
             createTables();
             if (daoClasses.contains(Netmail.class)) {
                 removeLegacyNetmailSendIndex();
+                addEchoIngressColumn();
             }
         } catch (SQLException | RuntimeException e) {
             try {
@@ -180,6 +181,39 @@ public class OrmManager {
                                             + quote
                                             + name.replace(quote, quote + quote)
                                             + quote);
+                }
+            }
+        } finally {
+            connectionSource.releaseConnection(database);
+        }
+    }
+
+    private void addEchoIngressColumn() throws SQLException {
+        DatabaseConnection database = connectionSource.getReadWriteConnection();
+        try {
+            Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
+            try (ResultSet tables = jdbc.getMetaData()
+                                        .getTables(null, null, null, new String[]{"TABLE"})) {
+                while (tables.next()) {
+                    String table = tables.getString("TABLE_NAME");
+                    if (!"echomail".equalsIgnoreCase(table)) {
+                        continue;
+                    }
+                    boolean found = false;
+                    try (ResultSet columns = jdbc.getMetaData()
+                                                 .getColumns(null,
+                                                             tables.getString("TABLE_SCHEM"),
+                                                             table,
+                                                             null)) {
+                        while (columns.next()) {
+                            found |= "received_from".equalsIgnoreCase(columns.getString("COLUMN_NAME"));
+                        }
+                    }
+                    if (!found) {
+                        getDao(Echomail.class).executeRaw("ALTER TABLE "
+                                                          + table
+                                                          + " ADD received_from VARCHAR(255)");
+                    }
                 }
             }
         } finally {

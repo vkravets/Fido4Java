@@ -109,6 +109,9 @@ public class Echomail {
     @DatabaseField(columnName = ATTR_COLUMN, dataType = DataType.INTEGER)
     private int attr;
 
+    @DatabaseField(columnName = "received_from")
+    private String receivedFrom;
+
     public Echomail() {
     }
 
@@ -255,6 +258,10 @@ public class Echomail {
                                       text,
                                       echomail.getDate());
         message.getBody().setOrigin(echomail.getOrigin());
+        message.setAttributes(echomail.attr);
+        if (echomail.receivedFrom != null) {
+            message.setUpLink(new FTNAddr(echomail.receivedFrom));
+        }
         // FIXME: default zone
         int zone = message.getFAddr().getZone();
         message.getBody().setSeenBy(SeenBy.valueOf(echomail.getSeenBy(), zone));
@@ -265,6 +272,8 @@ public class Echomail {
     public static Echomail fromMessage(Message message, Echoarea area) throws ParseException {
         Echomail msg = new Echomail();
         msg.setArea(area);
+        msg.attr = message.getAttributes();
+        msg.receivedFrom = message.getUpLink() == null ? null : message.getUpLink().toString();
         SafeSimpleDateFormat dateFormat = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss",
                                                                    new Locale("en", "US"));
         Date msgDate = dateFormat.parse(message.getMsgDate());
