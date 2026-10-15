@@ -23,13 +23,18 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 public class TosserSecurityTest {
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
 
     private Tosser tosser(String password, Path root) throws Exception {
-        Link link = new Link(new FTNAddr("2:467/1"), null, password, "localhost", 0);
+        Link link = new Link(new FTNAddr("2:467/1"),
+                             Collections.singletonList(new FTNAddr("0:0/0")),
+                             password,
+                             "localhost",
+                             0);
         JFtnConfig config = new JFtnConfig() {
             @Override
             public Link getLink(FTNAddr address) {

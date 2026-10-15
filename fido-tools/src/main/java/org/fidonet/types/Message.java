@@ -281,6 +281,10 @@ public class Message {
         return upLink;
     }
 
+    public void setUpLink(FTNAddr address) {
+        upLink = address;
+    }
+
     public String getMsgId() {
         return msgId;
     }
