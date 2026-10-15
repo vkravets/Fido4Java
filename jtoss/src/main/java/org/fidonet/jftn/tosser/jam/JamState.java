@@ -30,6 +30,17 @@ final class JamState {
 
     void put(String key, String value) throws IOException {
         values.setProperty(key, value);
+        save();
+    }
+
+    void prepare(String identity, String fingerprint, String targets) throws IOException {
+        values.setProperty("import." + identity, fingerprint);
+        values.setProperty("targets." + identity, targets);
+        values.setProperty("stage." + identity, "PREPARED");
+        save();
+    }
+
+    private void save() throws IOException {
         Files.createDirectories(path.getParent());
         Path temporary = Files.createTempFile(path.getParent(), "jam-state-", ".tmp");
         try {

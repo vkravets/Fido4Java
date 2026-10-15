@@ -149,6 +149,13 @@ public final class JamBridge {
                                 JamState state)
             throws IOException {
         Message message = entry.getMessage();
+        if ((entry.getAttributes() & 0xf000) != 0) {
+            throw new UnsupportedOperationException("JAM file requests and attachment operations are unsupported");
+        }
+        if ((entry.getAttributes() & JamArea.LOCKED) != 0 && (message.getMsgId() == null
+                || state.get("import." + MailIdentity.of(message)) == null)) {
+            return;
+        }
         if (!message.hasValidAddressing()
                 || !config.getLocalAddresses().contains(message.getFAddr())) {
             throw new IllegalArgumentException("Outgoing JAM message requires valid addresses and a local sender AKA");
@@ -182,21 +189,24 @@ public final class JamBridge {
             return;
         }
         if ("ACCEPTED".equals(stage)) {
-            access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
+            if ((entry.getAttributes() & JamArea.LOCKED) == 0) {
+                access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
+            }
             return;
         }
         if (previous == null && (state.get("export." + identity) != null || base.isDupe(message))) {
             throw new IllegalStateException("This MSGID already exists; edited mail is not automatically resent");
         }
-        state.put("import." + identity, fingerprint);
-        if (state.get("targets." + identity) == null) {
+        String savedTargets = state.get("targets." + identity);
+        if (savedTargets == null) {
             List<String> targets = new ArrayList<>();
             for (FTNAddr address : tosser.submissionTargets(message)) {
                 targets.add(address.toString());
             }
-            state.put("targets." + identity, String.join(",", targets));
+            savedTargets = String.join(",", targets);
         }
-        state.put("stage." + identity, "PREPARED");
+        state.prepare(identity, fingerprint, savedTargets);
+        access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
         if (binding.name == null) {
             tosser.submitNetmail(message, "jam:" + identity);
         } else {
@@ -238,7 +248,9 @@ public final class JamBridge {
                         delivered &= spool.isAcknowledged(key, new FTNAddr(target));
                     }
                     if (delivered) {
-                        state.put("stage." + identity, "DELIVERED");
+                        if (!"DELIVERED".equals(stage)) {
+                            state.put("stage." + identity, "DELIVERED");
+                        }
                         if ((entry.getAttributes() & JamArea.SENT) == 0) {
                             access.attributes(entry.getNumber(), JamArea.SENT, JamArea.LOCKED);
                         }

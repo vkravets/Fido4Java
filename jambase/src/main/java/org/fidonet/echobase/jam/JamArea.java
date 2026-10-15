@@ -81,15 +81,20 @@ public final class JamArea {
     }
 
     public <T> T locked(Operation<T> operation) throws IOException {
+        return locked(operation, false);
+    }
+
+    private <T> T locked(Operation<T> operation, boolean readOnly) throws IOException {
         if (!Files.isRegularFile(file(".jhr")) || !Files.isRegularFile(file(".jdt"))
                 || !Files.isRegularFile(file(".jdx"))) {
             throw new IOException("Incomplete JAM area: " + path);
         }
-        try (RandomAccessFile rawHeader = new RandomAccessFile(file(".jhr").toFile(), "rw");
-                FileLock lock = acquire(rawHeader);
+        String mode = readOnly ? "r" : "rw";
+        try (RandomAccessFile rawHeader = new RandomAccessFile(file(".jhr").toFile(), mode);
+                FileLock lock = acquire(rawHeader, readOnly);
                 JHRFile header = new JHRFile(rawHeader);
-                RandomAccessFile text = new RandomAccessFile(file(".jdt").toFile(), "rw");
-                RandomAccessFile index = new RandomAccessFile(file(".jdx").toFile(), "rw")) {
+                RandomAccessFile text = new RandomAccessFile(file(".jdt").toFile(), mode);
+                RandomAccessFile index = new RandomAccessFile(file(".jdx").toFile(), mode)) {
             if (index.length() % 8 != 0) {
                 throw new IOException("Truncated JAM index");
             }
@@ -97,9 +102,9 @@ public final class JamArea {
         }
     }
 
-    private FileLock acquire(RandomAccessFile header) throws IOException {
+    private FileLock acquire(RandomAccessFile header, boolean shared) throws IOException {
         try {
-            FileLock lock = header.getChannel().tryLock(0, 1, false);
+            FileLock lock = header.getChannel().tryLock(0, 1, shared);
             if (lock == null) {
                 throw new IOException("JAM area is busy: " + path);
             }
@@ -111,6 +116,21 @@ public final class JamArea {
 
     public List<Entry> read() throws IOException {
         return locked(Access::read);
+    }
+
+    public List<Entry> readOnly() throws IOException {
+        return locked(Access::read, true);
+    }
+
+    public void visitReadOnly(EntryConsumer consumer) throws IOException {
+        locked(access -> {
+            access.forEach(consumer);
+            return null;
+        }, true);
+    }
+
+    public interface EntryConsumer {
+        void accept(Entry entry) throws IOException;
     }
 
     public long append(Message message, int attributes) throws IOException {
@@ -146,13 +166,18 @@ public final class JamArea {
             this.text = text;
             this.index = index;
             info = header.getFixedHeader();
-            if (info.getBasemsgnum() < 1) {
+            if (info.getBasemsgnum() == 0) {
                 throw new IOException("Invalid JAM base message number");
             }
         }
 
         public List<Entry> read() throws IOException {
             List<Entry> result = new ArrayList<>();
+            forEach(result::add);
+            return result;
+        }
+
+        private void forEach(EntryConsumer consumer) throws IOException {
             for (long slot = 0; slot < index.length() / 8; slot++) {
                 index.seek(slot * 8);
                 int user = Integer.reverseBytes(index.readInt());
@@ -169,6 +194,13 @@ public final class JamArea {
                 if ((stored.Attribute & DELETED) != 0) {
                     continue;
                 }
+                int kind = stored.Attribute & (ECHO | NET | TYPE_LOCAL);
+                if (kind != (area == null ? NET : ECHO)) {
+                    throw new IOException("JAM message kind does not match configured area");
+                }
+                if ((stored.Attribute & 0x00380000) != 0) {
+                    throw new IOException("Encrypted, compressed or escaped JAM text is unsupported");
+                }
                 long start = Integer.toUnsignedLong(stored.Offset);
                 if (stored.TxtLen < 0 || stored.TxtLen > 64 * 1024 * 1024
                         || start + stored.TxtLen > text.length()) {
@@ -177,11 +209,10 @@ public final class JamArea {
                 byte[] bytes = new byte[stored.TxtLen];
                 text.seek(start);
                 text.readFully(bytes);
-                result.add(new Entry(Integer.toUnsignedLong(stored.MessageNumber),
-                                     stored.Attribute,
-                                     JamCodec.decode(stored, bytes, area, charset, aka)));
+                consumer.accept(new Entry(Integer.toUnsignedLong(stored.MessageNumber),
+                                          stored.Attribute,
+                                          JamCodec.decode(stored, bytes, area, charset, aka)));
             }
-            return result;
         }
 
         public long append(Message message, int attributes) throws IOException {
@@ -242,6 +273,9 @@ public final class JamArea {
             }
             rawHeader.seek(offset + 52);
             rawHeader.writeInt(Integer.reverseBytes((stored.Attribute | set) & ~clear));
+            if ((set & DELETED) != 0) {
+                info.setActivemsg(info.getActivemsg() - 1);
+            }
             header.setFixedHeader(info);
             force();
         }

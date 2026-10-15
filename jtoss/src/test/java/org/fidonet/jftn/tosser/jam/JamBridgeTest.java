@@ -235,4 +235,20 @@ public class JamBridgeTest {
         assertEquals(0, netmail.read().get(0).getAttributes() & JamArea.SENT);
         assertEquals(1, base.getQueuedNetmail().size());
     }
+
+    @Test
+    public void rejectedFileOperationCanBeCorrectedAndSubmitted() throws Exception {
+        bridge.exportMessages();
+        netmail.append(local(false, true), JamArea.NET | JamArea.LOCAL | 0x2000);
+        Tosser tosser = new Tosser(config, base);
+        bridge.importOutgoing(tosser);
+        assertTrue(base.getQueuedNetmail().isEmpty());
+        assertEquals(0, netmail.read().get(0).getAttributes() & JamArea.LOCKED);
+        netmail.locked(access -> {
+            access.attributes(1, 0, 0x2000);
+            return null;
+        });
+        bridge.importOutgoing(tosser);
+        assertEquals(1, base.getQueuedNetmail().size());
+    }
 }

@@ -46,6 +46,9 @@ final class EchoExporter {
     }
 
     private void export(Message message) throws IOException {
+        if (base.isArchived(message)) {
+            return;
+        }
         List<Link> recipients = recipients(message);
         for (Link link : recipients) {
             export(message, link, recipients);

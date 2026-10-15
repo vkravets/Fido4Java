@@ -1,5 +1,20 @@
 description = ''
 
+tasks.register('importJamArchive', JavaExec) {
+    group = 'application'
+    description = 'Imports a historical JAM area into SQL without scheduling delivery.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.fidonet.jftn.JamArchiveImport'
+    doFirst {
+        def source = providers.gradleProperty('jamSource').get()
+        def area = providers.gradleProperty('jamArea').orElse('-').get()
+        def aka = providers.gradleProperty('jamAka').get()
+        args providers.gradleProperty('jftnConfig').orElse('jftn.conf').get(),
+                providers.gradleProperty('jamDatabase').orElse('jdbc:h2:./database/jftn10').get(),
+                source, area, aka, providers.gradleProperty('jamCharset').orElse('CP866').get()
+    }
+}
+
 dependencies {
     implementation project(':fido-config')
     implementation project(':fido-database')

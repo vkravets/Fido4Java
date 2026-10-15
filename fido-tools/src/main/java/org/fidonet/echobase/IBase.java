@@ -75,6 +75,10 @@ public interface IBase {
 
     boolean isDupe(Message message);
 
+    default boolean isArchived(Message message) {
+        return false;
+    }
+
     List<String> getSubscriptions(Link link);
 
     void addSubscription(Link link, String area);

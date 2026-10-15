@@ -74,7 +74,10 @@ final class JamCodec {
         field(header, 2, message.getFrom(), charset);
         field(header, 3, message.getTo(), charset);
         field(header, 6, message.getSubject(), charset);
-        for (String line : message.getBody().toString().split("\r", -1)) {
+        String[] lines = message.getBody().toString().split("\r", -1);
+        int tail = routingTail(lines);
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
             if (line.startsWith("\1")) {
                 String control = line.substring(1);
                 int end = 0;
@@ -105,7 +108,10 @@ final class JamCodec {
                         id = 8;
                         break;
                     case "PATH" :
-                        id = 2002;
+                        id = message.isEchomail() && i >= tail ? 2002 : 2000;
+                        if (id == 2000) {
+                            value = control;
+                        }
                         break;
                     case "FLAGS" :
                         id = 2003;
@@ -118,7 +124,7 @@ final class JamCodec {
                         value = control;
                 }
                 field(header, id, value, charset);
-            } else if (line.startsWith("SEEN-BY: ")) {
+            } else if (message.isEchomail() && i >= tail && line.startsWith("SEEN-BY: ")) {
                 field(header, 2001, line.substring(9), charset);
             }
         }
@@ -129,16 +135,31 @@ final class JamCodec {
     static byte[] text(Message message) {
         StringBuilder text = new StringBuilder();
         String[] lines = message.getBody().toString().split("\r", -1);
+        int tail = routingTail(lines);
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             if (i == 0 && message.isEchomail() && line.startsWith("AREA:")) {
                 continue;
             }
-            if (!line.startsWith("\1") && !line.startsWith("SEEN-BY: ") && i < lines.length - 1) {
+            if (!line.startsWith("\1")
+                    && !(message.isEchomail() && i >= tail && line.startsWith("SEEN-BY: "))
+                    && i < lines.length - 1) {
                 text.append(line).append('\r');
             }
         }
         return text.toString().getBytes(CharsetTools.charsetDetect(message.getMessageCharset()));
+    }
+
+    private static int routingTail(String[] lines) {
+        int tail = lines.length;
+        while (tail > 0 && lines[tail - 1].isEmpty()) {
+            tail--;
+        }
+        while (tail > 0 && (lines[tail - 1].startsWith("SEEN-BY: ")
+                || lines[tail - 1].startsWith("\1PATH: "))) {
+            tail--;
+        }
+        return tail;
     }
 
     static Message decode(MessageHeader header,
