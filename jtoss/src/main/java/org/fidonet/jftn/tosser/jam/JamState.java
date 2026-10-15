@@ -7,7 +7,9 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.zip.CRC32;
 
 /** Durable receipt records. An incomplete final record is discarded before the next append. */
@@ -20,6 +22,9 @@ final class JamState {
     private final Properties values = new Properties();
     private long validLength;
     private final RecordWriter writer;
+    private final Path legacy;
+    private String diskVersion;
+    private final Set<String> accepted = new HashSet<>();
 
     JamState(Path path) throws IOException {
         this(path, JamState::writeRecord);
@@ -27,10 +32,45 @@ final class JamState {
 
     JamState(Path path, RecordWriter writer) throws IOException {
         this.writer = writer;
+        legacy = path;
         log = Path.of(path + ".log");
         loadLegacy(path);
         if (Files.exists(log)) {
             loadRecords();
+        }
+        diskVersion = diskVersion();
+        refreshAccepted(values);
+    }
+
+    boolean isCurrent() throws IOException {
+        return diskVersion.equals(diskVersion());
+    }
+
+    Set<String> acceptedIdentities() {
+        return new HashSet<>(accepted);
+    }
+
+    private String diskVersion() throws IOException {
+        return stamp(legacy) + ":" + stamp(log);
+    }
+
+    private String stamp(Path file) throws IOException {
+        return Files.exists(file)
+                ? Files.size(file) + ":" + Files.getLastModifiedTime(file)
+                : "missing";
+    }
+
+    private void refreshAccepted(Properties changes) {
+        for (String key : changes.stringPropertyNames()) {
+            if (!key.startsWith("stage.")) {
+                continue;
+            }
+            String identity = key.substring("stage.".length());
+            if (Stage.ACCEPTED.name().equals(changes.getProperty(key))) {
+                accepted.add(identity);
+            } else {
+                accepted.remove(identity);
+            }
         }
     }
 
@@ -117,6 +157,8 @@ final class JamState {
         Files.createDirectories(log.getParent());
         validLength = writer.write(log, validLength, bytes);
         values.putAll(changes);
+        refreshAccepted(changes);
+        diskVersion = diskVersion();
     }
 
     interface RecordWriter {

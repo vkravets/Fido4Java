@@ -14,6 +14,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -178,6 +179,28 @@ public final class JamArea {
             List<Entry> result = new ArrayList<>();
             forEach(result::add);
             return result;
+        }
+
+        /** Compared only while the area is locked; replacement and external edits invalidate it. */
+        public String version() throws IOException {
+            return info.getDatecreated()
+                   + ":"
+                   + info.getModcounter()
+                   + ":"
+                   + Files.readAttributes(file(".jhr"), BasicFileAttributes.class)
+                          .fileKey()
+                   + ":"
+                   + rawHeader.length()
+                   + ":"
+                   + text.length()
+                   + ":"
+                   + index.length()
+                   + ":"
+                   + Files.getLastModifiedTime(file(".jhr"))
+                   + ":"
+                   + Files.getLastModifiedTime(file(".jdt"))
+                   + ":"
+                   + Files.getLastModifiedTime(file(".jdx"));
         }
 
         public void forEach(EntryConsumer consumer) throws IOException {

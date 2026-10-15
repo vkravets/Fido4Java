@@ -17,11 +17,30 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 public class JamAreaTest {
+    @Test
+    public void versionChangesForExternalTextEditsAndHeaderUpdates() throws Exception {
+        JamArea area = area();
+        area.append(message());
+        String initial = area.locked(JamArea.Access::version);
+        Path text = Path.of(area.getPath() + ".jdt");
+        Files.setLastModifiedTime(text,
+                                  FileTime.fromMillis(Files.getLastModifiedTime(text).toMillis()
+                                                      + 1000));
+        String edited = area.locked(JamArea.Access::version);
+        assertFalse(initial.equals(edited));
+        area.locked(access -> {
+            access.attributes(1, JamArea.SENT, 0);
+            assertFalse(edited.equals(access.version()));
+            return null;
+        });
+    }
+
     @Test
     public void visitsFilteredHeadersAndReadsAssignedIdsByNumber() throws Exception {
         JamArea area = area();

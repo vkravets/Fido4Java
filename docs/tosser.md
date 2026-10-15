@@ -240,10 +240,33 @@ document or independent-tosser certification.
   sharing the same zone/net/node/point cannot be represented independently.
 - SQL migrations are exercised against H2. Other database drivers require their
   own migration verification before production use.
-- The exporter scans stored areas and consults durable per-recipient receipts.
-  Indexed incremental export and automatic receipt cleanup remain future work.
+- SQL echo export uses independent persistent checkpoints for each configured link
+  and JAM view. Checkpoints advance after durable preparation, not acknowledgement;
+  pending packets remain in the outbound spool until binkp confirms them. A new
+  consumer starts with its own history. Automatic receipt cleanup remains future work.
 - Hooks may reject messages, but core durable delivery does not rely on a hook
   to save netmail. Hook publication still uses the existing event bus.
+
+## Processing and storage costs
+
+Netty file writes are drained after each 64 KiB window and at the end of a file.
+Outgoing packet streams open on first use and seek for retransmission without
+buffering the entire file. Mail bundles are validated into temporary files before
+processing starts; existing packet, bundle and entry limits still apply. Temporary
+disk space up to the bundle limit is required while processing an archive.
+
+JAM scans stream messages and skip unchanged areas using their modification counter,
+file identity, lengths and timestamps. Delivery receipts are still checked while
+submitted messages await acknowledgement. An external editor must follow JAM's
+locking and modification-counter rules. SQL netmail search keys are backfilled into
+`netmail_index` when an existing database is opened; message rows are retained.
+
+JAM bridge updates append checksummed, forced records to `*.properties.log` alongside
+legacy `*.properties` receipts. Preserve both kinds of files in backups. A truncated
+final record is discarded on retry; a complete record with a bad checksum causes an
+error. Keep SQL, outbound packets, acknowledgement receipts and bridge journals
+together when backing up or restoring the node. Mail processing uses a separate lock
+from session bookkeeping, and repeated receive-triggered scans are coalesced.
 
 ## Validation and specifications
 
