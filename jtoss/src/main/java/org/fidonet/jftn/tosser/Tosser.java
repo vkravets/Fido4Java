@@ -31,6 +31,7 @@ package org.fidonet.jftn.tosser;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.NetmailRoutingStore;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.echobase.exceptions.EchoBaseException;
@@ -77,11 +78,16 @@ public class Tosser extends HasEventBus {
     private JFtnConfig config;
     private final NetmailStore netmailStore;
     private final IBase base;
+    private final NetmailRouter netmailRouter;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
         this.base = base;
         this.netmailStore = base instanceof NetmailStore ? (NetmailStore) base : null;
+        this.netmailRouter = new NetmailRouter(config,
+                                               base instanceof NetmailRoutingStore
+                                                       ? (NetmailRoutingStore) base
+                                                       : null);
         this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
@@ -342,11 +348,11 @@ public class Tosser extends HasEventBus {
                 boolean local = config.getLocalAddresses().contains(msg.getTAddr())
                         || origlink.getMyaddr() != null
                                 && origlink.getMyaddr().contains(msg.getTAddr());
-                Link route = local ? null : new NetmailRouter(config).route(msg);
-                if (!local && (!Boolean.parseBoolean(config.getValue("AllowTransit", "false"))
-                        || route == null || route.getAddr().equals(origlink.getAddr())
-                        || hasRoutingLoop(msg) || (msg.getAttributes() & 0x8810) != 0)) {
-                    logger.warn("Netmail has no permitted transit route; quarantining packet");
+                NetmailDecision decision = netmailRouter.explainTransit(msg, origlink.getAddr());
+                Link route = decision.getNextHop();
+                if (!local && (!decision.isPermitted() || (msg.getAttributes() & 0x8810) != 0)) {
+                    logger.warn("Netmail transit refused ({}); quarantining packet",
+                                decision.getReason());
                     return false;
                 }
                 netmailStore.saveNetmail(msg,
@@ -367,16 +373,6 @@ public class Tosser extends HasEventBus {
                 && first.getPnt().equals(second.getPnt());
     }
 
-    private boolean hasRoutingLoop(Message message) {
-        for (String via : message.getBody().getViaLines()) {
-            String[] fields = via.trim().split("\\s+");
-            if (fields.length > 1 && config.getLocalAddresses().contains(new FTNAddr(fields[1]))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public synchronized void submitNetmail(Message message, String deliveryKey) throws IOException {
         if ((message.getAttributes() & 0x8810) != 0) {
             throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
@@ -390,7 +386,7 @@ public class Tosser extends HasEventBus {
             netmailStore.saveNetmail(message, deliveryKey, null);
             return;
         }
-        Link route = new NetmailRouter(config).route(message);
+        Link route = netmailRouter.route(message);
         if (route == null) {
             throw new IllegalStateException("No route for " + message.getTAddr());
         }
@@ -456,7 +452,7 @@ public class Tosser extends HasEventBus {
                 throw new IllegalStateException("No configured recipients for local echomail");
             }
         } else if (!config.getLocalAddresses().contains(message.getTAddr())) {
-            Link route = new NetmailRouter(config).route(message);
+            Link route = netmailRouter.route(message);
             if (route == null) {
                 throw new IllegalStateException("No route for " + message.getTAddr());
             }
@@ -467,5 +463,9 @@ public class Tosser extends HasEventBus {
 
     public EchoMgr getAreamgr() {
         return areamgr;
+    }
+
+    public NetmailRouter getNetmailRouter() {
+        return netmailRouter;
     }
 }

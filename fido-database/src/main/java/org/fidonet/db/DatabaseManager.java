@@ -36,12 +36,15 @@ import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
+import org.fidonet.db.objects.NetmailRouteRecord;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.ArchiveStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.IncrementalEchoStore;
 import org.fidonet.echobase.MessageIteration;
+import org.fidonet.echobase.NetmailRoute;
+import org.fidonet.echobase.NetmailRoutingStore;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.packet.MailIdentity;
@@ -72,7 +75,49 @@ import java.util.Locale;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager implements IBase, NetmailStore, ArchiveStore, IncrementalEchoStore {
+public class DatabaseManager
+        implements
+            IBase,
+            NetmailStore,
+            ArchiveStore,
+            IncrementalEchoStore,
+            NetmailRoutingStore {
+
+    @Override
+    public List<NetmailRoute> getNetmailRoutes() {
+        try {
+            List<NetmailRoute> result = new ArrayList<>();
+            for (NetmailRouteRecord row : dbManager.<NetmailRouteRecord, String>getDao(NetmailRouteRecord.class)
+                                                   .queryBuilder()
+                                                   .orderBy("priority", true)
+                                                   .orderBy("id", true)
+                                                   .query()) {
+                result.add(row.toRoute());
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to read netmail routes", e);
+        }
+    }
+
+    @Override
+    public synchronized void saveNetmailRoute(NetmailRoute route) {
+        try {
+            dbManager.getDao(NetmailRouteRecord.class)
+                     .createOrUpdate(new NetmailRouteRecord(route));
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to save netmail route", e);
+        }
+    }
+
+    @Override
+    public synchronized void removeNetmailRoute(String id) {
+        try {
+            dbManager.<NetmailRouteRecord, String>getDao(NetmailRouteRecord.class).deleteById(id);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to remove netmail route", e);
+        }
+    }
 
     @Override
     public void visitNewEcho(String area, String consumer, MessageIteration.Handler handler)

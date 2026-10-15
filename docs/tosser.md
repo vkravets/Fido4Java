@@ -61,6 +61,41 @@ existing Runner polling schedule remains every ten minutes; Crash/CRA does not
 introduce an immediate dial scheduler. KillSent deletes a netmail only after
 acknowledgement, retaining its duplicate receipt.
 
+### Managed netmail routing
+
+`Tosser.getNetmailRouter()` exposes the same policy used by local submissions and
+transit. `explain(message)` returns a typed reason, next hop and matched rule ID;
+`explainTransit(message, authenticatedPeer)` also checks relay permissions,
+return-to-sender and local Via loops. Previews do not create mail or packets.
+`Route` masks support `*` and `?` against full addresses, including explicit points.
+All configured masks and active next hops are validated before processing starts.
+Local destinations take precedence over forwarding rules. Direct/Crash never
+fall back to an uplink. Hold continues to hold delivery to the selected next hop;
+this is an explicit local policy, not an implementation of HPT's flavour syntax.
+
+By default rules come from ordered `Route=mask,next-hop` declarations. For durable
+administration set `NetmailRoutes=database` and use `saveRule(NetmailRoute)` /
+`removeRule(id)` / `rules()`. SQL rules contain a stable ID, numeric priority,
+destination mask, next hop and enabled flag. Lower priority values run first;
+equal priorities are ordered by ID. Database mode does not merge config rules.
+An empty table still permits direct links and `DefaultRoute`. Disabling a rule
+retains its settings. CLI/RPC adapters can call this API; RPC methods are separate.
+
+`AllowTransit=true` remains necessary for non-local incoming mail. Optional repeated
+`TransitFrom=1:500/101` and `TransitTo=1:500/103` masks restrict authenticated input
+links and selected output links respectively. With no lists the existing global
+policy applies. Local delivery does not need transit permission.
+
+Updating rules affects new deliveries only: the persisted next hop, prepared PKT,
+spool key and acknowledgement history of accepted mail remain unchanged. No
+automatic rerouting of an in-flight or already prepared delivery is performed.
+
+The first-match approach was compared with HPT's
+[`findSelfRouteForNetmail` / `findRouteForNetmail`](https://github.com/huskyproject/hpt/blob/master/src/scan.c).
+Wire addresses and Via remain governed by FTS-4001 and FTS-4009. Route ordering,
+SQL storage and operator permissions are application policy. Automatic nodelist
+host/hub discovery and HPT's full route/flavour language are not implemented.
+
 ## Processing and recovery
 
 The Runner starts `MailService` after loading the transport, scheduler and

@@ -1,5 +1,10 @@
 package org.fidonet.db;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Version;
 
@@ -8,11 +13,6 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class OrmLifecycleTest {
     private String url() {
@@ -29,7 +29,7 @@ public class OrmLifecycleTest {
             manager.connect();
             manager.createTables();
             assertTrue(manager.isConnect());
-            assertEquals(11, manager.getAllDaos().size());
+            assertEquals(12, manager.getAllDaos().size());
             assertEquals(Long.valueOf(Version.UNKNOWN_VERSION), manager.getCurrentVersion());
             Version version = new Version();
             version.setId(1L);
