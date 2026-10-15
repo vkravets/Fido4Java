@@ -79,57 +79,63 @@ final class JamCodec {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             if (line.startsWith("\1")) {
-                String control = line.substring(1);
-                int end = 0;
-                while (end < control.length() && control.charAt(end) != ':'
-                        && control.charAt(end) != ' ') {
-                    end++;
-                }
-                String key = control.substring(0, end);
-                String value = control.substring(end).replaceFirst("^:?[ ]*", "");
-                int id;
-                switch (key) {
-                    case "INTL" :
-                    case "FMPT" :
-                    case "TOPT" :
-                        continue;
-                    case "MSGID" :
-                        id = 4;
-                        header.MSGIDcrc = crc(value.trim().getBytes(charset));
-                        break;
-                    case "REPLY" :
-                        id = 5;
-                        header.REPLYcrc = crc(value.trim().getBytes(charset));
-                        break;
-                    case "PID" :
-                        id = 7;
-                        break;
-                    case "Via" :
-                        id = 8;
-                        break;
-                    case "PATH" :
-                        id = message.isEchomail() && i >= tail ? 2002 : 2000;
-                        if (id == 2000) {
-                            value = control;
-                        }
-                        break;
-                    case "FLAGS" :
-                        id = 2003;
-                        break;
-                    case "TZUTC" :
-                        id = 2004;
-                        break;
-                    default :
-                        id = 2000;
-                        value = control;
-                }
-                field(header, id, value, charset);
+                encodeControl(header, line, charset, message.isEchomail() && i >= tail);
             } else if (message.isEchomail() && i >= tail && line.startsWith("SEEN-BY: ")) {
                 field(header, 2001, line.substring(9), charset);
             }
         }
         header.SubfieldLen = header.getSubLen();
         return header;
+    }
+
+    private static void encodeControl(MessageHeader header,
+                                      String line,
+                                      Charset charset,
+                                      boolean routing) {
+        String control = line.substring(1);
+        int end = 0;
+        while (end < control.length() && control.charAt(end) != ':' && control.charAt(end) != ' ') {
+            end++;
+        }
+        String key = control.substring(0, end);
+        String value = control.substring(end).replaceFirst("^:?[ ]*", "");
+        int id;
+        switch (key) {
+            case "INTL" :
+            case "FMPT" :
+            case "TOPT" :
+                return;
+            case "MSGID" :
+                id = 4;
+                header.MSGIDcrc = crc(value.trim().getBytes(charset));
+                break;
+            case "REPLY" :
+                id = 5;
+                header.REPLYcrc = crc(value.trim().getBytes(charset));
+                break;
+            case "PID" :
+                id = 7;
+                break;
+            case "Via" :
+                id = 8;
+                break;
+            case "PATH" :
+                id = routing ? 2002 : 2000;
+                if (id == 2000) {
+                    value = control;
+                }
+                break;
+            case "FLAGS" :
+                id = 2003;
+                break;
+            case "TZUTC" :
+                id = 2004;
+                break;
+            default :
+                id = 2000;
+                value = control;
+        }
+        field(header, id, value, charset);
     }
 
     static byte[] text(Message message) {

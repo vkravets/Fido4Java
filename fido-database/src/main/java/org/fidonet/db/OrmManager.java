@@ -150,47 +150,68 @@ public class OrmManager {
         DatabaseConnection database = connectionSource.getReadWriteConnection();
         try {
             Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
-            Set<String> indexes = new HashSet<>();
-            try (ResultSet tables = jdbc.getMetaData()
-                                        .getTables(null, null, null, new String[]{"TABLE"})) {
-                while (tables.next()) {
-                    if (!"netmail".equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
-                        continue;
-                    }
-                    Map<String, Set<String>> columns = new HashMap<>();
-                    try (ResultSet rows = jdbc.getMetaData()
-                                              .getIndexInfo(null,
-                                                            tables.getString("TABLE_SCHEM"),
-                                                            tables.getString("TABLE_NAME"),
-                                                            true,
-                                                            false)) {
-                        while (rows.next()) {
-                            String name = rows.getString("INDEX_NAME");
-                            String column = rows.getString("COLUMN_NAME");
-                            if (name != null && column != null) {
-                                columns.computeIfAbsent(name, ignored -> new HashSet<>())
-                                       .add(column.toLowerCase(Locale.ROOT));
-                            }
-                        }
-                    }
-                    for (Map.Entry<String, Set<String>> index : columns.entrySet()) {
-                        if (index.getValue().equals(Collections.singleton("send"))) {
-                            indexes.add(index.getKey());
-                        }
-                    }
-                }
-            }
+            Set<String> indexes = legacySendIndexes(jdbc);
             String quote = jdbc.getMetaData().getIdentifierQuoteString().trim();
             for (String name : indexes) {
-                try (Statement statement = jdbc.createStatement()) {
-                    statement.executeUpdate("DROP INDEX "
-                                            + quote
-                                            + name.replace(quote, quote + quote)
-                                            + quote);
-                }
+                dropIndex(jdbc, name, quote);
             }
         } finally {
             connectionSource.releaseConnection(database);
+        }
+    }
+
+    private Set<String> legacySendIndexes(Connection jdbc) throws SQLException {
+        Set<String> indexes = new HashSet<>();
+        try (ResultSet tables = jdbc.getMetaData()
+                                    .getTables(null, null, null, new String[]{"TABLE"})) {
+            while (tables.next()) {
+                if (!"netmail".equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
+                    continue;
+                }
+                indexes.addAll(sendOnlyIndexes(jdbc,
+                                               tables.getString("TABLE_SCHEM"),
+                                               tables.getString("TABLE_NAME")));
+            }
+        }
+        return indexes;
+    }
+
+    private Set<String> sendOnlyIndexes(Connection jdbc, String schema, String table)
+            throws SQLException {
+        Map<String, Set<String>> columns = uniqueIndexColumns(jdbc, schema, table);
+        Set<String> indexes = new HashSet<>();
+        for (Map.Entry<String, Set<String>> index : columns.entrySet()) {
+            if (index.getValue().equals(Collections.singleton("send"))) {
+                indexes.add(index.getKey());
+            }
+        }
+        return indexes;
+    }
+
+    private Map<String, Set<String>> uniqueIndexColumns(Connection jdbc,
+                                                        String schema,
+                                                        String table)
+            throws SQLException {
+        Map<String, Set<String>> columns = new HashMap<>();
+        try (ResultSet rows = jdbc.getMetaData().getIndexInfo(null, schema, table, true, false)) {
+            while (rows.next()) {
+                String name = rows.getString("INDEX_NAME");
+                String column = rows.getString("COLUMN_NAME");
+                if (name != null && column != null) {
+                    columns.computeIfAbsent(name, ignored -> new HashSet<>())
+                           .add(column.toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        return columns;
+    }
+
+    private void dropIndex(Connection jdbc, String name, String quote) throws SQLException {
+        try (Statement statement = jdbc.createStatement()) {
+            statement.executeUpdate("DROP INDEX "
+                                    + quote
+                                    + name.replace(quote, quote + quote)
+                                    + quote);
         }
     }
 
@@ -198,33 +219,42 @@ public class OrmManager {
         DatabaseConnection database = connectionSource.getReadWriteConnection();
         try {
             Connection jdbc = ((JdbcDatabaseConnection) database).getInternalConnection();
-            try (ResultSet tables = jdbc.getMetaData()
-                                        .getTables(null, null, null, new String[]{"TABLE"})) {
-                while (tables.next()) {
-                    String table = tables.getString("TABLE_NAME");
-                    if (!"echomail".equalsIgnoreCase(table)) {
-                        continue;
-                    }
-                    boolean found = false;
-                    try (ResultSet columns = jdbc.getMetaData()
-                                                 .getColumns(null,
-                                                             tables.getString("TABLE_SCHEM"),
-                                                             table,
-                                                             null)) {
-                        while (columns.next()) {
-                            found |= "received_from".equalsIgnoreCase(columns.getString("COLUMN_NAME"));
-                        }
-                    }
-                    if (!found) {
-                        getDao(Echomail.class).executeRaw("ALTER TABLE "
-                                                          + table
-                                                          + " ADD received_from VARCHAR(255)");
-                    }
-                }
-            }
+            addEchoIngressColumns(jdbc);
         } finally {
             connectionSource.releaseConnection(database);
         }
+    }
+
+    private void addEchoIngressColumns(Connection jdbc) throws SQLException {
+        try (ResultSet tables = jdbc.getMetaData()
+                                    .getTables(null, null, null, new String[]{"TABLE"})) {
+            while (tables.next()) {
+                String table = tables.getString("TABLE_NAME");
+                if ("echomail".equalsIgnoreCase(table)) {
+                    ensureEchoIngressColumn(jdbc, tables.getString("TABLE_SCHEM"), table);
+                }
+            }
+        }
+    }
+
+    private void ensureEchoIngressColumn(Connection jdbc, String schema, String table)
+            throws SQLException {
+        if (!hasEchoIngressColumn(jdbc, schema, table)) {
+            getDao(Echomail.class).executeRaw("ALTER TABLE "
+                                              + table
+                                              + " ADD received_from VARCHAR(255)");
+        }
+    }
+
+    private boolean hasEchoIngressColumn(Connection jdbc, String schema, String table)
+            throws SQLException {
+        boolean found = false;
+        try (ResultSet columns = jdbc.getMetaData().getColumns(null, schema, table, null)) {
+            while (columns.next()) {
+                found |= "received_from".equalsIgnoreCase(columns.getString("COLUMN_NAME"));
+            }
+        }
+        return found;
     }
 
     private void migrateLegacyNetmailDeliveries() throws SQLException {
@@ -237,30 +267,33 @@ public class OrmManager {
                                                   deliveries.queryBuilder()
                                                             .selectColumns("message_id"))
                                            .query()) {
-                String route = message.getRoute();
-                if (route != null && route.trim().isEmpty()) {
-                    route = null;
-                }
-                NetmailDelivery delivery = new NetmailDelivery("legacy:" + message.getId(),
-                                                               message,
-                                                               route);
-                if (Boolean.TRUE.equals(message.getSend())) {
-                    delivery.setState("SENT");
-                } else if (route != null) {
-                    try {
-                        if (!new FTNAddr(route).isValid()) {
-                            delivery.setState("BLOCKED");
-                        }
-                    } catch (RuntimeException invalidRoute) {
-                        delivery.setState("BLOCKED");
-                    }
-                }
-                deliveries.create(delivery);
+                deliveries.create(legacyDelivery(message));
             }
             return null;
         });
     }
 
+    private NetmailDelivery legacyDelivery(Netmail message) {
+        String route = message.getRoute();
+        if (route != null && route.trim().isEmpty()) {
+            route = null;
+        }
+        NetmailDelivery delivery = new NetmailDelivery("legacy:" + message.getId(), message, route);
+        if (Boolean.TRUE.equals(message.getSend())) {
+            delivery.setState("SENT");
+        } else if (route != null && !isValidLegacyRoute(route)) {
+            delivery.setState("BLOCKED");
+        }
+        return delivery;
+    }
+
+    private boolean isValidLegacyRoute(String route) {
+        try {
+            return new FTNAddr(route).isValid();
+        } catch (RuntimeException invalidRoute) {
+            return false;
+        }
+    }
     public <T> T inTransaction(Callable<T> work) throws SQLException {
         return TransactionManager.callInTransaction(connectionSource, work);
     }

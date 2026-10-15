@@ -156,32 +156,40 @@ public abstract class AbstractScriptManager implements ScriptEngine {
     public synchronized void reloadScripts(Map<String, String> scriptsContent,
                                            Boolean forceReload,
                                            Object... params) {
-        if (scriptsContent.size() > 0) {
-            for (Map.Entry<String, String> script : scriptsContent.entrySet()) {
-                String fileName = script.getKey();
-                if (fileName.endsWith("." + getFileExtension())) {
-                    try {
-                        logger.debug("Loading {}", fileName);
-                        String cacheContent = getFromCache(fileName);
-                        String content;
-                        try (InputStream stream = new FileInputStream(fileName)) {
-                            content = loadScriptContent(stream);
-                        }
-                        boolean isCached = cacheContent != null && cacheContent.equals(content);
-                        if (Boolean.TRUE.equals(forceReload) || !isCached) {
-                            logger.debug("Registering {} script", fileName);
-                            registerScript(fileName, content, params);
-                        }
-                        logger.debug("{} successfully registered", fileName);
-
-                    } catch (Exception e) {
-                        logger.error("Error during loading {} script. Details: {}",
-                                     fileName,
-                                     e.getMessage(),
-                                     e);
-                    }
-                }
+        for (String fileName : scriptsContent.keySet()) {
+            if (fileName.endsWith("." + getFileExtension())) {
+                reloadScriptSafely(fileName, forceReload, params);
             }
+        }
+    }
+
+    private void reloadScriptSafely(String fileName, Boolean forceReload, Object... params) {
+        try {
+            reloadScript(fileName, forceReload, params);
+        } catch (Exception e) {
+            logger.error("Error during loading {} script. Details: {}",
+                         fileName,
+                         e.getMessage(),
+                         e);
+        }
+    }
+
+    private void reloadScript(String fileName, Boolean forceReload, Object... params)
+            throws Exception {
+        logger.debug("Loading {}", fileName);
+        String cacheContent = getFromCache(fileName);
+        String content = readScript(fileName);
+        boolean isCached = cacheContent != null && cacheContent.equals(content);
+        if (Boolean.TRUE.equals(forceReload) || !isCached) {
+            logger.debug("Registering {} script", fileName);
+            registerScript(fileName, content, params);
+        }
+        logger.debug("{} successfully registered", fileName);
+    }
+
+    private String readScript(String fileName) throws IOException, ScriptException {
+        try (InputStream stream = new FileInputStream(fileName)) {
+            return loadScriptContent(stream);
         }
     }
 

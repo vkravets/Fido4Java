@@ -65,44 +65,62 @@ public class OPTCommand extends NULCommand {
     @Override
     protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
-        String[] tokens = commandArgs.trim().split("\\s+");
-        for (String token : tokens) {
-            if (token.startsWith("CRAM") && sessionContext.getLinksInfo().getCurLink() != null
-                    && sessionContext.getLinksInfo().getCurLink().isMD()) {
-                String[] cramTokens = token.split("-", 3);
-                if (cramTokens.length != 3 || !cramTokens[2].matches("(?i)(?:[0-9a-f]{2})+")) {
-                    throw new IllegalArgumentException("Invalid CRAM challenge");
-                }
-                String cryptType = null;
-                for (String offered : cramTokens[1].split("/")) {
-                    if (offered.equals("MD5") || offered.equals("SHA1")) {
-                        cryptType = offered;
-                        break;
-                    }
-                }
-                if (cryptType == null) {
-                    continue;
-                }
-                MessageDigest md = MessageDigest.getInstance(cryptType);
-                Password password = sessionContext.getPassword();
-                password.setCrypt(true);
-                password.setMd(md);
-                password.setKey(cramTokens[2]);
-                sessionContext.setMessageDigest(md);
-                sessionContext.setPasswordKey(cramTokens[2]);
-            } else if (token.equals("NR")) {
-                if (sessionContext.getStationConfig().isNREnabled()) {
-                    sessionContext.setNRMode(true);
-                }
-            } else if (token.equals("CRYPT")) {
-                if (sessionContext.getStationConfig().isCryptMode()) {
-                    sessionContext.setCryptMode(true);
-                    log.info("Remote requests CRYPT mode");
-                } else {
-                    sessionContext.setCryptMode(false);
-                    log.info("Ignore CRYPT mode, doesn't support");
-                }
+        for (String token : commandArgs.trim().split("\\s+")) {
+            handleOption(sessionContext, token);
+        }
+    }
+
+    private void handleOption(SessionContext context, String token) throws Exception {
+        if (token.startsWith("CRAM") && context.getLinksInfo().getCurLink() != null
+                && context.getLinksInfo().getCurLink().isMD()) {
+            configureCram(context, token);
+            return;
+        }
+        if (token.equals("NR")) {
+            if (context.getStationConfig().isNREnabled()) {
+                context.setNRMode(true);
+            }
+            return;
+        }
+        if (token.equals("CRYPT")) {
+            configureCrypt(context);
+        }
+    }
+
+    private void configureCram(SessionContext context, String token) throws Exception {
+        String[] cramTokens = token.split("-", 3);
+        if (cramTokens.length != 3 || !cramTokens[2].matches("(?i)(?:[0-9a-f]{2})+")) {
+            throw new IllegalArgumentException("Invalid CRAM challenge");
+        }
+        String cryptType = supportedDigest(cramTokens[1]);
+        if (cryptType == null) {
+            return;
+        }
+        MessageDigest md = MessageDigest.getInstance(cryptType);
+        Password password = context.getPassword();
+        password.setCrypt(true);
+        password.setMd(md);
+        password.setKey(cramTokens[2]);
+        context.setMessageDigest(md);
+        context.setPasswordKey(cramTokens[2]);
+    }
+
+    private String supportedDigest(String offeredDigests) {
+        for (String offered : offeredDigests.split("/")) {
+            if (offered.equals("MD5") || offered.equals("SHA1")) {
+                return offered;
             }
         }
+        return null;
+    }
+
+    private void configureCrypt(SessionContext context) {
+        if (context.getStationConfig().isCryptMode()) {
+            context.setCryptMode(true);
+            log.info("Remote requests CRYPT mode");
+            return;
+        }
+        context.setCryptMode(false);
+        log.info("Ignore CRYPT mode, doesn't support");
     }
 }

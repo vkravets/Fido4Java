@@ -210,39 +210,54 @@ public class Message {
         String id = body.getKludges().get("MSGID");
         msgId = id == null ? null : id.trim();
         if (echomail) {
-            String origin = body.getOrigin();
-            if (origin != null && origin.lastIndexOf('(') >= 0
-                    && origin.lastIndexOf(')') > origin.lastIndexOf('(')) {
-                FTNAddr address = parseAddress(origin.substring(origin.lastIndexOf('(') + 1,
-                                                                origin.lastIndexOf(')')));
-                if (address != null) {
-                    fAddr = address;
-                }
+            detectEchoSource();
+            return;
+        }
+        detectNetmailAddresses();
+    }
+
+    private void detectEchoSource() {
+        FTNAddr originAddress = addressFromOrigin(body.getOrigin());
+        if (originAddress != null) {
+            fAddr = originAddress;
+        }
+        if ((fAddr == null || !fAddr.isValid()) && msgId != null) {
+            FTNAddr address = parseAddress(msgId.split("\\s+", 2)[0]);
+            if (address != null) {
+                fAddr = address;
             }
-            if ((fAddr == null || !fAddr.isValid()) && msgId != null) {
-                FTNAddr address = parseAddress(msgId.split("\\s+", 2)[0]);
-                if (address != null) {
-                    fAddr = address;
-                }
-            }
-        } else {
-            String intl = body.getKludges().get("INTL");
-            if (intl != null) {
-                String[] addresses = intl.trim().split("\\s+");
-                if (addresses.length == 2) {
-                    FTNAddr dest = parseAddress(addresses[0]);
-                    FTNAddr source = parseAddress(addresses[1]);
-                    if (dest != null && source != null) {
-                        tAddr = dest;
-                        fAddr = source;
-                    }
-                }
-            }
-            fAddr = withPoint(fAddr, body.getKludges().get("FMPT"));
-            tAddr = withPoint(tAddr, body.getKludges().get("TOPT"));
         }
     }
 
+    private FTNAddr addressFromOrigin(String origin) {
+        if (origin == null || origin.lastIndexOf('(') < 0
+                || origin.lastIndexOf(')') <= origin.lastIndexOf('(')) {
+            return null;
+        }
+        return parseAddress(origin.substring(origin.lastIndexOf('(') + 1, origin.lastIndexOf(')')));
+    }
+
+    private void detectNetmailAddresses() {
+        String intl = body.getKludges().get("INTL");
+        if (intl != null) {
+            applyIntlAddresses(intl);
+        }
+        fAddr = withPoint(fAddr, body.getKludges().get("FMPT"));
+        tAddr = withPoint(tAddr, body.getKludges().get("TOPT"));
+    }
+
+    private void applyIntlAddresses(String intl) {
+        String[] addresses = intl.trim().split("\\s+");
+        if (addresses.length != 2) {
+            return;
+        }
+        FTNAddr dest = parseAddress(addresses[0]);
+        FTNAddr source = parseAddress(addresses[1]);
+        if (dest != null && source != null) {
+            tAddr = dest;
+            fAddr = source;
+        }
+    }
     private static FTNAddr parseAddress(String value) {
         try {
             FTNAddr address = new FTNAddr(value);
@@ -327,30 +342,30 @@ public class Message {
         if (!validAddress(fAddr) || !validAddress(tAddr) || echomail && area.isEmpty()) {
             return false;
         }
-        if (!echomail) {
-            String intl = body.getKludges().get("INTL");
-            if (intl != null) {
-                String[] addresses = intl.trim().split("\\s+");
-                if (addresses.length != 2 || !validAddress(parseAddress(addresses[0]))
-                        || !validAddress(parseAddress(addresses[1]))) {
-                    return false;
-                }
-            }
-            for (String key : new String[]{"FMPT", "TOPT"}) {
-                String value = body.getKludges().get(key);
-                if (value != null) {
-                    try {
-                        int point = Integer.parseInt(value.trim());
-                        if (point < 1 || point > 65535) {
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        return false;
-                    }
-                }
-            }
+        return echomail || validIntl(body.getKludges().get("INTL"))
+                && validPoint(body.getKludges().get("FMPT"))
+                && validPoint(body.getKludges().get("TOPT"));
+    }
+
+    private static boolean validIntl(String intl) {
+        if (intl == null) {
+            return true;
         }
-        return true;
+        String[] addresses = intl.trim().split("\\s+");
+        return addresses.length == 2 && validAddress(parseAddress(addresses[0]))
+                && validAddress(parseAddress(addresses[1]));
+    }
+
+    private static boolean validPoint(String value) {
+        if (value == null) {
+            return true;
+        }
+        try {
+            int point = Integer.parseInt(value.trim());
+            return point >= 1 && point <= 65535;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private static boolean validAddress(FTNAddr address) {

@@ -27,7 +27,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -115,12 +114,8 @@ public class MailServiceTest {
                                         server.getLocalPort());
             client = new Client(destination);
             client.run(clientContext);
-            long deadline = System.nanoTime() + 30_000_000_000L;
-            while (System.nanoTime() < deadline && !delivered(clientBase, serverBase)) {
-                Thread.sleep(25);
-            }
             assertTrue("Messages and acknowledgements must reach both databases",
-                       delivered(clientBase, serverBase));
+                       awaitDelivery(clientBase, serverBase, clientConfig, serverConfig));
             assertEquals("Текст сообщения\r",
                          clientBase.getLocalNetmail(new FTNAddr("2:500/101"))
                                    .get(0)
@@ -151,6 +146,27 @@ public class MailServiceTest {
                 && server.getLocalNetmail(new FTNAddr("2:500/102")).size() == 1
                 && client.getMessageSize("test") == 2 && server.getMessageSize("test") == 2
                 && client.getQueuedNetmail().isEmpty() && server.getQueuedNetmail().isEmpty();
+    }
+
+    private boolean awaitDelivery(DatabaseManager client,
+                                  DatabaseManager server,
+                                  JFtnConfig clientConfig,
+                                  JFtnConfig serverConfig)
+            throws Exception {
+        long deadline = System.nanoTime() + 30_000_000_000L;
+        while (System.nanoTime() < deadline) {
+            if (delivered(client, server) && outboundEmpty(clientConfig)
+                    && outboundEmpty(serverConfig)) {
+                return true;
+            }
+            Thread.sleep(25);
+        }
+        return false;
+    }
+
+    private boolean outboundEmpty(JFtnConfig config) throws IOException {
+        return new OutboundSpool(config).pending(config.getConfiguredLinks().get(0), true)
+                                        .isEmpty();
     }
 
     @Test

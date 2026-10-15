@@ -2,6 +2,7 @@ package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.MessageIteration;
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
 import org.fidonet.packet.MailIdentity;
@@ -11,7 +12,6 @@ import org.fidonet.types.Message;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /** Fan-out produces independent copies and never alters the stored original. */
@@ -28,20 +28,7 @@ final class EchoExporter {
 
     void export() throws IOException {
         for (String area : base.getAreas()) {
-            Iterator<Message> messages = base.getMessages(area);
-            try {
-                while (messages.hasNext()) {
-                    export(messages.next());
-                }
-            } finally {
-                if (messages instanceof AutoCloseable) {
-                    try {
-                        ((AutoCloseable) messages).close();
-                    } catch (Exception e) {
-                        throw new IOException("Unable to close message iterator", e);
-                    }
-                }
-            }
+            MessageIteration.forEach(base.getMessages(area), this::export);
         }
     }
 

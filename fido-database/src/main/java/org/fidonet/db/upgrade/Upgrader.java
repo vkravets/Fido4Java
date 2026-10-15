@@ -71,15 +71,7 @@ public interface Upgrader {
             Dao<NEW, Object> newEchoareDao = newManager.getDao(newClazz);
 
             QueryBuilder<OLD, Object> oldObjectQueryBuilder = oldEchoareaDao.queryBuilder();
-            for (Field field : oldClazz.getDeclaredFields()) {
-                DatabaseField metadata = field.getAnnotation(DatabaseField.class);
-                if (metadata != null && (metadata.id() || metadata.generatedId())) {
-                    oldObjectQueryBuilder.orderBy(metadata.columnName().isEmpty()
-                            ? field.getName()
-                            : metadata.columnName(), true);
-                    break;
-                }
-            }
+            orderByIdentity(oldClazz, oldObjectQueryBuilder);
 
             try (DatabasePagingIterator<OLD, OLD> linkIterator = new DatabasePagingIterator<OLD, OLD>(oldObjectQueryBuilder,
                                                                                                       0,
@@ -87,30 +79,46 @@ public interface Upgrader {
                                                                                                       true)) {
                 while (linkIterator.hasNext()) {
                     OLD oldObject = linkIterator.next();
-                    try {
-                        NEW newObject = newClazz.newInstance();
-                        objectUpgrader.upgrade(oldObject, newObject);
-                        newEchoareDao.create(newObject);
-                    } catch (InstantiationException e) {
-                        objectUpgrader.onException(oldObject, e);
-                        if (failOnError) {
-                            return false;
-                        }
-                    } catch (IllegalAccessException e) {
-                        objectUpgrader.onException(oldObject, e);
-                        if (failOnError) {
-                            return false;
-                        }
-                    } catch (SQLException e) {
-                        objectUpgrader.onException(oldObject, e);
-                        if (failOnError) {
-                            return false;
-                        }
+                    boolean upgraded = upgradeObject(oldObject,
+                                                     newClazz,
+                                                     newEchoareDao,
+                                                     objectUpgrader);
+                    if (!upgraded && failOnError) {
+                        return false;
                     }
                 }
                 return true;
             } catch (SQLException e) {
                 DatabasePagingIterator.logger.error("Unable to close migration iterator", e);
+                return false;
+            }
+        }
+
+        private static <OLD> void orderByIdentity(Class<OLD> type,
+                                                  QueryBuilder<OLD, Object> query) {
+            for (Field field : type.getDeclaredFields()) {
+                DatabaseField metadata = field.getAnnotation(DatabaseField.class);
+                if (metadata == null || !metadata.id() && !metadata.generatedId()) {
+                    continue;
+                }
+                query.orderBy(metadata.columnName().isEmpty()
+                        ? field.getName()
+                        : metadata.columnName(), true);
+                return;
+            }
+        }
+
+        private static <OLD, NEW> boolean upgradeObject(OLD oldObject,
+                                                        Class<NEW> type,
+                                                        Dao<NEW, Object> target,
+                                                        ObjectUpgrader<OLD, NEW> upgrader) {
+            try {
+                NEW newObject = type.newInstance();
+                upgrader.upgrade(oldObject, newObject);
+                target.create(newObject);
+                return true;
+            } catch (InstantiationException | IllegalAccessException | SQLException e) {
+                upgrader.onException(oldObject, e);
                 return false;
             }
         }

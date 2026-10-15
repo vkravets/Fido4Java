@@ -71,57 +71,47 @@ public class Runner {
     }
 
     public void poll(final Link link, final SessionContext context) throws Exception {
-        Runnable clientRun = new Runnable() {
+        threadPoolExecutor.submit(() -> runClient(link, context));
+    }
 
-            public void waitSessionFinish() throws InterruptedException {
-                for (;;) {
-                    Thread.sleep(500);
-                    if (context.isTransferComplete() || context.getState() == SessionState.STATE_ERR
-                            || context.getState() == SessionState.STATE_END) {
-                        break;
-                    }
-                }
+    private void runClient(Link link, SessionContext context) {
+        Client client = null;
+        try {
+            client = createClient(link);
+            client.run(context);
+            if (client.isConnect()) {
+                waitSessionFinish(context);
             }
-
-            @Override
-            public void run() {
-                Client client = null;
-                try {
-                    client = createClient(link);
-                    client.run(context);
-                    if (client.isConnect()) {
-                        waitSessionFinish();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    logger.error("Client unexpectedly stops", e);
-                } finally {
-                    if (client != null) {
-                        client.stop();
-                    }
-                }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error("Client unexpectedly stops", e);
+        } finally {
+            if (client != null) {
+                client.stop();
             }
-        };
+        }
+    }
 
-        threadPoolExecutor.submit(clientRun);
+    private void waitSessionFinish(SessionContext context) throws InterruptedException {
+        do {
+            Thread.sleep(500);
+        } while (!context.isTransferComplete() && context.getState() != SessionState.STATE_ERR
+                && context.getState() != SessionState.STATE_END);
     }
 
     public void bindServer(final SessionContext context, final int port) {
-        Runnable runServer = new Runnable() {
-            @Override
-            public void run() {
-                server = new Server(port);
-                try {
-                    server.run(context);
-                } catch (Exception e) {
-                    logger.error("Server unexpectedly stops", e);
-                }
-            }
-        };
-        threadPoolExecutor.submit(runServer);
+        threadPoolExecutor.submit(() -> runServer(context, port));
     }
 
+    private void runServer(SessionContext context, int port) {
+        server = new Server(port);
+        try {
+            server.run(context);
+        } catch (Exception e) {
+            logger.error("Server unexpectedly stops", e);
+        }
+    }
     public void shutdown() {
         if (server != null) {
             server.stop();

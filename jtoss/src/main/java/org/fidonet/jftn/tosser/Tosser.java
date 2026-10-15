@@ -104,54 +104,76 @@ public class Tosser extends HasEventBus {
         if (files == null) {
             throw new TosserException("Directory " + dirname + " not found!");
         }
-        // TODO: We should make some checks!
         long startTime = System.currentTimeMillis();
-        if (files.length != 0) {
-            for (File file : files) {
-                boolean packet = file.getName().toLowerCase(Locale.ROOT).endsWith(".pkt");
-                if (file.isFile() && (packet || isBunldeName(file.getName()))) {
-                    try {
-                        LinkedList<PktTemp> pktlist = new LinkedList<>();
-                        if (packet) {
-                            try (InputStream input = Files.newInputStream(file.toPath())) {
-                                byte[] bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
-                                if (bytes.length > Zipper.MAX_PACKET_BYTES) {
-                                    throw new IOException("Packet exceeds size limit");
-                                }
-                                pktlist.add(new PktTemp(file.getName(), ByteBuffer.wrap(bytes)));
-                            }
-                        } else {
-                            pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
-                        }
-                        while (!pktlist.isEmpty()) {
-                            PktTemp aPktlist = pktlist.pop();
-                            if (!tosspkt(aPktlist.getPkt(), authenticatedPeer)) {
-                                logger.info("Save to Tmp");
-                                saveBad(aPktlist);
-                            }
-                        }
-                        if (config.isDeleteTossedFiles() != 0) {
-                            if (!file.delete()) {
-                                logger.error("Error while deleting tossed boundle!");
-                            }
-                        }
-                    } catch (IOException | RuntimeException | EchoBaseException e) {
-                        logger.error("Failed to unpack {}. Details: {}",
-                                     file.getAbsolutePath(),
-                                     e.getMessage(),
-                                     e);
-                    } catch (TosserException e) {
-                        logger.error("Failed to toss {}. Details: {}",
-                                     file.getAbsolutePath(),
-                                     e.getMessage(),
-                                     e);
-                    }
-                }
+        for (File file : files) {
+            if (isSupportedMailFile(file)) {
+                processInboundFileSafely(file, authenticatedPeer);
             }
         }
         logger.debug("Tossing process takes {}ms", System.currentTimeMillis() - startTime);
     }
 
+    private boolean isPacket(File file) {
+        return file.getName().toLowerCase(Locale.ROOT).endsWith(".pkt");
+    }
+
+    private boolean isSupportedMailFile(File file) {
+        return file.isFile() && (isPacket(file) || isBunldeName(file.getName()));
+    }
+
+    private void processInboundFileSafely(File file, FTNAddr authenticatedPeer) {
+        try {
+            processInboundFile(file, authenticatedPeer);
+        } catch (IOException | RuntimeException | EchoBaseException e) {
+            logger.error("Failed to unpack {}. Details: {}",
+                         file.getAbsolutePath(),
+                         e.getMessage(),
+                         e);
+        } catch (TosserException e) {
+            logger.error("Failed to toss {}. Details: {}",
+                         file.getAbsolutePath(),
+                         e.getMessage(),
+                         e);
+        }
+    }
+
+    private void processInboundFile(File file, FTNAddr authenticatedPeer)
+            throws IOException, TosserException, EchoBaseException {
+        LinkedList<PktTemp> packets = readPackets(file);
+        while (!packets.isEmpty()) {
+            processPacket(packets.pop(), authenticatedPeer);
+        }
+        deleteTossedFile(file);
+    }
+
+    private LinkedList<PktTemp> readPackets(File file) throws IOException {
+        if (!isPacket(file)) {
+            return Zipper.unpackboundlfast(file.getAbsolutePath());
+        }
+        LinkedList<PktTemp> packets = new LinkedList<>();
+        try (InputStream input = Files.newInputStream(file.toPath())) {
+            byte[] bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
+            if (bytes.length > Zipper.MAX_PACKET_BYTES) {
+                throw new IOException("Packet exceeds size limit");
+            }
+            packets.add(new PktTemp(file.getName(), ByteBuffer.wrap(bytes)));
+        }
+        return packets;
+    }
+
+    private void processPacket(PktTemp packet, FTNAddr authenticatedPeer)
+            throws IOException, TosserException, EchoBaseException {
+        if (!tosspkt(packet.getPkt(), authenticatedPeer)) {
+            logger.info("Save to Tmp");
+            saveBad(packet);
+        }
+    }
+
+    private void deleteTossedFile(File file) {
+        if (config.isDeleteTossedFiles() != 0 && !file.delete()) {
+            logger.error("Error while deleting tossed boundle!");
+        }
+    }
     private void saveBad(PktTemp pkt) throws IOException, TosserException {
         Path root = new File(config.getTmpDir()).toPath().toRealPath();
         String name = pkt.getName().replace('\\', '/');
@@ -204,14 +226,15 @@ public class Tosser extends HasEventBus {
         Link origlink = config.getLink(q.getOrigaddr());
         if (origlink == null && q.getOrigZone() == 0) {
             for (Link candidate : config.getConfiguredLinks()) {
-                if (sameNode(candidate.getAddr(), q.getOrigaddr()) && (authenticatedPeer == null
-                        || authenticatedPeer.equals(candidate.getAddr()))) {
-                    if (origlink != null) {
-                        logger.warn("Ambiguous zone-less packet origin");
-                        return false;
-                    }
-                    origlink = candidate;
+                if (!sameNode(candidate.getAddr(), q.getOrigaddr()) || authenticatedPeer != null
+                        && !authenticatedPeer.equals(candidate.getAddr())) {
+                    continue;
                 }
+                if (origlink != null) {
+                    logger.warn("Ambiguous zone-less packet origin");
+                    return false;
+                }
+                origlink = candidate;
             }
         }
         if (origlink == null) {
@@ -234,13 +257,14 @@ public class Tosser extends HasEventBus {
         if (destination.getZone() == 0 && !localAddresses.contains(destination)) {
             FTNAddr resolved = null;
             for (FTNAddr candidate : localAddresses) {
-                if (sameNode(candidate, destination)) {
-                    if (resolved != null) {
-                        logger.warn("Ambiguous zone-less packet destination");
-                        return false;
-                    }
-                    resolved = candidate;
+                if (!sameNode(candidate, destination)) {
+                    continue;
                 }
+                if (resolved != null) {
+                    logger.warn("Ambiguous zone-less packet destination");
+                    return false;
+                }
+                resolved = candidate;
             }
             if (resolved != null) {
                 destination = resolved;
