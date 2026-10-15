@@ -13,3 +13,5 @@ dependencies {
   api project(':jambase')
     testRuntimeOnly 'com.h2database:h2:1.4.192'
 }
+
+apply from: "$rootDir/gradle/hpt-integration.gradle"
