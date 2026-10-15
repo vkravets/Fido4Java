@@ -37,6 +37,7 @@ import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
+import org.fidonet.db.objects.NetmailRouteRecord;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
 
@@ -85,6 +86,7 @@ public class OrmManager {
         daoClasses.add(Netmail.class);
         daoClasses.add(NetmailDelivery.class);
         daoClasses.add(NetmailIndex.class);
+        daoClasses.add(NetmailRouteRecord.class);
         daoClasses.add(MessageCheckpoint.class);
         daoClasses.add(MessageReceipt.class);
         daoClasses.add(ArchiveReceipt.class);
