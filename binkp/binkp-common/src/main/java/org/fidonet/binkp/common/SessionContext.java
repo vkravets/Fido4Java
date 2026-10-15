@@ -119,6 +119,43 @@ public class SessionContext extends HasEventBus {
     private boolean batchActivity;
     private int batchNumber;
     private Consumer<SessionContext> outboundLoader;
+    private ReceivedFileHandler receivedFileHandler;
+    private SentFileHandler sentFileHandler;
+    private Consumer<SessionContext> sessionClosedHandler;
+
+    @FunctionalInterface
+    public interface ReceivedFileHandler {
+        void accept(SessionContext context, FileData<OutputStream> file) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface SentFileHandler {
+        void accept(SessionContext context, FileData<InputStream> file) throws IOException;
+    }
+
+    public void setReceivedFileHandler(ReceivedFileHandler handler) {
+        receivedFileHandler = handler;
+    }
+
+    public void setSentFileHandler(SentFileHandler handler) {
+        sentFileHandler = handler;
+    }
+
+    public void setSessionClosedHandler(Consumer<SessionContext> handler) {
+        sessionClosedHandler = handler;
+    }
+
+    public void commitReceivedFile(FileData<OutputStream> file) throws IOException {
+        if (receivedFileHandler != null) {
+            receivedFileHandler.accept(this, file);
+        }
+    }
+
+    public void commitSentFile(FileData<InputStream> file) throws IOException {
+        if (sentFileHandler != null) {
+            sentFileHandler.accept(this, file);
+        }
+    }
 
     public synchronized void setRemoteProtocol(int major, int minor) {
         if (!transferStarted && major >= 1 && minor >= 0) {
@@ -181,6 +218,9 @@ public class SessionContext extends HasEventBus {
     }
 
     public void closeReceiveStreams() {
+        if (sessionClosedHandler != null) {
+            sessionClosedHandler.accept(this);
+        }
         if (activeSender != null) {
             activeSender.cancel();
         }
@@ -238,6 +278,9 @@ public class SessionContext extends HasEventBus {
         this(context.getStationConfig(),
                 new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
         outboundLoader = context.outboundLoader;
+        receivedFileHandler = context.receivedFileHandler;
+        sentFileHandler = context.sentFileHandler;
+        sessionClosedHandler = context.sessionClosedHandler;
         if (context.getLinksInfo().getCurLink() != null) {
             linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
         }

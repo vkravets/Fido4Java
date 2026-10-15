@@ -29,23 +29,26 @@
 import org.fidonet.config.JFtnConfig
 import org.fidonet.jftn.engine.script.JFtnScriptService
 import org.fidonet.jftn.share.Command
-import org.fidonet.jftn.tosser.Tosser
+import org.fidonet.jftn.MailService
+import org.fidonet.db.DatabaseManager
+import org.fidonet.jftn.plugins.PluginManager
 
 class TossCommand implements Command<String, Boolean> {
 
     private JFtnScriptService share;
 
-    public TestCommand(JFtnScriptService share) {
+    public TossCommand(JFtnScriptService share) {
         this.share = share;
     }
 
     @Override
     public Boolean execute(String param) {
         def config = (JFtnConfig) share.getConfig()
-        def tosser = new Tosser(config)
-        tosser.runFast(config.getInbound())
+        def database = (DatabaseManager) PluginManager.getInstance().getContext("database").get()
+        MailService.runOnce(config, database)
+        return true
     }
 }
 
-jftn.registerCommand("tosspack", TossCommand(jftn))
+jftn.registerCommand("tosspack", new TossCommand(jftn))
 

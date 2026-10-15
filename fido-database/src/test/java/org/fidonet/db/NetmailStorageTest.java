@@ -52,6 +52,7 @@ public class NetmailStorageTest {
         String url = "jdbc:h2:mem:legacyNetmail" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
         OrmManager first = new OrmManager(url);
         first.connect();
+        first.getDao(Netmail.class).create(Netmail.fromMessage(message("Legacy message\r")));
         first.getDao(Netmail.class)
              .executeRaw("CREATE UNIQUE INDEX legacy_netmail_send ON netmail(send)");
         first.disconnect();
@@ -60,9 +61,29 @@ public class NetmailStorageTest {
         try {
             reopened.saveNetmail(message("One\r"), "one", null);
             reopened.saveNetmail(message("Two\r"), "two", null);
-            assertEquals(2, reopened.getLocalNetmail(new FTNAddr("2:500/102.2")).size());
+            assertEquals(3, reopened.getLocalNetmail(new FTNAddr("2:500/102.2")).size());
         } finally {
             reopened.close();
+        }
+    }
+
+    @Test
+    public void killSentDeletesOnlyAfterAcknowledgementAndKeepsDuplicateHistory() throws Exception {
+        OrmManager orm = new OrmManager("jdbc:h2:mem:killSent" + System.nanoTime());
+        DatabaseManager base = new DatabaseManager(orm);
+        assertTrue(base.open());
+        try {
+            Message message = message("\1MSGID: 2:500/101.1 kill-sent\rBody\r");
+            message.setAttributes(128);
+            base.saveNetmail(message, "kill", "2:500/103");
+            assertEquals(1, base.getQueuedNetmail().size());
+            assertEquals(1, orm.getDao(Netmail.class).countOf());
+            base.markNetmailSent("kill");
+            assertEquals(0, orm.getDao(Netmail.class).countOf());
+            base.saveNetmail(message, "repeated", "2:500/103");
+            assertEquals(0, orm.getDao(Netmail.class).countOf());
+        } finally {
+            base.close();
         }
     }
 }

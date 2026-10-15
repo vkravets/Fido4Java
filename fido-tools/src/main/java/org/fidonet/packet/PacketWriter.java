@@ -58,6 +58,9 @@ public final class PacketWriter {
         }
         packet.write(0);
         packet.write(0);
+        if (packet.size() > 64 * 1024 * 1024) {
+            throw new IOException("Packet exceeds size limit");
+        }
         return packet.toByteArray();
     }
 

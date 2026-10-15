@@ -10,6 +10,8 @@ import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
+import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.types.Link;
 
@@ -33,11 +35,20 @@ public class RunnerStartupTest {
 
     private File config() throws Exception {
         File file = temporary.newFile("jftn.conf");
+        String root = temporary.getRoot().getAbsolutePath().replace('\\', '/');
         Files.writeString(file.toPath(),
-                          "Inbound=inbound\n"
-                          + "Tmp=tmp\n"
-                          + "EchoPath=echo\n"
-                          + "Outbound=outbound\n"
+                          "Inbound="
+                          + root
+                          + "/inbound\n"
+                          + "Tmp="
+                          + root
+                          + "/tmp\n"
+                          + "EchoPath="
+                          + root
+                          + "/echo\n"
+                          + "Outbound="
+                          + root
+                          + "/outbound\n"
                           + "SysOp=Configured Sysop\n"
                           + "System=Configured Station\n"
                           + "Location=Test Location\n"
@@ -51,6 +62,9 @@ public class RunnerStartupTest {
     public void loadsConfigurationStartsConfiguredLinksAndUnloadsPlugins() throws Exception {
         List<String> calls = new ArrayList<>();
         AtomicReference<SessionContext> bound = new AtomicReference<>();
+        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:runnerMail"
+                                                                      + System.nanoTime()));
+        assertTrue(database.open());
         Runner runner = new Runner() {
             @Override
             public void bindServer(SessionContext context, int port) {
@@ -81,7 +95,9 @@ public class RunnerStartupTest {
                                                                             () -> calls.add("load"),
                                                                             id -> new WeakReference<>(id.equals(NettyPlugin.BINKP_PLUGIN_ID)
                                                                                     ? runner
-                                                                                    : scheduler),
+                                                                                    : id.equals("database")
+                                                                                            ? database
+                                                                                            : scheduler),
                                                                             () -> calls.add("unload"),
                                                                             () -> calls.add("wait")));
             assertEquals(Arrays.asList("load",
@@ -99,6 +115,7 @@ public class RunnerStartupTest {
             assertEquals("1:500/100.0", bound.get().getStationConfig().getAddress());
         } finally {
             runner.shutdown();
+            database.close();
         }
     }
 

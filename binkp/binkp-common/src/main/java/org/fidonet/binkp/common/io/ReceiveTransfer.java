@@ -79,6 +79,7 @@ public final class ReceiveTransfer {
             return;
         }
         file.getStream().close();
+        context.commitReceivedFile(file);
         file.getInfo().setFinished(true);
         context.receiveEvent(new FileReceivedEvent(context, file));
         new GOTCommand().send(session, context);

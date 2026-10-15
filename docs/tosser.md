@@ -1,0 +1,169 @@
+# Mail processing
+
+The Runner uses the database plugin's SQL store for echomail and netmail. Its
+current default database is `jdbc:h2:./database/jftn10`. The same plugin context
+is shared with other application services; the mail service does not open a
+second database. JAM remains an echomail storage implementation and is not the
+Runner's netmail store.
+
+## Configuration
+
+```text
+Inbound=inbound
+Outbound=outbound
+Tmp=state
+EchoPath=echo
+SysOp=Your Name
+System=Your Station
+Link=2:500/101,2:500/102,session-password,127.0.0.1:24554
+PacketPassword=2:500/101,pktpass
+EchoArea=TEST,2:500/101=BOTH
+EnforceEchoAccess=true
+AutoCreateEcho=false
+AllowTransit=false
+DefaultRoute=2:500/101
+TossIntervalSeconds=5
+BinkpPort=24554
+```
+
+`Link` lists the remote address, local AKAs, session password and optional host.
+Local AKAs identify local netmail destinations, including point numbers.
+`PacketPassword` overrides the PKT password for that link. Without an override,
+the existing link password is used. PKT passwords must fit eight ASCII bytes;
+long session passwords require a separate PKT password. `-` selects no password.
+
+`EchoArea` adds or updates SQL subscriptions. It accepts multiple comma-separated
+addresses, each optionally followed by `=READ`, `=WRITE` or `=BOTH`; the default
+is `BOTH`. READ permits export to that link, WRITE permits import from it.
+Existing SQL subscriptions not mentioned in these declarations are retained.
+Removing a declaration does not revoke a previously stored subscription.
+
+Unknown areas and unauthorized posts go to quarantine by default. Legacy
+automatic area creation can be selected explicitly with `AutoCreateEcho=true`
+and `EnforceEchoAccess=false`.
+
+Routes can also be declared in order:
+
+```text
+Route=3:600/*,2:500/101
+DefaultRoute=2:500/101
+AllowTransit=true
+```
+
+The first matching `Route` wins. Otherwise an explicitly configured final
+destination is used, then `DefaultRoute`. Every next hop must be a configured
+link. `DIR`, `CRA` and the Crash attribute require a configured direct link.
+Transit requires `AllowTransit=true`; returning a message to its input link or
+through a local address already present in its Via trail is refused.
+Missing/forbidden routes retain the packet in quarantine rather than discard it.
+Hold/HLD packets are offered on inbound sessions, not outbound calls. The
+existing Runner polling schedule remains every ten minutes; Crash/CRA does not
+introduce an immediate dial scheduler. KillSent deletes a netmail only after
+acknowledgement, retaining its duplicate receipt.
+
+## Processing and recovery
+
+The Runner starts `MailService` after loading the transport, scheduler and
+database plugins. A process lock in `Tmp` prevents two mail services from using
+the same state directory. Existing inbound files and queues are processed at
+startup and then periodically. The Groovy `tosspack` command reuses the running
+service, or opens a temporary service for a single processing pass.
+
+Incoming files use disk-backed partial storage. Before binkp sends `M_GOT`, a
+completed receive file is atomically published beneath `Inbound/peers`, in a
+directory for its configured session peer. Packet origins must match that peer.
+The filename is derived from transfer identity, preserving the mail extension.
+The stream remains readable for existing receive-event consumers. Publication
+failure prevents acknowledgement. Equal completed copies can be reused; a
+different copy is never overwritten. Processing failures retain the durable
+file. Files placed directly in `Inbound` are treated as trusted offline input
+and still undergo PKT origin/password/destination checks.
+
+The tosser accepts loose `.pkt` files and ZIP mail bundles with weekday bundle
+extensions. Legacy Type-2 packets with zero zone fields are resolved only when
+configured addresses identify an unambiguous peer and destination; the receiving
+session can disambiguate the peer. Limits are 64 MiB per packet, 256 MiB total unpacked data per bundle
+and 4096 archive entries. Non-packet archive entries are rejected; other archive
+formats are unsupported. Non-mail files received through binkp remain on disk
+and are not interpreted as packets.
+
+Rejected packets are saved as `.bad` in `Tmp`. If an existing name has different
+contents, the original source is retained. Correct the cause and move a rejected
+packet back to inbound with a `.pkt` extension to retry it. An unhandled message
+can quarantine the remaining packet; successfully imported messages are not
+lost. SQL errors are propagated rather than reported as successful writes.
+
+Per-packet progress is persisted in `Tmp/toss-journal`. SQL duplicate receipts
+are committed with message insertion, scoped by echo area or netmail endpoints.
+Messages without MSGID use a stable content fingerprint. Receipts survive
+deletion of message contents. Locally submitted messages receive an MSGID from
+a persistent 32-bit sequence; imported legacy messages are not assigned fake
+MSGIDs. Keep `Tmp`, the SQL database and `Outbound/jftn-mail` together when
+backing up or restoring a node. Do not reuse an old progress journal with a
+new, empty database. Receipt/journal retention is currently manual.
+
+On opening an existing SQL database, missing netmail delivery records are
+created without replacing the original messages. Previously sent mail stays
+sent, unsent mail without a route becomes local, and unsent mail with a valid
+route is queued. Invalid legacy route strings are retained in a BLOCKED state
+for operator repair. The incorrect unique Boolean index on netmail `send` is
+removed, and the echo ingress column is added when missing.
+
+Outgoing Type-2+ packets contain next-hop envelope addresses and independent
+final message addresses. Netmail exports INTL/FMPT/TOPT and appends a UTC Via
+line. Echomail exports independent subscriber copies, preserves existing Origin
+and tear lines, updates SEEN-BY/PATH, and omits point addresses from those 2D
+lists. Cross-zone copies omit routing entries from other zones rather than
+reinterpret their net/node numbers in the receiving zone. Local Origin lines
+are generated only for locally submitted messages without an Origin.
+
+An outbound packet and its metadata are persisted before queue publication.
+Preparing or writing a packet does not mark it sent. `M_GOT` persists a receipt,
+then updates SQL. If the process stops between those actions, the next pass
+reconciles SQL from the receipt. Disconnect releases session claims so packets
+can be retried. A lost protocol acknowledgement can cause a retransmission;
+duplicate checking makes repeated imports safe.
+
+## Scope and remaining limitations
+
+This implements the described import, local delivery, configured transit and
+export pipeline. It is not a claim of complete compliance with every FTSC
+document or independent-tosser certification.
+
+- FileAttach, FileRequest and FileUpdateRequest processing is not implemented.
+  Outgoing submissions using these attributes fail explicitly; such transit
+  packets are quarantined. Local messages can be stored with their attributes,
+  but no attachment or FREQ service is executed.
+- Return-receipt/audit requests are preserved in the wire attributes; automatic
+  receipt generation, PING/TRACE services and AreaFix are not implemented.
+- Routing uses configured links and patterns; there is no nodelist-based route
+  discovery, DNS node discovery or automatic zonegate selection.
+- FTN addresses currently use the project's existing 4D model. Distinct domains
+  sharing the same zone/net/node/point cannot be represented independently.
+- SQL migrations are exercised against H2. Other database drivers require their
+  own migration verification before production use.
+- The exporter scans stored areas and consults durable per-recipient receipts.
+  Indexed incremental export and automatic receipt cleanup remain future work.
+- Hooks may reject messages, but core durable delivery does not rely on a hook
+  to save netmail. Hook publication still uses the existing event bus.
+
+## Validation and specifications
+
+Tests cover partial failure/restart, quarantine conflicts, loose PKT intake,
+destination/password checks, local netmail, SQL migration, routing and Hold,
+acknowledgement recovery, subscriber access, echo fan-out, control-line ordering,
+legacy MSGID-free messages, JAM UTF-8 storage, receive publication failure and
+real TCP exchange of both message kinds between two production Netty peers.
+Existing historical inbound bundle fixtures remain part of the regression suite.
+No new interoperability claim is made for an external tosser.
+
+References used for the wire formats and control lines:
+
+- [FTS-0001: packet/message layout and attributes](https://defsol.com/files/ftsc/fts-0001.016)
+- [FTS-0004: echomail distribution](https://defsol.com/files/ftsc/fts-0004.001)
+- [FTS-0009: MSGID and REPLY](https://defsol.com/files/ftsc/fts-0009.001)
+- [FTS-4001: INTL, FMPT and TOPT](https://defsol.com/files/ftsc/fts-4001.001)
+- [FTS-4009: Via tracking](https://defsol.com/files/ftsc/fts-4009.001)
+- [FSC-0039: Type-2+ header extension](https://defsol.com/files/ftsc/fsc-0039.004)
+
+FSC documents are proposals/reference material, distinct from FTS standards.

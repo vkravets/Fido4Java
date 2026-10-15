@@ -71,7 +71,7 @@ final class EchoExporter {
                 }
             }
             for (FTNAddr address : message.getBody().getPath().getAddresses()) {
-                if (address.getZone().equals(local.getZone()) && address.getPnt() == 0) {
+                if (address.getZone().equals(link.getAddr().getZone()) && address.getPnt() == 0) {
                     path.add(address);
                 }
             }
@@ -81,7 +81,7 @@ final class EchoExporter {
                     seen.add(recipient.getAddr());
                 }
             }
-            if (local.getPnt() == 0) {
+            if (local.getPnt() == 0 && local.getZone().equals(link.getAddr().getZone())) {
                 seen.add(local);
                 path.add(local);
             }

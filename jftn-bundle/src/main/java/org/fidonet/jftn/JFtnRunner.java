@@ -36,6 +36,7 @@ import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
+import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
@@ -45,6 +46,8 @@ import org.fidonet.types.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -97,6 +100,7 @@ public class JFtnRunner {
         Runner runner;
         Scheduler scheduler;
         SessionContext context;
+        MailService mail = null;
         try {
             loadPlugins.run();
             runner = Runner.class.cast(requireContext(plugins.getContext(NettyPlugin.BINKP_PLUGIN_ID),
@@ -104,11 +108,40 @@ public class JFtnRunner {
             scheduler = Scheduler.class.cast(requireContext(plugins.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID),
                                                             "scheduler"));
             context = createSessionContext(config);
+            DatabaseManager database = DatabaseManager.class.cast(requireContext(plugins.getContext("database"),
+                                                                                 "database"));
+            mail = new MailService(config, database);
+            mail.attach(context);
+            mail.start();
         } catch (Exception failure) {
+            if (mail != null) {
+                try {
+                    mail.close();
+                } catch (IOException closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
             unloadPlugins.run();
             throw failure;
         }
-        runNode(runner, scheduler, context, Connector.BINK_PORT, waiter, unloadPlugins);
+        MailService activeMail = mail;
+        runNode(runner,
+                scheduler,
+                context,
+                Integer.parseInt(config.getValue("BinkpPort",
+                                                 Integer.toString(Connector.BINK_PORT))),
+                waiter,
+                () -> {
+                    try {
+                        scheduler.stop();
+                        runner.shutdown();
+                        activeMail.close();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    } finally {
+                        unloadPlugins.run();
+                    }
+                });
     }
 
     static SessionContext createSessionContext(JFtnConfig config) {
