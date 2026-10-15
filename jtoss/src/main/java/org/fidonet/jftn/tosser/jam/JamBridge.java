@@ -139,34 +139,47 @@ public final class JamBridge {
         prepareArea(binding);
         JamState state = state(binding);
         binding.area.locked(access -> {
-            importEntries(binding, access, state, tosser);
+            if (access.version().equals(binding.importedVersion)) {
+                return null;
+            }
+            binding.importedVersion = importEntries(binding, access, state, tosser)
+                    ? access.version()
+                    : null;
             return null;
         });
     }
 
-    private void importEntries(Binding binding,
-                               JamArea.Access access,
-                               JamState state,
-                               Tosser tosser)
+    private boolean importEntries(Binding binding,
+                                  JamArea.Access access,
+                                  JamState state,
+                                  Tosser tosser)
             throws IOException {
+        boolean[] completed = {true};
         access.forEach(attributes -> (attributes
                 & (JamArea.LOCAL | JamArea.SENT | JamArea.TYPE_LOCAL)) == JamArea.LOCAL,
-                       entry -> importEntrySafely(tosser, binding, access, entry, state));
+                       entry -> completed[0] &= importEntrySafely(tosser,
+                                                                  binding,
+                                                                  access,
+                                                                  entry,
+                                                                  state));
+        return completed[0];
     }
-    private void importEntrySafely(Tosser tosser,
-                                   Binding binding,
-                                   JamArea.Access access,
-                                   JamArea.Entry entry,
-                                   JamState state)
+    private boolean importEntrySafely(Tosser tosser,
+                                      Binding binding,
+                                      JamArea.Access access,
+                                      JamArea.Entry entry,
+                                      JamState state)
             throws IOException {
         try {
             importOutgoing(tosser, binding, access, entry, state);
+            return true;
         } catch (IllegalArgumentException | IllegalStateException
                 | UnsupportedOperationException e) {
             logger.warn("JAM submission rejected at {} message {}: {}",
                         binding.area.getPath(),
                         entry.getNumber(),
                         e.getMessage());
+            return false;
         }
     }
 
@@ -260,9 +273,24 @@ public final class JamBridge {
     private void reconcileArea(Binding binding, OutboundSpool spool) throws IOException {
         JamState state = state(binding);
         binding.area.locked(access -> {
+            if (access.version().equals(binding.reconciledVersion)
+                    && !hasAcknowledgements(binding, state, spool)) {
+                return null;
+            }
             access.forEach(entry -> reconcileEntry(binding, access, entry, state, spool));
+            binding.reconciledVersion = access.version();
             return null;
         });
+    }
+
+    private boolean hasAcknowledgements(Binding binding, JamState state, OutboundSpool spool)
+            throws IOException {
+        for (String identity : state.acceptedIdentities()) {
+            if (allAcknowledged(binding, state, spool, identity)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void reconcileEntry(Binding binding,
@@ -331,11 +359,17 @@ public final class JamBridge {
     }
 
     private JamState state(Binding binding) throws IOException {
+        if (binding.state != null && binding.state.isCurrent()) {
+            return binding.state;
+        }
         String id = UUID.nameUUIDFromBytes(binding.area.getPath()
                                                        .toString()
                                                        .getBytes(StandardCharsets.UTF_8))
                         .toString();
-        return new JamState(Path.of(config.getTmpDir(), "jam-bridge", id + ".properties"));
+        binding.state = new JamState(Path.of(config.getTmpDir(), "jam-bridge", id + ".properties"));
+        binding.importedVersion = null;
+        binding.reconciledVersion = null;
+        return binding.state;
     }
 
     private static final class ExistingMessages {
@@ -362,6 +396,9 @@ public final class JamBridge {
         private final String name;
         private final FTNAddr aka;
         private final JamArea area;
+        private JamState state;
+        private String importedVersion;
+        private String reconciledVersion;
 
         private Binding(String name, Path path, FTNAddr aka, Charset charset) {
             this.name = name;

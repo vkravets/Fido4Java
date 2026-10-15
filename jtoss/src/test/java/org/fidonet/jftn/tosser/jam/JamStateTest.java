@@ -1,6 +1,7 @@
 package org.fidonet.jftn.tosser.jam;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -15,6 +16,21 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 public class JamStateTest {
+    @Test
+    public void detectsAnotherWritersReceiptsAndTracksPendingDeliveries() throws Exception {
+        Path path = temporary.getRoot().toPath().resolve("shared-state");
+        JamState cached = new JamState(path);
+        assertTrue(cached.isCurrent());
+        JamState writer = new JamState(path);
+        writer.stage("message", JamState.Stage.ACCEPTED);
+        assertFalse(cached.isCurrent());
+        JamState refreshed = new JamState(path);
+        assertTrue(refreshed.acceptedIdentities().contains("message"));
+        refreshed.stage("message", JamState.Stage.DELIVERED);
+        assertTrue(refreshed.isCurrent());
+        assertTrue(refreshed.acceptedIdentities().isEmpty());
+    }
+
     @Test
     public void doesNotAdvanceStateWhenDurableWritingFails() throws Exception {
         Path path = temporary.getRoot().toPath().resolve("failed-state");
