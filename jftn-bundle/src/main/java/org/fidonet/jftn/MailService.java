@@ -10,6 +10,7 @@ import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.jftn.tosser.jam.JamBridge;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -40,6 +41,7 @@ public final class MailService implements AutoCloseable {
     private final JFtnConfig config;
     private final Tosser tosser;
     private final OutboundSpool spool;
+    private final JamBridge jam;
     private final Path stateDirectory;
     private final FileChannel lockChannel;
     private final FileLock lock;
@@ -69,6 +71,7 @@ public final class MailService implements AutoCloseable {
             configure(base);
             tosser = new Tosser(config, base);
             spool = new OutboundSpool(config);
+            jam = new JamBridge(config, base, base);
         } catch (IOException | RuntimeException e) {
             if (acquired != null) {
                 acquired.release();
@@ -152,6 +155,11 @@ public final class MailService implements AutoCloseable {
         }
         tosser.exportPendingNetmail();
         tosser.exportEchomail();
+        try {
+            jam.exportMessages();
+        } catch (IOException e) {
+            logger.warn("JAM synchronization deferred; SQL mail processing completed", e);
+        }
     }
 
     private synchronized void received(SessionContext context, FileData<OutputStream> file)

@@ -124,6 +124,29 @@ reconciles SQL from the receipt. Disconnect releases session claims so packets
 can be retried. A lost protocol acknowledgement can cause a retransmission;
 duplicate checking makes repeated imports safe.
 
+## External JAM editor
+
+SQL remains the authoritative store. Optional editor views are configured with
+repeated `JamEcho=AREA,path[,AKA]` and `JamNetmail=path[,AKA]` entries. Paths omit
+the `.jhr` suffix. The default AKA is the first configured local address;
+`JamCharset=CP866` supplies the decoding fallback when no CHRS is present.
+
+Only explicitly configured existing SQL echoes and netmail addressed to the
+view's AKA are exported. Export is incremental, retains `.jlr`, and does not
+recreate messages deleted in the editor. Keep `Tmp/jam-bridge` with SQL and JAM
+when backing up. A busy editor defers synchronization without blocking transport.
+
+GoldED+ can define these views using, for example:
+
+```text
+AREADEF TEST "Test echo" 0 Echo JAM C:\fido\jam\test 2:500/102 (Loc)
+AREADEF NETMAIL "Netmail" 0 Net JAM C:\fido\jam\netmail 2:500/102 (Loc Pvt)
+```
+
+The AKA must be configured locally in both applications. JAM file locks are
+implemented, but compatibility with an actual GoldED+ process has not yet been
+certified on either Windows or Linux.
+
 ## Scope and remaining limitations
 
 This implements the described import, local delivery, configured transit and

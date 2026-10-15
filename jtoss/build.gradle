@@ -10,5 +10,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     compileOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.6.2'
   api project(':fido-database')
+  api project(':jambase')
     testRuntimeOnly 'com.h2database:h2:1.4.192'
 }

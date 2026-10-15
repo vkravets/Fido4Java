@@ -120,6 +120,10 @@ public final class JamArea {
         return append(message, JamCodec.toJam(message));
     }
 
+    public static int attributesOf(Message message) {
+        return JamCodec.toJam(message);
+    }
+
     public interface Operation<T> {
         T run(Access access) throws IOException;
     }
