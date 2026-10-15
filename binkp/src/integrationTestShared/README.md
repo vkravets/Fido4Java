@@ -112,16 +112,30 @@ as successful. Each explicit invocation runs again, even with unchanged sources.
 
 ## CircleCI
 
-The `binkd-integration` job runs independently alongside `build` in the
-`build-and-test` workflow. It uses the pinned `ubuntu-2404:2026.05.1` machine image,
+The `binkd-integration` and `hpt-integration` jobs both require a successful `build`
+in the `build-and-test` workflow, then run in parallel. They use the compiled
+integration runtimes published by `build` through a CircleCI workspace. The jobs
+check the Git revision and SHA-256 checksums before running tests.
+
+The `binkd-integration` job uses the pinned `ubuntu-2404:2026.05.1` machine image,
 installs Java 17 and uses the VM's Docker daemon. No `setup_remote_docker`, Podman,
 WSL host override or Thrift compiler is needed for this job.
 
-The job explicitly runs `binkdDockerTest` in all three backend modules, caches Gradle
+The job explicitly runs `binkdDockerTest` in the Netty and MINA2 backend modules, caches Gradle
 downloads, publishes JUnit XML to the Tests tab, and stores the HTML report,
 per-case protocol/binkd logs, Gradle output and Docker diagnostics as artifacts. Reports from all backends are collected under `build/binkd-integration`, with separate backend directories. `--continue` allows the other backends to finish even if one fails.
 Diagnostics are collected even after a failed step; failure is preserved through
 `pipefail` when capturing Gradle output. Ryuk remains enabled.
+
+`prepareCiIntegration` packages each module's compiled integration test classes,
+resources and complete ordered runtime classpath under
+`build/ci-integration/<module>/`. The HPT package also contains its Java worker
+JARs. `-PciIntegrationSnapshot` switches integration tasks to these files without
+depending on application compilation or JAR packaging tasks. Local commands keep
+their normal compile-and-test behavior unless this property is supplied. Gradle
+may still compile `buildSrc`, which contains build tooling rather than application
+classes. The workspace belongs to the current workflow; Gradle download caches
+are only an optimization and never supply the application classes being tested.
 
 The scenarios have passed locally with Podman. The new CircleCI job still needs
 its first actual pipeline run to verify the VM image and CI network environment.

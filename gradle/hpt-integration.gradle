@@ -30,7 +30,9 @@ def workerFiles = tasks.register('hptInteropWorkerFiles', Sync) {
 tasks.register('hptInteropTest', Test) {
     description = 'Checks JAM and SQL interoperability with real HPT processes.'
     group = 'verification'
-    dependsOn workerFiles
+    if (!providers.gradleProperty('ciIntegrationSnapshot').isPresent()) {
+        dependsOn workerFiles
+    }
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnit()
@@ -46,3 +48,6 @@ tasks.register('hptInteropTest', Test) {
         exceptionFormat = 'full'
     }
 }
+
+apply from: "$rootDir/gradle/ci-integration.gradle"
+configureCiIntegration('hptInteropTest', workerFiles)

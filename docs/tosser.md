@@ -190,7 +190,10 @@ compares every JAM file before and after the operation.
 Command output, pinned revisions, configuration, JAM files, SQL and packets are
 saved in `jtoss/build/reports/hptInteropTest`; the JUnit HTML report is in
 `jtoss/build/reports/tests/hptInteropTest`. CircleCI runs a separate
-`hpt-integration` job. Interactive GoldED+ testing remains separate.
+`hpt-integration` job after a successful main build. It verifies and runs the
+compiled runtime and worker JARs from that build's workspace using
+`-PciIntegrationSnapshot`, without recompiling application or test sources.
+Interactive GoldED+ testing remains separate.
 
 On Windows with Podman, use the Docker compatibility API and the WSL host override
 described in `binkp/src/integrationTestShared/README.md`. Ryuk remains enabled.

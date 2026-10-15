@@ -32,3 +32,6 @@ tasks.register('binkdDockerTest', Test) {
     }
     systemProperty 'binkd.artifactsDir', layout.buildDirectory.dir('reports/binkdDockerTest').get().asFile.absolutePath
 }
+
+apply from: "$rootDir/gradle/ci-integration.gradle"
+configureCiIntegration('binkdDockerTest')
