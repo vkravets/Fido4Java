@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /** Owns tossing and transfer queues; database lifetime belongs to the database plugin. */
 public final class MailService implements AutoCloseable {
@@ -50,8 +52,20 @@ public final class MailService implements AutoCloseable {
     private final Map<Path, SessionContext> claims = new ConcurrentHashMap<>();
     private final Map<FileData<InputStream>, Path> outgoing = new ConcurrentHashMap<>();
     private volatile boolean closed;
+    private boolean resourcesClosed;
+    private final ReentrantLock processing = new ReentrantLock();
+    private final ProcessingTrigger trigger;
 
     public MailService(JFtnConfig config, DatabaseManager base) throws IOException {
+        this(config, base,
+                () -> Executors.newSingleThreadScheduledExecutor(task -> new Thread(task,
+                                                                                    "jftn-tosser")));
+    }
+
+    MailService(JFtnConfig config,
+                DatabaseManager base,
+                Supplier<ScheduledExecutorService> workerFactory)
+            throws IOException {
         this.config = config;
         stateDirectory = Path.of(config.getTmpDir()).toAbsolutePath().normalize();
         Files.createDirectories(stateDirectory);
@@ -73,6 +87,7 @@ public final class MailService implements AutoCloseable {
             tosser = new Tosser(config, base);
             spool = new OutboundSpool(config);
             jam = new JamBridge(config, base, base);
+            worker = workerFactory.get();
         } catch (IOException | RuntimeException e) {
             if (acquired != null) {
                 acquired.release();
@@ -81,8 +96,7 @@ public final class MailService implements AutoCloseable {
             throw e;
         }
         lock = acquired;
-        worker = Executors.newSingleThreadScheduledExecutor(task -> new Thread(task,
-                                                                               "jftn-tosser"));
+        trigger = new ProcessingTrigger(worker, this::processSafely);
         ACTIVE.put(stateDirectory, this);
     }
 
@@ -143,7 +157,16 @@ public final class MailService implements AutoCloseable {
         }
     }
 
-    public synchronized void processPending() throws Exception {
+    public void processPending() throws Exception {
+        processing.lockInterruptibly();
+        try {
+            processMail();
+        } finally {
+            processing.unlock();
+        }
+    }
+
+    private void processMail() throws Exception {
         if (closed) {
             return;
         }
@@ -192,21 +215,26 @@ public final class MailService implements AutoCloseable {
                                                     .toString()
                                                     .replaceFirst("\\.part$", extension));
         partial.commitTo(destination);
-        worker.execute(this::processSafely);
+        trigger.request();
     }
 
-    private synchronized void loadOutbound(SessionContext context) {
+    private void loadOutbound(SessionContext context) {
         if (closed) {
             return;
         }
         try {
             processPending();
-            Link link = requireLink(context);
-            for (Path path : spool.pending(link, context.getServerRole() == ServerRole.SERVER)) {
-                enqueueOutboundFile(context, path);
-            }
+            enqueuePending(context);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to prepare outbound", e);
+        }
+    }
+
+    private synchronized void enqueuePending(SessionContext context) throws IOException {
+        requireOpen();
+        Link link = requireLink(context);
+        for (Path path : spool.pending(link, context.getServerRole() == ServerRole.SERVER)) {
+            enqueueOutboundFile(context, path);
         }
     }
 
@@ -300,30 +328,55 @@ public final class MailService implements AutoCloseable {
     @Override
     public void close() throws IOException {
         synchronized (this) {
-            if (closed) {
+            if (resourcesClosed) {
                 return;
             }
             closed = true;
         }
         worker.shutdown();
+        awaitWorker();
+        acquireShutdownLock();
+        try {
+            closeResources();
+        } finally {
+            processing.unlock();
+        }
+    }
+
+    private void awaitWorker() throws IOException {
         try {
             if (!worker.awaitTermination(10, TimeUnit.SECONDS)) {
                 worker.shutdownNow();
-                throw new IOException("Tosser worker did not stop");
+                throw new IOException("Tosser worker did not stop; service lock was retained");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             worker.shutdownNow();
             throw new IOException("Interrupted while stopping tosser", e);
-        } finally {
-            synchronized (this) {
-                for (SessionContext context : claims.values()) {
-                    release(context);
-                }
-                ACTIVE.remove(stateDirectory, this);
-                lock.release();
-                lockChannel.close();
-            }
         }
+    }
+
+    private void acquireShutdownLock() throws IOException {
+        try {
+            if (!processing.tryLock(10, TimeUnit.SECONDS)) {
+                throw new IOException("Mail processing did not stop; service lock was retained");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while awaiting mail processing", e);
+        }
+    }
+
+    private synchronized void closeResources() throws IOException {
+        if (resourcesClosed) {
+            return;
+        }
+        for (SessionContext context : claims.values()) {
+            release(context);
+        }
+        lock.release();
+        lockChannel.close();
+        ACTIVE.remove(stateDirectory, this);
+        resourcesClosed = true;
     }
 }
