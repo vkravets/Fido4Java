@@ -98,6 +98,53 @@ host/hub discovery and HPT's full route/flavour language are not implemented.
 
 ## Processing and recovery
 
+### Managed echo distribution
+
+Echomail is distributed by readable subscriptions rather than netmail `Route`
+rules. `Tosser.getEchoRouter().explain(message)` returns the eligibility of each
+configured link: permitted, no read access, archived message, input link,
+already in SEEN-BY, or local address. A point remains eligible even when its boss
+is present in the 2D SEEN-BY list. Previews do not advance delivery positions.
+
+Set `EchoSubscriptions=database` to administer subscriptions with the synchronized
+`Tosser.configureEchoSubscription(peer, area, access, history)` and
+`removeEchoSubscription(peer, area)` methods. The Runner then stops reapplying
+`EchoArea` declarations at startup; existing SQL subscriptions remain authoritative.
+In the default `config` mode the previous additive `EchoArea` behavior is retained.
+READ, WRITE and BOTH are relative to the remote link. New areas can be created
+by subscription administration, but peers must already be configured links.
+
+`EchoHistory.ALL` begins a new consumer at the start of the area;
+`EchoHistory.NEW_ONLY` starts after the newest existing SQL message ID. This
+choice initializes only a previously unseen consumer. Updating access, removing
+and restoring a subscription never rewinds or skips its existing checkpoint.
+Mail accumulated while unsubscribed is therefore eligible after resubscription.
+Removing a subscription revokes future import/export permission but deliberately
+retains prepared outbound packets and receipts. Cancelling those packets requires
+a separate explicit queue operation, not subscription editing.
+
+For an explicit historical resend use
+`rescanEcho(area, peer, firstId, lastId, requestId)`. The inclusive range uses SQL
+message IDs. A readable subscription is required. This operation bypasses the
+normal source-link/SEEN-BY suppression for the selected peer, never exports
+archived imports, and does not change ordinary delivery checkpoints. Its separate
+spool namespace and stable request ID make repeated preparation idempotent even
+after acknowledgement. A new request ID explicitly requests another resend.
+All subscription edits and rescans through the Tosser are serialized with export.
+
+Optional repeated `EchoAka=TEST,1:500/101,1:500/202` bindings select a local AKA for
+an area/peer pair. The AKA must already belong to that link's local AKA list.
+It is used for the PKT envelope, newly generated local Origin, SEEN-BY and PATH;
+the stored original and received Origin are retained. Duplicates and foreign
+aliases fail at startup. The first configured AKA remains the default.
+
+Eligibility and routing-line updates were compared with HPT's
+[`forwardMsgToLinks`](https://github.com/huskyproject/hpt/blob/master/src/toss.c):
+SEEN-BY suppresses normal duplicate fan-out and excludes point addresses;
+PATH records processors. FTS-0004 defines these different roles, while FTS-4001
+requires final netmail addresses to stay independent of the packet envelope.
+Automatic AreaFix, a nodelist router and RPC endpoints remain separate features.
+
 The Runner starts `MailService` after loading the transport, scheduler and
 database plugins. A process lock in `Tmp` prevents two mail services from using
 the same state directory. Existing inbound files and queues are processed at

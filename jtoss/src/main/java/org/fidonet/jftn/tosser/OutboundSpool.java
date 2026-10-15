@@ -39,6 +39,14 @@ public final class OutboundSpool {
     }
 
     public synchronized void enqueue(String key, Link link, Message message) throws IOException {
+        FTNAddr local = link.getMyaddr() == null || link.getMyaddr().isEmpty()
+                ? null
+                : link.getMyaddr().get(0);
+        enqueue(key, link, message, local);
+    }
+
+    public synchronized void enqueue(String key, Link link, Message message, FTNAddr local)
+            throws IOException {
         Path directory = directory(link.getAddr());
         Files.createDirectories(directory);
         String name = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
@@ -48,10 +56,10 @@ public final class OutboundSpool {
             return;
         }
         if (!Files.exists(packet)) {
-            if (link.getMyaddr() == null || link.getMyaddr().isEmpty()) {
+            if (local == null || link.getMyaddr() == null || !link.getMyaddr().contains(local)) {
                 throw new IOException("Missing local AKA for " + link.getAddr());
             }
-            byte[] bytes = PacketWriter.write(link.getMyaddr().get(0),
+            byte[] bytes = PacketWriter.write(local,
                                               link.getAddr(),
                                               config.getPacketPassword(link),
                                               Collections.singletonList(message));

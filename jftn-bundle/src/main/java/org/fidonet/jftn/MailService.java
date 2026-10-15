@@ -8,6 +8,7 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.tosser.EchoRouter;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
@@ -133,8 +134,12 @@ public final class MailService implements AutoCloseable {
     }
 
     private void configure(DatabaseManager base) {
+        boolean managed = EchoRouter.databaseSubscriptions(config);
         for (Link link : config.getConfiguredLinks()) {
             base.configureLink(link, config.getPacketPassword(link));
+        }
+        if (managed) {
+            return;
         }
         List<String> areas = config.getValuesAsList("EchoArea");
         if (areas == null) {

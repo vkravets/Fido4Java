@@ -13,6 +13,7 @@ import org.fidonet.types.Message;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Fan-out produces independent copies and never alters the stored original. */
@@ -20,11 +21,13 @@ final class EchoExporter {
     private final JFtnConfig config;
     private final IBase base;
     private final OutboundSpool spool;
+    private final EchoRouter router;
 
     EchoExporter(JFtnConfig config, IBase base, OutboundSpool spool) {
         this.config = config;
         this.base = base;
         this.spool = spool;
+        router = new EchoRouter(config, base);
     }
 
     void export() throws IOException {
@@ -83,21 +86,25 @@ final class EchoExporter {
     }
 
     private List<Link> recipients(Message message, List<Link> readers) {
-        List<Link> recipients = new ArrayList<>();
-        for (Link link : readers) {
-            if (!link.getAddr().equals(message.getUpLink()) && (link.getAddr().getPnt() != 0
-                    || !message.getBody().getSeenBy().getAddresses().contains(link.getAddr()))) {
-                recipients.add(link);
-            }
-        }
-        return recipients;
+        return router.recipients(message, readers);
     }
     private void export(Message message, Link link, List<Link> recipients) throws IOException {
-        if (link.getMyaddr() == null || link.getMyaddr().isEmpty()) {
-            throw new IOException("Missing local echo AKA");
+        export(message, link, recipients, "echo:");
+    }
+
+    void rescan(Message message, Link link, String requestId) throws IOException {
+        if (!base.isArchived(message)) {
+            export(message,
+                   link,
+                   Collections.singletonList(link),
+                   "rescan:" + requestId + ":echo:");
         }
+    }
+
+    private void export(Message message, Link link, List<Link> recipients, String prefix)
+            throws IOException {
         Message copy = message.copy();
-        FTNAddr local = link.getMyaddr().get(0);
+        FTNAddr local = router.localAddress(message.getArea(), link);
         SeenBy seen = new SeenBy();
         FidoPath path = new FidoPath();
         for (FTNAddr address : message.getBody().getSeenBy().getAddresses()) {
@@ -126,11 +133,11 @@ final class EchoExporter {
             copy.getBody()
                 .setOrigin(" * Origin: " + config.getValue("System", "JFtn") + " (" + local + ")");
         }
-        spool.enqueue("echo:"
+        spool.enqueue(prefix
                       + message.getArea()
                       + ":"
                       + MailIdentity.of(message)
                       + ":"
-                      + link.getAddr(), link, copy);
+                      + link.getAddr(), link, copy, local);
     }
 }
