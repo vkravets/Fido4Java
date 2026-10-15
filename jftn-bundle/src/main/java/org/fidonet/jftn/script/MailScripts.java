@@ -10,6 +10,7 @@ import org.fidonet.jftn.share.HookInterpreter;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.NetmailHandler;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,11 +27,18 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         void run() throws IOException;
     }
 
+    @FunctionalInterface
+    public interface FileHandler {
+        void accept(String area, Path file, String name, FTNAddr peer, String receipt)
+                throws IOException;
+    }
+
     private final Tosser tosser;
     private final DatabaseManager database;
     private final ScriptState state;
     private final List<NetmailHandler> handlers = new ArrayList<>();
     private final List<ScanHandler> scans = new ArrayList<>();
+    private final List<FileHandler> fileHandlers = new ArrayList<>();
     private final List<String> loaded = new ArrayList<>();
     private final GroovyScriptManager manager;
 
@@ -104,6 +112,26 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         scans.add(handler);
     }
 
+    public List<ReceivedFile> getReceivedFiles() throws IOException {
+        return ReceivedFile.list((JFtnConfig) getConfig());
+    }
+
+    public FileDeliveryQueue getFileQueue() {
+        return new FileDeliveryQueue((JFtnConfig) getConfig());
+    }
+
+    public void onFile(FileHandler handler) {
+        fileHandlers.add(handler);
+    }
+
+    /** Invoked by the TIC script only after authentication, CRC checks and durable storage. */
+    public void publishFile(String area, Path file, String name, FTNAddr peer, String receipt)
+            throws IOException {
+        for (FileHandler handler : fileHandlers) {
+            handler.accept(area, file, name, peer, receipt);
+        }
+    }
+
     @Override
     public void beforeExport(Tosser ignored) throws IOException {
         for (ScanHandler scan : scans) {
@@ -139,6 +167,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         loaded.clear();
         handlers.clear();
         scans.clear();
+        fileHandlers.clear();
         if (failure != null) {
             throw failure;
         }
