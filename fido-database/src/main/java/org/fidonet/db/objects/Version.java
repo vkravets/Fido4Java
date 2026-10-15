@@ -57,7 +57,7 @@ public class Version {
         return id;
     }
 
-    /** Preserve original identities when migrating a database. */
+    /** Sets the persistent row identity. */
     public void setId(Long id) {
         this.id = id;
     }

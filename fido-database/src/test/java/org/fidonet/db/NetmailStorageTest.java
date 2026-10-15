@@ -1,8 +1,5 @@
 package org.fidonet.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
@@ -13,28 +10,34 @@ import org.junit.Test;
 
 import java.util.Date;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class NetmailStorageTest {
     @Test
-    public void backfillsSearchKeysAndRejectsLegacyArchiveDuplicatesAcrossRestart()
-            throws Exception {
+    public void preservesSearchKeysAndRejectsArchiveDuplicatesAcrossRestart() throws Exception {
         String url = "jdbc:h2:mem:netmailIndex" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        OrmManager legacy = new OrmManager(url);
-        legacy.connect();
-        Message original = message("Legacy without MSGID\r");
-        legacy.getDao(Netmail.class).create(Netmail.fromMessage(original));
-        legacy.disconnect();
-        assertIndexedLegacy(url, original);
-        assertIndexedLegacy(url, original);
+        DatabaseManager base = new DatabaseManager(new OrmManager(url));
+        assertTrue(base.open());
+        Message original = message("Message without MSGID\r");
+        try {
+            base.saveNetmail(original, "stored", null);
+        } finally {
+            base.close();
+        }
+        assertIndexedNetmail(url, original);
+        assertIndexedNetmail(url, original);
     }
 
-    private void assertIndexedLegacy(String url, Message original) throws Exception {
+    private void assertIndexedNetmail(String url, Message original) throws Exception {
         OrmManager orm = new OrmManager(url);
         DatabaseManager base = new DatabaseManager(orm);
         assertTrue(base.open());
         try {
             assertEquals(1, orm.getDao(NetmailIndex.class).countOf());
-            assertEquals(false, base.importArchive(original, "legacy"));
+            assertEquals(false, base.importArchive(original, "archive"));
             assertEquals(1, orm.getDao(Netmail.class).countOf());
+            assertEquals(1, orm.getDao(NetmailDelivery.class).countOf());
             int[] selected = {0};
             base.visitEditorNetmail(original.getFAddr(), message -> selected[0]++);
             assertEquals(1, selected[0]);
@@ -76,26 +79,6 @@ public class NetmailStorageTest {
             assertEquals(0, base.getLocalNetmail(new FTNAddr("2:500/102")).size());
         } finally {
             base.close();
-        }
-    }
-
-    @Test
-    public void removesLegacyUniqueSendIndexWhenOpeningExistingDatabase() throws Exception {
-        String url = "jdbc:h2:mem:legacyNetmail" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        OrmManager first = new OrmManager(url);
-        first.connect();
-        first.getDao(Netmail.class).create(Netmail.fromMessage(message("Legacy message\r")));
-        first.getDao(Netmail.class)
-             .executeRaw("CREATE UNIQUE INDEX legacy_netmail_send ON netmail(send)");
-        first.disconnect();
-        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
-        assertTrue(reopened.open());
-        try {
-            reopened.saveNetmail(message("One\r"), "one", null);
-            reopened.saveNetmail(message("Two\r"), "two", null);
-            assertEquals(3, reopened.getLocalNetmail(new FTNAddr("2:500/102.2")).size());
-        } finally {
-            reopened.close();
         }
     }
 

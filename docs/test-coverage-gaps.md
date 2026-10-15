@@ -9,8 +9,6 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | --- | ---: | ---: | --- |
 | [binkp/binkp-common/binkp/common/io/FilesSender.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/io/FilesSender.java) | 7 | 19 | 85, 96, 99, 107, 117, 158, 159, 163, 173, 177, 228, 238, 242, 257, 268 |
 | [fido-fts/types/FTNAddr.java](../fido-fts/src/main/java/org/fidonet/types/FTNAddr.java) | 0 | 16 | 128, 131, 134, 137, 146, 147, 148, 149 |
-| [fido-database/db/upgrade/version0/UpgraderV0.java](../fido-database/src/main/java/org/fidonet/db/upgrade/version0/UpgraderV0.java) | 16 | 8 | 65, 73, 77, 81, 85, 144, 148, 154 |
-| [fido-database/db/upgrade/Upgrader.java](../fido-database/src/main/java/org/fidonet/db/upgrade/Upgrader.java) | 12 | 7 | 72, 74, 96, 101, 106 |
 | [fido-config/config/JFtnConfig.java](../fido-config/src/main/java/org/fidonet/config/JFtnConfig.java) | 9 | 6 | 102, 127, 128, 131 |
 | [binkp/binkp-mina2/binkp/mina2/Server.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/Server.java) | 6 | 5 | 88, 100, 104, 132 |
 | [binkp/binkp-mina2/binkp/mina2/Client.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/Client.java) | 3 | 5 | 70, 82, 86, 95, 98 |
@@ -47,7 +45,6 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [jambase/echobase/jam/struct/MessageHeader.java](../jambase/src/main/java/org/fidonet/echobase/jam/struct/MessageHeader.java) | 1 | 1 | 66 |
 | [binkp/binkp-mina2/binkp/mina2/codec/BinkDataEncoder.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/codec/BinkDataEncoder.java) | 1 | 1 | 45 |
 | [binkp/binkp-netty/binkp/netty/plugin/codec/BinkDataDecoder.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/codec/BinkDataDecoder.java) | 1 | 1 | 54 |
-| [fido-database/db/upgrade/version0/Echomail.java](../fido-database/src/main/java/org/fidonet/db/upgrade/version0/Echomail.java) | 1 | 1 | 269 |
 | [binkp/binkp-mina2/binkp/mina2/codec/BinkDataDecoder.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/codec/BinkDataDecoder.java) | 0 | 1 | 56 |
 | [fido-database/db/objects/Echomail.java](../fido-database/src/main/java/org/fidonet/db/objects/Echomail.java) | 0 | 1 | 241 |
 | [binkp/binkp-netty/binkp/netty/plugin/Server.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/Server.java) | 0 | 1 | 95 |
@@ -56,7 +53,6 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [binkp/binkp-mina2/binkp/mina2/codec/TrafficCrypterCodecFilter.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/codec/TrafficCrypterCodecFilter.java) | 0 | 1 | 68 |
 | [binkp/binkp-common/binkp/common/io/FileInfo.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/io/FileInfo.java) | 0 | 1 | 156 |
 | [binkp/binkp-netty/binkp/netty/plugin/codec/TrafficCrypterCodec.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/codec/TrafficCrypterCodec.java) | 0 | 1 | 62 |
-| [fido-database/db/upgrade/tools/UpgraderTool.java](../fido-database/src/main/java/org/fidonet/db/upgrade/tools/UpgraderTool.java) | 0 | 1 | 58 |
 | [binkp/binkp-common/binkp/common/commands/SKIPCommand.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/commands/SKIPCommand.java) | 0 | 1 | 61 |
 | [binkp/binkp-common/binkp/common/LinksInfo.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/LinksInfo.java) | 0 | 1 | 69 |
 | [fido-fts/fts/FtsMsg.java](../fido-fts/src/main/java/org/fidonet/fts/FtsMsg.java) | 31 | 0 |  |
@@ -88,7 +84,6 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [binkp/binkp-common/binkp/common/codec/TrafficCrypter.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/codec/TrafficCrypter.java) | 2 | 0 |  |
 | [fido-tools/Body.java](../fido-tools/src/main/java/org/fidonet/Body.java) | 2 | 0 |  |
 | [binkp/binkp-common/binkp/common/commands/CramOPTCommand.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/commands/CramOPTCommand.java) | 2 | 0 |  |
-| [fido-database/db/upgrade/version0/OrmManagerV0.java](../fido-database/src/main/java/org/fidonet/db/upgrade/version0/OrmManagerV0.java) | 2 | 0 |  |
 | [fido-fts/fts/SeenBy.java](../fido-fts/src/main/java/org/fidonet/fts/SeenBy.java) | 2 | 0 |  |
 | [binkp/binkp-common/binkp/common/codec/DataReader.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/codec/DataReader.java) | 1 | 0 |  |
 | [fido-fts/tools/CharsetTools.java](../fido-fts/src/main/java/org/fidonet/tools/CharsetTools.java) | 1 | 0 |  |
@@ -99,7 +94,6 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [binkp/binkp-netty/binkp/netty/plugin/Handler.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/Handler.java) | 1 | 0 |  |
 | [binkp/binkp-netty/binkp/netty/plugin/commons/SessionKeys.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/commons/SessionKeys.java) | 1 | 0 |  |
 | [binkp/binkp-common/binkp/common/SessionHelper.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/SessionHelper.java) | 1 | 0 |  |
-| [fido-database/db/upgrade/version0/ConfigurationLink.java](../fido-database/src/main/java/org/fidonet/db/upgrade/version0/ConfigurationLink.java) | 1 | 0 |  |
 | [binkp/binkp-mina2/binkp/mina2/commons/SessionKeys.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/commons/SessionKeys.java) | 1 | 0 |  |
 | [binkp/binkp-common/binkp/common/protocol/SessionWrapper.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/protocol/SessionWrapper.java) | 1 | 0 |  |
 | [binkp/binkp-common/binkp/common/crypt/DummyEncrypt.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/crypt/DummyEncrypt.java) | 1 | 0 |  |

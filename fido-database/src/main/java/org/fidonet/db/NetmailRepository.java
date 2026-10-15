@@ -16,29 +16,12 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Iterator;
 
-/** Indexed, streaming netmail reads and an idempotent upgrade of existing messages. */
+/** Indexed, streaming netmail reads and search-key maintenance for new messages. */
 final class NetmailRepository {
     private final OrmManager orm;
 
     NetmailRepository(OrmManager orm) {
         this.orm = orm;
-    }
-
-    void indexExisting() throws SQLException {
-        QueryBuilder<Netmail, Object> query = orm.<Netmail, Object>getDao(Netmail.class)
-                                                 .queryBuilder();
-        query.where()
-             .notIn("id",
-                    orm.getDao(NetmailIndex.class).queryBuilder().selectColumns("message_id"));
-        try (QueryCursor<Netmail> rows = new QueryCursor<>(query)) {
-            indexRows(rows);
-        }
-    }
-
-    private void indexRows(Iterator<Netmail> rows) throws SQLException {
-        while (rows.hasNext()) {
-            index(rows.next());
-        }
     }
 
     void index(Netmail message) throws SQLException {

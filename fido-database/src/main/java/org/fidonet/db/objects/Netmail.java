@@ -117,11 +117,6 @@ public class Netmail {
         return id;
     }
 
-    /** Preserve original identities when migrating a database. */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getFromName() {
         return fromName;
     }
