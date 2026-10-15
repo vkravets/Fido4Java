@@ -33,8 +33,12 @@ import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -46,6 +50,7 @@ import io.netty.channel.ChannelHandlerContext;
 public class NettySession implements Session {
 
     private ChannelHandlerContext context;
+    private volatile ChannelFuture lastWrite;
 
     public NettySession(ChannelHandlerContext context) {
         this.context = context;
@@ -53,8 +58,27 @@ public class NettySession implements Session {
 
     @Override
     public void write(Object message) {
-        context.channel().write(message);
-        context.channel().flush();
+        lastWrite = context.channel()
+                           .writeAndFlush(message)
+                           .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+    }
+
+    @Override
+    public void awaitWrites() throws IOException, InterruptedException {
+        ChannelFuture pending = lastWrite;
+        if (pending == null) {
+            return;
+        }
+        if (!pending.isDone() && context.executor().inEventLoop()) {
+            throw new IOException("Cannot wait for file writes on the Netty event loop");
+        }
+        if (!pending.await(30, TimeUnit.SECONDS)) {
+            context.close();
+            throw new IOException("Timed out writing to the peer");
+        }
+        if (!pending.isSuccess()) {
+            throw new IOException("Unable to write to the peer", pending.cause());
+        }
     }
 
     @Override

@@ -122,6 +122,7 @@ public class FilesSender<T extends Session> implements Runnable {
         final byte[] buf = new byte[FILE_BLOCK_SIZE];
         int read = reader.read(buf);
         long fileSize = offset;
+        int queuedBytes = 0;
         data.getInfo().setCurSize(fileSize);
         while (read != -1) {
             if (cancelled || data.getInfo().isShouldSkip() || data.getInfo().isFinished()) {
@@ -132,10 +133,16 @@ public class FilesSender<T extends Session> implements Runnable {
                 throw new IOException("Input exceeds advertised file size");
             }
             session.write(dataBulk.getRawData());
+            queuedBytes += read;
+            if (queuedBytes >= 64 * 1024) {
+                session.awaitWrites();
+                queuedBytes = 0;
+            }
             fileSize += read;
             data.getInfo().setCurSize(fileSize);
             read = reader.read(buf);
         }
+        session.awaitWrites();
         if (fileSize != fileInfo.getSize()) {
             throw new EOFException("Input ends before advertised file size");
         }
