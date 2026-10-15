@@ -60,7 +60,9 @@ unfinished stubs; it should not substitute for those decisions.
 Full build and eight Docker scenarios passed. The final unit-report refresh also passed.
 83 new test methods were added in the coverage round; the style cleanup adds no test cases.
 Results: 261 passed, 3 skipped, 0 failed.
-The skipped tests are the existing ignored Mina2ServerTest.test1/test2 and NettyClientTest.testBaseFlow.
+The skips in this historical snapshot were Mina2ServerTest.test1/test2 and NettyClientTest.testBaseFlow.
+Those retired tests have since been removed. Their useful Netty lifecycle and
+fragmentation checks now run in NettyPeerTransferTest and BinkDataDecoderTest.
 
 Overall: **91.1% lines (4514/4955)** and **90.2% branches (1342/1487)**.
 

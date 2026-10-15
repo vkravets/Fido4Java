@@ -212,7 +212,7 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
                 log.warn(e.getMessage(), e);
                 exceptionCaught(ctx, e);
             }
-        } else {
+        } else if (!binkData.isCommand()) {
             try {
                 ReceiveTransfer.accept(nettySession, sessionContext, binkData.getData());
             } catch (Exception e) {

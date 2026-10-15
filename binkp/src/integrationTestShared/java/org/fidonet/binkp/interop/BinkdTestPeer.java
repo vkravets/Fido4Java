@@ -91,6 +91,9 @@ final class BinkdTestPeer implements AutoCloseable {
         byte[] received = container.copyFileFromContainer("/data/inbound/"
                 + ExchangeFiles.FROM_JFTN, InputStream::readAllBytes);
         assertArrayEquals(files.toBinkd, received);
+        byte[] second = container.copyFileFromContainer("/data/inbound/"
+                + ExchangeFiles.SECOND_FROM_JFTN, InputStream::readAllBytes);
+        assertArrayEquals(files.toBinkd, second);
         assertEquals("binkd must remove the acknowledged outbound file",
                      0,
                      container.execInContainer("sh",

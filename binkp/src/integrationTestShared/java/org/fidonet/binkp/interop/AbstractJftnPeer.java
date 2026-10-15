@@ -39,6 +39,11 @@ public abstract class AbstractJftnPeer implements JftnPeer {
         this.files = files;
         this.requestNr = requestNr;
         template = createContext(role, requestNr);
+        template.setOutboundLoader(context -> {
+            if (context.getBatchNumber() == 1) {
+                context.getSendFiles().add(files.outgoingInNextBatch());
+            }
+        });
         bus.subscribe(receiver);
     }
 
@@ -64,6 +69,9 @@ public abstract class AbstractJftnPeer implements JftnPeer {
             Thread.sleep(10);
         }
         assertTrue("EOB and all file acknowledgements are required", session.isTransferComplete());
+        assertTrue("binkp 1.1 must be negotiated", session.isBinkp11());
+        assertTrue("Both file batches must complete before the empty batch",
+                   session.getBatchNumber() >= 2);
     }
 
     public void assertProtocol() throws Exception {

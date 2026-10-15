@@ -47,6 +47,7 @@ public class StationConfig {
     private ServerRole role;
     private boolean nrMode;
     private boolean nrEnabled = true;
+    private boolean binkp11Enabled = true;
     private boolean cryptMode;
     private Path partialDirectory = Paths.get("inbound", ".binkp-partials");
 
@@ -112,7 +113,16 @@ public class StationConfig {
         return nrEnabled;
     }
 
-    /** Set before opening a session. False suppresses OPT NR and ignores peer NR requests. */
+    /** NR support is mandatory when advertising binkp 1.1. */
+    public boolean isBinkp11Enabled() {
+        return binkp11Enabled && nrEnabled;
+    }
+
+    public void setBinkp11Enabled(boolean enabled) {
+        binkp11Enabled = enabled;
+    }
+
+    /** Set before opening a session. False also selects binkp 1.0 for this station. */
     public void setNREnabled(boolean enabled) {
         nrEnabled = enabled;
     }

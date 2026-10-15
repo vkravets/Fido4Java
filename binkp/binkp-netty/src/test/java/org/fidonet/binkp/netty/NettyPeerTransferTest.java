@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
@@ -13,6 +14,7 @@ import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.events.FileReceivedEventHandler;
+import org.fidonet.binkp.common.events.SessionEventProbe;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
@@ -118,6 +120,26 @@ public class NettyPeerTransferTest {
 
     @Test(timeout = 30000)
     public void exchangesFilesInBothDirectionsThroughRealTcpConnection() throws Exception {
+        exchangeFiles(false);
+    }
+
+    @Test(timeout = 30000)
+    public void exchangesAdditionalBatchesThroughTheSameTcpConnection() throws Exception {
+        assumeTrue(clientEnabled && serverEnabled);
+        exchangeFiles(true);
+    }
+
+    private void exchangeFiles(boolean additionalBatch) throws Exception {
+        exchangeFiles(additionalBatch, false);
+    }
+
+    @Test(timeout = 30000)
+    public void retainsEncryptionAcrossBatches() throws Exception {
+        assumeTrue(clientEnabled && serverEnabled && !clientRequests && !serverRequests);
+        exchangeFiles(true, true);
+    }
+
+    private void exchangeFiles(boolean additionalBatch, boolean encrypted) throws Exception {
         byte[] clientBytes = new byte[20003], serverBytes = new byte[17009];
         new Random(11).nextBytes(clientBytes);
         new Random(12).nextBytes(serverBytes);
@@ -131,9 +153,27 @@ public class NettyPeerTransferTest {
                                                 serverEnabled,
                                                 serverRequests,
                                                 ServerRole.SERVER);
+        if (encrypted) {
+            client.getStationConfig().setCryptMode(true);
+            serverTemplate.getStationConfig().setCryptMode(true);
+            client.getLinksInfo().getCurLink().setMD(true);
+            serverTemplate.getLinksInfo().getCurLink().setMD(true);
+        }
+        if (additionalBatch) {
+            client.setOutboundLoader(current -> {
+                if (current.getBatchNumber() == 1) {
+                    current.getSendFiles().add(file("client second.pkt", clientBytes, 125));
+                }
+            });
+            serverTemplate.setOutboundLoader(current -> {
+                if (current.getBatchNumber() == 1) {
+                    current.getSendFiles().add(file("server second.pkt", serverBytes, 126));
+                }
+            });
+        }
         client.getSendFiles().add(file("client file.pkt", clientBytes, 123));
         EventBus clientBus = new EventBus(), serverBus = new EventBus();
-        CountDownLatch received = new CountDownLatch(2);
+        CountDownLatch received = new CountDownLatch(additionalBatch ? 4 : 2);
         ConcurrentMap<String, byte[]> contents = new ConcurrentHashMap<>();
         AtomicReference<Throwable> eventFailure = new AtomicReference<>();
         FileReceivedEventHandler receiver = new FileReceivedEventHandler() {
@@ -158,7 +198,7 @@ public class NettyPeerTransferTest {
                 serverWorkers = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()),
                 clientWorkers = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         Channel listener = null, connection = null;
-        try {
+        try (SessionEventProbe lifecycle = new SessionEventProbe()) {
             listener = new ServerBootstrap().group(acceptor, serverWorkers)
                                             .channel(NioServerSocketChannel.class)
                                             .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -207,10 +247,26 @@ public class NettyPeerTransferTest {
             assertNull("Receive event must complete without errors", eventFailure.get());
             assertArrayEquals(clientBytes, contents.get("client file.pkt"));
             assertArrayEquals(serverBytes, contents.get("server file.pkt"));
+            if (additionalBatch) {
+                assertArrayEquals(clientBytes, contents.get("client second.pkt"));
+                assertArrayEquals(serverBytes, contents.get("server second.pkt"));
+            }
             assertTrue("The protocol must finish and close TCP",
                        connection.closeFuture().await(10, TimeUnit.SECONDS));
             SessionContext server = accepted.get();
             assertNotNull(server);
+            assertEquals(Arrays.asList("connected", "disconnected"),
+                         lifecycle.awaitLifecycle(client));
+            assertEquals(Arrays.asList("connected", "disconnected"),
+                         lifecycle.awaitLifecycle(server));
+            if (additionalBatch) {
+                assertTrue(client.getBatchNumber() >= 2);
+                assertTrue(server.getBatchNumber() >= 2);
+            }
+            if (encrypted) {
+                assertTrue(client.isCryptMode());
+                assertTrue(server.isCryptMode());
+            }
             long completionDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
             while ((!client.isTransferComplete() || !server.isTransferComplete())
                     && System.nanoTime() < completionDeadline) {
@@ -220,10 +276,11 @@ public class NettyPeerTransferTest {
                        client.isTransferComplete());
             assertTrue("Server must receive EOB and all acknowledgements",
                        server.isTransferComplete());
-            assertEquals(clientBytes.length, client.getSendFilesSize());
-            assertEquals(serverBytes.length, server.getSendFilesSize());
-            assertEquals(serverBytes.length, client.getRecvFilesSize());
-            assertEquals(clientBytes.length, server.getRecvFilesSize());
+            int batches = additionalBatch ? 2 : 1;
+            assertEquals(batches * clientBytes.length, client.getSendFilesSize());
+            assertEquals(batches * serverBytes.length, server.getSendFilesSize());
+            assertEquals(batches * serverBytes.length, client.getRecvFilesSize());
+            assertEquals(batches * clientBytes.length, server.getRecvFilesSize());
             boolean clientSendsNr = clientEnabled && serverEnabled && serverRequests;
             boolean serverSendsNr = serverEnabled && clientEnabled && clientRequests;
             assertEquals(clientSendsNr, client.isNRMode());

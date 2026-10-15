@@ -177,7 +177,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             command.handle(mina2Session,
                            sessionContext,
                            new String(binkData.getData(), StandardCharsets.UTF_8));
-        } else {
+        } else if (!binkData.isCommand()) {
             try {
                 ReceiveTransfer.accept(mina2Session, sessionContext, binkData.getData());
             } catch (Exception e) {
