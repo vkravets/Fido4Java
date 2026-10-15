@@ -106,7 +106,7 @@ and reused after reconnecting. Configure this directory with
 Completed receive streams remain readable through the byte-array event API.
 The application should manage retention of the files in the configured directory.
 
-Building requires JDK 17 or newer. The included Gradle 9.1 Wrapper supports
+Building requires JDK 17 or newer. The included Gradle 9.8.1 distribution supports
 JDK 25, so a separate Gradle installation is not required. All modules compile
 with `--release 11`, targeting Java 11 bytecode and APIs. The scripting engine
 uses Groovy 5.1.3.
@@ -120,10 +120,30 @@ When upgrading the Wrapper, update `wrapperUrl`, `wrapperSha256Sum`,
 `distributionUrl` and `distributionSha256Sum` in `gradle-wrapper.properties`.
 Binary test fixtures remain in version control.
 
+The Gradle 9.8.1 distribution is launched using the official 9.8.0 Wrapper JAR.
+The JAR in Gradle's 9.8.1 source tag is also the 9.8.0 binary; both checksums
+are pinned against the [official release checksums](https://gradle.org/release-checksums/).
+
+The bundled database driver is H2 2.5.252. Existing H2 1.x database files cannot
+be opened directly with H2 2.x. Stop JFtn and back up the complete database
+directory before upgrading. Export with the **old** driver, then import into a
+new database path with the new driver, using the same database credentials:
+
+```sh
+java -cp h2-1.4.192.jar org.h2.tools.Script -url jdbc:h2:./database/jftn10 -script backup.sql
+java -cp h2-2.5.252.jar org.h2.tools.RunScript -url jdbc:h2:./database/jftn-new -script backup.sql -options FROM_1X
+```
+
+Keep the original files and SQL backup until the imported mail and subscriptions
+have been checked. The default database path is `./database/jftn10`: after
+validation, use the new database files at that path while JFtn is stopped.
+See the [H2 migration guide](https://h2database.github.io/html/migration-to-v2.html).
+The application does not convert old database files automatically.
+
 The Runner now connects received binkp files to the tosser and sends queued
 netmail and subscribed echomail. See [mail processing, configuration and limitations](docs/tosser.md).
 
-The RPC module requires the Apache Thrift 0.14.2 compiler on `PATH`.
+The RPC module requires the Apache Thrift 0.25.0 compiler on `PATH`.
 Run the full build, including tests:
 
 ```powershell
@@ -133,7 +153,7 @@ Run the full build, including tests:
 If Thrift is not on `PATH`, specify its executable explicitly:
 
 ```powershell
-.\gradlew.bat build "-PthriftExecutable=C:/tools/thrift-0.14.2.exe"
+.\gradlew.bat build "-PthriftExecutable=C:/tools/thrift-0.25.0.exe"
 ```
 
 On Linux/macOS, use `./gradlew build` with the same optional

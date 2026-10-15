@@ -160,7 +160,7 @@ public class DatabasePagingIterator<T, K> implements Iterator<K>, AutoCloseable 
         CloseableIterator<T> iterator = curlist;
         curlist = null;
         if (iterator != null) {
-            iterator.close();
+            QueryCursor.closeRows(iterator);
         }
     }
 

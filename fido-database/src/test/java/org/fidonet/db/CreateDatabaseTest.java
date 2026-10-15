@@ -39,7 +39,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -53,7 +52,6 @@ import java.util.List;
  */
 public class CreateDatabaseTest {
 
-    private static final File pathDb = TestUtils.computeTestDataRoot(CreateDatabaseTest.class);
     private static OrmManager ormManager;
     private static DatabaseManager databaseManager;
     private static Dao<ConfigurationLink, Long> daoLinks;
@@ -61,10 +59,7 @@ public class CreateDatabaseTest {
 
     @BeforeClass
     public static void setUp() throws SQLException {
-        //        System.setProperty("derby.stream.error.file", pathDb + "/derby.log");
-        //        ormManager = new OrmManager("jdbc:derby:" + pathDb + "/TestDerby;create=true");
-        //        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2;TRACE_LEVEL_FILE=4");
-        ormManager = new OrmManager("jdbc:h2:" + pathDb + "/TestH2");
+        ormManager = new OrmManager("jdbc:h2:mem:createDatabase" + System.nanoTime());
         databaseManager = new DatabaseManager(ormManager);
         databaseManager.open();
         daoLinks = ormManager.getDao(ConfigurationLink.class);

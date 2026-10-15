@@ -39,13 +39,13 @@ public class SubscriptionRegressionTest {
         database.getDao(ConfigurationLink.class).create(configuration);
         link = configuration.toLink();
         Echoarea a = area("a"), b = area("b"), other = area("other");
-        subscribe(configuration, a, 100L);
-        subscribe(configuration, b, 10L);
-        message(a, 50L, "old-a");
-        message(a, 101L, "new-a");
-        message(b, 9L, "old-b");
-        message(b, 11L, "new-b");
-        message(other, 200L, "unsubscribed");
+        long lastB = message(b, "old-b");
+        message(b, "new-b");
+        long lastA = message(a, "old-a");
+        message(a, "new-a");
+        message(other, "unsubscribed");
+        subscribe(configuration, a, lastA);
+        subscribe(configuration, b, lastB);
     }
 
     @After
@@ -69,9 +69,8 @@ public class SubscriptionRegressionTest {
         database.getDao(Subscription.class).create(subscription);
     }
 
-    private void message(Echoarea area, long id, String subject) throws Exception {
+    private long message(Echoarea area, String subject) throws Exception {
         Echomail message = new Echomail();
-        message.setId(id);
         message.setArea(area);
         message.setMsgId(subject);
         message.setFromName("from");
@@ -83,6 +82,7 @@ public class SubscriptionRegressionTest {
         message.setSeenBy("467/1");
         message.setPath("467/1");
         database.getDao(Echomail.class).create(message);
+        return message.getId();
     }
 
     private List<String> subjects(Iterator<Message> iterator) {

@@ -50,7 +50,7 @@ import java.util.Locale;
 @DatabaseTable(tableName = "netmail")
 public class Netmail {
 
-    @DatabaseField(columnName = "id", generatedId = true, allowGeneratedIdInsert = true, canBeNull = false, unique = true, uniqueIndex = true)
+    @DatabaseField(columnName = "id", generatedId = true, canBeNull = false, unique = true, uniqueIndex = true)
     private Long id;
 
     @DatabaseField(columnName = "from_name", canBeNull = false)

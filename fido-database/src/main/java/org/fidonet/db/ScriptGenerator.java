@@ -57,15 +57,17 @@ public class ScriptGenerator {
         Method dropIndex = TableUtils.class.getDeclaredMethod("addDropIndexStatements",
                                                               DatabaseType.class,
                                                               dao.getTableInfo().getClass(),
-                                                              List.class);
+                                                              List.class,
+                                                              boolean.class);
         Method dropTables = TableUtils.class.getDeclaredMethod("addDropTableStatements",
                                                                DatabaseType.class,
                                                                dao.getTableInfo().getClass(),
-                                                               List.class);
+                                                               List.class,
+                                                               boolean.class);
         dropIndex.setAccessible(true);
         dropTables.setAccessible(true);
-        dropIndex.invoke(null, dbType, dao.getTableInfo(), statements);
-        dropTables.invoke(null, dbType, dao.getTableInfo(), statements);
+        dropIndex.invoke(null, dbType, dao.getTableInfo(), statements, false);
+        dropTables.invoke(null, dbType, dao.getTableInfo(), statements, false);
         return statements;
     }
 
