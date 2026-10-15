@@ -38,6 +38,7 @@ import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.exception.TosserException;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -88,9 +90,21 @@ public class Tosser extends HasEventBus {
         long startTime = System.currentTimeMillis();
         if (files.length != 0) {
             for (File file : files) {
-                if (file.isFile() && isBunldeName(file.getName())) {
+                boolean packet = file.getName().toLowerCase(Locale.ROOT).endsWith(".pkt");
+                if (file.isFile() && (packet || isBunldeName(file.getName()))) {
                     try {
-                        LinkedList<PktTemp> pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
+                        LinkedList<PktTemp> pktlist = new LinkedList<>();
+                        if (packet) {
+                            try (InputStream input = Files.newInputStream(file.toPath())) {
+                                byte[] bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
+                                if (bytes.length > Zipper.MAX_PACKET_BYTES) {
+                                    throw new IOException("Packet exceeds size limit");
+                                }
+                                pktlist.add(new PktTemp(file.getName(), ByteBuffer.wrap(bytes)));
+                            }
+                        } else {
+                            pktlist = Zipper.unpackboundlfast(file.getAbsolutePath());
+                        }
                         while (!pktlist.isEmpty()) {
                             PktTemp aPktlist = pktlist.pop();
                             if (!tosspkt(aPktlist.getPkt())) {
@@ -210,7 +224,16 @@ public class Tosser extends HasEventBus {
             logger.error("Unknown Link! Drop it.");
             return false;
         }
-        String expectedPassword = origlink.getPass() == null ? "" : origlink.getPass();
+        FTNAddr destination = new FTNAddr(q.getDestZone(),
+                                          q.getDestNet(),
+                                          q.getDestNode(),
+                                          q.getDestPoint());
+        if (!config.getLocalAddresses().contains(destination)
+                && (origlink.getMyaddr() == null || !origlink.getMyaddr().contains(destination))) {
+            logger.error("Packet addressed to another station: {}", destination);
+            return false;
+        }
+        String expectedPassword = config.getPacketPassword(origlink);
         if (!q.getPass().equals(expectedPassword)) {
             logger.error("Bad PASSWORD! Drop it.");
             return false;
@@ -225,6 +248,7 @@ public class Tosser extends HasEventBus {
             }
             FtsPackMsg msg1 = msgs[index];
             final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
+            msg.setUpLink(q.getOrigaddr());
             if (msg.isEchomail()) {
                 if (areamgr.isDupe(msg)) {
                     journal.complete(index);

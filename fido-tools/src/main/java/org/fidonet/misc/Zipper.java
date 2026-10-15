@@ -31,16 +31,22 @@ package org.fidonet.misc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Zipper {
+
+    public static final int MAX_PACKET_BYTES = 64 * 1024 * 1024;
+    private static final long MAX_BUNDLE_BYTES = 256L * 1024 * 1024;
+    private static final int MAX_ENTRIES = 4096;
 
     private static final Logger logger = LoggerFactory.getLogger(Zipper.class.getName());
 
@@ -50,24 +56,38 @@ public class Zipper {
         LinkedList<PktTemp> res = new LinkedList<PktTemp>();
 
         try (ZipFile zip = new ZipFile(bound)) {
-            Enumeration entries = zip.entries();
+            Enumeration<? extends ZipEntry> entries = zip.entries();
             byte[] buf = new byte[1024];
+            long total = 0;
+            int count = 0;
             while (entries.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry) entries.nextElement();
+                ZipEntry entry = entries.nextElement();
+                if (++count > MAX_ENTRIES) {
+                    throw new IOException("Too many archive entries");
+                }
                 if (entry.isDirectory()) {
                     continue;
                 }
                 logger.debug("        {}", entry.getName());
-                ByteBuffer resbuf = ByteBuffer.allocate((int) entry.getSize());
-                resbuf.order(ByteOrder.LITTLE_ENDIAN);
-                resbuf.position(0);
+                if (!entry.getName().toLowerCase(Locale.ROOT).endsWith(".pkt")) {
+                    throw new IOException("Non-packet entry in mail bundle: " + entry.getName());
+                }
+                if (entry.getSize() > MAX_PACKET_BYTES) {
+                    throw new IOException("Packet exceeds size limit");
+                }
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 try (InputStream fis = zip.getInputStream(entry)) {
                     int readed;
                     while ((readed = fis.read(buf)) != -1) {
-                        resbuf.put(buf, 0, readed);
+                        total += readed;
+                        if (bytes.size() + readed > MAX_PACKET_BYTES || total > MAX_BUNDLE_BYTES) {
+                            throw new IOException("Unpacked data exceeds size limit");
+                        }
+                        bytes.write(buf, 0, readed);
                     }
                 }
-                resbuf.position(0);
+                ByteBuffer resbuf = ByteBuffer.wrap(bytes.toByteArray())
+                                              .order(ByteOrder.LITTLE_ENDIAN);
                 PktTemp pkt = new PktTemp(entry.getName(), resbuf);
                 res.push(pkt);
             }

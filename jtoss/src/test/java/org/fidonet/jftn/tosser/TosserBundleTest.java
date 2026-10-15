@@ -208,4 +208,33 @@ public class TosserBundleTest {
         assertEquals(2, base.getMessageSize("test"));
         assertFalse(Files.exists(source));
     }
+
+    @Test
+    public void importsLoosePacketAndQuarantinesPacketsForAnotherStation() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        byte[] bytes = packet("secret", "AREA:TEST\r\1MSGID: 2:500/101 loose\rHello\r");
+        Path accepted = inbound.resolve("accepted.PKT");
+        Files.write(accepted, bytes);
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).putShort(2, (short) 999);
+        Files.write(inbound.resolve("wrong.pkt"), bytes);
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertEquals(1, base.getMessageSize("test"));
+        assertFalse(Files.exists(accepted));
+        assertArrayEquals(bytes, Files.readAllBytes(bad.resolve("wrong.bad")));
+    }
+
+    @Test
+    public void preservesBundleContainingUnexpectedFiles() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        Path source = inbound.resolve("mail.mo0");
+        try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(source))) {
+            zip.putNextEntry(new ZipEntry("notes.txt"));
+            zip.write("unexpected attachment".getBytes(StandardCharsets.US_ASCII));
+            zip.closeEntry();
+        }
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertTrue(Files.exists(source));
+    }
 }

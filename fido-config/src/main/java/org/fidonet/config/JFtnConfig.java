@@ -38,9 +38,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -95,6 +99,46 @@ public class JFtnConfig extends BaseConfig {
 
     public Link getLink(FTNAddr addr) {
         return links.get(addr.toString());
+    }
+
+    public List<Link> getConfiguredLinks() {
+        return new ArrayList<>(links.values());
+    }
+
+    public Set<FTNAddr> getLocalAddresses() {
+        Set<FTNAddr> addresses = new LinkedHashSet<>();
+        for (Link link : getConfiguredLinks()) {
+            if (link.getMyaddr() != null) {
+                addresses.addAll(link.getMyaddr());
+            }
+        }
+        return addresses;
+    }
+
+    /** PacketPassword remote-address,password; defaults to the existing link password. */
+    public String getPacketPassword(Link link) {
+        List<String> values = getValuesAsList("PacketPassword");
+        String password = link.getPass() == null ? "" : link.getPass();
+        if (values != null) {
+            for (String value : values) {
+                String[] fields = value.split(",", 2);
+                if (fields.length != 2) {
+                    throw new IllegalArgumentException("Expected PacketPassword address,password");
+                }
+                if (new FTNAddr(fields[0].trim()).equals(link.getAddr())) {
+                    password = fields[1].trim();
+                    if (password.equals("-")) {
+                        password = "";
+                    }
+                }
+            }
+        }
+        if (!StandardCharsets.US_ASCII.newEncoder().canEncode(password) || password.length() > 8
+                || password.indexOf('\0') >= 0) {
+            throw new IllegalArgumentException("PKT password must contain at most eight ASCII bytes: "
+                    + link.getAddr());
+        }
+        return password;
     }
 
     public String getArealistFile() throws IOException {

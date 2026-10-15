@@ -44,7 +44,9 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runners.MethodSorters;
 
 import java.io.File;
@@ -65,6 +67,9 @@ import java.util.List;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestTosser {
+
+    @Rule
+    public TemporaryFolder temporary = new TemporaryFolder();
 
     private static OrmManager ormManager;
     private static DatabaseManager databaseManager;
@@ -98,7 +103,12 @@ public class TestTosser {
 
     @Test
     public void testFlowToss() {
-        JFtnConfig config = new JFtnConfig();
+        JFtnConfig config = new JFtnConfig() {
+            @Override
+            public String getTmpDir() {
+                return temporary.getRoot().getAbsolutePath();
+            }
+        };
         InputStream configStream = TestTosser.class.getClassLoader()
                                                    .getResourceAsStream("jftn.conf");
 
