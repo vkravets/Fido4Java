@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp.common;
 
+import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.Consumer;
 
 /**
  * Created by IntelliJ IDEA.
@@ -111,6 +113,60 @@ public class SessionContext extends HasEventBus {
     private boolean busy = false;
     private EventBus receiveEventBus;
     private FilesSender<?> activeSender;
+    private int remoteMajor = 1;
+    private int remoteMinor;
+    private boolean transferStarted;
+    private boolean batchActivity;
+    private int batchNumber;
+    private Consumer<SessionContext> outboundLoader;
+
+    public synchronized void setRemoteProtocol(int major, int minor) {
+        if (!transferStarted && major >= 1 && minor >= 0) {
+            remoteMajor = major;
+            remoteMinor = minor;
+        }
+    }
+
+    public synchronized boolean isBinkp11() {
+        return stationConfig.isBinkp11Enabled()
+                && (remoteMajor > 1 || remoteMajor == 1 && remoteMinor >= 1);
+    }
+
+    public synchronized void beginTransfer() {
+        transferStarted = true;
+    }
+
+    public synchronized void recordCommand(BinkCommand command) {
+        if (transferStarted && command != BinkCommand.M_EOB && command != BinkCommand.M_OK
+                && command != BinkCommand.M_PWD && command != BinkCommand.M_ADR) {
+            batchActivity = true;
+        }
+    }
+
+    public synchronized int getBatchNumber() {
+        return batchNumber;
+    }
+
+    /** Runs on the sending worker before each batch; enqueue only new outgoing files. */
+    public void setOutboundLoader(Consumer<SessionContext> loader) {
+        outboundLoader = loader;
+    }
+
+    public void loadOutbound() {
+        if (outboundLoader != null) {
+            outboundLoader.accept(this);
+        }
+    }
+
+    private void startNextBatch(Session session) {
+        batchNumber++;
+        batchActivity = false;
+        sendingIsFinish = false;
+        receivingIsFinish = false;
+        FilesSender<Session> sender = new FilesSender<>(session, sendFiles, this);
+        session.setFileSender(sender);
+        new Thread(sender, "binkp-batch-" + batchNumber).start();
+    }
 
     public void setActiveSender(FilesSender<?> sender) {
         activeSender = sender;
@@ -171,11 +227,17 @@ public class SessionContext extends HasEventBus {
         password = null;
         passwordKey = null;
         messageDigest = null;
+        remoteMajor = 1;
+        remoteMinor = 0;
+        transferStarted = false;
+        batchActivity = false;
+        batchNumber = 0;
     }
 
     public SessionContext(SessionContext context) {
         this(context.getStationConfig(),
                 new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
+        outboundLoader = context.outboundLoader;
         if (context.getLinksInfo().getCurLink() != null) {
             linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
         }
@@ -284,7 +346,15 @@ public class SessionContext extends HasEventBus {
     }
 
     public synchronized void finishSessionIfComplete(Session session) {
-        if (isTransferComplete() && state != SessionState.STATE_END) {
+        boolean batchComplete = sendingIsFinish && receivingIsFinish && pendingFiles.isEmpty();
+        if (batchComplete && state != SessionState.STATE_END && state != SessionState.STATE_ERR) {
+            if (isBinkp11() && (batchActivity || !sendFiles.isEmpty())) {
+                startNextBatch(session);
+                return;
+            }
+            if (!sendFiles.isEmpty()) {
+                return;
+            }
             ServerRole role = Objects.requireNonNull(serverRole,
                                                      "Session role must be set before completing a transfer");
             setState(SessionState.STATE_END);
@@ -297,6 +367,16 @@ public class SessionContext extends HasEventBus {
 
     public void setReceivingIsFinish(boolean receivingIsFinish) {
         this.receivingIsFinish = receivingIsFinish;
+    }
+
+    /** Retain partial files for later offers while ignoring data beyond the batch boundary. */
+    public void endIncomingBatch() {
+        FileData<OutputStream> file;
+        while ((file = recvFiles.poll()) != null) {
+            if (!file.getInfo().isFinished() && !notFinishedFiles.contains(file)) {
+                notFinishedFiles.add(file);
+            }
+        }
     }
 
     public boolean isSecureSession() {

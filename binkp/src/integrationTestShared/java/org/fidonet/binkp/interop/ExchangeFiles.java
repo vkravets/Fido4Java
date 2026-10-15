@@ -11,11 +11,17 @@ import java.util.Random;
 public final class ExchangeFiles {
     static final String FROM_JFTN = "from-jftn.bin";
     static final String FROM_BINKD = "from-binkd.bin";
+    static final String SECOND_FROM_JFTN = "from-jftn-second.bin";
     final byte[] toBinkd = randomBytes(20003, 11);
     final byte[] toJftn = randomBytes(17009, 12);
 
     public FileData<InputStream> outgoingFromJftn() {
         return new FileData<>(new FileInfo(FROM_JFTN, toBinkd.length, 1700000000L),
+                              new ByteArrayInputStream(toBinkd));
+    }
+
+    public FileData<InputStream> outgoingInNextBatch() {
+        return new FileData<>(new FileInfo(SECOND_FROM_JFTN, toBinkd.length, 1700000001L),
                               new ByteArrayInputStream(toBinkd));
     }
 

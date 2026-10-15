@@ -29,6 +29,10 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.protocol.Session;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,11 +43,29 @@ import org.fidonet.binkp.common.SessionContext;
  */
 public class VERCommand extends NULCommand {
 
+    private static final Pattern PROTOCOL = Pattern.compile("(?:^|\\s)binkp/(\\d+)\\.(\\d+)(?=\\s|$)",
+                                                            Pattern.CASE_INSENSITIVE);
+
     public static final String version = "jftn/1.0";
 
     @Override
     protected String getArguments(SessionContext sessionContext) {
-        return String.format("%s %s", version, "binkp/1.0");
+        return String.format("%s binkp/%s",
+                             version,
+                             sessionContext.getStationConfig().isBinkp11Enabled() ? "1.1" : "1.0");
+    }
+
+    @Override
+    protected void handleCommand(Session session, SessionContext context, String arguments) {
+        Matcher match = PROTOCOL.matcher(arguments);
+        if (match.find()) {
+            try {
+                context.setRemoteProtocol(Integer.parseInt(match.group(1)),
+                                          Integer.parseInt(match.group(2)));
+            } catch (NumberFormatException ignored) {
+                // Malformed or unsupported version values retain the safe 1.0 fallback.
+            }
+        }
     }
 
     @Override

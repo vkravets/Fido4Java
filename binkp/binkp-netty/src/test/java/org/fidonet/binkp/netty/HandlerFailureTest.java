@@ -12,6 +12,8 @@ import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.common.io.FileData;
+import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.netty.plugin.handler.BinkSessionHandler;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
@@ -21,11 +23,30 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.ReferenceCountUtil;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class HandlerFailureTest extends HasEventBus {
+    @Test
+    public void unknownCommandDoesNotBecomeIncomingFileData() {
+        SessionContext context = context();
+        EmbeddedChannel channel = new EmbeddedChannel(new BinkSessionHandler(context,
+                                                                             getEventBus()));
+        try {
+            FileInfo info = new FileInfo("receiving.bin", 10, 123);
+            context.getRecvFiles().add(new FileData<>(info, new ByteArrayOutputStream()));
+            channel.writeInbound(BinkData.toBinkFrame(new BinkData(true,
+                                                                   (byte) 100,
+                                                                   new byte[]{42})));
+            assertEquals(0, info.getCurSize());
+            assertTrue(channel.isOpen());
+        } finally {
+            channel.finishAndReleaseAll();
+        }
+    }
+
     private SessionContext context() {
         Link link = new Link("2:500/2, 2:500/1, secret, localhost");
         SessionContext context = new SessionContext(new StationConfig("station",

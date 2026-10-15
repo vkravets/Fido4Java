@@ -54,6 +54,9 @@ public class EOBCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        if (sessionContext.isBinkp11()) {
+            sessionContext.endIncomingBatch();
+        }
         sessionContext.setReceivingIsFinish(true);
         sessionContext.finishSessionIfComplete(session);
     }

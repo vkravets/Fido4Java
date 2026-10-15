@@ -159,9 +159,15 @@ public class FilesSender<T extends Session> implements Runnable {
 
     @Override
     public void run() {
-
-        sessionContext.setState(SessionState.STATE_TRANSFER);
+        synchronized (sessionContext) {
+            if (cancelled || sessionContext.getState() == SessionState.STATE_ERR
+                    || sessionContext.getState() == SessionState.STATE_END) {
+                return;
+            }
+            sessionContext.setState(SessionState.STATE_TRANSFER);
+        }
         try {
+            sessionContext.loadOutbound();
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
             while (!files.isEmpty() || !sessionContext.getPendingFiles().isEmpty()) {
                 if (cancelled || sessionContext.getState() == SessionState.STATE_ERR
@@ -206,9 +212,11 @@ public class FilesSender<T extends Session> implements Runnable {
                 }
             }
             final Command eob = new EOBCommand();
-            eob.send(session, sessionContext);
-            sessionContext.setSendingIsFinish(true);
-            sessionContext.finishSessionIfComplete(session);
+            synchronized (sessionContext) {
+                eob.send(session, sessionContext);
+                sessionContext.setSendingIsFinish(true);
+                sessionContext.finishSessionIfComplete(session);
+            }
         } catch (Exception e) {
             logger.error("Unable to send files", e);
             sessionContext.setState(SessionState.STATE_ERR);

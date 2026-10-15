@@ -73,7 +73,26 @@ fully qualified types. Expression alignment preserves comments and text blocks;
 when the requested alignment cannot fit within 100 characters, it retains the
 Eclipse layout. Common test-code extraction remains a manual refactoring task.
 
-The BinkP implementation advertises version 1.0 and supports the NR extension.
+The BinkP implementation advertises version 1.1 and falls back to 1.0 when the
+peer does not identify a newer protocol before authentication completes.
+`StationConfig.setBinkp11Enabled(false)` explicitly selects 1.0. Disabling NR
+with `setNREnabled(false)` also advertises 1.0, preserving the local NR policy
+without claiming the mandatory NR support of 1.1.
+Version 1.1 supports multiple file batches in the same authenticated connection,
+ending after an empty exchange of `M_EOB`. Authentication, NR, and the CRYPT
+cipher state survive batch boundaries. `SessionContext.setOutboundLoader(loader)`
+installs a synchronous callback on the sending worker before each batch; it
+receives the actual session context and should enqueue only new eligible files.
+Skipped/deferred files are not automatically retried in subsequent batches.
+The callback is also copied to accepted server sessions. Applications producing
+responses asynchronously must await their own work inside the loader before
+it returns; the protocol does not wait indefinitely for future files.
+
+The implementation follows the batch completion and command activity logic in
+[binkd protocol.c, revision 5a84e85](https://github.com/pgul/binkd/blob/5a84e8596a96ca8b1f4ec69d9a608cd264aa06ba/protocol.c#L3113),
+alongside `docs/binkp/binkp11.rus.txt`. ND/NDA, compression, CRC and a FREQ service
+are separate extensions and are not advertised by this change.
+
 NR policy is identical for client and server sessions. `setNREnabled(false)`
 disables NR: no `OPT NR` is advertised and peer NR requests do not change
 outbound transfers. NR is allowed by default. `setNRRequested(true)` requests

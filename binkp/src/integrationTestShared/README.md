@@ -2,7 +2,10 @@
 
 Scenarios cover **JFtn client -> external binkd server in Docker** and
 **external binkd client in Docker -> JFtn server**.
-Both peers send a file in the same authenticated TCP session. The test uses
+Both peers send a file in the same authenticated TCP session. JFtn then queues
+a second file after the first batch, and both peers complete a final empty batch.
+Assertions require negotiated binkp 1.1 and at least three EOBs in each direction.
+The test uses
 production JFtn handlers and codecs and an independent binkd process; it does
 not replay a recorded stream. Each role runs with and without an NR request from
 JFtn, giving four cases per backend (Netty and MINA2), eight in total. NR assertions check binkd sending to JFtn.

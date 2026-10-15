@@ -87,6 +87,7 @@ public class PWDCommand extends MessageCommand {
             if (password != null
                     && MessageDigest.isEqual(password.getText().getBytes(StandardCharsets.UTF_8),
                                              passwordString.getBytes(StandardCharsets.UTF_8))) {
+                sessionContext.beginTransfer();
                 OKCommand ok = new OKCommand();
                 ok.send(session, sessionContext);
 

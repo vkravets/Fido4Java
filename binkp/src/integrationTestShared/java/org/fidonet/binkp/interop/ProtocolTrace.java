@@ -22,6 +22,14 @@ public final class ProtocolTrace {
         assertTrue("JFtn must send M_GOT", has(outgoing, BinkCommand.M_GOT));
         assertTrue("binkd must send M_EOB", has(incoming, BinkCommand.M_EOB));
         assertTrue("JFtn must send M_EOB", has(outgoing, BinkCommand.M_EOB));
+        assertTrue("binkd must finish both file batches and the final empty batch",
+                   incoming.stream()
+                           .filter(frame -> frame.getData()[0] == BinkCommand.M_EOB.getCmd())
+                           .count() >= 3);
+        assertTrue("JFtn must finish both file batches and the final empty batch",
+                   outgoing.stream()
+                           .filter(frame -> frame.getData()[0] == BinkCommand.M_EOB.getCmd())
+                           .count() >= 3);
         assertEquals("binkd must honor JFtn's NR request",
                      requestNr ? -1 : 0,
                      firstIncomingFileOffset());

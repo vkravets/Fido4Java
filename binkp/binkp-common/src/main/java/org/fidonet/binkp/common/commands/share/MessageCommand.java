@@ -74,6 +74,7 @@ public abstract class MessageCommand implements Command {
         cmdArgs = cmdArgs == null ? "" : cmdArgs;
         final BinkCommand command = BinkCommand.findCommand(commandType.getCmd());
         log.debug("Sending message {} [{}]", command, cmdArgs);
+        sessionContext.recordCommand(commandType);
         session.write(getData(cmdArgs));
     }
 
