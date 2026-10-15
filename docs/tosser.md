@@ -129,6 +129,24 @@ repeated `JamEcho=AREA,path[,AKA]` and `JamNetmail=path[,AKA]` entries. Paths om
 the `.jhr` suffix. The default AKA is the first configured local address;
 `JamCharset=CP866` supplies the decoding fallback when no CHRS is present.
 
+Synchronization is provided by the optional `jam-bridge` plugin module. The
+standard bundle includes it at runtime; the mail-processing core depends only on
+the `MailExtensionFactory` / `MailProcessingExtension` interfaces. Set
+`JamBridgeEnabled=false` to use SQL/RPC without JAM editor synchronization. The
+flag is checked before constructing a bridge: disabled bindings and charset
+settings are not validated, and no JAM files or bridge journals are opened or
+created. Existing files and journals are retained. The default is `true` for
+existing configurations; without `JamEcho` / `JamNetmail` entries there are no
+views to synchronize. Changing the flag requires restarting the node.
+
+The Runner obtains extension factories from loaded plugins. Standalone
+`MailService` / `runOnce` calls discover the same factories through `ServiceLoader`.
+Extensions are created per mail service, run under its processing lock before
+and after packet export, and are closed before the database plugin is unloaded.
+Without the plugin JAR, SQL storage, packet generation and binkp delivery still
+work; JAM view settings have no effect. Offline historical JAM archive import is
+independent of the synchronization plugin.
+
 Only explicitly configured existing SQL echoes and netmail addressed to the
 view's AKA are exported. Export is incremental, retains `.jlr`, and does not
 recreate messages deleted in the editor. Keep `Tmp/jam-bridge` with SQL and JAM

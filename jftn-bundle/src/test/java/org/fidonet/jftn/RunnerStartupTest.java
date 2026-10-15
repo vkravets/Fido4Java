@@ -1,10 +1,5 @@
 package org.fidonet.jftn;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
@@ -13,6 +8,9 @@ import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.scheduler.Scheduler;
+import org.fidonet.jftn.tosser.MailExtensionFactory;
+import org.fidonet.jftn.tosser.MailProcessingExtension;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.Link;
 
 import org.junit.Rule;
@@ -24,10 +22,17 @@ import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RunnerStartupTest {
     @Rule
@@ -93,11 +98,10 @@ public class RunnerStartupTest {
         try {
             JFtnRunner.withShutdownHook(waiter -> JFtnRunner.runApplication(config().getAbsolutePath(),
                                                                             () -> calls.add("load"),
-                                                                            id -> new WeakReference<>(id.equals(NettyPlugin.BINKP_PLUGIN_ID)
-                                                                                    ? runner
-                                                                                    : id.equals("database")
-                                                                                            ? database
-                                                                                            : scheduler),
+                                                                            contexts(runner,
+                                                                                     scheduler,
+                                                                                     database,
+                                                                                     calls),
                                                                             () -> calls.add("unload"),
                                                                             () -> calls.add("wait")));
             assertEquals(Arrays.asList("load",
@@ -106,6 +110,7 @@ public class RunnerStartupTest {
                                        "poll first",
                                        "poll second",
                                        "wait",
+                                       "close extension",
                                        "unload"),
                          calls);
             assertEquals("Configured Station", bound.get().getStationConfig().getName());
@@ -117,6 +122,42 @@ public class RunnerStartupTest {
             runner.shutdown();
             database.close();
         }
+    }
+
+    private JFtnRunner.PluginContexts contexts(Runner runner,
+                                               Scheduler scheduler,
+                                               DatabaseManager database,
+                                               List<String> calls) {
+        return new JFtnRunner.PluginContexts() {
+            @Override
+            public WeakReference<?> getContext(String id) {
+                if (id.equals(NettyPlugin.BINKP_PLUGIN_ID)) {
+                    return new WeakReference<>(runner);
+                }
+                return new WeakReference<>(id.equals("database") ? database : scheduler);
+            }
+
+            @Override
+            public Iterable<MailExtensionFactory> mailExtensions() {
+                return Collections.singletonList((config,
+                                                  base) -> Optional.of(new MailProcessingExtension() {
+                                                      @Override
+                                                      public void beforeExport(Tosser tosser) {
+                                                          assertEquals("Configured Station",
+                                                                       config.getValue("System"));
+                                                      }
+
+                                                      @Override
+                                                      public void afterExport() {
+                                                      }
+
+                                                      @Override
+                                                      public void close() {
+                                                          calls.add("close extension");
+                                                      }
+                                                  }));
+            }
+        };
     }
 
     @Test

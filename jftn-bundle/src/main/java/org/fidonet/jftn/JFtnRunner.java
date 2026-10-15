@@ -40,6 +40,7 @@ import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
+import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -50,6 +51,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class JFtnRunner {
         try {
             withShutdownHook(waiter -> runApplication("jftn.conf",
                                                       pluginManager::loadPlugins,
-                                                      pluginManager::getContext,
+                                                      pluginContexts(pluginManager),
                                                       pluginManager::unloadPlugins,
                                                       waiter));
         } catch (ParseConfigException e) {
@@ -87,6 +89,24 @@ public class JFtnRunner {
 
     interface PluginContexts {
         WeakReference<?> getContext(String name) throws Exception;
+
+        default Iterable<MailExtensionFactory> mailExtensions() {
+            return Collections.emptyList();
+        }
+    }
+
+    private static PluginContexts pluginContexts(PluginManager manager) {
+        return new PluginContexts() {
+            @Override
+            public WeakReference<?> getContext(String name) throws Exception {
+                return manager.getContext(name);
+            }
+
+            @Override
+            public Iterable<MailExtensionFactory> mailExtensions() {
+                return manager.findContexts(MailExtensionFactory.class);
+            }
+        };
     }
 
     static void runApplication(String configFile,
@@ -110,7 +130,7 @@ public class JFtnRunner {
             context = createSessionContext(config);
             DatabaseManager database = DatabaseManager.class.cast(requireContext(plugins.getContext("database"),
                                                                                  "database"));
-            mail = new MailService(config, database);
+            mail = new MailService(config, database, plugins.mailExtensions());
             mail.attach(context);
             mail.start();
         } catch (Exception failure) {
@@ -138,10 +158,9 @@ public class JFtnRunner {
                                      Runner runner,
                                      MailService mail,
                                      Runnable unloadPlugins) {
-        try {
+        try (mail) {
             scheduler.stop();
             runner.shutdown();
-            mail.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {

@@ -15,7 +15,10 @@ import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.jftn.tosser.MailExtensionFactory;
+import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -31,9 +34,12 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +47,115 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class MailServiceTest {
+    @Test
+    public void disabledJamDoesNotValidateBindingsOrCreateFilesAndStillExportsPackets()
+            throws Exception {
+        Path jam = temporary.getRoot().toPath().resolve("disabled-jam");
+        JFtnConfig config = config("2:500/102",
+                                   "2:500/101",
+                                   "JamBridgeEnabled=false\nJamEcho=invalid\nJamNetmail="
+                                   + jam
+                                   + "\nJamCharset=not-a-charset\n");
+        DatabaseManager base = database();
+        try (MailService service = new MailService(config, base)) {
+            service.getTosser().submitNetmail(message("2:500/102", "2:500/101", false), "ui");
+            service.processPending();
+            assertFalse(new OutboundSpool(config).pending(config.getLink(new FTNAddr("2:500/101")),
+                                                          false)
+                                                 .isEmpty());
+            assertFalse(Files.exists(jam));
+            assertFalse(Files.exists(Path.of(config.getTmpDir(), "jam-bridge")));
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
+    public void discoversJamPluginAndExportsOnlyWhenEnabled() throws Exception {
+        Path jam = temporary.getRoot().toPath().resolve("enabled-jam/netmail");
+        JFtnConfig config = config("2:500/102", "2:500/101", "JamNetmail=" + jam + "\n");
+        DatabaseManager base = database();
+        try (MailService service = new MailService(config, base)) {
+            service.getTosser().submitNetmail(message("2:500/102", "2:500/102", false), "local");
+            service.processPending();
+            assertTrue(Files.exists(Path.of(jam + ".jhr")));
+            assertTrue(Files.exists(Path.of(jam + ".jdt")));
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
+    public void runsWithoutAnyExtensionPluginAndOrdersExtensionLifecycle() throws Exception {
+        JFtnConfig config = config("2:500/102", "2:500/101");
+        DatabaseManager base = database();
+        List<String> calls = new ArrayList<>();
+        try {
+            try (MailService service = new MailService(config, base, Collections.emptyList())) {
+                service.processPending();
+            }
+            try (MailService service = new MailService(config,
+                                                       base,
+                                                       Arrays.asList(extension("first", calls),
+                                                                     extension("second", calls)))) {
+                service.processPending();
+            }
+            assertEquals(Arrays.asList("before first",
+                                       "before second",
+                                       "after first",
+                                       "after second",
+                                       "close second",
+                                       "close first"),
+                         calls);
+        } finally {
+            base.close();
+        }
+    }
+
+    private MailExtensionFactory extension(String name, List<String> calls) {
+        return (config, base) -> Optional.of(new MailProcessingExtension() {
+            @Override
+            public void beforeExport(Tosser tosser) {
+                calls.add("before " + name);
+            }
+
+            @Override
+            public void afterExport() {
+                calls.add("after " + name);
+            }
+
+            @Override
+            public void close() {
+                calls.add("close " + name);
+            }
+        });
+    }
+
+    @Test
+    public void failedExtensionInitializationClosesCreatedExtensionsAndReleasesServiceLock()
+            throws Exception {
+        JFtnConfig config = config("2:500/102", "2:500/101");
+        DatabaseManager base = database();
+        List<String> calls = new ArrayList<>();
+        MailExtensionFactory broken = (settings, database) -> {
+            throw new IllegalArgumentException("Invalid extension settings");
+        };
+        try {
+            try {
+                new MailService(config, base, Arrays.asList(extension("created", calls), broken));
+                fail("Invalid extension accepted");
+            } catch (IllegalArgumentException expected) {
+                assertEquals("Invalid extension settings", expected.getMessage());
+            }
+            assertEquals(Collections.singletonList("close created"), calls);
+            try (MailService service = new MailService(config, base, Collections.emptyList())) {
+                service.processPending();
+            }
+        } finally {
+            base.close();
+        }
+    }
+
     @Test
     public void closingASessionDoesNotWaitForTheTosserScan() throws Exception {
         CountDownLatch entered = new CountDownLatch(1);

@@ -34,7 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -63,6 +65,8 @@ public class PluginManager extends HasEventBus {
     }
 
     private static final Map<String, Plugin> plugins = new HashMap<String, Plugin>();
+    private final List<Plugin> lifecycleOrder = new ArrayList<>();
+    private final Set<Plugin> loaded = new HashSet<>();
 
     private PluginManager() {
     }
@@ -85,11 +89,13 @@ public class PluginManager extends HasEventBus {
         // After loading all plugins, try to init and load it
         for (Plugin plugin : sortedPlugins) {
             String pluginId = plugin.getPluginInfo().getId();
+            lifecycleOrder.add(plugin);
             try {
                 long startTime = System.currentTimeMillis();
                 logger.info("Loading {} plugin", pluginId);
                 plugin.init(this, getEventBus());
                 plugin.load();
+                loaded.add(plugin);
                 logger.info("Plugin {} was successfully loaded", pluginId);
                 logger.debug("Plugin {} loading time is {}ms",
                              pluginId,
@@ -170,7 +176,9 @@ public class PluginManager extends HasEventBus {
     }
 
     public void unloadPlugins() {
-        for (Plugin plugin : getPlugins().values()) {
+        List<Plugin> unloading = new ArrayList<>(lifecycleOrder);
+        Collections.reverse(unloading);
+        for (Plugin plugin : unloading) {
             try {
                 plugin.unload();
                 logger.debug("Plugin {} was successfully unloaded", plugin.getPluginInfo().getId());
@@ -179,6 +187,24 @@ public class PluginManager extends HasEventBus {
             }
         }
         plugins.clear();
+        lifecycleOrder.clear();
+        loaded.clear();
+    }
+
+    /** Finds optional services among successfully loaded plugins. */
+    public <T> List<T> findContexts(Class<T> type) {
+        List<T> contexts = new ArrayList<>();
+        for (Plugin plugin : lifecycleOrder) {
+            if (!loaded.contains(plugin)) {
+                continue;
+            }
+            WeakReference<?> reference = plugin.getContext();
+            Object context = reference == null ? null : reference.get();
+            if (type.isInstance(context)) {
+                contexts.add(type.cast(context));
+            }
+        }
+        return contexts;
     }
 
     private static void addPlugin(String id, Plugin plugin) {
