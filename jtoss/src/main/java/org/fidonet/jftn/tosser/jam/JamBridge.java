@@ -177,17 +177,12 @@ public final class JamBridge {
                                 JamState state)
             throws IOException {
         Message message = entry.getMessage();
-        if ((entry.getAttributes() & 0xf000) != 0) {
-            throw new UnsupportedOperationException("JAM file requests and attachment operations are unsupported");
-        }
+        JamSubmissionPolicy.requireSupportedOperations(entry.getAttributes());
         if ((entry.getAttributes() & JamArea.LOCKED) != 0 && (message.getMsgId() == null
                 || state.get("import." + MailIdentity.of(message)) == null)) {
             return;
         }
-        if (!message.hasValidAddressing()
-                || !config.getLocalAddresses().contains(message.getFAddr())) {
-            throw new IllegalArgumentException("Outgoing JAM message requires valid addresses and a local sender AKA");
-        }
+        JamSubmissionPolicy.requireLocalSender(message, config.getLocalAddresses());
         if (binding.name != null && !base.isAreaExists(binding.name)) {
             throw new IllegalArgumentException("Unknown echo area " + binding.name);
         }
@@ -198,14 +193,14 @@ public final class JamBridge {
         if (previous != null && !previous.equals(fingerprint)) {
             throw new IllegalStateException("Message changed after submission; create a new message instead");
         }
-        String stage = state.get("stage." + identity);
-        if ("DELIVERED".equals(stage)) {
+        JamState.Stage stage = state.stage(identity);
+        if (stage == JamState.Stage.DELIVERED) {
             throw new IllegalStateException("Already delivered; create a new message for resending");
         }
         if ((entry.getAttributes() & JamArea.LOCKED) != 0 && previous == null) {
             return;
         }
-        if ("ACCEPTED".equals(stage)) {
+        if (stage == JamState.Stage.ACCEPTED) {
             ensureLocked(access, entry);
             return;
         }
@@ -219,7 +214,7 @@ public final class JamBridge {
         } else {
             tosser.submitEchomail(message);
         }
-        state.put("stage." + identity, "ACCEPTED");
+        state.stage(identity, JamState.Stage.ACCEPTED);
         access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
         logger.info("Accepted JAM submission {} from {}", identity, binding.area.getPath());
     }
@@ -278,8 +273,8 @@ public final class JamBridge {
             throws IOException {
         Message message = entry.getMessage();
         String identity = MailIdentity.of(message);
-        String stage = state.get("stage." + identity);
-        if (!"ACCEPTED".equals(stage) && !"DELIVERED".equals(stage)) {
+        JamState.Stage stage = state.stage(identity);
+        if (stage != JamState.Stage.ACCEPTED && stage != JamState.Stage.DELIVERED) {
             return;
         }
         if (!JamFingerprint.of(message, entry.getAttributes())
@@ -291,8 +286,8 @@ public final class JamBridge {
         if (!allAcknowledged(binding, state, spool, identity)) {
             return;
         }
-        if (!"DELIVERED".equals(stage)) {
-            state.put("stage." + identity, "DELIVERED");
+        if (stage != JamState.Stage.DELIVERED) {
+            state.stage(identity, JamState.Stage.DELIVERED);
         }
         if ((entry.getAttributes() & JamArea.SENT) == 0) {
             access.attributes(entry.getNumber(), JamArea.SENT, JamArea.LOCKED);

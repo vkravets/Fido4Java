@@ -3,16 +3,35 @@ package org.fidonet.jftn.tosser.jam;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 public class JamStateTest {
+    @Test
+    public void doesNotAdvanceStateWhenDurableWritingFails() throws Exception {
+        Path path = temporary.getRoot().toPath().resolve("failed-state");
+        JamState state = new JamState(path, (log, length, bytes) -> {
+            throw new IOException("Disk failure");
+        });
+        try {
+            state.prepare("message", "fingerprint", "2:500/1");
+            fail("Expected disk failure");
+        } catch (IOException expected) {
+            assertEquals("Disk failure", expected.getMessage());
+        }
+        assertNull(state.stage("message"));
+        assertNull(state.get("import.message"));
+        assertNull(new JamState(path).stage("message"));
+    }
+
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
 

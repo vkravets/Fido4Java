@@ -57,7 +57,7 @@ public class NettySession implements Session {
     }
 
     @Override
-    public void write(Object message) {
+    public synchronized void write(Object message) {
         lastWrite = context.channel()
                            .writeAndFlush(message)
                            .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
