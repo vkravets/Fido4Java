@@ -3,6 +3,7 @@ package org.fidonet.echobase;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
+import java.io.IOException;
 import java.util.List;
 
 /** Durable netmail delivery, separate from conference message areas. */
@@ -16,6 +17,23 @@ public interface NetmailStore {
     }
 
     List<QueuedNetmail> getQueuedNetmail();
+
+    default void visitEditorNetmail(FTNAddr address, MessageIteration.Handler visitor)
+            throws IOException {
+        for (Message message : getEditorNetmail(address)) {
+            visitor.accept(message);
+        }
+    }
+
+    default void visitQueuedNetmail(QueuedHandler visitor) throws IOException {
+        for (QueuedNetmail message : getQueuedNetmail()) {
+            visitor.accept(message);
+        }
+    }
+
+    interface QueuedHandler {
+        void accept(QueuedNetmail message) throws IOException;
+    }
 
     void markNetmailSent(String deliveryKey);
 }

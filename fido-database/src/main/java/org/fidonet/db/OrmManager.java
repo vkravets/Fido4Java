@@ -35,6 +35,7 @@ import org.fidonet.db.objects.Echomail;
 import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
+import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
 import org.fidonet.types.FTNAddr;
@@ -90,6 +91,7 @@ public class OrmManager {
         daoClasses.add(ConfigurationLink.class);
         daoClasses.add(Netmail.class);
         daoClasses.add(NetmailDelivery.class);
+        daoClasses.add(NetmailIndex.class);
         daoClasses.add(MessageReceipt.class);
         daoClasses.add(ArchiveReceipt.class);
         daoClasses.add(Subscription.class);
@@ -127,6 +129,7 @@ public class OrmManager {
                 removeLegacyNetmailSendIndex();
                 addEchoIngressColumn();
                 migrateLegacyNetmailDeliveries();
+                new NetmailRepository(this).indexExisting();
             }
         } catch (SQLException | RuntimeException e) {
             try {

@@ -384,14 +384,14 @@ public class Tosser extends HasEventBus {
             return;
         }
         OutboundSpool spool = new OutboundSpool(config);
-        for (QueuedNetmail queued : netmailStore.getQueuedNetmail()) {
+        netmailStore.visitQueuedNetmail(queued -> {
             Link route = config.getLink(new FTNAddr(queued.getNextHop()));
             if (route == null || route.getMyaddr() == null || route.getMyaddr().isEmpty()) {
                 throw new IOException("Missing configured route " + queued.getNextHop());
             }
             if (spool.isAcknowledged("netmail:" + queued.getKey(), route)) {
                 netmailStore.markNetmailSent(queued.getKey());
-                continue;
+                return;
             }
             Message copy = queued.getMessage().copy();
             copy.getBody()
@@ -404,7 +404,7 @@ public class Tosser extends HasEventBus {
                                            .format(Instant.now())
                         + ".UTC JFtn 1.0");
             spool.enqueue("netmail:" + queued.getKey(), route, copy);
-        }
+        });
     }
 
     public void acknowledgeOutbound(String key) {
