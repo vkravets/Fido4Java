@@ -69,6 +69,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -83,6 +84,15 @@ public class Tosser extends HasEventBus {
     private final IBase base;
     private final NetmailRouter netmailRouter;
     private final EchoRouter echoRouter;
+    private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
+
+    public synchronized void addNetmailHandler(NetmailHandler handler) {
+        netmailHandlers.add(Objects.requireNonNull(handler));
+    }
+
+    public synchronized void removeNetmailHandler(NetmailHandler handler) {
+        netmailHandlers.remove(handler);
+    }
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
@@ -366,6 +376,13 @@ public class Tosser extends HasEventBus {
                 netmailStore.saveNetmail(msg,
                                          journal.key(index),
                                          local ? null : route.getAddr().toString());
+                if (local) {
+                    for (NetmailHandler handler : netmailHandlers) {
+                        if (handler.handle(msg.copy(), origlink, journal.key(index))) {
+                            break;
+                        }
+                    }
+                }
             }
             journal.complete(index);
         }
