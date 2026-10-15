@@ -11,6 +11,7 @@ import org.fidonet.echobase.AccessLevel;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.jftn.tosser.jam.JamBridge;
+import org.fidonet.misc.LazyFileInputStream;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -217,7 +218,7 @@ public final class MailService implements AutoCloseable {
             FileInfo info = new FileInfo(path.getFileName().toString(),
                                          Files.size(path),
                                          Files.getLastModifiedTime(path).toMillis() / 1000);
-            FileData<InputStream> file = new FileData<>(info, Files.newInputStream(path));
+            FileData<InputStream> file = new FileData<>(info, new LazyFileInputStream(path));
             outgoing.put(file, path);
             context.getSendFiles().add(file);
         } catch (IOException e) {
