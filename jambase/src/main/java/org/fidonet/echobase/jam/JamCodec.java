@@ -204,6 +204,10 @@ final class JamCodec {
                                           controls + new String(text, charset) + tail,
                                           date(header.DateWritten));
             message.setAttributes(fromJam(header.Attribute));
+            if ((header.Attribute & 0x400) != 0) {
+                String flags = message.getBody().getKludges().getOrDefault("FLAGS", "");
+                message.getBody().getKludges().put("FLAGS", flags + " DIR");
+            }
             return message;
         } catch (IllegalArgumentException e) {
             throw new IOException("Invalid JAM addressing", e);

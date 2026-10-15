@@ -153,6 +153,11 @@ public final class MailService implements AutoCloseable {
                 tosser.runFast(directory.toString(), link.getAddr());
             }
         }
+        try {
+            jam.importOutgoing(tosser);
+        } catch (IOException e) {
+            logger.warn("JAM submission scan deferred", e);
+        }
         tosser.exportPendingNetmail();
         tosser.exportEchomail();
         try {

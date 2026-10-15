@@ -8,6 +8,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.jam.JamArea;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
@@ -18,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -105,5 +107,72 @@ public class JamBridgeTest {
         assertTrue(echo.read().isEmpty());
         assertEquals(16, Files.size(lastread));
         assertEquals(1, base.getMessageSize("test"));
+    }
+
+    private Message local(boolean echomail, boolean withId) {
+        return new Message("Sysop",
+                           "Remote",
+                           new FTNAddr("2:500/102"),
+                           new FTNAddr("2:500/101"),
+                           "Outgoing",
+                           (echomail ? "AREA:TEST\r" : "")
+                           + (withId ? "\1MSGID: 2:500/102 local\r" : "")
+                           + "Hello\r",
+                           new Date(1700000000000L));
+    }
+
+    @Test
+    public void importsLocalPostsOnceAndPersistsMissingMsgidInJam() throws Exception {
+        bridge.exportMessages();
+        echo.append(local(true, false), JamArea.ECHO | JamArea.LOCAL);
+        netmail.append(local(false, true), JamArea.NET | JamArea.LOCAL);
+        Tosser tosser = new Tosser(config, base);
+        bridge.importOutgoing(tosser);
+        new JamBridge(config, base, base).importOutgoing(tosser);
+        assertEquals(1, base.getMessageSize("test"));
+        assertEquals(1, base.getQueuedNetmail().size());
+        assertTrue(echo.read()
+                       .get(0)
+                       .getMessage()
+                       .getMsgId()
+                       .startsWith(new FTNAddr("2:500/102") + " "));
+        assertTrue((echo.read().get(0).getAttributes() & JamArea.LOCKED) != 0);
+        assertFalse((echo.read().get(0).getAttributes() & JamArea.SENT) != 0);
+    }
+
+    @Test
+    public void rejectsForeignSenderAndPreviouslyStoredMsgid() throws Exception {
+        base.addMessage(message(true), "test");
+        bridge.exportMessages();
+        echo.append(message(true), JamArea.ECHO | JamArea.LOCAL);
+        Message duplicate = local(true, true);
+        base.addMessage(duplicate, "test");
+        echo.append(duplicate, JamArea.ECHO | JamArea.LOCAL);
+        bridge.importOutgoing(new Tosser(config, base));
+        assertEquals(2, base.getMessageSize("test"));
+        assertEquals(0, echo.read().get(1).getAttributes() & JamArea.LOCKED);
+        assertEquals(0, echo.read().get(2).getAttributes() & JamArea.LOCKED);
+    }
+
+    @Test
+    public void recoversWhenSqlCommittedBeforeJamReceiptWasSaved() throws Exception {
+        bridge.exportMessages();
+        echo.append(local(true, true), JamArea.ECHO | JamArea.LOCAL);
+        Tosser interrupted = new Tosser(config, base) {
+            @Override
+            public synchronized void submitEchomail(Message message) throws IOException {
+                super.submitEchomail(message);
+                throw new IOException("Simulated interruption after SQL commit");
+            }
+        };
+        try {
+            bridge.importOutgoing(interrupted);
+            throw new AssertionError("Expected interruption");
+        } catch (IOException expected) {
+            assertEquals(1, base.getMessageSize("test"));
+        }
+        new JamBridge(config, base, base).importOutgoing(new Tosser(config, base));
+        assertEquals(1, base.getMessageSize("test"));
+        assertTrue((echo.read().get(0).getAttributes() & JamArea.LOCKED) != 0);
     }
 }

@@ -4,7 +4,10 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.jam.JamArea;
+import org.fidonet.jftn.tosser.MessageIds;
+import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.MailIdentity;
+import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
@@ -109,6 +112,84 @@ public final class JamBridge {
                 return null;
             });
         }
+    }
+
+    /** Only local unsent posts are submissions. Ordinary stored mail is never submitted. */
+    public void importOutgoing(Tosser tosser) throws IOException {
+        for (Binding binding : bindings) {
+            Files.createDirectories(binding.area.getPath().getParent());
+            binding.area.ensureExists();
+            JamState state = state(binding);
+            binding.area.locked(access -> {
+                for (JamArea.Entry entry : access.read()) {
+                    if ((entry.getAttributes() & (JamArea.LOCAL | JamArea.SENT
+                            | JamArea.TYPE_LOCAL)) != JamArea.LOCAL) {
+                        continue;
+                    }
+                    try {
+                        importOutgoing(tosser, binding, access, entry, state);
+                    } catch (IllegalArgumentException | IllegalStateException
+                            | UnsupportedOperationException e) {
+                        logger.warn("JAM submission rejected at {} message {}: {}",
+                                    binding.area.getPath(),
+                                    entry.getNumber(),
+                                    e.getMessage());
+                    }
+                }
+                return null;
+            });
+        }
+    }
+
+    private void importOutgoing(Tosser tosser,
+                                Binding binding,
+                                JamArea.Access access,
+                                JamArea.Entry entry,
+                                JamState state)
+            throws IOException {
+        Message message = entry.getMessage();
+        if (!message.hasValidAddressing()
+                || !config.getLocalAddresses().contains(message.getFAddr())) {
+            throw new IllegalArgumentException("Outgoing JAM message requires valid addresses and a local sender AKA");
+        }
+        if (binding.name != null && !base.isAreaExists(binding.name)) {
+            throw new IllegalArgumentException("Unknown echo area " + binding.name);
+        }
+        if (message.getMsgId() == null) {
+            MessageIds.ensure(message, Path.of(config.getTmpDir()));
+            access.assignMsgId(entry.getNumber(),
+                               message.getMsgId(),
+                               CharsetTools.charsetDetect(message.getMessageCharset()));
+            for (JamArea.Entry updated : access.read()) {
+                if (updated.getNumber() == entry.getNumber()) {
+                    message = updated.getMessage();
+                    break;
+                }
+            }
+        }
+        String identity = MailIdentity.of(message);
+        String fingerprint = JamFingerprint.of(message, entry.getAttributes());
+        String previous = state.get("import." + identity);
+        if (previous != null && !previous.equals(fingerprint)) {
+            throw new IllegalStateException("Message changed after submission; create a new message instead");
+        }
+        if ("ACCEPTED".equals(state.get("stage." + identity))) {
+            access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
+            return;
+        }
+        if (previous == null && (state.get("export." + identity) != null || base.isDupe(message))) {
+            throw new IllegalStateException("This MSGID already exists; edited mail is not automatically resent");
+        }
+        state.put("import." + identity, fingerprint);
+        state.put("stage." + identity, "PREPARED");
+        if (binding.name == null) {
+            tosser.submitNetmail(message, "jam:" + identity);
+        } else {
+            tosser.submitEchomail(message);
+        }
+        state.put("stage." + identity, "ACCEPTED");
+        access.attributes(entry.getNumber(), JamArea.LOCKED, 0);
+        logger.info("Accepted JAM submission {} from {}", identity, binding.area.getPath());
     }
 
     private void export(Message message,
