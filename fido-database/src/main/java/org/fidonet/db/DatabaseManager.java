@@ -28,6 +28,7 @@
 
 package org.fidonet.db;
 
+import org.fidonet.db.objects.ArchiveReceipt;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
@@ -36,6 +37,7 @@ import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.echobase.ArchiveStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
@@ -65,7 +67,7 @@ import java.util.Locale;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager implements IBase, NetmailStore {
+public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
@@ -89,6 +91,66 @@ public class DatabaseManager implements IBase, NetmailStore {
             dao.createOrUpdate(stored);
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to configure link", e);
+        }
+    }
+
+    @Override
+    public synchronized boolean importArchive(Message message, String source) {
+        if (!message.hasValidAddressing()) {
+            throw new IllegalArgumentException("Archive message has invalid addressing");
+        }
+        try {
+            return dbManager.inTransaction(() -> {
+                String identity = (message.isEchomail() ? "echo:" : "netmail:")
+                                  + MailIdentity.of(message);
+                Dao<MessageReceipt, String> receipts = dbManager.getDao(MessageReceipt.class);
+                if (receipts.queryForId(identity) != null) {
+                    return false;
+                }
+                if (message.isEchomail() && isDupe(message)) {
+                    return false;
+                }
+                if (!message.isEchomail()) {
+                    for (Netmail existing : dbManager.<Netmail, Long>getDao(Netmail.class)
+                                                     .queryForAll()) {
+                        if (MailIdentity.of(existing.toMessage())
+                                        .equals(MailIdentity.of(message))) {
+                            return false;
+                        }
+                    }
+                }
+                if (message.isEchomail()) {
+                    Echoarea area = findEchoareaByName(message.getArea().toLowerCase(Locale.ROOT));
+                    if (area == null) {
+                        throw new IllegalArgumentException("Create the target SQL area before archive import");
+                    }
+                    dbManager.getDao(Echomail.class).create(Echomail.fromMessage(message, area));
+                } else {
+                    Netmail stored = Netmail.fromMessage(message);
+                    dbManager.getDao(Netmail.class).create(stored);
+                    NetmailDelivery delivery = new NetmailDelivery("archive:"
+                            + MailIdentity.of(message), stored, null);
+                    delivery.setState("ARCHIVE");
+                    dbManager.getDao(NetmailDelivery.class).create(delivery);
+                }
+                dbManager.getDao(ArchiveReceipt.class).create(new ArchiveReceipt(identity, source));
+                receipts.create(new MessageReceipt(identity));
+                return true;
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to import archive message", e);
+        }
+    }
+
+    @Override
+    public boolean isArchived(Message message) {
+        try {
+            String identity = (message.isEchomail() ? "echo:" : "netmail:")
+                              + MailIdentity.of(message);
+            return dbManager.<ArchiveReceipt, String>getDao(ArchiveReceipt.class)
+                            .queryForId(identity) != null;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to check archive status", e);
         }
     }
 

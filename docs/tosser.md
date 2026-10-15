@@ -164,6 +164,33 @@ The AKA must be configured locally in both applications. JAM file locks are
 implemented, but compatibility with an actual GoldED+ process has not yet been
 certified on either Windows or Linux.
 
+### Historical archive import
+
+Stop the Runner before running the offline command. It acquires the same mail
+service lock, opens SQL, reads JAM using read-only handles and never processes
+outbound. The target echo must already exist in SQL (or be configured by
+`EchoArea`). Paths omit the JAM filename extension.
+
+```powershell
+.\gradlew.bat :jftn-bundle:importJamArchive "-PjamSource=C:/archive/ru.test" "-PjamArea=RU.TEST" "-PjamAka=2:500/102"
+```
+
+Omit `jamArea` to import netmail. Optional properties: `jftnConfig` (default
+`jftn.conf`), `jamDatabase` (default `jdbc:h2:./database/jftn10`), and `jamCharset`
+(default `CP866`, used only when CHRS is absent). The fallback AKA supplies
+missing legacy addresses; choose it to match the original base.
+
+Archive imports retain MSGID, dates, content and original attributes. Missing
+historical MSGIDs remain missing. SQL stores the source path and import time;
+archive status and duplicate receipts are committed with each message. Imported
+echoes are excluded from export and netmail has ARCHIVE delivery state. A retry
+after partial failure skips already committed messages. An existing live message
+is retained without changing its delivery policy. Deleted JAM records are skipped.
+
+The importer streams records while holding the JAM read lock. Do not pack or
+replace the source while importing. Archive status is durable and survives SQL
+reopening; enabling redistribution would require a separate explicit operation.
+
 ## Scope and remaining limitations
 
 This implements the described import, local delivery, configured transit and
