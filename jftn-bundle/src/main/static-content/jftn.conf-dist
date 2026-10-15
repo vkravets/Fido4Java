@@ -32,3 +32,17 @@ SysOp=Dmitriy Tochansky
 deletetossed=1
 
 Outbound = /home/toch/ftn/var/spool/outbound
+
+# Optional bundled mail robots. Configure the corresponding Link entries first.
+# See docs/mail-scripts.md for supported commands, authorization and retention.
+# EchoSubscriptions=database
+# MailScript=classpath:mail-scripts/areafix.groovy
+# AreaFixPeer=1:500/101|change-this-areafix-password|test.*|READ
+# MailScript=classpath:mail-scripts/filefix.groovy
+# FileArea=lists|./fileecho/lists|Node and point lists
+# FileFixPeer=1:500/101|change-this-filefix-password|lists
+# TicPeer=1:500/101|change-this-tic-password|lists
+# MailScript=classpath:mail-scripts/directory-import.groovy
+# NodeDirectoryPath=./database/nodelist/catalog
+# DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|1:500/101|1|500
+# DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/points.lst|1:500/101

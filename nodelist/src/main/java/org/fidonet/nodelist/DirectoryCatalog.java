@@ -77,6 +77,21 @@ public final class DirectoryCatalog implements AutoCloseable {
         }
     }
 
+    /** Validate parsing and SQL uniqueness using bounded inserts, then roll back all changes. */
+    public synchronized void validateSource(DirectorySource source) throws IOException {
+        String fingerprint = fingerprint(source.getPath());
+        try (Connection connection = connect()) {
+            connection.setAutoCommit(false);
+            try {
+                replace(connection, source, fingerprint);
+            } finally {
+                connection.rollback();
+            }
+        } catch (SQLException e) {
+            throw new IOException("Directory validation failed for " + source.getId(), e);
+        }
+    }
+
     private DirectoryImportResult previous(Connection connection,
                                            DirectorySource source,
                                            String fingerprint)

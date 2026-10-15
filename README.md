@@ -152,6 +152,8 @@ The Runner now connects received binkp files to the tosser and sends queued
 netmail and subscribed echomail. See [mail processing, configuration and limitations](docs/tosser.md).
 The optional [node and point directory plugin](docs/nodelist.md) imports FTSC
 nodelists and pointlists from local files or ZIP archives into its own catalog.
+Bundled [Groovy mail scripts](docs/mail-scripts.md) provide AreaFix, FileFix,
+TIC file distribution and automatic directory imports with NODEDIFF support.
 
 The RPC module requires the Apache Thrift 0.25.0 compiler on `PATH`.
 Run the full build, including tests:
