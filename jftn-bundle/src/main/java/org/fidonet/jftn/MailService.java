@@ -8,6 +8,7 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.tosser.EchoRouter;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
@@ -110,6 +111,10 @@ public final class MailService implements AutoCloseable {
             spool = new OutboundSpool(config);
             for (MailExtensionFactory factory : factories) {
                 factory.create(config, base).ifPresent(created::add);
+            }
+            if (config.getValuesAsList("MailScript") != null
+                    && !config.getValuesAsList("MailScript").isEmpty()) {
+                created.add(new MailScripts(config, base, tosser));
             }
             extensions = created;
             worker = workerFactory.get();
