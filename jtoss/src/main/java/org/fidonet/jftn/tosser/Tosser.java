@@ -38,6 +38,7 @@ import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.exception.TosserException;
+import org.fidonet.misc.PacketArchive;
 import org.fidonet.misc.PktTemp;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.FTNAddr;
@@ -139,6 +140,11 @@ public class Tosser extends HasEventBus {
 
     private void processInboundFile(File file, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
+        if (!isPacket(file)) {
+            processBundle(file, authenticatedPeer);
+            deleteTossedFile(file);
+            return;
+        }
         LinkedList<PktTemp> packets = readPackets(file);
         while (!packets.isEmpty()) {
             processPacket(packets.pop(), authenticatedPeer);
@@ -146,10 +152,22 @@ public class Tosser extends HasEventBus {
         deleteTossedFile(file);
     }
 
-    private LinkedList<PktTemp> readPackets(File file) throws IOException {
-        if (!isPacket(file)) {
-            return Zipper.unpackboundlfast(file.getAbsolutePath());
+    private void processBundle(File file, FTNAddr authenticatedPeer)
+            throws IOException, TosserException, EchoBaseException {
+        try (PacketArchive archive = Zipper.unpackToDisk(file.getAbsolutePath())) {
+            processArchivePackets(archive, authenticatedPeer);
         }
+    }
+
+    private void processArchivePackets(PacketArchive archive, FTNAddr authenticatedPeer)
+            throws IOException, TosserException, EchoBaseException {
+        PktTemp packet;
+        while ((packet = archive.readNext()) != null) {
+            processPacket(packet, authenticatedPeer);
+        }
+    }
+
+    private LinkedList<PktTemp> readPackets(File file) throws IOException {
         LinkedList<PktTemp> packets = new LinkedList<>();
         try (InputStream input = Files.newInputStream(file.toPath())) {
             byte[] bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
