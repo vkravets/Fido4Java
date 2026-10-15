@@ -32,10 +32,8 @@ import java.util.zip.CRC32;
 
 public class MyCRC {
 
-    private static final CRC32 crc32 = new CRC32();
-
     public static int CRC(byte[] bb) {
-        crc32.reset();
+        CRC32 crc32 = new CRC32();
         crc32.update(bb);
         return ~(int) crc32.getValue();
     }

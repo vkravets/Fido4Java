@@ -50,12 +50,18 @@ class JHRFile implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(JHRFile.class.getName());
 
     private RandomAccessFile jhr;
+    private boolean ownsFile = true;
 
     public JHRFile(File tmp) throws FileNotFoundException {
         jhr = new RandomAccessFile(tmp, "rw");
     }
 
-    public MessageHeader getMsgHeaderByShift(int shift) throws IOException {
+    JHRFile(RandomAccessFile file) {
+        jhr = file;
+        ownsFile = false;
+    }
+
+    public MessageHeader getMsgHeaderByShift(long shift) throws IOException {
         jhr.seek(shift);
         if (shift < 1024) {
             return null;
@@ -90,7 +96,8 @@ class JHRFile implements Closeable {
         result.TxtLen = tmpbuf.getInt();
         result.PasswordCRC = tmpbuf.getInt();
         result.Cost = tmpbuf.getInt();
-        if (result.SubfieldLen < 0 || result.SubfieldLen > jhr.length() - jhr.getFilePointer()) {
+        if (result.SubfieldLen < 0 || result.SubfieldLen > 16 * 1024 * 1024
+                || result.SubfieldLen > jhr.length() - jhr.getFilePointer()) {
             throw new IOException("Invalid JAM subfield length");
         }
         if (result.SubfieldLen != 0) {
@@ -182,6 +189,8 @@ class JHRFile implements Closeable {
 
     @Override
     public void close() throws IOException {
-        jhr.close();
+        if (ownsFile) {
+            jhr.close();
+        }
     }
 }
