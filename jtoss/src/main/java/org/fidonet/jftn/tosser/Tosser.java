@@ -71,9 +71,11 @@ public class Tosser extends HasEventBus {
     private Pattern bunlderegex;
     private JFtnConfig config;
     private final NetmailStore netmailStore;
+    private final IBase base;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
+        this.base = base;
         this.netmailStore = base instanceof NetmailStore ? (NetmailStore) base : null;
         this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
@@ -178,47 +180,6 @@ public class Tosser extends HasEventBus {
         }
     }
 
-    /*    private static void tosspkt(String filename) {
-        Logger.Log("Tossing file " + filename);
-        final FileInputStream ins;
-        final File inf = new File(filename);
-
-        try {
-            ins = new FileInputStream(inf);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return;
-        }
-        final byte[] arr = new byte[(int) inf.length()];
-        try {
-            final int readed = ins.read(arr);
-            if (readed < inf.length()) {
-                System.out.println("Some problem while readin " + inf.getName());
-                return;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        final ftsPkt p = new ftsPkt(arr);
-        final ftsPackMsg[] msgs = p.getMsgs();
-        for (int i = 0; i < msgs.length; i++) {
-            ftsPackMsg msg1 = msgs[i];
-            final Message msg = new Message(msg1);
-            if (msg.isEchomail()) {
-                ProcessEchoMail(msg);
-            } else {
-                Logger.Log("Netmail???");
-            }
-        }
-        try {
-            ins.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        inf.delete();
-    }*/
-
     private boolean tosspkt(ByteBuffer buf) throws IOException, EchoBaseException {
         final FtsPkt q;
         try {
@@ -257,6 +218,15 @@ public class Tosser extends HasEventBus {
             final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
             msg.setUpLink(q.getOrigaddr());
             if (msg.isEchomail()) {
+                if ((!areamgr.isEchoExists(msg.getArea().toLowerCase(Locale.ROOT))
+                        && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false")))
+                        || (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
+                                && !base.canWriteEcho(origlink, msg.getArea()))) {
+                    logger.warn("Echo import is not permitted: {} from {}",
+                                msg.getArea(),
+                                origlink.getAddr());
+                    return false;
+                }
                 if (areamgr.isDupe(msg)) {
                     journal.complete(index);
                     continue;
@@ -358,6 +328,10 @@ public class Tosser extends HasEventBus {
         if (key.startsWith("netmail:") && netmailStore != null) {
             netmailStore.markNetmailSent(key.substring("netmail:".length()));
         }
+    }
+
+    public synchronized void exportEchomail() throws IOException {
+        new EchoExporter(config, base, new OutboundSpool(config)).export();
     }
 
     public EchoMgr getAreamgr() {

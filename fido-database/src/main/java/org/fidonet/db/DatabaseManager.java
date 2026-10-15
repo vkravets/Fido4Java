@@ -451,6 +451,34 @@ public class DatabaseManager implements IBase, NetmailStore {
         dbManager.disconnect();
     }
 
+    @Override
+    public boolean canReadEcho(Link link, String area) {
+        return hasEchoAccess(link, area, AccessLevel.READ);
+    }
+
+    @Override
+    public boolean canWriteEcho(Link link, String area) {
+        return hasEchoAccess(link, area, AccessLevel.WRITE);
+    }
+
+    private boolean hasEchoAccess(Link link, String area, AccessLevel requested) {
+        try {
+            ConfigurationLink configured = findConfigurationLinkByLink(link);
+            if (configured == null) {
+                return false;
+            }
+            for (Subscription subscription : getSubscriptionsForLink(configured)) {
+                if (subscription.getEchoarea().getName().equalsIgnoreCase(area)) {
+                    return subscription.getAccessLevel() == AccessLevel.BOTH
+                            || subscription.getAccessLevel() == requested;
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to check echo access", e);
+        }
+    }
+
     /** * Private stuff *** */
     private Iterator<Message> createEchomailIterator(final QueryBuilder<Echomail, Object> echomailQueryBuilder,
                                                      long startMessage,

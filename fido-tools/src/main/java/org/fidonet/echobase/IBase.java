@@ -79,5 +79,13 @@ public interface IBase {
 
     void addSubscription(Link link, String area);
 
+    default boolean canReadEcho(Link link, String area) {
+        return false;
+    }
+
+    default boolean canWriteEcho(Link link, String area) {
+        return false;
+    }
+
     void close();
 }
