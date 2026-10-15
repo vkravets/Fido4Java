@@ -8,7 +8,9 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.EchoRouter;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
@@ -49,6 +51,7 @@ public final class MailService implements AutoCloseable {
     private final JFtnConfig config;
     private final Tosser tosser;
     private final OutboundSpool spool;
+    private final FileDeliveryQueue fileQueue;
     private final List<MailProcessingExtension> extensions;
     private final Path stateDirectory;
     private final FileChannel lockChannel;
@@ -109,6 +112,7 @@ public final class MailService implements AutoCloseable {
             configure(base);
             tosser = new Tosser(config, base);
             spool = new OutboundSpool(config);
+            fileQueue = new FileDeliveryQueue(config);
             for (MailExtensionFactory factory : factories) {
                 factory.create(config, base).ifPresent(created::add);
             }
@@ -264,6 +268,10 @@ public final class MailService implements AutoCloseable {
                                                     .getFileName()
                                                     .toString()
                                                     .replaceFirst("\\.part$", extension));
+        if (!extension.equalsIgnoreCase(".pkt")
+                && original.matches("[A-Za-z0-9_~-][A-Za-z0-9_.~-]{0,127}")) {
+            ReceivedFile.record(destination, original);
+        }
         partial.commitTo(destination);
         trigger.request();
     }
@@ -284,6 +292,9 @@ public final class MailService implements AutoCloseable {
         requireOpen();
         Link link = requireLink(context);
         for (Path path : spool.pending(link, context.getServerRole() == ServerRole.SERVER)) {
+            enqueueOutboundFile(context, path);
+        }
+        for (Path path : fileQueue.pending(link)) {
             enqueueOutboundFile(context, path);
         }
     }
@@ -313,7 +324,11 @@ public final class MailService implements AutoCloseable {
         if (path != null) {
             // Close the sender's stream before removing its packet on Windows.
             file.getStream().close();
-            tosser.acknowledgeOutbound(spool.acknowledge(path));
+            if (fileQueue.owns(path)) {
+                fileQueue.acknowledge(path);
+            } else {
+                tosser.acknowledgeOutbound(spool.acknowledge(path));
+            }
             outgoing.remove(file);
             claims.remove(path, context);
         }

@@ -62,3 +62,59 @@ Command syntax was checked against
 [HPT AreaFix help](https://github.com/huskyproject/hpt/blob/master/misc/areafix.hlp).
 This is the supported subset, not every HPT extension (pause, remote password
 changes, day-based rescans and forwarded uplink requests are not implemented).
+
+## FileFix and file echoes
+
+```ini
+MailScript=classpath:mail-scripts/filefix.groovy
+FileArea=lists|./fileecho/lists|Node and point lists
+FileFixPeer=1:500/102|filefix-password|lists
+TicPeer=1:500/101|incoming-password|lists
+TicPeer=1:500/102|outgoing-password|lists
+TicCharset=IBM437
+```
+
+FileFix/FileMgr accepts the same basic list and subscribe/unsubscribe commands
+as AreaFix, without rescan. Subscriptions persist in script state and affect
+new accepted files only. `TicPeer` explicitly allows a configured transport
+peer to exchange files in the listed area masks. It uses one shared password
+per link, case-insensitive for TIC interoperability, separate from FileFix.
+Only declared file areas can be used; the third FileArea field is descriptive.
+
+`filefix.groovy` also processes TICs from completed authenticated peer inboxes.
+Transport metadata preserves original filenames even when the mailer renames
+physical files. Area, File, From, Origin, Crc, Path and Seenby are required;
+an optional Size is checked. A configured TIC password is mandatory. From must
+match the peer; To, when present, must be local. Path loops are rejected.
+DOS 8.3 File names are supported; Lfile/Fullname are preserved but not used as
+filesystem paths. FTN domain decorations are retained when forwarded, but the
+address policy uses numeric addresses in this installation's single namespace.
+Cross-domain routing is not implemented.
+
+Payloads are streamed through CRC-32 and SHA-256, limited to 128 MiB. TICs are
+limited to 64 KiB and lines to 1024 characters. Missing payloads and invalid
+TICs remain in inbound for later delivery, inspection or retry. Accepted files
+are stored under immutable receipt-prefixed names in their area directory.
+They are forwarded only to authorized subscribers, excluding the sender,
+local addresses and Seenby entries. Unknown TIC lines are preserved; outgoing
+From, To, Pw, Created, Path and Seenby are rebuilt as appropriate. Replaces is
+preserved but does not delete local files. No automatic hatching or FREQ service
+is provided.
+
+The transport queue stores a private file/TIC pair and publishes it atomically.
+Payload precedes TIC; each is removed only after its own M_GOT acknowledgement.
+An interrupted pair is retried; completed receipts prevent re-queuing the same
+job. Currently one pair is loaded per connection, alongside ordinary mail.
+File queues are not polled automatically: existing polling/session scheduling
+must connect to the recipient.
+
+`onFile { area, storedPath, originalName, peer, receipt -> ... }` callbacks run
+after validation and storage. Their failure leaves the incoming TIC retryable.
+Receipts are marked complete after forwarding and callbacks succeed. Keep
+FileFix before dependent scripts in configuration; all scripts register before
+the first scan. Inputs, stored files and receipts have no automatic retention
+cleanup in this version; configure operational retention separately.
+
+The TIC format was checked against
+[FTS-5006.001](https://defsol.com/files/ftsc/fts-5006.001) and command conventions
+against [Husky htick](https://github.com/huskyproject/htick).
