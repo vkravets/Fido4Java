@@ -22,6 +22,35 @@ import java.util.Date;
 import java.util.List;
 
 public class JamAreaTest {
+    @Test
+    public void visitsFilteredHeadersAndReadsAssignedIdsByNumber() throws Exception {
+        JamArea area = area();
+        area.append(message(), JamArea.ECHO);
+        area.append(message(), JamArea.ECHO | JamArea.LOCAL);
+        area.locked(access -> {
+            int[] selected = {0};
+            access.forEach(attributes -> (attributes & JamArea.LOCAL) != 0, entry -> {
+                selected[0]++;
+                assertEquals(2, entry.getNumber());
+            });
+            assertEquals(1, selected[0]);
+            assertEquals(2, access.get(2).getNumber());
+            assertEquals(message().getMsgId(), access.get(2).getMessage().getMsgId());
+            access.attributes(1, JamArea.DELETED, 0);
+            assertDeletedEntryRejected(access);
+            return null;
+        });
+    }
+
+    private void assertDeletedEntryRejected(JamArea.Access access) throws IOException {
+        try {
+            access.get(1);
+            fail("Deleted message must not be returned");
+        } catch (IOException expected) {
+            assertEquals("JAM message was deleted", expected.getMessage());
+        }
+    }
+
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
 

@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /** A JAM area. Every operation reopens and locks the base, allowing external editors. */
 public final class JamArea {
@@ -177,42 +178,69 @@ public final class JamArea {
             return result;
         }
 
-        private void forEach(EntryConsumer consumer) throws IOException {
-            for (long slot = 0; slot < index.length() / 8; slot++) {
-                index.seek(slot * 8);
-                int user = Integer.reverseBytes(index.readInt());
-                long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
-                if (user == -1 || offset == 0xffffffffL) {
-                    continue;
+        public void forEach(EntryConsumer consumer) throws IOException {
+            forEach(attributes -> true, consumer);
+        }
+
+        public void forEach(IntPredicate filter, EntryConsumer consumer) throws IOException {
+            long slots = index.length() / 8;
+            for (long slot = 0; slot < slots; slot++) {
+                Entry entry = readSlot(slot, filter);
+                if (entry != null) {
+                    consumer.accept(entry);
                 }
-                MessageHeader stored = header.getMsgHeaderByShift(offset);
-                if (stored == null || stored.revision != 1
-                        || Integer.toUnsignedLong(stored.MessageNumber) != Integer.toUnsignedLong(info.getBasemsgnum())
-                                                                           + slot) {
-                    throw new IOException("Invalid JAM message header/index mapping");
-                }
-                if ((stored.Attribute & DELETED) != 0) {
-                    continue;
-                }
-                int kind = stored.Attribute & (ECHO | NET | TYPE_LOCAL);
-                if (kind != (area == null ? NET : ECHO)) {
-                    throw new IOException("JAM message kind does not match configured area");
-                }
-                if ((stored.Attribute & 0x00380000) != 0) {
-                    throw new IOException("Encrypted, compressed or escaped JAM text is unsupported");
-                }
-                long start = Integer.toUnsignedLong(stored.Offset);
-                if (stored.TxtLen < 0 || stored.TxtLen > 64 * 1024 * 1024
-                        || start + stored.TxtLen > text.length()) {
-                    throw new IOException("Invalid JAM text bounds");
-                }
-                byte[] bytes = new byte[stored.TxtLen];
-                text.seek(start);
-                text.readFully(bytes);
-                consumer.accept(new Entry(Integer.toUnsignedLong(stored.MessageNumber),
-                                          stored.Attribute,
-                                          JamCodec.decode(stored, bytes, area, charset, aka)));
             }
+        }
+
+        public Entry get(long number) throws IOException {
+            long slot = number - Integer.toUnsignedLong(info.getBasemsgnum());
+            if (slot < 0 || slot >= index.length() / 8) {
+                throw new IOException("JAM message no longer exists");
+            }
+            Entry entry = readSlot(slot, attributes -> true);
+            if (entry == null) {
+                throw new IOException("JAM message was deleted");
+            }
+            return entry;
+        }
+
+        private Entry readSlot(long slot, IntPredicate filter) throws IOException {
+            index.seek(slot * 8);
+            int user = Integer.reverseBytes(index.readInt());
+            long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
+            if (user == -1 || offset == 0xffffffffL) {
+                return null;
+            }
+            MessageHeader stored = header.getMsgHeaderByShift(offset);
+            if (stored == null || stored.revision != 1
+                    || Integer.toUnsignedLong(stored.MessageNumber) != Integer.toUnsignedLong(info.getBasemsgnum())
+                                                                       + slot) {
+                throw new IOException("Invalid JAM message header/index mapping");
+            }
+            if ((stored.Attribute & DELETED) != 0) {
+                return null;
+            }
+            int kind = stored.Attribute & (ECHO | NET | TYPE_LOCAL);
+            if (kind != (area == null ? NET : ECHO)) {
+                throw new IOException("JAM message kind does not match configured area");
+            }
+            if ((stored.Attribute & 0x00380000) != 0) {
+                throw new IOException("Encrypted, compressed or escaped JAM text is unsupported");
+            }
+            long start = Integer.toUnsignedLong(stored.Offset);
+            if (stored.TxtLen < 0 || stored.TxtLen > 64 * 1024 * 1024
+                    || start + stored.TxtLen > text.length()) {
+                throw new IOException("Invalid JAM text bounds");
+            }
+            if (!filter.test(stored.Attribute)) {
+                return null;
+            }
+            byte[] bytes = new byte[stored.TxtLen];
+            text.seek(start);
+            text.readFully(bytes);
+            return new Entry(Integer.toUnsignedLong(stored.MessageNumber),
+                             stored.Attribute,
+                             JamCodec.decode(stored, bytes, area, charset, aka));
         }
 
         public long append(Message message, int attributes) throws IOException {
