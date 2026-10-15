@@ -2,6 +2,7 @@ package org.fidonet.jftn.tosser.jam;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.IncrementalEchoStore;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.jam.JamArea;
@@ -112,6 +113,15 @@ public final class JamBridge {
         if (binding.name == null) {
             netmail.visitEditorNetmail(binding.aka,
                                        message -> export(message, access, existing, state));
+            return;
+        }
+        if (base instanceof IncrementalEchoStore) {
+            ((IncrementalEchoStore) base).visitNewEcho(binding.name,
+                                                       "jam:" + binding.area.getPath(),
+                                                       message -> export(message,
+                                                                         access,
+                                                                         existing,
+                                                                         state));
             return;
         }
         MessageIteration.forEach(base.getMessages(binding.name),
