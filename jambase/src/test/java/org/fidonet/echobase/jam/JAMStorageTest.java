@@ -43,6 +43,36 @@ public class JAMStorageTest {
     }
 
     @Test
+    public void storesUtf8MessageWithoutMsgidUsingUnknownIdCrc() throws Exception {
+        EchoList areas = areas();
+        String path = areas.getEcho("test").Path;
+        Message message = new Message("Автор",
+                                      "Читатель",
+                                      new FTNAddr("2:500/1"),
+                                      new FTNAddr("2:500/2"),
+                                      "Тема",
+                                      "AREA:TEST\r\1CHRS: UTF-8 4\rТекст\r",
+                                      new Date());
+        JAMEchoBase base = new JAMEchoBase(areas);
+        base.openArea("test");
+        try {
+            base.addMessage(message);
+        } finally {
+            base.closeArea();
+        }
+        assertArrayEquals(message.getBody().toString().getBytes(StandardCharsets.UTF_8),
+                          Files.readAllBytes(new File(path + ".jdt").toPath()));
+        try (JHRFile header = new JHRFile(new File(path + ".jhr"))) {
+            MessageHeader stored = header.getMsgHeaderByShift(1024);
+            assertEquals(-1, stored.MSGIDcrc);
+            assertNull(stored.SubFieldList.stream()
+                                          .filter(field -> field.loID == 4)
+                                          .findFirst()
+                                          .orElse(null));
+        }
+    }
+
+    @Test
     public void createsValidBaseAndAppendsMessagesAcrossReopen() throws Exception {
         EchoList areas = areas();
         String path = areas.getEcho("test").Path;

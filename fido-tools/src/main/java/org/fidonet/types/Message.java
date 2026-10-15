@@ -126,6 +126,7 @@ public class Message {
         final Map<String, String> kltmp = new LinkedHashMap<String, String>();
         List<String> controlLines = new ArrayList<>();
         List<String> viaLines = new ArrayList<>();
+        List<String> layout = new ArrayList<>();
         SeenBy seenBy = new SeenBy();
         FidoPath path = new FidoPath();
         StringBuilder sb = new StringBuilder();
@@ -138,7 +139,25 @@ public class Message {
             echomail = false;
         }
 
-        int defaultZone = fAddr == null ? 2 : fAddr.getZone();
+        int defaultZone = tAddr != null ? tAddr.getZone() : fAddr == null ? 2 : fAddr.getZone();
+        int end = lines.length;
+        while (end > 0 && lines[end - 1].isEmpty()) {
+            end--;
+        }
+        int tail = end;
+        if (echomail) {
+            while (tail > 0 && (lines[tail - 1].startsWith("SEEN-BY: ")
+                    || lines[tail - 1].startsWith(FidoPath.PATH_LINE_PREFIX))) {
+                tail--;
+            }
+            if (tail > 0 && lines[tail - 1].startsWith(" * Origin: ")) {
+                tail--;
+            }
+        } else {
+            while (tail > 0 && lines[tail - 1].startsWith("\1Via ")) {
+                tail--;
+            }
+        }
         for (int i = 0; i < lines.length; i++) {
             String x = lines[i];
             if (i == lines.length - 1 && x.isEmpty()) {
@@ -146,6 +165,9 @@ public class Message {
             }
             if (i == 0 && echomail) {
                 continue;
+            }
+            if (i < tail) {
+                layout.add(x);
             }
             if (x.startsWith("\1")) {
                 Matcher control = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(x);
@@ -155,19 +177,19 @@ public class Message {
                 }
                 String key = control.group(1);
                 String value = control.group(2);
-                if (!echomail && key.equals("Via")) {
+                if (!echomail && key.equals("Via") && i >= tail) {
                     viaLines.add(x);
-                } else if (x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
+                } else if (echomail && i >= tail && x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
                     path.add(FidoPath.valueOf(value, defaultZone));
                 } else {
                     kltmp.putIfAbsent(key, value);
                     controlLines.add(x);
                 }
             } else {
-                if (x.startsWith("SEEN-BY: ")) {
+                if (echomail && i >= tail && x.startsWith("SEEN-BY: ")) {
                     String[] split = collon.split(x, 2);
                     seenBy.add(SeenBy.valueOf(split[1], defaultZone));
-                } else if (x.startsWith(" * Origin")) {
+                } else if (echomail && i >= tail && x.startsWith(" * Origin: ")) {
                     origin = x;
                 } else {
                     sb.append(x).append("\r");
@@ -177,6 +199,7 @@ public class Message {
         Body parsed = new Body(sb.toString(), kltmp, origin, seenBy, path);
         parsed.setArea(echomail ? area : null);
         parsed.setControlLines(controlLines);
+        parsed.setLayout(layout);
         for (String via : viaLines) {
             parsed.addVia(via);
         }
@@ -293,6 +316,54 @@ public class Message {
 
     public String getMsgId() {
         return msgId;
+    }
+
+    public void setMsgId(String value) {
+        msgId = value;
+        body.getKludges().put("MSGID", value);
+    }
+
+    public boolean hasValidAddressing() {
+        if (!validAddress(fAddr) || !validAddress(tAddr) || echomail && area.isEmpty()) {
+            return false;
+        }
+        if (!echomail) {
+            String intl = body.getKludges().get("INTL");
+            if (intl != null) {
+                String[] addresses = intl.trim().split("\\s+");
+                if (addresses.length != 2 || !validAddress(parseAddress(addresses[0]))
+                        || !validAddress(parseAddress(addresses[1]))) {
+                    return false;
+                }
+            }
+            for (String key : new String[]{"FMPT", "TOPT"}) {
+                String value = body.getKludges().get(key);
+                if (value != null) {
+                    try {
+                        int point = Integer.parseInt(value.trim());
+                        if (point < 1 || point > 65535) {
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean validAddress(FTNAddr address) {
+        if (address == null || !address.isValid()) {
+            return false;
+        }
+        for (int value : new int[]{address.getZone(), address.getNet(), address.getNode(),
+                address.getPnt()}) {
+            if (value < 0 || value > 65535) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public String getSubject() {

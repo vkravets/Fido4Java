@@ -33,6 +33,7 @@ import org.fidonet.types.Message;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 public class EchoMgr {
 
@@ -43,7 +44,7 @@ public class EchoMgr {
     }
 
     public void addMessage(Message msg) throws IOException, EchoBaseException {
-        echosbase.addMessage(msg, msg.getArea().toLowerCase());
+        echosbase.addMessage(msg, msg.getArea().toLowerCase(Locale.ROOT));
     }
 
     public Message getMessage(String area, String id) throws EchoBaseException {

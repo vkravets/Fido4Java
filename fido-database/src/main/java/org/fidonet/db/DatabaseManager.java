@@ -31,6 +31,7 @@ package org.fidonet.db;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
+import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
@@ -38,6 +39,7 @@ import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
+import org.fidonet.packet.MailIdentity;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -50,11 +52,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by IntelliJ IDEA.
@@ -78,11 +80,15 @@ public class DatabaseManager implements IBase, NetmailStore {
         Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
         try {
             dbManager.inTransaction(() -> {
-                if (deliveries.queryForId(deliveryKey) == null) {
+                String identity = "netmail:" + MailIdentity.of(message);
+                Dao<MessageReceipt, String> receipts = dbManager.getDao(MessageReceipt.class);
+                if (deliveries.queryForId(deliveryKey) == null
+                        && receipts.queryForId(identity) == null) {
                     Netmail stored = Netmail.fromMessage(message);
                     stored.setRoute(nextHop);
                     dbManager.getDao(Netmail.class).create(stored);
                     deliveries.create(new NetmailDelivery(deliveryKey, stored, nextHop));
+                    receipts.create(new MessageReceipt(identity));
                 }
                 return null;
             });
@@ -267,22 +273,31 @@ public class DatabaseManager implements IBase, NetmailStore {
     }
 
     @Override
-    public void addMessage(Message message, String areaname) {
+    public synchronized void addMessage(Message message, String areaname) {
         Dao<Echoarea, Long> echoareasDao = dbManager.getDao(Echoarea.class);
         Dao<Echomail, Object> echomailDao = dbManager.getDao(Echomail.class);
         try {
-            Echoarea area = findEchoareaByName(areaname);
-            if (area == null) {
-                // TODO: Check autocreate flag
-                area = new Echoarea();
-                area.setName(areaname);
-                echoareasDao.create(area);
-            }
-            Echomail echomail = Echomail.fromMessage(message, area);
-            // TODO: if my point - check access level, if it's not allow to post - sent to him
-            // netmail with such info
-            echomailDao.create(echomail);
-        } catch (SQLException | ParseException e) {
+            dbManager.inTransaction(() -> {
+                String identity = "echo:" + MailIdentity.of(message);
+                Dao<MessageReceipt, String> receipts = dbManager.getDao(MessageReceipt.class);
+                if (receipts.queryForId(identity) != null) {
+                    return null;
+                }
+                Echoarea area = findEchoareaByName(areaname);
+                if (area == null) {
+                    // TODO: Check autocreate flag
+                    area = new Echoarea();
+                    area.setName(areaname);
+                    echoareasDao.create(area);
+                }
+                Echomail echomail = Echomail.fromMessage(message, area);
+                // TODO: if my point - check access level, if it's not allow to post - sent to him
+                // netmail with such info
+                echomailDao.create(echomail);
+                receipts.create(new MessageReceipt(identity));
+                return null;
+            });
+        } catch (SQLException e) {
             throw new IllegalStateException("Unable to save message in " + areaname, e);
         }
     }
@@ -363,13 +378,22 @@ public class DatabaseManager implements IBase, NetmailStore {
         Dao<Echoarea, Object> daoEchoarea = dbManager.getDao(Echoarea.class);
         try {
             QueryBuilder<Echoarea, Object> echoareaQueryBuilder = daoEchoarea.queryBuilder();
-            echoareaQueryBuilder.where().eq(Echoarea.NAME_COLUMN, message.getArea().toLowerCase());
+            if (dbManager.<MessageReceipt, String>getDao(MessageReceipt.class)
+                         .queryForId("echo:" + MailIdentity.of(message)) != null) {
+                return true;
+            }
+            echoareaQueryBuilder.where()
+                                .eq(Echoarea.NAME_COLUMN,
+                                    message.getArea().toLowerCase(Locale.ROOT));
 
             QueryBuilder<Echomail, Object> echomailObjectQueryBuilder = daoEchomail.queryBuilder();
             echomailObjectQueryBuilder.join(echoareaQueryBuilder)
                                       .setCountOf(true)
                                       .where()
-                                      .eq(Echomail.MSGID_COLUMN, message.getMsgId());
+                                      .eq(Echomail.MSGID_COLUMN,
+                                          message.getMsgId() == null
+                                                  ? "NO-MSGID:" + MailIdentity.of(message)
+                                                  : message.getMsgId());
             return daoEchomail.countOf(echomailObjectQueryBuilder.prepare()) != 0;
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to check duplicates", e);
@@ -414,7 +438,7 @@ public class DatabaseManager implements IBase, NetmailStore {
     @Override
     public void addSubscription(Link link, String area) {
         List<String> subscriptions = getSubscriptions(link);
-        if (subscriptions.contains(area.toLowerCase())) {
+        if (subscriptions.contains(area.toLowerCase(Locale.ROOT))) {
             return;
         }
 

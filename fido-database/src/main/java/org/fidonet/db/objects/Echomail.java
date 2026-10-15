@@ -31,6 +31,7 @@ package org.fidonet.db.objects;
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
 import org.fidonet.jftn.tools.SafeSimpleDateFormat;
+import org.fidonet.packet.MailIdentity;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
@@ -238,7 +239,8 @@ public class Echomail {
         if (areaName != null && !text.startsWith("AREA:")) {
             text = "AREA:" + areaName + "\r" + text;
         }
-        if (echomail.getMsgId() != null && !text.contains("\1MSGID:")) {
+        if (echomail.getMsgId() != null && !echomail.getMsgId().startsWith("NO-MSGID:")
+                && !text.contains("\1MSGID:")) {
             int areaEnd = text.startsWith("AREA:") ? text.indexOf('\r') + 1 : 0;
             text = text.substring(0, areaEnd)
                    + "\1MSGID: "
@@ -282,7 +284,9 @@ public class Echomail {
         if (message.getTAddr() != null) {
             msg.setToAddr(message.getTAddr().as5D());
         }
-        msg.setMsgId(message.getMsgId());
+        msg.setMsgId(message.getMsgId() == null
+                ? "NO-MSGID:" + MailIdentity.of(message)
+                : message.getMsgId());
         msg.setFromName(message.getFrom());
         msg.setToName(message.getTo());
         msg.setSubject(message.getSubject());

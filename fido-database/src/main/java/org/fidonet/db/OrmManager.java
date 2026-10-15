@@ -31,6 +31,7 @@ package org.fidonet.db;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
+import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
@@ -87,6 +88,7 @@ public class OrmManager {
         daoClasses.add(ConfigurationLink.class);
         daoClasses.add(Netmail.class);
         daoClasses.add(NetmailDelivery.class);
+        daoClasses.add(MessageReceipt.class);
         daoClasses.add(Subscription.class);
         daoClasses.add(Version.class);
     }
