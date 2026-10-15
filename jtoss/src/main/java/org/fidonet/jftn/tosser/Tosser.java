@@ -31,6 +31,7 @@ package org.fidonet.jftn.tosser;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
@@ -65,9 +66,11 @@ public class Tosser extends HasEventBus {
     private EchoMgr areamgr;
     private Pattern bunlderegex;
     private JFtnConfig config;
+    private final NetmailStore netmailStore;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
+        this.netmailStore = base instanceof NetmailStore ? (NetmailStore) base : null;
         this.areamgr = new EchoMgr(base);
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
@@ -264,8 +267,13 @@ public class Tosser extends HasEventBus {
             } else {
                 // Call onTossNetMail hook
                 getEventBus().publish(new TossNetmailEvent(msg));
-                logger.warn("Netmail has no durable delivery handler; retaining packet");
-                return false;
+                if (netmailStore == null || !msg.isValid()
+                        || (!config.getLocalAddresses().contains(msg.getTAddr())
+                                && !origlink.getMyaddr().contains(msg.getTAddr()))) {
+                    logger.warn("Netmail cannot be delivered locally; quarantining packet");
+                    return false;
+                }
+                netmailStore.saveNetmail(msg, journal.key(index), null);
             }
             journal.complete(index);
         }

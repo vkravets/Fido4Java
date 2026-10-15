@@ -332,6 +332,14 @@ public class Message {
         return isValid;
     }
 
+    public int getAttributes() {
+        return attrs == null ? 0 : Short.toUnsignedInt(attrs.getAttr());
+    }
+
+    public void setAttributes(int value) {
+        attrs = new Attribute((short) value);
+    }
+
     public void setValid(boolean isValid) {
         this.isValid = isValid;
     }

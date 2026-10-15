@@ -163,7 +163,7 @@ public class TosserBundleTest {
     public void quarantinesUnhandledNetmailBeforeDeletingItsBundle() throws Exception {
         Path inbound = temporary.newFolder().toPath();
         Path bad = temporary.newFolder().toPath();
-        byte[] bytes = packet("secret", "Netmail\r");
+        byte[] bytes = packet("secret", "\1INTL 2:500/999 2:500/101\rNetmail\r");
         Path source = bundle(inbound, "mail.mo0", bytes);
         tosser(bad, 1, true).runFast(inbound.toString());
         assertArrayEquals(bytes, Files.readAllBytes(bad.resolve("message.bad")));
@@ -236,5 +236,22 @@ public class TosserBundleTest {
         }
         tosser(bad, 1, true).runFast(inbound.toString());
         assertTrue(Files.exists(source));
+    }
+
+    @Test
+    public void deliversMultipleLocalNetmailsAndKeepsThemOutOfEchoAreas() throws Exception {
+        Path inbound = temporary.newFolder().toPath();
+        Path bad = temporary.newFolder().toPath();
+        Path source = bundle(inbound,
+                             "mail.mo0",
+                             packet("secret", "First netmail\r", "Second netmail\r"));
+        Tosser tosser = tosser(bad, 0, true);
+        tosser.runFast(inbound.toString());
+        tosser.runFast(inbound.toString());
+        assertTrue(Files.exists(source));
+        assertEquals(2, base.getLocalNetmail(new FTNAddr("2:500/102")).size());
+        assertEquals("First netmail\r",
+                     base.getLocalNetmail(new FTNAddr("2:500/102")).get(0).getBody().getBody());
+        assertEquals(0, base.getMessageSize("test"));
     }
 }

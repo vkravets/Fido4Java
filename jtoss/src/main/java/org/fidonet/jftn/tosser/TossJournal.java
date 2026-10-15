@@ -34,6 +34,10 @@ final class TossJournal {
         return Files.exists(directory.resolve(index + ".done"));
     }
 
+    String key(int index) {
+        return directory.getFileName() + ":" + index;
+    }
+
     void complete(int index) throws IOException {
         try (FileChannel channel = FileChannel.open(directory.resolve(index + ".done"),
                                                     StandardOpenOption.CREATE,
