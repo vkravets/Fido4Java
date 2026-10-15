@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayDeque;
 
 public class SenderBackpressureTest {
@@ -46,8 +47,13 @@ public class SenderBackpressureTest {
         FilesSender<RecordingSession> sender = new FilesSender<>(session,
                                                                  new ArrayDeque<>(),
                                                                  new SessionContext(null, null));
-        sender.send(new FileData<>(new FileInfo("small.bin", 3, 0),
-                                   new ByteArrayInputStream(new byte[3])));
-        assertEquals(1, drains[0]);
+        FileData<InputStream> file = new FileData<>(new FileInfo("small.bin", 3, 0),
+                                                    new ByteArrayInputStream(new byte[3]));
+        int[] releases = {0};
+        file.setSendResource(() -> releases[0]++);
+        sender.send(file);
+        sender.send(file.resend(new FileInfo("small.bin", 3, 0)));
+        assertEquals(2, releases[0]);
+        assertEquals(2, drains[0]);
     }
 }

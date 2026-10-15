@@ -246,7 +246,9 @@ public final class MailService implements AutoCloseable {
             FileInfo info = new FileInfo(path.getFileName().toString(),
                                          Files.size(path),
                                          Files.getLastModifiedTime(path).toMillis() / 1000);
-            FileData<InputStream> file = new FileData<>(info, new LazyFileInputStream(path));
+            LazyFileInputStream stream = new LazyFileInputStream(path);
+            FileData<InputStream> file = new FileData<>(info, stream);
+            file.setSendResource(stream::release);
             outgoing.put(file, path);
             context.getSendFiles().add(file);
         } catch (IOException e) {

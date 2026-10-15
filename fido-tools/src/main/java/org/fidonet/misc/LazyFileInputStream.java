@@ -17,7 +17,7 @@ public final class LazyFileInputStream extends InputStream {
         this.path = path;
     }
 
-    private FileInputStream input() throws IOException {
+    private synchronized FileInputStream input() throws IOException {
         if (closed) {
             throw new IOException("Stream is closed");
         }
@@ -70,10 +70,16 @@ public final class LazyFileInputStream extends InputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         closed = true;
+        release();
+    }
+
+    /** Releases the descriptor while retaining the position needed by a later M_GET. */
+    public synchronized void release() throws IOException {
         if (input != null) {
             input.close();
+            input = null;
         }
     }
 }

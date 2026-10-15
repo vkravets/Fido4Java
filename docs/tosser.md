@@ -250,8 +250,9 @@ document or independent-tosser certification.
 ## Processing and storage costs
 
 Netty file writes are drained after each 64 KiB window and at the end of a file.
-Outgoing packet streams open on first use and seek for retransmission without
-buffering the entire file. Mail bundles are validated into temporary files before
+Outgoing packet streams open on first use, release their descriptors after each
+attempt, and reopen and seek for retransmission without buffering the entire file.
+Mail bundles are validated into temporary files before
 processing starts; existing packet, bundle and entry limits still apply. Temporary
 disk space up to the bundle limit is required while processing an archive.
 

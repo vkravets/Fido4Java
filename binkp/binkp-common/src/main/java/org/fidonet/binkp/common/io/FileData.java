@@ -28,6 +28,8 @@
 
 package org.fidonet.binkp.common.io;
 
+import java.io.IOException;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -41,6 +43,28 @@ public class FileData<T> {
     private T stream;
     private boolean rewindBeforeSend;
     private boolean resumeResponse;
+    private SendResource sendResource;
+
+    public interface SendResource extends AutoCloseable {
+        @Override
+        void close() throws IOException;
+    }
+
+    public SendResource getSendResource() {
+        return sendResource;
+    }
+
+    public void setSendResource(SendResource resource) {
+        sendResource = resource;
+    }
+
+    public FileData<T> resend(FileInfo requested) {
+        FileData<T> resend = new FileData<>(requested, stream);
+        resend.sendResource = sendResource;
+        resend.setRewindBeforeSend(true);
+        resend.setResumeResponse(true);
+        return resend;
+    }
 
     public boolean isResumeResponse() {
         return resumeResponse;
