@@ -1,0 +1,21 @@
+apply plugin: 'java-library'
+
+description = 'Optional FTSC node and point directory plugin'
+
+dependencies {
+    api project(':jtoss')
+    implementation project(':plugin-manager')
+    implementation 'org.slf4j:slf4j-api:2.0.20'
+    runtimeOnly 'com.h2database:h2:2.5.252'
+}
+
+tasks.register('importDirectory', JavaExec) {
+    group = 'application'
+    description = 'Imports configured nodelists and pointlists without starting the node.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.fidonet.nodelist.DirectoryImport'
+    workingDir rootProject.projectDir
+    doFirst {
+        args providers.gradleProperty('directoryConfig').orElse('jftn.conf').get()
+    }
+}

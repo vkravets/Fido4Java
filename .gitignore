@@ -12,5 +12,6 @@
 **/logs/
 **/tmp/
 /inbound/.binkp-partials/
+/database/
 **/*.hprof
 **/*.part
