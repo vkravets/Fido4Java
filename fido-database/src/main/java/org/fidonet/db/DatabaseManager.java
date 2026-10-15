@@ -49,6 +49,7 @@ import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.echobase.NetmailRoutingStore;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
+import org.fidonet.echobase.StoredMail;
 import org.fidonet.packet.MailIdentity;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -66,6 +67,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -196,6 +198,75 @@ public class DatabaseManager
     private final NetmailRepository netmailRepository;
     private final AreaRepository areas;
     private final SubscriptionRepository subscriptions;
+
+    /** Ascending SQL row cursor. Call with limit+1 to determine whether another page exists. */
+    public List<StoredMail> readEchoPage(String name, long after, int limit) throws IOException {
+        checkPage(after, limit);
+        try {
+            Echoarea area = areas.findByName(name.toLowerCase(Locale.ROOT));
+            if (area == null) {
+                throw new IllegalArgumentException("Unknown echo area");
+            }
+            List<StoredMail> result = new ArrayList<>();
+            QueryBuilder<Echomail, Object> query = dbManager.<Echomail, Object>getDao(Echomail.class)
+                                                            .queryBuilder()
+                                                            .orderBy("id", true)
+                                                            .limit((long) limit);
+            query.where().eq(Echomail.ID_AREA_COLUMN, area.getId()).and().gt("id", after);
+            for (Echomail row : query.query()) {
+                row.setArea(area);
+                result.add(new StoredMail(row.getId(), row.toMessage()));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IOException("Unable to read echo page", e);
+        }
+    }
+
+    public List<StoredMail> readNetmailPage(Collection<FTNAddr> local,
+                                            boolean sent,
+                                            long after,
+                                            int limit)
+            throws IOException {
+        checkPage(after, limit);
+        List<String> addresses = new ArrayList<>();
+        for (FTNAddr address : local) {
+            addresses.add(address.toString());
+        }
+        if (addresses.isEmpty()) {
+            return List.of();
+        }
+        try {
+            QueryBuilder<Netmail, Object> query = dbManager.<Netmail, Object>getDao(Netmail.class)
+                                                           .queryBuilder()
+                                                           .orderBy("id", true)
+                                                           .limit((long) limit);
+            Where<Netmail, Object> where = query.where()
+                                                .gt("id", after)
+                                                .and()
+                                                .in(sent ? "from_addr" : "to_addr", addresses);
+            if (!sent) {
+                where.and().isNull("route_via");
+            }
+            List<StoredMail> result = new ArrayList<>();
+            for (Netmail row : query.query()) {
+                Message message = row.toMessage();
+                if (Boolean.TRUE.equals(row.getSend())) {
+                    message.setAttributes(message.getAttributes() | 8);
+                }
+                result.add(new StoredMail(row.getId(), message));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IOException("Unable to read netmail page", e);
+        }
+    }
+
+    private static void checkPage(long after, int limit) {
+        if (after < 0 || limit < 1 || limit > 201) {
+            throw new IllegalArgumentException("Invalid page cursor or size");
+        }
+    }
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;

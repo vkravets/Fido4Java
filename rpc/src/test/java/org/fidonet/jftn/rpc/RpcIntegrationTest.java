@@ -53,10 +53,11 @@ public class RpcIntegrationTest {
                 Api.Client api = new Api.Client(protocol(connection, "api"));
                 assertEquals(Response.OK, api.ping());
                 assertEquals(new VersionResponse(Response.OK, "1.0"), api.getVersion());
-                // The default login handler is currently a stub; this checks RPC wiring only.
+                // An unconfigured standalone server cannot authenticate users.
                 LoginService.Client login = new LoginService.Client(protocol(connection, "login"));
                 LoginResponse session = login.login(new Credential("test", "test"));
-                assertEquals("session_id_1", session.getSession_id());
+                assertEquals(Response.AUTHORIZATION_FAILED, session.getRespose_status());
+                assertEquals("", session.getSession_id());
                 login.logout(session.getSession_id());
                 assertTrue(new MessageService.Client(protocol(connection,
                                                               "messages")).getMessages("empty")

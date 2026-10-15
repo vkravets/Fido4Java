@@ -12,11 +12,13 @@ struct LoginResponse {
 }
 
 struct Credential {
+    // RPC account credentials; independent from FTN/binkp link passwords.
     1: string login,
     2: string password
 }
 
 service LoginService {
+    // Password login. Optional WebAuthn/passkey ceremonies use the auth service.
     LoginResponse login(1:Credential cred),
     oneway void logout(1: string session_id)
 }

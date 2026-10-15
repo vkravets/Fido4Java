@@ -142,6 +142,22 @@ public final class MailService implements AutoCloseable {
         return tosser;
     }
 
+    @FunctionalInterface
+    public interface MailOperation<T> {
+        T run(Tosser tosser) throws Exception;
+    }
+
+    /** UI mutations share the same lock as scans, scripts and outbound preparation. */
+    public <T> T operate(MailOperation<T> operation) throws Exception {
+        processing.lockInterruptibly();
+        try {
+            requireOpen();
+            return operation.run(tosser);
+        } finally {
+            processing.unlock();
+        }
+    }
+
     private void configure(DatabaseManager base) {
         boolean managed = EchoRouter.databaseSubscriptions(config);
         for (Link link : config.getConfiguredLinks()) {

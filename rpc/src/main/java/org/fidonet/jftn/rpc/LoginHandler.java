@@ -40,7 +40,7 @@ import org.apache.thrift.TException;
 public class LoginHandler implements LoginService.Iface {
     @Override
     public LoginResponse login(Credential cred) throws TException {
-        return new LoginResponse(Response.OK, "session_id_1");
+        return new LoginResponse(Response.AUTHORIZATION_FAILED, "");
     }
 
     @Override
