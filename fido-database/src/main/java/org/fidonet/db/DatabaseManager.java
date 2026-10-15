@@ -37,6 +37,7 @@ import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
+import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -103,6 +104,41 @@ public class DatabaseManager implements IBase, NetmailStore {
             return result;
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to read netmail", e);
+        }
+    }
+
+    @Override
+    public List<QueuedNetmail> getQueuedNetmail() {
+        try {
+            List<QueuedNetmail> result = new ArrayList<>();
+            for (NetmailDelivery delivery : dbManager.<NetmailDelivery, String>getDao(NetmailDelivery.class)
+                                                     .queryForEq("state", "QUEUED")) {
+                result.add(new QueuedNetmail(delivery.getKey(),
+                                             delivery.getNextHop(),
+                                             delivery.getMessage().toMessage()));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to read outgoing netmail", e);
+        }
+    }
+
+    @Override
+    public synchronized void markNetmailSent(String deliveryKey) {
+        try {
+            dbManager.inTransaction(() -> {
+                Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
+                NetmailDelivery delivery = deliveries.queryForId(deliveryKey);
+                if (delivery != null) {
+                    delivery.setState("SENT");
+                    delivery.getMessage().setSend(true);
+                    dbManager.getDao(Netmail.class).update(delivery.getMessage());
+                    deliveries.update(delivery);
+                }
+                return null;
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to acknowledge outgoing netmail", e);
         }
     }
 

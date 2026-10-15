@@ -125,6 +125,7 @@ public class Message {
     public Body getStripedBody(String[] lines) {
         final Map<String, String> kltmp = new LinkedHashMap<String, String>();
         List<String> controlLines = new ArrayList<>();
+        List<String> viaLines = new ArrayList<>();
         SeenBy seenBy = new SeenBy();
         FidoPath path = new FidoPath();
         StringBuilder sb = new StringBuilder();
@@ -154,7 +155,9 @@ public class Message {
                 }
                 String key = control.group(1);
                 String value = control.group(2);
-                if (x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
+                if (!echomail && key.equals("Via")) {
+                    viaLines.add(x);
+                } else if (x.startsWith(FidoPath.PATH_LINE_PREFIX)) {
                     path.add(FidoPath.valueOf(value, defaultZone));
                 } else {
                     kltmp.putIfAbsent(key, value);
@@ -174,6 +177,9 @@ public class Message {
         Body parsed = new Body(sb.toString(), kltmp, origin, seenBy, path);
         parsed.setArea(echomail ? area : null);
         parsed.setControlLines(controlLines);
+        for (String via : viaLines) {
+            parsed.addVia(via);
+        }
         return parsed;
     }
 
@@ -338,6 +344,14 @@ public class Message {
 
     public void setAttributes(int value) {
         attrs = new Attribute((short) value);
+    }
+
+    public Message copy() {
+        Message copy = new Message(from, to, fAddr, tAddr, subject, body.toString(), new Date(0));
+        copy.msgDate = msgDate;
+        copy.setAttributes(getAttributes());
+        copy.upLink = upLink;
+        return copy;
     }
 
     public void setValid(boolean isValid) {

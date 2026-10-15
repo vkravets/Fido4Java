@@ -10,4 +10,8 @@ public interface NetmailStore {
     void saveNetmail(Message message, String deliveryKey, String nextHop);
 
     List<Message> getLocalNetmail(FTNAddr address);
+
+    List<QueuedNetmail> getQueuedNetmail();
+
+    void markNetmailSent(String deliveryKey);
 }

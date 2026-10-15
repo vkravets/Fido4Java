@@ -1,0 +1,123 @@
+package org.fidonet.jftn.tosser;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.fidonet.config.JFtnConfig;
+import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.OrmManager;
+import org.fidonet.fts.FtsPkt;
+import org.fidonet.packet.PacketWriter;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Link;
+import org.fidonet.types.Message;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Date;
+
+public class NetmailRoutingTest {
+    @Rule
+    public TemporaryFolder temporary = new TemporaryFolder();
+
+    JFtnConfig config(boolean transit) throws Exception {
+        String root = temporary.newFolder().getAbsolutePath().replace('\\', '/');
+        String text = "Inbound="
+                      + root
+                      + "/inbound\nTmp="
+                      + root
+                      + "/tmp\nEchoPath="
+                      + root
+                      + "/echo\n"
+                      + "Outbound="
+                      + root
+                      + "/outbound\nSysOp=Test\nAllowTransit="
+                      + transit
+                      + "\n"
+                      + "Link=2:500/101,2:500/102,secret,localhost\n"
+                      + "Link=2:500/103,2:500/102,secret,localhost\nDefaultRoute=2:500/103\n";
+        Files.createDirectories(Path.of(root, "inbound"));
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        return config;
+    }
+
+    private Message message(String from, String body) {
+        return new Message("Author",
+                           "Reader",
+                           new FTNAddr(from),
+                           new FTNAddr("3:600/1.4"),
+                           "Subject",
+                           body,
+                           new Date());
+    }
+
+    @Test
+    public void persistsRoutesExportsAndAcknowledgesOutgoingNetmail() throws Exception {
+        JFtnConfig config = config(false);
+        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:route"
+                                                                  + System.nanoTime()));
+        assertTrue(base.open());
+        try {
+            Tosser tosser = new Tosser(config, base);
+            Message message = message("2:500/102", "\1MSGID: 2:500/102 outgoing\rHello\r");
+            message.setAttributes(512);
+            tosser.submitNetmail(message, "outgoing");
+            tosser.exportPendingNetmail();
+            tosser.exportPendingNetmail();
+            Link nextHop = config.getLink(new FTNAddr("2:500/103"));
+            OutboundSpool spool = new OutboundSpool(config);
+            assertTrue(spool.pending(nextHop, false).isEmpty());
+            assertEquals(1, spool.pending(nextHop, true).size());
+            Path file = spool.pending(nextHop, true).get(0);
+            FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(file)));
+            assertEquals(103, packet.getDestNode());
+            Message restored = new Message(packet.getMsgs()[0],
+                                           packet.getOrigZone(),
+                                           packet.getDestZone());
+            assertEquals(message.getTAddr(), restored.getTAddr());
+            assertTrue(restored.getBody().toString().contains("Hello\r\1Via 2:500/102"));
+            assertEquals(1, base.getQueuedNetmail().size());
+            spool.acknowledge(file);
+            // Simulate a crash after the filesystem receipt but before the SQL update.
+            new Tosser(config, base).exportPendingNetmail();
+            assertTrue(base.getQueuedNetmail().isEmpty());
+            tosser.exportPendingNetmail();
+            assertTrue(spool.pending(nextHop, true).isEmpty());
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
+    public void onlyRoutesTransitWhenExplicitlyAllowed() throws Exception {
+        for (boolean allowed : new boolean[]{false, true}) {
+            JFtnConfig config = config(allowed);
+            DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:transit"
+                                                                      + System.nanoTime()));
+            assertTrue(base.open());
+            try {
+                byte[] bytes = PacketWriter.write(new FTNAddr("2:500/101"),
+                                                  new FTNAddr("2:500/102"),
+                                                  "secret",
+                                                  Collections.singletonList(message("1:100/1",
+                                                                                    "Transit\r")));
+                Files.write(Path.of(config.getInbound(), "transit.pkt"), bytes);
+                new Tosser(config, base).runFast(config.getInbound());
+                assertEquals(allowed ? 1 : 0, base.getQueuedNetmail().size());
+                assertEquals(!allowed, Files.exists(Path.of(config.getTmpDir(), "transit.bad")));
+            } finally {
+                base.close();
+            }
+        }
+    }
+}

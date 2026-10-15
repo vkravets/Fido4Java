@@ -58,6 +58,15 @@ public class Body {
     private String body;
     private String area;
     private List<String> controlLines = Collections.emptyList();
+    private List<String> viaLines = new ArrayList<>();
+
+    public List<String> getViaLines() {
+        return Collections.unmodifiableList(viaLines);
+    }
+
+    public void addVia(String line) {
+        viaLines.add(line);
+    }
 
     public void setControlLines(List<String> lines) {
         controlLines = new ArrayList<>(lines);
@@ -162,6 +171,12 @@ public class Body {
         // insert path
         for (String p : path.toPathStrings()) {
             sb.append(p).append("\r");
+        }
+        for (String line : viaLines) {
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\r') {
+                sb.append('\r');
+            }
+            sb.append(line).append('\r');
         }
         return sb.toString();
     }

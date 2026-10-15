@@ -32,6 +32,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailStore;
+import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.echobase.exceptions.EchoBaseException;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
@@ -54,6 +55,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -267,13 +271,22 @@ public class Tosser extends HasEventBus {
             } else {
                 // Call onTossNetMail hook
                 getEventBus().publish(new TossNetmailEvent(msg));
-                if (netmailStore == null || !msg.isValid()
-                        || (!config.getLocalAddresses().contains(msg.getTAddr())
-                                && !origlink.getMyaddr().contains(msg.getTAddr()))) {
-                    logger.warn("Netmail cannot be delivered locally; quarantining packet");
+                if (netmailStore == null || !msg.isValid()) {
                     return false;
                 }
-                netmailStore.saveNetmail(msg, journal.key(index), null);
+                boolean local = config.getLocalAddresses().contains(msg.getTAddr())
+                        || origlink.getMyaddr() != null
+                                && origlink.getMyaddr().contains(msg.getTAddr());
+                Link route = local ? null : new NetmailRouter(config).route(msg);
+                if (!local && (!Boolean.parseBoolean(config.getValue("AllowTransit", "false"))
+                        || route == null || route.getAddr().equals(origlink.getAddr())
+                        || hasRoutingLoop(msg) || (msg.getAttributes() & 0x8810) != 0)) {
+                    logger.warn("Netmail has no permitted transit route; quarantining packet");
+                    return false;
+                }
+                netmailStore.saveNetmail(msg,
+                                         journal.key(index),
+                                         local ? null : route.getAddr().toString());
             }
             journal.complete(index);
         }
@@ -282,6 +295,69 @@ public class Tosser extends HasEventBus {
 
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg);
+    }
+
+    private boolean hasRoutingLoop(Message message) {
+        for (String via : message.getBody().getViaLines()) {
+            String[] fields = via.trim().split("\\s+");
+            if (fields.length > 1 && config.getLocalAddresses().contains(new FTNAddr(fields[1]))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public synchronized void submitNetmail(Message message, String deliveryKey) {
+        if ((message.getAttributes() & 0x8810) != 0) {
+            throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
+        }
+        if (message.isEchomail() || netmailStore == null
+                || !config.getLocalAddresses().contains(message.getFAddr())) {
+            throw new IllegalArgumentException("Outgoing netmail must originate from a local AKA");
+        }
+        if (config.getLocalAddresses().contains(message.getTAddr())) {
+            netmailStore.saveNetmail(message, deliveryKey, null);
+            return;
+        }
+        Link route = new NetmailRouter(config).route(message);
+        if (route == null) {
+            throw new IllegalStateException("No route for " + message.getTAddr());
+        }
+        netmailStore.saveNetmail(message, deliveryKey, route.getAddr().toString());
+    }
+
+    public synchronized void exportPendingNetmail() throws IOException {
+        if (netmailStore == null) {
+            return;
+        }
+        OutboundSpool spool = new OutboundSpool(config);
+        for (QueuedNetmail queued : netmailStore.getQueuedNetmail()) {
+            Link route = config.getLink(new FTNAddr(queued.getNextHop()));
+            if (route == null || route.getMyaddr() == null || route.getMyaddr().isEmpty()) {
+                throw new IOException("Missing configured route " + queued.getNextHop());
+            }
+            if (spool.isAcknowledged("netmail:" + queued.getKey(), route)) {
+                netmailStore.markNetmailSent(queued.getKey());
+                continue;
+            }
+            Message copy = queued.getMessage().copy();
+            copy.getBody()
+                .addVia("\1Via "
+                        + route.getMyaddr()
+                               .get(0)
+                        + " @"
+                        + DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")
+                                           .withZone(ZoneOffset.UTC)
+                                           .format(Instant.now())
+                        + ".UTC JFtn 1.0");
+            spool.enqueue("netmail:" + queued.getKey(), route, copy);
+        }
+    }
+
+    public void acknowledgeOutbound(String key) {
+        if (key.startsWith("netmail:") && netmailStore != null) {
+            netmailStore.markNetmailSent(key.substring("netmail:".length()));
+        }
     }
 
     public EchoMgr getAreamgr() {
