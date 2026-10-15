@@ -131,17 +131,22 @@ public class JFtnRunner {
                 Integer.parseInt(config.getValue("BinkpPort",
                                                  Integer.toString(Connector.BINK_PORT))),
                 waiter,
-                () -> {
-                    try {
-                        scheduler.stop();
-                        runner.shutdown();
-                        activeMail.close();
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    } finally {
-                        unloadPlugins.run();
-                    }
-                });
+                () -> stopServices(scheduler, runner, activeMail, unloadPlugins));
+    }
+
+    private static void stopServices(Scheduler scheduler,
+                                     Runner runner,
+                                     MailService mail,
+                                     Runnable unloadPlugins) {
+        try {
+            scheduler.stop();
+            runner.shutdown();
+            mail.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            unloadPlugins.run();
+        }
     }
 
     static SessionContext createSessionContext(JFtnConfig config) {

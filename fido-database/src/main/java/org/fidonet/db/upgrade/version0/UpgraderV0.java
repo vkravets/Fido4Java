@@ -142,24 +142,7 @@ public class UpgraderV0 implements Upgrader {
                                              newObject.setToAddr(oldObject.getToAddr());
                                              newObject.setDate(oldObject.getDate());
                                              newObject.setSubject(oldObject.getSubject());
-                                             StringBuilder text = new StringBuilder();
-                                             if (oldObject.getKludges() != null) {
-                                                 for (Map.Entry<String, String> kludge : oldObject.getKludges()
-                                                                                                  .entrySet()) {
-                                                     String key = kludge.getKey();
-                                                     if (!key.startsWith("\u0001")) {
-                                                         text.append('\u0001');
-                                                     }
-                                                     text.append(key)
-                                                         .append(':')
-                                                         .append(kludge.getValue())
-                                                         .append('\r');
-                                                 }
-                                             }
-                                             if (oldObject.getText() != null) {
-                                                 text.append(oldObject.getText());
-                                             }
-                                             newObject.setText(text.toString());
+                                             newObject.setText(upgradeEchoText(oldObject));
                                              newObject.setOrigin(oldObject.getOrigin());
                                              newObject.setSeenBy(oldObject.getSeenBy());
                                              newObject.setPath(oldObject.getPath());
@@ -176,6 +159,25 @@ public class UpgraderV0 implements Upgrader {
                                      true);
     }
 
+    private String upgradeEchoText(Echomail message) {
+        StringBuilder text = new StringBuilder();
+        if (message.getKludges() != null) {
+            for (Map.Entry<String, String> kludge : message.getKludges().entrySet()) {
+                appendKludge(text, kludge.getKey(), kludge.getValue());
+            }
+        }
+        if (message.getText() != null) {
+            text.append(message.getText());
+        }
+        return text.toString();
+    }
+
+    private void appendKludge(StringBuilder text, String key, String value) {
+        if (!key.startsWith("\u0001")) {
+            text.append('\u0001');
+        }
+        text.append(key).append(':').append(value).append('\r');
+    }
     private boolean upgradeNetmails(OrmManager oldManager, OrmManager newManager) {
         return Helper.upgradeObjects(Netmail.class,
                                      oldManager,

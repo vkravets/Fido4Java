@@ -81,11 +81,10 @@ public class JFtnConfig extends BaseConfig {
     @Override
     public void load(InputStream stream) throws ParseConfigException {
         super.load(stream);
-        if (isValidate()) {
-            links = getLinks(getValuesAsList("link"));
-        } else {
+        if (!isValidate()) {
             throw new ParseConfigException("Config is not valid!");
         }
+        links = getLinks(getValuesAsList("link"));
     }
 
     private Map<String, Link> getLinks(List<String> links) {
@@ -121,16 +120,7 @@ public class JFtnConfig extends BaseConfig {
         String password = link.getPass() == null ? "" : link.getPass();
         if (values != null) {
             for (String value : values) {
-                String[] fields = value.split(",", 2);
-                if (fields.length != 2) {
-                    throw new IllegalArgumentException("Expected PacketPassword address,password");
-                }
-                if (new FTNAddr(fields[0].trim()).equals(link.getAddr())) {
-                    password = fields[1].trim();
-                    if (password.equals("-")) {
-                        password = "";
-                    }
-                }
+                password = packetPasswordOverride(value, link, password);
             }
         }
         if (!StandardCharsets.US_ASCII.newEncoder().canEncode(password) || password.length() > 8
@@ -139,6 +129,18 @@ public class JFtnConfig extends BaseConfig {
                     + link.getAddr());
         }
         return password;
+    }
+
+    private String packetPasswordOverride(String value, Link link, String current) {
+        String[] fields = value.split(",", 2);
+        if (fields.length != 2) {
+            throw new IllegalArgumentException("Expected PacketPassword address,password");
+        }
+        if (!new FTNAddr(fields[0].trim()).equals(link.getAddr())) {
+            return current;
+        }
+        String password = fields[1].trim();
+        return password.equals("-") ? "" : password;
     }
 
     public String getArealistFile() throws IOException {

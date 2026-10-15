@@ -65,53 +65,12 @@ public class EchoList {
 
     private HashMap<String, EchoCfg> readList(String filename) throws IOException {
         HashMap<String, EchoCfg> loaded = new HashMap<>();
-
-        String str;
         try (BufferedReader file = new BufferedReader(new FileReader(filename))) {
+            String line;
             int lineNumber = 0;
-            while ((str = file.readLine()) != null) {
-                lineNumber++;
-                if (str.contains("#")) {
-                    str = str.substring(0, str.indexOf('#'));
-                }
-                str = str.trim();
-                if (str.length() == 0) {
-                    continue;
-                }
-                String[] area = str.split("\\s+");
-                if (area[0].equalsIgnoreCase("echoarea")) {
-                    if (area.length < 3) {
-                        throw new IOException("Incomplete EchoArea at "
-                                              + filename
-                                              + ":"
-                                              + lineNumber);
-                    }
-                    EchoCfg echo = new EchoCfg();
-                    echo.Name = area[1];
-                    echo.Path = area[2];
-                    for (int i = 3; i < area.length; i++) {
-                        if ((area[i].equals("-b") || area[i].equals("-g") || area[i].equals("-a"))
-                                && (i + 1 == area.length || area[i + 1].startsWith("-"))) {
-                            throw new IOException("Missing value for "
-                                                  + area[i]
-                                                  + " at "
-                                                  + filename
-                                                  + ":"
-                                                  + lineNumber);
-                        }
-                        if (area[i].equals("-b")) {
-                            echo.Type = area[i + 1];
-                            i++;
-                        } else if (area[i].equals("-g")) {
-                            echo.Group = area[i + 1];
-                            i++;
-                        } else if (area[i].equals("-a")) {
-                            echo.AKA = new FTNAddr(area[i + 1]);
-                            i++;
-                        } else if (!area[i].startsWith("-")) {
-                            echo.Link = new FTNAddr(area[i]);
-                        }
-                    }
+            while ((line = file.readLine()) != null) {
+                EchoCfg echo = parseAreaLine(line, filename, ++lineNumber);
+                if (echo != null) {
                     loaded.put(echo.Name, echo);
                 }
             }
@@ -119,6 +78,61 @@ public class EchoList {
         return loaded;
     }
 
+    private EchoCfg parseAreaLine(String line, String filename, int lineNumber) throws IOException {
+        int comment = line.indexOf('#');
+        String content = (comment < 0 ? line : line.substring(0, comment)).trim();
+        if (content.isEmpty()) {
+            return null;
+        }
+        String[] area = content.split("\\s+");
+        if (!area[0].equalsIgnoreCase("echoarea")) {
+            return null;
+        }
+        if (area.length < 3) {
+            throw new IOException("Incomplete EchoArea at " + filename + ":" + lineNumber);
+        }
+        EchoCfg echo = new EchoCfg();
+        echo.Name = area[1];
+        echo.Path = area[2];
+        readAreaOptions(echo, area, filename, lineNumber);
+        return echo;
+    }
+
+    private void readAreaOptions(EchoCfg echo, String[] area, String filename, int lineNumber)
+            throws IOException {
+        for (int i = 3; i < area.length; i++) {
+            validateOptionValue(area, i, filename, lineNumber);
+            switch (area[i]) {
+                case "-b" :
+                    echo.Type = area[++i];
+                    break;
+                case "-g" :
+                    echo.Group = area[++i];
+                    break;
+                case "-a" :
+                    echo.AKA = new FTNAddr(area[++i]);
+                    break;
+                default :
+                    if (!area[i].startsWith("-")) {
+                        echo.Link = new FTNAddr(area[i]);
+                    }
+            }
+        }
+    }
+
+    private void validateOptionValue(String[] area, int index, String filename, int lineNumber)
+            throws IOException {
+        String option = area[index];
+        boolean needsValue = option.equals("-b") || option.equals("-g") || option.equals("-a");
+        if (needsValue && (index + 1 == area.length || area[index + 1].startsWith("-"))) {
+            throw new IOException("Missing value for "
+                                  + option
+                                  + " at "
+                                  + filename
+                                  + ":"
+                                  + lineNumber);
+        }
+    }
     public boolean isInList(String name) {
         return list.containsKey(name);
     }

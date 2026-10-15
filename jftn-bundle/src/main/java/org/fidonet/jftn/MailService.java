@@ -202,23 +202,27 @@ public final class MailService implements AutoCloseable {
             processPending();
             Link link = requireLink(context);
             for (Path path : spool.pending(link, context.getServerRole() == ServerRole.SERVER)) {
-                if (claims.putIfAbsent(path, context) != null) {
-                    continue;
-                }
-                try {
-                    FileInfo info = new FileInfo(path.getFileName().toString(),
-                                                 Files.size(path),
-                                                 Files.getLastModifiedTime(path).toMillis() / 1000);
-                    FileData<InputStream> file = new FileData<>(info, Files.newInputStream(path));
-                    outgoing.put(file, path);
-                    context.getSendFiles().add(file);
-                } catch (IOException e) {
-                    claims.remove(path, context);
-                    throw e;
-                }
+                enqueueOutboundFile(context, path);
             }
         } catch (Exception e) {
             throw new IllegalStateException("Unable to prepare outbound", e);
+        }
+    }
+
+    private void enqueueOutboundFile(SessionContext context, Path path) throws IOException {
+        if (claims.putIfAbsent(path, context) != null) {
+            return;
+        }
+        try {
+            FileInfo info = new FileInfo(path.getFileName().toString(),
+                                         Files.size(path),
+                                         Files.getLastModifiedTime(path).toMillis() / 1000);
+            FileData<InputStream> file = new FileData<>(info, Files.newInputStream(path));
+            outgoing.put(file, path);
+            context.getSendFiles().add(file);
+        } catch (IOException e) {
+            claims.remove(path, context);
+            throw e;
         }
     }
 
@@ -236,15 +240,20 @@ public final class MailService implements AutoCloseable {
 
     private synchronized void release(SessionContext context) {
         for (Map.Entry<FileData<InputStream>, Path> entry : outgoing.entrySet()) {
-            if (claims.get(entry.getValue()) == context) {
-                try {
-                    entry.getKey().getStream().close();
-                } catch (IOException e) {
-                    logger.warn("Unable to close outgoing packet", e);
-                }
-                outgoing.remove(entry.getKey());
-                claims.remove(entry.getValue(), context);
+            if (claims.get(entry.getValue()) != context) {
+                continue;
             }
+            closeOutgoingFile(entry.getKey());
+            outgoing.remove(entry.getKey());
+            claims.remove(entry.getValue(), context);
+        }
+    }
+
+    private void closeOutgoingFile(FileData<InputStream> file) {
+        try {
+            file.getStream().close();
+        } catch (IOException e) {
+            logger.warn("Unable to close outgoing packet", e);
         }
     }
 

@@ -27,19 +27,7 @@ public final class MessageIds {
                                                     StandardOpenOption.WRITE);
                 FileLock lock = channel.lock()) {
             ByteBuffer buffer = ByteBuffer.allocate(8);
-            long previous = 0;
-            if (channel.size() != 0) {
-                if (channel.size() != 8) {
-                    throw new IOException("Corrupt MSGID sequence");
-                }
-                while (buffer.hasRemaining()) {
-                    if (channel.read(buffer) < 0) {
-                        throw new IOException("Truncated MSGID sequence");
-                    }
-                }
-                buffer.flip();
-                previous = buffer.getLong();
-            }
+            long previous = readPrevious(channel, buffer);
             long serial = Math.max(previous + 1, System.currentTimeMillis() / 1000);
             if (serial > 0xffffffffL) {
                 throw new IOException("MSGID serial space exhausted");
@@ -53,5 +41,21 @@ public final class MessageIds {
             channel.force(true);
             message.setMsgId(message.getFAddr() + " " + String.format(Locale.ROOT, "%08x", serial));
         }
+    }
+
+    private static long readPrevious(FileChannel channel, ByteBuffer buffer) throws IOException {
+        if (channel.size() == 0) {
+            return 0;
+        }
+        if (channel.size() != 8) {
+            throw new IOException("Corrupt MSGID sequence");
+        }
+        while (buffer.hasRemaining()) {
+            if (channel.read(buffer) < 0) {
+                throw new IOException("Truncated MSGID sequence");
+            }
+        }
+        buffer.flip();
+        return buffer.getLong();
     }
 }

@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -110,28 +111,13 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
                 if (message.isEchomail() && isDupe(message)) {
                     return false;
                 }
-                if (!message.isEchomail()) {
-                    for (Netmail existing : dbManager.<Netmail, Long>getDao(Netmail.class)
-                                                     .queryForAll()) {
-                        if (MailIdentity.of(existing.toMessage())
-                                        .equals(MailIdentity.of(message))) {
-                            return false;
-                        }
-                    }
+                if (!message.isEchomail() && containsNetmail(message)) {
+                    return false;
                 }
                 if (message.isEchomail()) {
-                    Echoarea area = findEchoareaByName(message.getArea().toLowerCase(Locale.ROOT));
-                    if (area == null) {
-                        throw new IllegalArgumentException("Create the target SQL area before archive import");
-                    }
-                    dbManager.getDao(Echomail.class).create(Echomail.fromMessage(message, area));
+                    storeArchiveEcho(message);
                 } else {
-                    Netmail stored = Netmail.fromMessage(message);
-                    dbManager.getDao(Netmail.class).create(stored);
-                    NetmailDelivery delivery = new NetmailDelivery("archive:"
-                            + MailIdentity.of(message), stored, null);
-                    delivery.setState("ARCHIVE");
-                    dbManager.getDao(NetmailDelivery.class).create(delivery);
+                    storeArchiveNetmail(message);
                 }
                 dbManager.getDao(ArchiveReceipt.class).create(new ArchiveReceipt(identity, source));
                 receipts.create(new MessageReceipt(identity));
@@ -140,6 +126,34 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to import archive message", e);
         }
+    }
+
+    private boolean containsNetmail(Message message) throws SQLException {
+        String identity = MailIdentity.of(message);
+        for (Netmail existing : dbManager.<Netmail, Long>getDao(Netmail.class).queryForAll()) {
+            if (MailIdentity.of(existing.toMessage()).equals(identity)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void storeArchiveEcho(Message message) throws SQLException, ParseException {
+        Echoarea area = findEchoareaByName(message.getArea().toLowerCase(Locale.ROOT));
+        if (area == null) {
+            throw new IllegalArgumentException("Create the target SQL area before archive import");
+        }
+        dbManager.getDao(Echomail.class).create(Echomail.fromMessage(message, area));
+    }
+
+    private void storeArchiveNetmail(Message message) throws SQLException, ParseException {
+        Netmail stored = Netmail.fromMessage(message);
+        dbManager.getDao(Netmail.class).create(stored);
+        NetmailDelivery delivery = new NetmailDelivery("archive:" + MailIdentity.of(message),
+                                                       stored,
+                                                       null);
+        delivery.setState("ARCHIVE");
+        dbManager.getDao(NetmailDelivery.class).create(delivery);
     }
 
     @Override
@@ -221,19 +235,28 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
         try {
             List<Message> result = new ArrayList<>();
             for (Netmail stored : dbManager.<Netmail, Long>getDao(Netmail.class).queryForAll()) {
-                if (address.equals(new FTNAddr(stored.getFromAddr()))
-                        || address.equals(new FTNAddr(stored.getToAddr()))) {
-                    Message message = stored.toMessage();
-                    if (Boolean.TRUE.equals(stored.getSend())) {
-                        message.setAttributes(message.getAttributes() | 8);
-                    }
-                    result.add(message);
+                if (!belongsToAddress(stored, address)) {
+                    continue;
                 }
+                result.add(toEditorMessage(stored));
             }
             return result;
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to read editor netmail", e);
         }
+    }
+
+    private boolean belongsToAddress(Netmail stored, FTNAddr address) {
+        return address.equals(new FTNAddr(stored.getFromAddr()))
+                || address.equals(new FTNAddr(stored.getToAddr()));
+    }
+
+    private Message toEditorMessage(Netmail stored) {
+        Message message = stored.toMessage();
+        if (Boolean.TRUE.equals(stored.getSend())) {
+            message.setAttributes(message.getAttributes() | 8);
+        }
+        return message;
     }
 
     @Override
@@ -258,22 +281,29 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
             dbManager.inTransaction(() -> {
                 Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
                 NetmailDelivery delivery = deliveries.queryForId(deliveryKey);
-                if (delivery != null) {
-                    if ((delivery.getMessage().getAttr() & 128) != 0) {
-                        deliveries.delete(delivery);
-                        dbManager.getDao(Netmail.class).delete(delivery.getMessage());
-                        return null;
-                    }
-                    delivery.setState("SENT");
-                    delivery.getMessage().setSend(true);
-                    dbManager.getDao(Netmail.class).update(delivery.getMessage());
-                    deliveries.update(delivery);
-                }
+                acknowledgeDelivery(delivery, deliveries);
                 return null;
             });
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to acknowledge outgoing netmail", e);
         }
+    }
+
+    private void acknowledgeDelivery(NetmailDelivery delivery,
+                                     Dao<NetmailDelivery, String> deliveries)
+            throws SQLException {
+        if (delivery == null) {
+            return;
+        }
+        if ((delivery.getMessage().getAttr() & 128) != 0) {
+            deliveries.delete(delivery);
+            dbManager.getDao(Netmail.class).delete(delivery.getMessage());
+            return;
+        }
+        delivery.setState("SENT");
+        delivery.getMessage().setSend(true);
+        dbManager.getDao(Netmail.class).update(delivery.getMessage());
+        deliveries.update(delivery);
     }
 
     @Override

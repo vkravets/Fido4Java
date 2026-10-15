@@ -68,26 +68,9 @@ public class Zipper {
                 if (entry.isDirectory()) {
                     continue;
                 }
-                logger.debug("        {}", entry.getName());
-                if (!entry.getName().toLowerCase(Locale.ROOT).endsWith(".pkt")) {
-                    throw new IOException("Non-packet entry in mail bundle: " + entry.getName());
-                }
-                if (entry.getSize() > MAX_PACKET_BYTES) {
-                    throw new IOException("Packet exceeds size limit");
-                }
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                try (InputStream fis = zip.getInputStream(entry)) {
-                    int readed;
-                    while ((readed = fis.read(buf)) != -1) {
-                        total += readed;
-                        if (bytes.size() + readed > MAX_PACKET_BYTES || total > MAX_BUNDLE_BYTES) {
-                            throw new IOException("Unpacked data exceeds size limit");
-                        }
-                        bytes.write(buf, 0, readed);
-                    }
-                }
-                ByteBuffer resbuf = ByteBuffer.wrap(bytes.toByteArray())
-                                              .order(ByteOrder.LITTLE_ENDIAN);
+                byte[] bytes = readPacket(zip, entry, buf, total);
+                total += bytes.length;
+                ByteBuffer resbuf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
                 PktTemp pkt = new PktTemp(entry.getName(), resbuf);
                 res.push(pkt);
             }
@@ -95,5 +78,33 @@ public class Zipper {
         logger.info("Unpacking was finished");
         logger.debug("Unpacking takes {}ms", System.currentTimeMillis() - startTime);
         return res;
+    }
+
+    private static byte[] readPacket(ZipFile zip, ZipEntry entry, byte[] buffer, long total)
+            throws IOException {
+        logger.debug("        {}", entry.getName());
+        if (!entry.getName().toLowerCase(Locale.ROOT).endsWith(".pkt")) {
+            throw new IOException("Non-packet entry in mail bundle: " + entry.getName());
+        }
+        if (entry.getSize() > MAX_PACKET_BYTES) {
+            throw new IOException("Packet exceeds size limit");
+        }
+        try (InputStream input = zip.getInputStream(entry)) {
+            return readBoundedPacket(input, buffer, total);
+        }
+    }
+
+    private static byte[] readBoundedPacket(InputStream input, byte[] buffer, long total)
+            throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            if (bytes.size() + count > MAX_PACKET_BYTES
+                    || total + bytes.size() + count > MAX_BUNDLE_BYTES) {
+                throw new IOException("Unpacked data exceeds size limit");
+            }
+            bytes.write(buffer, 0, count);
+        }
+        return bytes.toByteArray();
     }
 }

@@ -37,25 +37,33 @@ public final class PartialFileOutputStream extends ByteArrayOutputStream {
             return;
         }
         if (Files.exists(destination)) {
-            try (InputStream first = Files.newInputStream(path);
-                    InputStream second = Files.newInputStream(destination)) {
-                while (true) {
-                    byte[] left = first.readNBytes(8192);
-                    byte[] right = second.readNBytes(8192);
-                    if (!Arrays.equals(left, right)) {
-                        throw new IOException("Different completed file already exists: "
-                                              + destination);
-                    }
-                    if (left.length == 0) {
-                        break;
-                    }
-                }
-            }
+            verifyExistingFile(destination);
             Files.delete(path);
         } else {
             Files.move(path, destination, StandardCopyOption.ATOMIC_MOVE);
         }
         path = destination;
+    }
+
+    private void verifyExistingFile(Path destination) throws IOException {
+        try (InputStream first = Files.newInputStream(path);
+                InputStream second = Files.newInputStream(destination)) {
+            verifyEqualContents(first, second, destination);
+        }
+    }
+
+    private void verifyEqualContents(InputStream first, InputStream second, Path destination)
+            throws IOException {
+        while (true) {
+            byte[] left = first.readNBytes(8192);
+            byte[] right = second.readNBytes(8192);
+            if (!Arrays.equals(left, right)) {
+                throw new IOException("Different completed file already exists: " + destination);
+            }
+            if (left.length == 0) {
+                return;
+            }
+        }
     }
     private final FileChannel channel;
     private final FileLock lock;
@@ -190,17 +198,22 @@ public final class PartialFileOutputStream extends ByteArrayOutputStream {
 
     @Override
     public synchronized void close() throws IOException {
-        if (!closed) {
-            try {
-                channel.force(true);
-            } finally {
-                closed = true;
-                try {
-                    lock.release();
-                } finally {
-                    channel.close();
-                }
-            }
+        if (closed) {
+            return;
+        }
+        try {
+            channel.force(true);
+        } finally {
+            closed = true;
+            releaseResources();
+        }
+    }
+
+    private void releaseResources() throws IOException {
+        try {
+            lock.release();
+        } finally {
+            channel.close();
         }
     }
 }

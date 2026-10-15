@@ -175,39 +175,12 @@ public class FilesSender<T extends Session> implements Runnable {
                     return;
                 }
                 if (files.isEmpty()) {
-                    if (System.nanoTime() > deadline) {
-                        throw new IOException("Timed out waiting for file acknowledgement");
-                    }
-                    synchronized (sessionContext) {
-                        sessionContext.wait(100);
-                    }
+                    waitForAcknowledgement(deadline);
                     continue;
                 }
                 deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
-                curFile = files.peek();
-                if (curFile.getStream().markSupported() && !curFile.isRewindBeforeSend()) {
-                    curFile.getStream().mark(Integer.MAX_VALUE);
-                }
-                if (sessionContext.isNRMode() && curFile.getInfo().getOffset() == 0
-                        && !curFile.isResumeResponse()) {
-                    curFile.getInfo().setOffset(-1);
-                }
-                awaitingOffset = curFile.getInfo().getOffset() < 0;
-                sessionContext.getPendingFiles().put(curFile.getInfo(), curFile);
-                final Command file = new FILECommand();
-                file.send(session, sessionContext);
-                files.poll();
-                try {
-                    send(curFile);
-                } catch (Exception e) {
-                    logger.error("Unable to send file {}", curFile.getInfo(), e);
-                    sessionContext.setLastErrorMessage(e.getMessage());
-                    sessionContext.setState(SessionState.STATE_ERR);
-                    try {
-                        new ERRCommand().send(session, sessionContext);
-                    } catch (Exception ignored) {
-                    }
-                    session.close(false);
+                prepareCurrentFile();
+                if (!sendCurrentFileSafely()) {
                     return;
                 }
             }
@@ -221,14 +194,54 @@ public class FilesSender<T extends Session> implements Runnable {
             logger.error("Unable to send files", e);
             sessionContext.setState(SessionState.STATE_ERR);
             sessionContext.setLastErrorMessage(e.getMessage());
-            try {
-                new ERRCommand().send(session, sessionContext);
-            } catch (Exception ignored) {
-            }
-            session.close(false);
+            sendErrorAndClose();
         }
     }
 
+    private void prepareCurrentFile() throws Exception {
+        curFile = files.peek();
+        if (curFile.getStream().markSupported() && !curFile.isRewindBeforeSend()) {
+            curFile.getStream().mark(Integer.MAX_VALUE);
+        }
+        if (sessionContext.isNRMode() && curFile.getInfo().getOffset() == 0
+                && !curFile.isResumeResponse()) {
+            curFile.getInfo().setOffset(-1);
+        }
+        awaitingOffset = curFile.getInfo().getOffset() < 0;
+        sessionContext.getPendingFiles().put(curFile.getInfo(), curFile);
+        new FILECommand().send(session, sessionContext);
+        files.poll();
+    }
+
+    private boolean sendCurrentFileSafely() {
+        try {
+            send(curFile);
+            return true;
+        } catch (Exception e) {
+            logger.error("Unable to send file {}", curFile.getInfo(), e);
+            sessionContext.setLastErrorMessage(e.getMessage());
+            sessionContext.setState(SessionState.STATE_ERR);
+            sendErrorAndClose();
+            return false;
+        }
+    }
+
+    private void sendErrorAndClose() {
+        try {
+            new ERRCommand().send(session, sessionContext);
+        } catch (Exception ignored) {
+        }
+        session.close(false);
+    }
+
+    private void waitForAcknowledgement(long deadline) throws IOException, InterruptedException {
+        if (System.nanoTime() > deadline) {
+            throw new IOException("Timed out waiting for file acknowledgement");
+        }
+        synchronized (sessionContext) {
+            sessionContext.wait(100);
+        }
+    }
     private FileData<InputStream> findFile(FileInfo info) {
         for (FileData<InputStream> fileData : files) {
             if (fileData.getInfo().equals(info)) {

@@ -246,32 +246,32 @@ public final class JamArea {
                 force();
                 return number;
             } catch (IOException e) {
-                try {
-                    rawHeader.setLength(headerSize);
-                    text.setLength(textSize);
-                    index.setLength(indexSize);
-                    rawHeader.seek(0);
-                    rawHeader.write(previous);
-                    force();
-                } catch (IOException rollback) {
-                    e.addSuppressed(rollback);
-                }
+                rollbackAppend(headerSize, textSize, indexSize, previous, e);
                 throw e;
             }
         }
 
+        private void rollbackAppend(long headerSize,
+                                    long textSize,
+                                    long indexSize,
+                                    byte[] previous,
+                                    IOException failure) {
+            try {
+                rawHeader.setLength(headerSize);
+                text.setLength(textSize);
+                index.setLength(indexSize);
+                rawHeader.seek(0);
+                rawHeader.write(previous);
+                force();
+            } catch (IOException rollback) {
+                failure.addSuppressed(rollback);
+            }
+        }
+
         public void attributes(long number, int set, int clear) throws IOException {
-            long slot = number - Integer.toUnsignedLong(info.getBasemsgnum());
-            if (slot < 0 || slot >= index.length() / 8) {
-                throw new IOException("JAM message no longer exists");
-            }
-            index.seek(slot * 8 + 4);
-            long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
-            MessageHeader stored = header.getMsgHeaderByShift(offset);
-            if (stored == null || (stored.Attribute & DELETED) != 0) {
-                throw new IOException("JAM message was deleted");
-            }
-            rawHeader.seek(offset + 52);
+            LocatedMessage located = locateMessage(number);
+            MessageHeader stored = located.header;
+            rawHeader.seek(located.offset + 52);
             rawHeader.writeInt(Integer.reverseBytes((stored.Attribute | set) & ~clear));
             if ((set & DELETED) != 0) {
                 info.setActivemsg(info.getActivemsg() - 1);
@@ -282,16 +282,8 @@ public final class JamArea {
 
         /** Append a replacement header; leave the text and all unrelated subfields intact. */
         public void assignMsgId(long number, String id, Charset encoding) throws IOException {
-            long slot = number - Integer.toUnsignedLong(info.getBasemsgnum());
-            if (slot < 0 || slot >= index.length() / 8) {
-                throw new IOException("JAM message no longer exists");
-            }
-            index.seek(slot * 8 + 4);
-            long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
-            MessageHeader stored = header.getMsgHeaderByShift(offset);
-            if (stored == null || (stored.Attribute & DELETED) != 0) {
-                throw new IOException("JAM message was deleted");
-            }
+            LocatedMessage located = locateMessage(number);
+            MessageHeader stored = located.header;
             if (stored.SubFieldList.stream().anyMatch(field -> field.loID == 4)) {
                 throw new IOException("JAM message already has MSGID");
             }
@@ -308,16 +300,42 @@ public final class JamArea {
             }
             header.writeHeader(stored);
             rawHeader.getChannel().force(true);
-            index.seek(slot * 8 + 4);
+            index.seek(located.slot * 8 + 4);
             index.writeInt(Integer.reverseBytes((int) size));
             header.setFixedHeader(info);
             force();
+        }
+
+        private LocatedMessage locateMessage(long number) throws IOException {
+            long slot = number - Integer.toUnsignedLong(info.getBasemsgnum());
+            if (slot < 0 || slot >= index.length() / 8) {
+                throw new IOException("JAM message no longer exists");
+            }
+            index.seek(slot * 8 + 4);
+            long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
+            MessageHeader stored = header.getMsgHeaderByShift(offset);
+            if (stored == null || (stored.Attribute & DELETED) != 0) {
+                throw new IOException("JAM message was deleted");
+            }
+            return new LocatedMessage(slot, offset, stored);
         }
 
         private void force() throws IOException {
             text.getChannel().force(true);
             rawHeader.getChannel().force(true);
             index.getChannel().force(true);
+        }
+    }
+
+    private static final class LocatedMessage {
+        private final long slot;
+        private final long offset;
+        private final MessageHeader header;
+
+        private LocatedMessage(long slot, long offset, MessageHeader header) {
+            this.slot = slot;
+            this.offset = offset;
+            this.header = header;
         }
     }
 

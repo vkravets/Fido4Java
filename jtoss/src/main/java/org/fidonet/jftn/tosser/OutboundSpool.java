@@ -1,6 +1,7 @@
 package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.misc.AtomicFiles;
 import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -8,14 +9,9 @@ import org.fidonet.types.Message;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,16 +64,7 @@ public final class OutboundSpool {
                                    Boolean.toString((message.getAttributes() & 512) != 0
                                            || (" " + NetmailRouter.configFlags(message)
                                                    + " ").contains(" HLD ")));
-            Path staging = Files.createTempFile(directory, "metadata-", ".tmp");
-            try {
-                try (OutputStream out = Files.newOutputStream(staging)) {
-                    properties.store(out, "JFtn outbound");
-                }
-                force(staging);
-                Files.move(staging, metadata, StandardCopyOption.ATOMIC_MOVE);
-            } finally {
-                Files.deleteIfExists(staging);
-            }
+            AtomicFiles.publish(metadata, out -> properties.store(out, "JFtn outbound"));
         }
     }
 
@@ -136,24 +123,6 @@ public final class OutboundSpool {
     }
 
     private static void writeAtomically(Path target, byte[] bytes) throws IOException {
-        Path staging = Files.createTempFile(target.getParent(), "packet-", ".tmp");
-        try {
-            try (FileChannel channel = FileChannel.open(staging, StandardOpenOption.WRITE)) {
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                while (buffer.hasRemaining()) {
-                    channel.write(buffer);
-                }
-                channel.force(true);
-            }
-            Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE);
-        } finally {
-            Files.deleteIfExists(staging);
-        }
-    }
-
-    private static void force(Path path) throws IOException {
-        try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE)) {
-            channel.force(true);
-        }
+        AtomicFiles.publish(target, output -> output.write(bytes));
     }
 }
