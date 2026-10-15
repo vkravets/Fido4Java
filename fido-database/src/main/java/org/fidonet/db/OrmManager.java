@@ -36,6 +36,7 @@ import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
+import org.fidonet.types.FTNAddr;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
@@ -123,6 +124,7 @@ public class OrmManager {
             if (daoClasses.contains(Netmail.class)) {
                 removeLegacyNetmailSendIndex();
                 addEchoIngressColumn();
+                migrateLegacyNetmailDeliveries();
             }
         } catch (SQLException | RuntimeException e) {
             try {
@@ -221,6 +223,40 @@ public class OrmManager {
         } finally {
             connectionSource.releaseConnection(database);
         }
+    }
+
+    private void migrateLegacyNetmailDeliveries() throws SQLException {
+        inTransaction(() -> {
+            Dao<NetmailDelivery, String> deliveries = getDao(NetmailDelivery.class);
+            Dao<Netmail, Long> messages = getDao(Netmail.class);
+            for (Netmail message : messages.queryBuilder()
+                                           .where()
+                                           .notIn("id",
+                                                  deliveries.queryBuilder()
+                                                            .selectColumns("message_id"))
+                                           .query()) {
+                String route = message.getRoute();
+                if (route != null && route.trim().isEmpty()) {
+                    route = null;
+                }
+                NetmailDelivery delivery = new NetmailDelivery("legacy:" + message.getId(),
+                                                               message,
+                                                               route);
+                if (Boolean.TRUE.equals(message.getSend())) {
+                    delivery.setState("SENT");
+                } else if (route != null) {
+                    try {
+                        if (!new FTNAddr(route).isValid()) {
+                            delivery.setState("BLOCKED");
+                        }
+                    } catch (RuntimeException invalidRoute) {
+                        delivery.setState("BLOCKED");
+                    }
+                }
+                deliveries.create(delivery);
+            }
+            return null;
+        });
     }
 
     public <T> T inTransaction(Callable<T> work) throws SQLException {

@@ -14,11 +14,49 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 /** Disk-backed receive stream; the byte-array API remains available to event consumers. */
 public final class PartialFileOutputStream extends ByteArrayOutputStream {
-    private final Path path;
+    private Path path;
+
+    public synchronized Path getPath() {
+        return path;
+    }
+
+    public synchronized void commitTo(Path destination) throws IOException {
+        if (!closed) {
+            throw new IOException("Receive stream must be closed before publication");
+        }
+        if (path.toAbsolutePath().normalize().equals(destination.toAbsolutePath().normalize())) {
+            if (!Files.exists(path)) {
+                throw new IOException("Completed receive file is missing");
+            }
+            return;
+        }
+        if (Files.exists(destination)) {
+            try (InputStream first = Files.newInputStream(path);
+                    InputStream second = Files.newInputStream(destination)) {
+                while (true) {
+                    byte[] left = first.readNBytes(8192);
+                    byte[] right = second.readNBytes(8192);
+                    if (!Arrays.equals(left, right)) {
+                        throw new IOException("Different completed file already exists: "
+                                              + destination);
+                    }
+                    if (left.length == 0) {
+                        break;
+                    }
+                }
+            }
+            Files.delete(path);
+        } else {
+            Files.move(path, destination, StandardCopyOption.ATOMIC_MOVE);
+        }
+        path = destination;
+    }
     private final FileChannel channel;
     private final FileLock lock;
     private long length;

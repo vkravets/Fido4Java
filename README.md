@@ -120,6 +120,9 @@ When upgrading the Wrapper, update `wrapperUrl`, `wrapperSha256Sum`,
 `distributionUrl` and `distributionSha256Sum` in `gradle-wrapper.properties`.
 Binary test fixtures remain in version control.
 
+The Runner now connects received binkp files to the tosser and sends queued
+netmail and subscribed echomail. See [mail processing, configuration and limitations](docs/tosser.md).
+
 The RPC module requires the Apache Thrift 0.14.2 compiler on `PATH`.
 Run the full build, including tests:
 

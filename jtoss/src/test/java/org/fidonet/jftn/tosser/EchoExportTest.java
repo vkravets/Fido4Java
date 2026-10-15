@@ -7,7 +7,6 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ConfigurationLink;
-import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.packet.PacketWriter;
@@ -32,6 +31,10 @@ public class EchoExportTest {
     public TemporaryFolder temporary = new TemporaryFolder();
 
     private JFtnConfig config() throws Exception {
+        return config("");
+    }
+
+    private JFtnConfig config(String extra) throws Exception {
         String root = temporary.getRoot().getAbsolutePath().replace('\\', '/');
         String text = "Inbound="
                       + root
@@ -47,7 +50,7 @@ public class EchoExportTest {
                       + "Link=2:500/103,2:500/102,secret,localhost\n"
                       + "Link=2:500/104,2:500/102,secret,localhost\n";
         JFtnConfig config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        config.load(new ByteArrayInputStream((text + extra).getBytes(StandardCharsets.UTF_8)));
         Files.createDirectories(Path.of(config.getInbound()));
         return config;
     }
@@ -125,12 +128,7 @@ public class EchoExportTest {
             base.createArea("test");
             Link source = config.getLink(new FTNAddr("2:500/101"));
             subscribe(orm, base, source);
-            Subscription subscription = orm.<Subscription, Object>getDao(Subscription.class)
-                                           .queryForAll()
-                                           .get(0);
-            subscription.setAccessLevel(AccessLevel.READ);
-            orm.getDao(Subscription.class)
-               .updateRaw("UPDATE subscription SET access_level = 'READ'");
+            base.configureSubscription(source, "test", AccessLevel.READ);
             for (String area : new String[]{"TEST", "UNKNOWN"}) {
                 Message message = new Message("Author",
                                               "All",
@@ -154,6 +152,39 @@ public class EchoExportTest {
             assertTrue(!base.isAreaExists("unknown"));
             assertTrue(Files.exists(Path.of(config.getTmpDir(), "TEST.bad")));
             assertTrue(Files.exists(Path.of(config.getTmpDir(), "UNKNOWN.bad")));
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
+    public void crossZoneExportDoesNotReinterpretOtherZoneSeenByOrPathEntries() throws Exception {
+        JFtnConfig config = config("Link=3:600/1,2:500/102,secret,localhost\n");
+        OrmManager orm = new OrmManager("jdbc:h2:mem:crossZoneEcho" + System.nanoTime());
+        DatabaseManager base = new DatabaseManager(orm);
+        assertTrue(base.open());
+        try {
+            base.createArea("test");
+            Link target = config.getLink(new FTNAddr("3:600/1"));
+            subscribe(orm, base, target);
+            Message message = new Message("Author",
+                                          "All",
+                                          new FTNAddr("2:400/1"),
+                                          new FTNAddr("2:500/102"),
+                                          "Subject",
+                                          "AREA:TEST\r\1MSGID: 2:400/1 cross-zone\rHello\r"
+                                                  + " * Origin: Original (2:400/1)\rSEEN-BY: 500/101\r\1PATH: 500/101\r",
+                                          new Date());
+            base.addMessage(message, "test");
+            new Tosser(config, base).exportEchomail();
+            Path file = new OutboundSpool(config).pending(target, true).get(0);
+            FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(file)));
+            Message exported = new Message(packet.getMsgs()[0],
+                                           packet.getOrigZone(),
+                                           packet.getDestZone());
+            assertEquals(Collections.singleton(new FTNAddr("3:600/1")),
+                         exported.getBody().getSeenBy().getAddresses());
+            assertTrue(exported.getBody().getPath().getAddresses().isEmpty());
         } finally {
             base.close();
         }

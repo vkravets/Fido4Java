@@ -59,8 +59,10 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Tosser extends HasEventBus {
@@ -86,6 +88,11 @@ public class Tosser extends HasEventBus {
     }
 
     public synchronized void runFast(String dirname)
+            throws TosserException, IOException, EchoBaseException {
+        runFast(dirname, null);
+    }
+
+    public synchronized void runFast(String dirname, FTNAddr authenticatedPeer)
             throws TosserException, IOException, EchoBaseException {
         if (dirname == null) {
             throw new TosserException("Error opening directory as inbound. Dirname is null.");
@@ -116,7 +123,7 @@ public class Tosser extends HasEventBus {
                         }
                         while (!pktlist.isEmpty()) {
                             PktTemp aPktlist = pktlist.pop();
-                            if (!tosspkt(aPktlist.getPkt())) {
+                            if (!tosspkt(aPktlist.getPkt(), authenticatedPeer)) {
                                 logger.info("Save to Tmp");
                                 saveBad(aPktlist);
                             }
@@ -181,6 +188,11 @@ public class Tosser extends HasEventBus {
     }
 
     private boolean tosspkt(ByteBuffer buf) throws IOException, EchoBaseException {
+        return tosspkt(buf, null);
+    }
+
+    private boolean tosspkt(ByteBuffer buf, FTNAddr authenticatedPeer)
+            throws IOException, EchoBaseException {
         final FtsPkt q;
         try {
             q = new FtsPkt(buf);
@@ -188,14 +200,50 @@ public class Tosser extends HasEventBus {
             throw new IOException("Invalid FTN packet", e);
         }
         Link origlink = config.getLink(q.getOrigaddr());
+        if (origlink == null && q.getOrigZone() == 0) {
+            for (Link candidate : config.getConfiguredLinks()) {
+                if (sameNode(candidate.getAddr(), q.getOrigaddr()) && (authenticatedPeer == null
+                        || authenticatedPeer.equals(candidate.getAddr()))) {
+                    if (origlink != null) {
+                        logger.warn("Ambiguous zone-less packet origin");
+                        return false;
+                    }
+                    origlink = candidate;
+                }
+            }
+        }
         if (origlink == null) {
             logger.error("Unknown Link! Drop it.");
+            return false;
+        }
+        FTNAddr origin = q.getOrigZone() == 0 ? origlink.getAddr() : q.getOrigaddr();
+        if (authenticatedPeer != null && !authenticatedPeer.equals(origin)) {
+            logger.warn("Packet origin does not match the receiving session");
             return false;
         }
         FTNAddr destination = new FTNAddr(q.getDestZone(),
                                           q.getDestNet(),
                                           q.getDestNode(),
                                           q.getDestPoint());
+        Set<FTNAddr> localAddresses = new LinkedHashSet<>(config.getLocalAddresses());
+        if (origlink.getMyaddr() != null) {
+            localAddresses.addAll(origlink.getMyaddr());
+        }
+        if (destination.getZone() == 0 && !localAddresses.contains(destination)) {
+            FTNAddr resolved = null;
+            for (FTNAddr candidate : localAddresses) {
+                if (sameNode(candidate, destination)) {
+                    if (resolved != null) {
+                        logger.warn("Ambiguous zone-less packet destination");
+                        return false;
+                    }
+                    resolved = candidate;
+                }
+            }
+            if (resolved != null) {
+                destination = resolved;
+            }
+        }
         if (!config.getLocalAddresses().contains(destination)
                 && (origlink.getMyaddr() == null || !origlink.getMyaddr().contains(destination))) {
             logger.error("Packet addressed to another station: {}", destination);
@@ -215,8 +263,8 @@ public class Tosser extends HasEventBus {
                 continue;
             }
             FtsPackMsg msg1 = msgs[index];
-            final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
-            msg.setUpLink(q.getOrigaddr());
+            final Message msg = new Message(msg1, origin.getZone(), destination.getZone());
+            msg.setUpLink(origin);
             if (!msg.hasValidAddressing()) {
                 return false;
             }
@@ -268,6 +316,11 @@ public class Tosser extends HasEventBus {
 
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg);
+    }
+
+    private static boolean sameNode(FTNAddr first, FTNAddr second) {
+        return first.getNet().equals(second.getNet()) && first.getNode().equals(second.getNode())
+                && first.getPnt().equals(second.getPnt());
     }
 
     private boolean hasRoutingLoop(Message message) {

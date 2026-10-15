@@ -67,6 +67,7 @@ public class GOTCommand extends MessageCommand {
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
         FileData<InputStream> sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {
+            sessionContext.commitSentFile(sentFile);
             FileInfo fileSentInfo = sentFile.getInfo();
             fileSentInfo.setFinished(true);
             sessionContext.getSendFiles().removeIf(file -> file.getInfo().equals(info));

@@ -19,6 +19,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +60,39 @@ public class NetmailRoutingTest {
                            "Subject",
                            body,
                            new Date());
+    }
+
+    @Test
+    public void importsUnambiguousLegacyType2PacketWithoutZoneFields() throws Exception {
+        JFtnConfig config = config(false);
+        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:legacyPacket"
+                                                                  + System.nanoTime()));
+        assertTrue(base.open());
+        try {
+            Message local = new Message("Author",
+                                        "Reader",
+                                        new FTNAddr("2:500/101"),
+                                        new FTNAddr("2:500/102"),
+                                        "Subject",
+                                        "Legacy packet\r",
+                                        new Date());
+            byte[] bytes = PacketWriter.write(local.getFAddr(),
+                                              local.getTAddr(),
+                                              "secret",
+                                              Collections.singletonList(local));
+            ByteBuffer raw = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+            raw.putShort(34, (short) 0);
+            raw.putShort(36, (short) 0);
+            raw.putShort(40, (short) 0);
+            raw.putShort(44, (short) 0);
+            raw.putShort(46, (short) 0);
+            raw.putShort(48, (short) 0);
+            Files.write(Path.of(config.getInbound(), "legacy.pkt"), bytes);
+            new Tosser(config, base).runFast(config.getInbound());
+            assertEquals(1, base.getLocalNetmail(local.getTAddr()).size());
+        } finally {
+            base.close();
+        }
     }
 
     @Test

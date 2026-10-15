@@ -75,6 +75,47 @@ public class DatabaseManager implements IBase, NetmailStore {
         this.dbManager = manager;
     }
 
+    public synchronized void configureLink(Link link, String packetPassword) {
+        try {
+            Dao<ConfigurationLink, Object> dao = dbManager.getDao(ConfigurationLink.class);
+            List<ConfigurationLink> matches = dao.queryForEq(ConfigurationLink.ADDRESS_COLUMN,
+                                                             link.getAddr().as5D());
+            ConfigurationLink stored = matches.isEmpty() ? new ConfigurationLink() : matches.get(0);
+            stored.setAddress(link.getAddr().as5D());
+            stored.setPassword(link.getPass() == null ? "" : link.getPass());
+            stored.setPacket_password(packetPassword);
+            stored.setHost(link.getHostAddress());
+            stored.setPort(link.getPort());
+            dao.createOrUpdate(stored);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to configure link", e);
+        }
+    }
+
+    public synchronized void configureSubscription(Link link, String area, AccessLevel access) {
+        String name = area.toLowerCase(Locale.ROOT);
+        if (!isAreaExists(name) && !createArea(name)) {
+            throw new IllegalStateException("Unable to create echo area " + name);
+        }
+        addSubscription(link, name);
+        try {
+            ConfigurationLink configured = findConfigurationLinkByLink(link);
+            Echoarea echo = findEchoareaByName(name);
+            UpdateBuilder<Subscription, Object> update = dbManager.<Subscription, Object>getDao(Subscription.class)
+                                                                  .updateBuilder();
+            update.updateColumnValue(Subscription.ACCESS_LEVEL_COLUMN, access);
+            update.where()
+                  .eq(Subscription.ID_LINK_COLUMN, configured.getId())
+                  .and()
+                  .eq(Subscription.ID_AREA_COLUMN, echo.getId());
+            if (update.update() == 0) {
+                throw new IllegalStateException("Unable to configure echo subscription");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to configure echo subscription", e);
+        }
+    }
+
     @Override
     public synchronized void saveNetmail(Message message, String deliveryKey, String nextHop) {
         Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
@@ -136,6 +177,11 @@ public class DatabaseManager implements IBase, NetmailStore {
                 Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
                 NetmailDelivery delivery = deliveries.queryForId(deliveryKey);
                 if (delivery != null) {
+                    if ((delivery.getMessage().getAttr() & 128) != 0) {
+                        deliveries.delete(delivery);
+                        dbManager.getDao(Netmail.class).delete(delivery.getMessage());
+                        return null;
+                    }
                     delivery.setState("SENT");
                     delivery.getMessage().setSend(true);
                     dbManager.getDao(Netmail.class).update(delivery.getMessage());
