@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
+import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
@@ -13,6 +14,37 @@ import org.junit.Test;
 import java.util.Date;
 
 public class NetmailStorageTest {
+    @Test
+    public void backfillsSearchKeysAndRejectsLegacyArchiveDuplicatesAcrossRestart()
+            throws Exception {
+        String url = "jdbc:h2:mem:netmailIndex" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
+        OrmManager legacy = new OrmManager(url);
+        legacy.connect();
+        Message original = message("Legacy without MSGID\r");
+        legacy.getDao(Netmail.class).create(Netmail.fromMessage(original));
+        legacy.disconnect();
+        assertIndexedLegacy(url, original);
+        assertIndexedLegacy(url, original);
+    }
+
+    private void assertIndexedLegacy(String url, Message original) throws Exception {
+        OrmManager orm = new OrmManager(url);
+        DatabaseManager base = new DatabaseManager(orm);
+        assertTrue(base.open());
+        try {
+            assertEquals(1, orm.getDao(NetmailIndex.class).countOf());
+            assertEquals(false, base.importArchive(original, "legacy"));
+            assertEquals(1, orm.getDao(Netmail.class).countOf());
+            int[] selected = {0};
+            base.visitEditorNetmail(original.getFAddr(), message -> selected[0]++);
+            assertEquals(1, selected[0]);
+            base.visitEditorNetmail(new FTNAddr("2:500/101"), message -> selected[0]++);
+            assertEquals(1, selected[0]);
+        } finally {
+            base.close();
+        }
+    }
+
     private Message message(String body) {
         Message message = new Message("Author",
                                       "Reader",

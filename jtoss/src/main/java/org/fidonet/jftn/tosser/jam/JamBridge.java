@@ -110,9 +110,8 @@ public final class JamBridge {
             throws IOException {
         ExistingMessages existing = new ExistingMessages(access);
         if (binding.name == null) {
-            for (Message message : netmail.getEditorNetmail(binding.aka)) {
-                export(message, access, existing, state);
-            }
+            netmail.visitEditorNetmail(binding.aka,
+                                       message -> export(message, access, existing, state));
             return;
         }
         MessageIteration.forEach(base.getMessages(binding.name),

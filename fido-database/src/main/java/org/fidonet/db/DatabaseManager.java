@@ -35,10 +35,12 @@ import org.fidonet.db.objects.Echomail;
 import org.fidonet.db.objects.MessageReceipt;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
+import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.ArchiveStore;
 import org.fidonet.echobase.IBase;
+import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.packet.MailIdentity;
@@ -53,6 +55,7 @@ import com.j256.ormlite.stmt.Where;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -73,9 +76,11 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
     private OrmManager dbManager;
+    private final NetmailRepository netmailRepository;
 
     public DatabaseManager(OrmManager manager) {
         this.dbManager = manager;
+        netmailRepository = new NetmailRepository(manager);
     }
 
     public synchronized void configureLink(Link link, String packetPassword) {
@@ -111,7 +116,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
                 if (message.isEchomail() && isDupe(message)) {
                     return false;
                 }
-                if (!message.isEchomail() && containsNetmail(message)) {
+                if (!message.isEchomail() && netmailRepository.contains(message)) {
                     return false;
                 }
                 if (message.isEchomail()) {
@@ -128,16 +133,6 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
         }
     }
 
-    private boolean containsNetmail(Message message) throws SQLException {
-        String identity = MailIdentity.of(message);
-        for (Netmail existing : dbManager.<Netmail, Long>getDao(Netmail.class).queryForAll()) {
-            if (MailIdentity.of(existing.toMessage()).equals(identity)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void storeArchiveEcho(Message message) throws SQLException, ParseException {
         Echoarea area = findEchoareaByName(message.getArea().toLowerCase(Locale.ROOT));
         if (area == null) {
@@ -149,6 +144,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
     private void storeArchiveNetmail(Message message) throws SQLException, ParseException {
         Netmail stored = Netmail.fromMessage(message);
         dbManager.getDao(Netmail.class).create(stored);
+        netmailRepository.index(stored);
         NetmailDelivery delivery = new NetmailDelivery("archive:" + MailIdentity.of(message),
                                                        stored,
                                                        null);
@@ -204,6 +200,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
                     Netmail stored = Netmail.fromMessage(message);
                     stored.setRoute(nextHop);
                     dbManager.getDao(Netmail.class).create(stored);
+                    netmailRepository.index(stored);
                     deliveries.create(new NetmailDelivery(deliveryKey, stored, nextHop));
                     receipts.create(new MessageReceipt(identity));
                 }
@@ -232,33 +229,25 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
 
     @Override
     public List<Message> getEditorNetmail(FTNAddr address) {
+        List<Message> result = new ArrayList<>();
         try {
-            List<Message> result = new ArrayList<>();
-            for (Netmail stored : dbManager.<Netmail, Long>getDao(Netmail.class).queryForAll()) {
-                if (!belongsToAddress(stored, address)) {
-                    continue;
-                }
-                result.add(toEditorMessage(stored));
-            }
+            visitEditorNetmail(address, result::add);
             return result;
-        } catch (SQLException e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Unable to read editor netmail", e);
         }
     }
 
-    private boolean belongsToAddress(Netmail stored, FTNAddr address) {
-        return address.equals(new FTNAddr(stored.getFromAddr()))
-                || address.equals(new FTNAddr(stored.getToAddr()));
+    @Override
+    public void visitEditorNetmail(FTNAddr address, MessageIteration.Handler visitor)
+            throws IOException {
+        netmailRepository.visitEditor(address, visitor);
     }
 
-    private Message toEditorMessage(Netmail stored) {
-        Message message = stored.toMessage();
-        if (Boolean.TRUE.equals(stored.getSend())) {
-            message.setAttributes(message.getAttributes() | 8);
-        }
-        return message;
+    @Override
+    public void visitQueuedNetmail(NetmailStore.QueuedHandler visitor) throws IOException {
+        netmailRepository.visitQueued(visitor);
     }
-
     @Override
     public List<QueuedNetmail> getQueuedNetmail() {
         try {
@@ -297,6 +286,7 @@ public class DatabaseManager implements IBase, NetmailStore, ArchiveStore {
         }
         if ((delivery.getMessage().getAttr() & 128) != 0) {
             deliveries.delete(delivery);
+            dbManager.getDao(NetmailIndex.class).deleteById(delivery.getMessage().getId());
             dbManager.getDao(Netmail.class).delete(delivery.getMessage());
             return;
         }
