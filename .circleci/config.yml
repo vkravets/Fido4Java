@@ -41,9 +41,22 @@ jobs:
           paths:
             - ~/.cache/thrift/0.14.2/bin/thrift
       - run:
-          name: Build & Tests
+          name: Build, test and package integration runtimes
           command: |
-            bash ./gradlew build --no-daemon --console=plain
+            bash ./gradlew build :binkp-root:binkp-netty:prepareCiIntegration \
+              :binkp-root:binkp-mina2:prepareCiIntegration :jtoss:prepareCiIntegration \
+              --no-daemon --console=plain
+      - run:
+          name: Seal compiled integration runtimes
+          command: |
+            set -euo pipefail
+            git rev-parse HEAD > build/ci-integration/revision.txt
+            cd build/ci-integration
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build/ci-integration
 
   binkd-integration:
     machine:
@@ -54,6 +67,15 @@ jobs:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
     steps:
       - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Verify compiled runtime from build job
+          command: |
+            set -euo pipefail
+            test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
+            cd build/ci-integration
+            sha256sum --check SHA256SUMS --quiet
       - run:
           name: Prepare Java 17 and Docker
           command: |
@@ -75,7 +97,7 @@ jobs:
             mkdir -p build/binkd-integration
             bash ./gradlew :binkp-root:binkp-netty:binkdDockerTest \
               :binkp-root:binkp-mina2:binkdDockerTest \
-              --continue --warning-mode fail --no-daemon --console=plain \
+              -PciIntegrationSnapshot --continue --warning-mode fail --no-daemon --console=plain \
               2>&1 | tee build/binkd-integration/gradle.log
       - save_cache:
           key: v2-binkd-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "build.gradle" }}-{{ checksum "gradle/binkd-integration.gradle" }}
@@ -119,6 +141,15 @@ jobs:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
     steps:
       - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Verify compiled runtime from build job
+          command: |
+            set -euo pipefail
+            test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
+            cd build/ci-integration
+            sha256sum --check SHA256SUMS --quiet
       - run:
           name: Prepare Java 17 and Docker
           command: |
@@ -138,7 +169,7 @@ jobs:
             docker build -t jftn-hpt-interop:ci jtoss/src/integrationTest/resources/hpt \
               2>&1 | tee build/hpt-integration/image-build.log
             bash ./gradlew :jtoss:hptInteropTest -Dhpt.image=jftn-hpt-interop:ci \
-              --warning-mode fail --no-daemon --console=plain \
+              -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain \
               2>&1 | tee build/hpt-integration/gradle.log
       - save_cache:
           key: v1-hpt-gradle-{{ arch }}-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "gradle/hpt-integration.gradle" }}
@@ -161,5 +192,9 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - binkd-integration
-      - hpt-integration
+      - binkd-integration:
+          requires:
+            - build
+      - hpt-integration:
+          requires:
+            - build

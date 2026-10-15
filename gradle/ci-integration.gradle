@@ -1,0 +1,57 @@
+// A relocatable runtime: downstream CI jobs execute these files without compiling sources.
+def snapshotDir = rootProject.layout.buildDirectory.dir("ci-integration/${project.name}")
+def useSnapshot = providers.gradleProperty('ciIntegrationSnapshot').isPresent()
+
+ext.configureCiIntegration = { String testTaskName, workerFiles = null ->
+    tasks.register('prepareCiIntegration') {
+        description = 'Packages compiled integration tests and their complete runtime for CI.'
+        group = 'build'
+        dependsOn sourceSets.integrationTest.output, sourceSets.integrationTest.runtimeClasspath
+        if (workerFiles != null) {
+            dependsOn workerFiles
+        }
+        outputs.dir snapshotDir
+        outputs.upToDateWhen { false }
+        doLast {
+            File destination = snapshotDir.get().asFile
+            delete destination
+            copy {
+                from sourceSets.integrationTest.output.classesDirs
+                into new File(destination, 'test-classes')
+            }
+            List<String> entries = []
+            sourceSets.integrationTest.runtimeClasspath.files.findAll { it.exists() }.eachWithIndex { entry, index ->
+                String relativePath = entry.isDirectory() ? "runtime/${index}" : "runtime/${index}/${entry.name}"
+                copy {
+                    from entry
+                    into new File(destination, "runtime/${index}")
+                }
+                entries.add(relativePath)
+            }
+            new File(destination, 'classpath.txt').setText(entries.join('\n') + '\n', 'UTF-8')
+            if (workerFiles != null) {
+                copy {
+                    from workerFiles
+                    into new File(destination, 'hpt-worker')
+                }
+            }
+        }
+    }
+
+    if (useSnapshot) {
+        tasks.named(testTaskName, Test) {
+            testClassesDirs = files(snapshotDir.map { it.dir('test-classes') })
+            classpath = files(providers.provider {
+                File directory = snapshotDir.get().asFile
+                File manifest = new File(directory, 'classpath.txt')
+                if (!manifest.isFile()) {
+                    throw new GradleException("Missing CI runtime: ${manifest}. Run prepareCiIntegration in the build job first.")
+                }
+                manifest.readLines('UTF-8').collect { new File(directory, it) }
+            })
+            if (workerFiles != null) {
+                systemProperty 'hpt.workerFiles', snapshotDir.get().dir('hpt-worker').asFile.absolutePath
+            }
+        }
+    }
+}
