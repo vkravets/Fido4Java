@@ -12,11 +12,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
 /** Persistent, monotonically increasing 32-bit serials for locally created messages. */
-final class MessageIds {
+public final class MessageIds {
     private MessageIds() {
     }
 
-    static void ensure(Message message, Path directory) throws IOException {
+    public static void ensure(Message message, Path directory) throws IOException {
         if (message.getMsgId() != null) {
             return;
         }

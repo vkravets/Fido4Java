@@ -2,6 +2,7 @@ package org.fidonet.echobase.jam;
 
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
+import org.fidonet.echobase.jam.struct.SubField;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -241,6 +242,40 @@ public final class JamArea {
             }
             rawHeader.seek(offset + 52);
             rawHeader.writeInt(Integer.reverseBytes((stored.Attribute | set) & ~clear));
+            header.setFixedHeader(info);
+            force();
+        }
+
+        /** Append a replacement header; leave the text and all unrelated subfields intact. */
+        public void assignMsgId(long number, String id, Charset encoding) throws IOException {
+            long slot = number - Integer.toUnsignedLong(info.getBasemsgnum());
+            if (slot < 0 || slot >= index.length() / 8) {
+                throw new IOException("JAM message no longer exists");
+            }
+            index.seek(slot * 8 + 4);
+            long offset = Integer.toUnsignedLong(Integer.reverseBytes(index.readInt()));
+            MessageHeader stored = header.getMsgHeaderByShift(offset);
+            if (stored == null || (stored.Attribute & DELETED) != 0) {
+                throw new IOException("JAM message was deleted");
+            }
+            if (stored.SubFieldList.stream().anyMatch(field -> field.loID == 4)) {
+                throw new IOException("JAM message already has MSGID");
+            }
+            SubField field = new SubField();
+            field.loID = 4;
+            field.buffer = id.getBytes(encoding);
+            field.datalen = field.buffer.length;
+            stored.SubFieldList.add(field);
+            stored.SubfieldLen = stored.getSubLen();
+            stored.MSGIDcrc = JamCodec.crc(field.buffer);
+            long size = rawHeader.length();
+            if (size + 76 + stored.SubfieldLen > 0xffffffffL) {
+                throw new IOException("JAM header storage limit exceeded");
+            }
+            header.writeHeader(stored);
+            rawHeader.getChannel().force(true);
+            index.seek(slot * 8 + 4);
+            index.writeInt(Integer.reverseBytes((int) size));
             header.setFixedHeader(info);
             force();
         }

@@ -143,6 +143,14 @@ AREADEF TEST "Test echo" 0 Echo JAM C:\fido\jam\test 2:500/102 (Loc)
 AREADEF NETMAIL "Netmail" 0 Net JAM C:\fido\jam\netmail 2:500/102 (Loc Pvt)
 ```
 
+The service imports local unsent messages before preparing outbound. Sender AKAs
+and addresses are validated; unknown echoes, unsupported file services and
+missing routes are rejected with a log message. A missing MSGID on a new outgoing
+post is durably assigned in JAM before SQL insertion. Existing identifiers are
+preserved. Import receipts survive restarts; accepted posts are locked against
+editing while queued. SENT is not set merely because SQL accepted a post.
+Changing content under a previously submitted MSGID is a conflict, not a resend.
+
 The AKA must be configured locally in both applications. JAM file locks are
 implemented, but compatibility with an actual GoldED+ process has not yet been
 certified on either Windows or Linux.
