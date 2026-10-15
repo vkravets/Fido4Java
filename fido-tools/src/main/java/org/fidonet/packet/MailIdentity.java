@@ -16,10 +16,13 @@ public final class MailIdentity {
         String area = message.getArea() == null ? "" : message.getArea().toLowerCase(Locale.ROOT);
         String id = message.getMsgId();
         String value = area + "\0"
+                + (message.isEchomail()
+                        ? ""
+                        : message.getFAddr() + "\0" + message.getTAddr() + "\0")
                 + (id == null || id.isEmpty()
-                        ? message.getFAddr() + "\0" + message.getTAddr() + "\0" + message.getFrom()
-                                + "\0" + message.getTo() + "\0" + message.getSubject() + "\0"
-                                + message.getMsgDate() + "\0" + message.getBody().getBody()
+                        ? message.getFAddr() + "\0" + message.getFrom() + "\0" + message.getTo()
+                                + "\0" + message.getSubject() + "\0" + message.getMsgDate() + "\0"
+                                + message.getBody().getBody()
                         : id);
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")

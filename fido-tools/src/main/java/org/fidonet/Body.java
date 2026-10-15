@@ -59,6 +59,11 @@ public class Body {
     private String area;
     private List<String> controlLines = Collections.emptyList();
     private List<String> viaLines = new ArrayList<>();
+    private List<String> layout;
+
+    public void setLayout(List<String> lines) {
+        layout = new ArrayList<>(lines);
+    }
 
     public List<String> getViaLines() {
         return Collections.unmodifiableList(viaLines);
@@ -130,6 +135,11 @@ public class Body {
         if (area != null && !area.isEmpty()) {
             sb.append("AREA:").append(area).append("\r");
         }
+        if (layout != null) {
+            appendLayout(sb);
+            appendTail(sb);
+            return sb.toString();
+        }
         // insert kludges
         Map<String, String> originalValues = new LinkedHashMap<>();
         Set<String> emitted = new HashSet<>();
@@ -157,6 +167,46 @@ public class Body {
         }
         // insert text
         sb.append(body);
+        appendTail(sb);
+        return sb.toString();
+    }
+
+    private void appendLayout(StringBuilder sb) {
+        Pattern pattern = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$");
+        Map<String, String> originals = new LinkedHashMap<>();
+        for (String line : controlLines) {
+            Matcher match = pattern.matcher(line);
+            if (match.matches()) {
+                originals.putIfAbsent(match.group(1), match.group(2));
+            }
+        }
+        Set<String> emitted = new HashSet<>();
+        for (Map.Entry<String, String> entry : kludges.entrySet()) {
+            if (!originals.containsKey(entry.getKey())) {
+                appendControl(sb, entry.getKey(), entry.getValue());
+                emitted.add(entry.getKey());
+            }
+        }
+        for (String line : layout) {
+            Matcher match = pattern.matcher(line);
+            if (!match.matches() || !originals.containsKey(match.group(1))) {
+                sb.append(line).append('\r');
+                continue;
+            }
+            String key = match.group(1);
+            if (!kludges.containsKey(key)) {
+                continue;
+            }
+            if (Objects.equals(kludges.get(key), originals.get(key))) {
+                sb.append(line).append('\r');
+                emitted.add(key);
+            } else if (emitted.add(key)) {
+                appendControl(sb, key, kludges.get(key));
+            }
+        }
+    }
+
+    private void appendTail(StringBuilder sb) {
         // insert origin
         if (origin != null) {
             if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\r') {
@@ -178,12 +228,11 @@ public class Body {
             }
             sb.append(line).append('\r');
         }
-        return sb.toString();
     }
 
     private static void appendControl(StringBuilder sb, String key, String value) {
         sb.append('\1').append(key);
-        if (key.equals("INTL") || key.equals("FMPT") || key.equals("TOPT")) {
+        if (key.equals("INTL") || key.equals("FMPT") || key.equals("TOPT") || key.equals("FLAGS")) {
             sb.append(' ').append(value.trim());
         } else {
             sb.append(':');

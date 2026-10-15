@@ -8,6 +8,7 @@ import static org.junit.Assert.fail;
 
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
+import org.fidonet.db.objects.Echomail;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -185,6 +186,26 @@ public class DatabaseOperationsTest {
         configuration.setPacket_password("secret");
         database.getDao(ConfigurationLink.class).create(configuration);
         return configuration.toLink();
+    }
+
+    @Test
+    public void legacyMessagesWithoutMsgidRemainImportableAndDupeHistorySurvivesDeletion()
+            throws Exception {
+        Message message = message("one", "temporary", "legacy");
+        message = new Message(message.getFrom(),
+                              message.getTo(),
+                              message.getFAddr(),
+                              message.getTAddr(),
+                              "legacy",
+                              "AREA:one\rLegacy text\r",
+                              new Date(1000000));
+        manager.addMessage(message, "one");
+        assertTrue(manager.isDupe(message));
+        assertNull(manager.getMessages("one").next().getMsgId());
+        database.getDao(Echomail.class).deleteBuilder().delete();
+        assertTrue(manager.isDupe(message));
+        manager.addMessage(message, "one");
+        assertEquals(0, manager.getMessageSize("one"));
     }
 
     private static Message message(String area, String id, String subject) {

@@ -217,6 +217,9 @@ public class Tosser extends HasEventBus {
             FtsPackMsg msg1 = msgs[index];
             final Message msg = new Message(msg1, q.getOrigZone(), q.getDestZone());
             msg.setUpLink(q.getOrigaddr());
+            if (!msg.hasValidAddressing()) {
+                return false;
+            }
             if (msg.isEchomail()) {
                 if ((!areamgr.isEchoExists(msg.getArea().toLowerCase(Locale.ROOT))
                         && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false")))
@@ -277,7 +280,7 @@ public class Tosser extends HasEventBus {
         return false;
     }
 
-    public synchronized void submitNetmail(Message message, String deliveryKey) {
+    public synchronized void submitNetmail(Message message, String deliveryKey) throws IOException {
         if ((message.getAttributes() & 0x8810) != 0) {
             throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
         }
@@ -285,6 +288,7 @@ public class Tosser extends HasEventBus {
                 || !config.getLocalAddresses().contains(message.getFAddr())) {
             throw new IllegalArgumentException("Outgoing netmail must originate from a local AKA");
         }
+        MessageIds.ensure(message, Path.of(config.getTmpDir()));
         if (config.getLocalAddresses().contains(message.getTAddr())) {
             netmailStore.saveNetmail(message, deliveryKey, null);
             return;
@@ -332,6 +336,15 @@ public class Tosser extends HasEventBus {
 
     public synchronized void exportEchomail() throws IOException {
         new EchoExporter(config, base, new OutboundSpool(config)).export();
+    }
+
+    public synchronized void submitEchomail(Message message) throws IOException {
+        if (!message.isEchomail() || !config.getLocalAddresses().contains(message.getFAddr())
+                || !base.isAreaExists(message.getArea().toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Local echomail requires a local AKA and an existing area");
+        }
+        MessageIds.ensure(message, Path.of(config.getTmpDir()));
+        base.addMessage(message, message.getArea().toLowerCase(Locale.ROOT));
     }
 
     public EchoMgr getAreamgr() {
