@@ -118,3 +118,56 @@ cleanup in this version; configure operational retention separately.
 The TIC format was checked against
 [FTS-5006.001](https://defsol.com/files/ftsc/fts-5006.001) and command conventions
 against [Husky htick](https://github.com/huskyproject/htick).
+
+## Automatic node/point directory import
+
+Add the bundled import script after FileFix:
+
+```ini
+MailScript=classpath:mail-scripts/directory-import.groovy
+NodeDirectoryPath=./database/nodelist/catalog
+DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/current-nodes.lst|1:500/101|1|500
+DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/current-points.lst|1:500/101
+```
+
+The repeatable definition is
+`id|format|file-area|full-mask|diff-mask|retained-base-file|peer[|zone|net|charset|requireChecksum]`.
+Defaults are zone/net 0, US-ASCII and requireChecksum=true. A blank diff mask
+disables diffs. IDs and retained paths must be unique. Full/diff masks must not
+overlap for an incoming name. Match the actual distribution names, including
+ZIP names such as NODELIST.Z?? and NODEDIFF.Z?? when applicable.
+
+This script opens the existing directory catalog directly. It does not require
+`NodeDirectoryEnabled=true` or DirectorySource settings; leave automatic file
+polling disabled when feeds own the imports. This also allows startup before
+the first list arrives. The nodelist module must remain in the distribution.
+After validated TIC delivery, only matching area/name/sender combinations are
+imported. A full list or a single-member ZIP initializes the retained plain
+base. The same mechanisms support NODELIST, BOSS and other configured parser
+formats. Stored SQL entries never become trusted links or routing rules.
+
+Diffs use the A/C/D editing format from
+[FTS-5000.005, section 6](https://defsol.com/files/ftsc/fts-5000.005).
+The first diff line must match the old base header exactly; counts are
+1..32767 and must consume the complete old file. Output uses CRLF and terminal
+DOS EOF. Both the old base and the result must pass header CRC validation for
+diff updates, even when requireChecksum=false permits full headerless lists.
+Pointlist diffs are supported when they use this same editing format. Missing
+editions, nonmatching bases and other diff formats are deferred, not guessed.
+ARC/ARJ/LZH/RAR distributions must be unpacked separately.
+
+Before publishing a base, the importer validates parsing, CRC and duplicate
+addresses through a rolled-back SQL import with bounded batches. The retained
+base is atomically replaced, then imported into SQL. These are two resources,
+not one transaction: a database failure can leave the verified new base beside
+the previous catalog. A forced recovery journal allows redelivery of the same
+diff to finish SQL import without applying it twice. Do not delete the adjacent
+`.update` journal or replace the base manually during recovery. A per-base file
+lock excludes concurrent updates using this API. Invalid data leaves the old
+base and catalog intact. Input files remain available for inspection/retry.
+
+The script does not download lists or infer which full edition is newer from
+filenames/day numbers. Feed authorized publications in edition order; a full
+list is an explicit replacement. When enabling this script after files were
+already accepted by FileFix, explicitly import those archived files rather
+than expecting completed TIC receipts to run again.

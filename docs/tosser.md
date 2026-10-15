@@ -143,7 +143,8 @@ Eligibility and routing-line updates were compared with HPT's
 SEEN-BY suppresses normal duplicate fan-out and excludes point addresses;
 PATH records processors. FTS-0004 defines these different roles, while FTS-4001
 requires final netmail addresses to stay independent of the packet envelope.
-Automatic AreaFix, a nodelist router and RPC endpoints remain separate features.
+Optional [Groovy mail scripts](mail-scripts.md) provide AreaFix and FileFix.
+A nodelist router and RPC endpoints remain separate features.
 
 The Runner starts `MailService` after loading the transport, scheduler and
 database plugins. A process lock in `Tmp` prevents two mail services from using
@@ -334,7 +335,7 @@ document or independent-tosser certification.
   packets are quarantined. Local messages can be stored with their attributes,
   but no attachment or FREQ service is executed.
 - Return-receipt/audit requests are preserved in the wire attributes; automatic
-  receipt generation, PING/TRACE services and AreaFix are not implemented.
+  receipt generation and PING/TRACE services are not implemented.
 - Routing uses configured links and patterns; there is no nodelist-based route
   discovery, DNS node discovery or automatic zonegate selection.
 - FTN addresses currently use the project's existing 4D model. Distinct domains

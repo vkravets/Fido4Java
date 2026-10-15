@@ -36,8 +36,11 @@ Plain files and ZIP archives are detected by content, including names such as
 payload are allowed. Members are streamed, never extracted. Each compressed/raw
 file and each expanded member is limited to 128 MiB; lines to 64 KiB.
 Unpack ARC/ARJ/LZH/RAR files separately. Filenames are explicit; the plugin does
-not guess the newest day number, download files, apply NODEDIFF, or move input
-files. Publish a replacement file using an atomic rename.
+not guess the newest day number or download files. The optional bundled
+[Groovy directory feed](mail-scripts.md#automatic-nodepoint-directory-import)
+imports TIC deliveries and applies NODEDIFF/pointlist A/C/D diffs while retaining
+base editions. For manually managed DirectorySource files, publish replacements
+using an atomic rename.
 
 Automatic import occurs when the mail service starts. Invalid initial sources
 fail startup. Later checks run before mail export, at most once per configured
