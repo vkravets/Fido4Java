@@ -32,12 +32,6 @@ import org.fidonet.echobase.EchoBase;
 import org.fidonet.echobase.EchoCfg;
 import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.exceptions.EchoBaseException;
-import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
-import org.fidonet.echobase.jam.struct.MessageHeader;
-import org.fidonet.echobase.jam.struct.SubField;
-import org.fidonet.jftn.tools.SafeSimpleDateFormat;
-import org.fidonet.misc.MyCRC;
-import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.Message;
 
 import org.slf4j.Logger;
@@ -46,14 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.nio.file.Path;
 
 public class JAMEchoBase implements EchoBase {
 
@@ -102,28 +90,11 @@ public class JAMEchoBase implements EchoBase {
         setFileNames(name);
         initFiles();
         try {
-            headerfile.createNewFile();
-            textfile.createNewFile();
-            indexfile.createNewFile();
-            lastrfile.createNewFile();
+            new JamArea(Path.of(echoList.getEcho(name).Path), name, null).create();
         } catch (IOException e) {
             throw new EchoBaseException("Unable to create " + name + " area", e);
         }
-
-        FixedHeaderInfoStruct hdr = new FixedHeaderInfoStruct();
-        hdr.setDatecreated((int) (System.currentTimeMillis() / 1000L));
-        hdr.setActivemsg(0);
-        hdr.setBasemsgnum(1);
-        hdr.setModcounter(1);
-        hdr.setPasswordcrc(0xFFFFFFFF);
-
-        try (FileOutputStream fhdr = new FileOutputStream(headerfile)) {
-            fhdr.write(hdr.toByteArray());
-        } catch (IOException e) {
-            throw new EchoBaseException("Unable to write " + name + " area header", e);
-        }
     }
-
     @Override
     public void openArea(String name) throws EchoBaseException {
         closeArea();
@@ -179,156 +150,15 @@ public class JAMEchoBase implements EchoBase {
         if (!msg.isEchomail()) {
             throw new EchoBaseException("JAMEchoBase accepts echomail only");
         }
-        Charset encoding = CharsetTools.charsetDetect(msg.getMessageCharset());
-        int shiftoflast;
         try {
-            shiftoflast = index.getLastMessageShift();
+            new JamArea(Path.of(headerfilename.substring(0, headerfilename.length() - 4)),
+                        msg.getArea(),
+                        null).append(msg);
         } catch (IOException e) {
-            throw new EchoBaseException("Unable to read JAM index", e);
-        }
-        int mesnum;
-        MessageHeader msgheader = null;
-        try {
-            msgheader = header.getMsgHeaderByShift(shiftoflast);
-        } catch (IOException e) {
-            throw new EchoBaseException(e.getMessage());
-        }
-        if (msgheader == null) {
-            mesnum = 0;
-        } else {
-            mesnum = msgheader.MessageNumber;
-        }
-
-        MessageHeader newmsg = new MessageHeader();
-        newmsg.MessageNumber = mesnum + 1;
-        newmsg.TimesRead = 0;
-        try {
-            newmsg.Offset = text.getSize();
-        } catch (IOException e) {
-            throw new EchoBaseException(e.getMessage());
-        }
-        String MSGID = msg.getMsgId();
-        newmsg.MSGIDcrc = MSGID == null ? 0xffffffff : MyCRC.CRC(MSGID.getBytes(encoding));
-
-        String REPLY = msg.getBody().getKludges().get("REPLY");
-        if (REPLY != null) {
-            newmsg.REPLYcrc = MyCRC.CRC(REPLY.getBytes(encoding));
-        }
-
-        newmsg.Attribute |= 0x01000000; // MSG_TYPEECHO
-
-        SafeSimpleDateFormat df = new SafeSimpleDateFormat("dd MMM yy  HH:mm:ss", Locale.US);
-
-        Date date;
-        try {
-            date = df.parse(msg.getMsgDate());
-        } catch (ParseException e) {
-            throw new EchoBaseException(e.getMessage(), e);
-        }
-
-        newmsg.DateWritten = (int) (date.getTime() / 1000L);
-        newmsg.DateReceived = 0; // (int) (System.currentTimeMillis() / 1000L);
-        newmsg.DateProcessed = (int) (System.currentTimeMillis() / 1000L);
-        newmsg.PasswordCRC = 0xFFFFFFFF;
-
-        SubField FromName = new SubField();
-        FromName.loID = 2;
-        FromName.buffer = msg.getFrom().getBytes(encoding);
-        FromName.datalen = FromName.buffer.length;
-        newmsg.SubFieldList.add(FromName);
-
-        SubField ToName = new SubField();
-        ToName.loID = 3;
-        ToName.buffer = msg.getTo().getBytes(encoding);
-        ToName.datalen = ToName.buffer.length;
-        newmsg.SubFieldList.add(ToName);
-
-        /*        SubField FromAdd = new SubField();
-        FromAdd.LoID = 0;
-        FromAdd.Buffer = msg.getFAddr().toString().getBytes();
-        FromAdd.datalen = FromAdd.Buffer.length;
-        newmsg.SubFieldList.add(FromAdd);*/
-
-        SubField Subject = new SubField();
-        Subject.loID = 6;
-        Subject.buffer = msg.getSubject().getBytes(encoding);
-        Subject.datalen = Subject.buffer.length;
-        newmsg.SubFieldList.add(Subject);
-
-        if (msg.getTAddr() != null) {
-            SubField ToAdd = new SubField();
-            ToAdd.loID = 1;
-            ToAdd.buffer = msg.getTAddr().toString().getBytes(encoding);
-            ToAdd.datalen = ToAdd.buffer.length;
-            newmsg.SubFieldList.add(ToAdd);
-        }
-
-        Pattern collon = Pattern.compile("[:][:\\s]");
-
-        if (MSGID != null) {
-            SubField msgid = new SubField();
-            msgid.loID = 4;
-            msgid.buffer = MSGID.getBytes(encoding);
-            msgid.datalen = msgid.buffer.length;
-            newmsg.SubFieldList.add(msgid);
-        }
-
-        Map<String, String> kludges = msg.getBody().getKludges();
-        for (String kludgeName : kludges.keySet()) {
-            if (kludgeName.equals("REPLY")) {
-                SubField reply = new SubField();
-                reply.loID = 5;
-                reply.buffer = kludges.get("REPLY").getBytes(encoding);
-                reply.datalen = reply.buffer.length;
-                newmsg.SubFieldList.add(reply);
-            } else if (kludgeName.equals("TZUTC")) {
-                SubField tz = new SubField();
-                tz.loID = 2004;
-                tz.buffer = kludges.get("TZUTC").getBytes(encoding);
-                tz.datalen = tz.buffer.length;
-                newmsg.SubFieldList.add(tz);
-                newmsg.SubfieldLen = newmsg.getSubLen();
-            } else {
-                SubField tid = new SubField();
-                tid.loID = 2000;
-                tid.buffer = (kludgeName + ": " + kludges.get(kludgeName)).getBytes(encoding);
-                tid.datalen = tid.buffer.length;
-                newmsg.SubFieldList.add(tid);
-            }
-        }
-
-        SubField path = new SubField();
-        path.loID = 2002;
-        path.buffer = msg.getBody().getPath().toPathString().getBytes(encoding);
-        path.datalen = path.buffer.length;
-        newmsg.SubFieldList.add(path);
-        newmsg.SubfieldLen = newmsg.getSubLen();
-
-        SubField seen = new SubField();
-        seen.loID = 2001;
-        seen.buffer = msg.getBody().getSeenBy().toSeenByString().getBytes(encoding);
-
-        seen.datalen = seen.buffer.length;
-        newmsg.SubFieldList.add(seen);
-        newmsg.SubfieldLen = newmsg.getSubLen();
-
-        byte[] msgtext = msg.getBody().toString().getBytes(encoding);
-
-        newmsg.TxtLen = msgtext.length;
-        int headeroffset = 0;
-        try {
-            headeroffset = header.writeHeader(newmsg);
-            text.writeText(msgtext);
-            index.writeIndex(msg.getTo(), headeroffset);
-
-            FixedHeaderInfoStruct fh = header.getFixedHeader();
-            fh.setActivemsg(fh.getActivemsg() + 1);
-            header.setFixedHeader(fh);
-        } catch (IOException e) {
-            throw new EchoBaseException(e.getMessage());
+            throw new EchoBaseException("Unable to append JAM message",
+                                        e.getCause() == null ? e : e.getCause());
         }
     }
-
     @Override
     public void delMessage(int id) throws EchoBaseException {
     }

@@ -60,7 +60,7 @@ public class JAMStorageTest {
         } finally {
             base.closeArea();
         }
-        assertArrayEquals(message.getBody().toString().getBytes(StandardCharsets.UTF_8),
+        assertArrayEquals(JamCodec.text(message),
                           Files.readAllBytes(new File(path + ".jdt").toPath()));
         try (JHRFile header = new JHRFile(new File(path + ".jhr"))) {
             MessageHeader stored = header.getMsgHeaderByShift(1024);
@@ -77,13 +77,13 @@ public class JAMStorageTest {
         EchoList areas = areas();
         String path = areas.getEcho("test").Path;
         JAMEchoBase base = new JAMEchoBase(areas);
-        long before = System.currentTimeMillis() / 1000;
+        long before = Integer.toUnsignedLong(JamCodec.timestamp(new Date()));
         base.openArea("test");
         base.closeArea();
         try (JHRFile header = new JHRFile(new File(path + ".jhr"))) {
             FixedHeaderInfoStruct fixed = header.getFixedHeader();
             assertTrue(fixed.getDatecreated() >= before);
-            assertTrue(fixed.getDatecreated() <= System.currentTimeMillis() / 1000);
+            assertTrue(fixed.getDatecreated() <= Integer.toUnsignedLong(JamCodec.timestamp(new Date())));
             assertEquals(0, fixed.getActivemsg());
             assertEquals(1, fixed.getBasemsgnum());
             assertEquals(1, fixed.getModcounter());
@@ -104,8 +104,8 @@ public class JAMStorageTest {
         }
         byte[] data = Files.readAllBytes(new File(path + ".jdt").toPath());
         Charset encoding = Charset.forName(CharsetTools.DEFAULT_ENCODING);
-        byte[] firstText = first.getBody().toString().getBytes(encoding);
-        byte[] secondText = second.getBody().toString().getBytes(encoding);
+        byte[] firstText = JamCodec.text(first);
+        byte[] secondText = JamCodec.text(second);
         ByteBuffer index = ByteBuffer.wrap(Files.readAllBytes(new File(path + ".jdx").toPath()))
                                      .order(ByteOrder.LITTLE_ENDIAN);
         assertEquals(16, index.remaining());
@@ -130,10 +130,10 @@ public class JAMStorageTest {
             assertEquals("Author", subfield(one, 2));
             assertEquals("Reader", subfield(one, 3));
             assertEquals("first", subfield(one, 6));
-            assertEquals(first.getBody().getKludges().get("REPLY"), subfield(one, 5));
-            assertEquals(first.getBody().getKludges().get("TZUTC"), subfield(one, 2004));
-            assertEquals(MyCRC.CRC(first.getMsgId().getBytes()), one.MSGIDcrc);
-            assertEquals(MyCRC.CRC(first.getBody().getKludges().get("REPLY").getBytes()),
+            assertEquals(first.getBody().getKludges().get("REPLY").trim(), subfield(one, 5));
+            assertEquals(first.getBody().getKludges().get("TZUTC").trim(), subfield(one, 2004));
+            assertEquals(JamCodec.crc(first.getMsgId().getBytes()), one.MSGIDcrc);
+            assertEquals(JamCodec.crc(first.getBody().getKludges().get("REPLY").trim().getBytes()),
                          one.REPLYcrc);
         }
     }
