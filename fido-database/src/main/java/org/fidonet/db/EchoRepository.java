@@ -69,6 +69,20 @@ final class EchoRepository {
         }
     }
 
+    void visitRecent(String area, int count, MessageIteration.Handler handler) throws IOException {
+        if (count < 1 || count > 10000) {
+            throw new IllegalArgumentException("Recent echo count must be 1..10000");
+        }
+        try (QueryCursor<Echomail> rows = new QueryCursor<>(query(area,
+                                                                  0,
+                                                                  Long.MAX_VALUE,
+                                                                  true).limit((long) count))) {
+            visitRangeRows(rows, handler);
+        } catch (SQLException e) {
+            throw new IOException("Unable to read recent echo history", e);
+        }
+    }
+
     private void visitRangeRows(QueryCursor<Echomail> rows, MessageIteration.Handler handler)
             throws IOException {
         while (rows.hasNext()) {

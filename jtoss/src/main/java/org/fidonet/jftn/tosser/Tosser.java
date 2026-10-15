@@ -538,6 +538,25 @@ public class Tosser extends HasEventBus {
         }
     }
 
+    public synchronized void rescanRecentEcho(String area,
+                                              FTNAddr peer,
+                                              int count,
+                                              String requestId)
+            throws IOException {
+        if (requestId == null || !requestId.matches("[A-Za-z0-9_-]{1,80}")) {
+            throw new IllegalArgumentException("A stable rescan request ID is required");
+        }
+        Link link = echoLink(peer);
+        String name = echoArea(area);
+        if (!base.isAreaExists(name) || !base.canReadEcho(link, name)) {
+            throw new IllegalArgumentException("Rescan requires a readable subscription");
+        }
+        EchoExporter exporter = new EchoExporter(config, base, new OutboundSpool(config));
+        echoStore().visitRecentEcho(name,
+                                    count,
+                                    message -> exporter.rescan(message, link, requestId));
+    }
+
     private EchoRoutingStore echoStore() {
         if (!(base instanceof EchoRoutingStore)) {
             throw new UnsupportedOperationException("This store does not support managed echo routing");
