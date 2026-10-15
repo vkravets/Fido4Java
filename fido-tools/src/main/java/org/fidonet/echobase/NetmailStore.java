@@ -11,6 +11,10 @@ public interface NetmailStore {
 
     List<Message> getLocalNetmail(FTNAddr address);
 
+    default List<Message> getEditorNetmail(FTNAddr address) {
+        return getLocalNetmail(address);
+    }
+
     List<QueuedNetmail> getQueuedNetmail();
 
     void markNetmailSent(String deliveryKey);

@@ -155,6 +155,26 @@ public class DatabaseManager implements IBase, NetmailStore {
     }
 
     @Override
+    public List<Message> getEditorNetmail(FTNAddr address) {
+        try {
+            List<Message> result = new ArrayList<>();
+            for (Netmail stored : dbManager.<Netmail, Long>getDao(Netmail.class).queryForAll()) {
+                if (address.equals(new FTNAddr(stored.getFromAddr()))
+                        || address.equals(new FTNAddr(stored.getToAddr()))) {
+                    Message message = stored.toMessage();
+                    if (Boolean.TRUE.equals(stored.getSend())) {
+                        message.setAttributes(message.getAttributes() | 8);
+                    }
+                    result.add(message);
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to read editor netmail", e);
+        }
+    }
+
+    @Override
     public List<QueuedNetmail> getQueuedNetmail() {
         try {
             List<QueuedNetmail> result = new ArrayList<>();

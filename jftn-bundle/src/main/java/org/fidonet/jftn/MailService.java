@@ -162,6 +162,7 @@ public final class MailService implements AutoCloseable {
         tosser.exportEchomail();
         try {
             jam.exportMessages();
+            jam.reconcileDeliveries();
         } catch (IOException e) {
             logger.warn("JAM synchronization deferred; SQL mail processing completed", e);
         }

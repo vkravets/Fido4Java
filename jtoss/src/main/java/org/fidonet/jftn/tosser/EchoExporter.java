@@ -46,6 +46,13 @@ final class EchoExporter {
     }
 
     private void export(Message message) throws IOException {
+        List<Link> recipients = recipients(message);
+        for (Link link : recipients) {
+            export(message, link, recipients);
+        }
+    }
+
+    List<Link> recipients(Message message) {
         List<Link> recipients = new ArrayList<>();
         for (Link link : config.getConfiguredLinks()) {
             if (base.canReadEcho(link, message.getArea())
@@ -57,50 +64,48 @@ final class EchoExporter {
                 recipients.add(link);
             }
         }
-        for (Link link : recipients) {
-            if (link.getMyaddr() == null || link.getMyaddr().isEmpty()) {
-                throw new IOException("Missing local echo AKA");
-            }
-            Message copy = message.copy();
-            FTNAddr local = link.getMyaddr().get(0);
-            SeenBy seen = new SeenBy();
-            FidoPath path = new FidoPath();
-            for (FTNAddr address : message.getBody().getSeenBy().getAddresses()) {
-                if (address.getZone().equals(link.getAddr().getZone()) && address.getPnt() == 0) {
-                    seen.add(address);
-                }
-            }
-            for (FTNAddr address : message.getBody().getPath().getAddresses()) {
-                if (address.getZone().equals(link.getAddr().getZone()) && address.getPnt() == 0) {
-                    path.add(address);
-                }
-            }
-            for (Link recipient : recipients) {
-                if (recipient.getAddr().getZone().equals(link.getAddr().getZone())
-                        && recipient.getAddr().getPnt() == 0) {
-                    seen.add(recipient.getAddr());
-                }
-            }
-            if (local.getPnt() == 0 && local.getZone().equals(link.getAddr().getZone())) {
-                seen.add(local);
-                path.add(local);
-            }
-            copy.getBody().setSeenBy(seen);
-            copy.getBody().setPath(path);
-            if (copy.getBody().getOrigin() == null && message.getUpLink() == null) {
-                copy.getBody()
-                    .setOrigin(" * Origin: "
-                               + config.getValue("System", "JFtn")
-                               + " ("
-                               + local
-                               + ")");
-            }
-            spool.enqueue("echo:"
-                          + message.getArea()
-                          + ":"
-                          + MailIdentity.of(message)
-                          + ":"
-                          + link.getAddr(), link, copy);
+        return recipients;
+    }
+
+    private void export(Message message, Link link, List<Link> recipients) throws IOException {
+        if (link.getMyaddr() == null || link.getMyaddr().isEmpty()) {
+            throw new IOException("Missing local echo AKA");
         }
+        Message copy = message.copy();
+        FTNAddr local = link.getMyaddr().get(0);
+        SeenBy seen = new SeenBy();
+        FidoPath path = new FidoPath();
+        for (FTNAddr address : message.getBody().getSeenBy().getAddresses()) {
+            if (address.getZone().equals(link.getAddr().getZone()) && address.getPnt() == 0) {
+                seen.add(address);
+            }
+        }
+        for (FTNAddr address : message.getBody().getPath().getAddresses()) {
+            if (address.getZone().equals(link.getAddr().getZone()) && address.getPnt() == 0) {
+                path.add(address);
+            }
+        }
+        for (Link recipient : recipients) {
+            if (recipient.getAddr().getZone().equals(link.getAddr().getZone())
+                    && recipient.getAddr().getPnt() == 0) {
+                seen.add(recipient.getAddr());
+            }
+        }
+        if (local.getPnt() == 0 && local.getZone().equals(link.getAddr().getZone())) {
+            seen.add(local);
+            path.add(local);
+        }
+        copy.getBody().setSeenBy(seen);
+        copy.getBody().setPath(path);
+        if (copy.getBody().getOrigin() == null && message.getUpLink() == null) {
+            copy.getBody()
+                .setOrigin(" * Origin: " + config.getValue("System", "JFtn") + " (" + local + ")");
+        }
+        spool.enqueue("echo:"
+                      + message.getArea()
+                      + ":"
+                      + MailIdentity.of(message)
+                      + ":"
+                      + link.getAddr(), link, copy);
     }
 }

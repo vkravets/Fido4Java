@@ -34,8 +34,12 @@ public final class OutboundSpool {
     }
 
     public boolean isAcknowledged(String key, Link link) {
+        return isAcknowledged(key, link.getAddr());
+    }
+
+    public boolean isAcknowledged(String key, FTNAddr address) {
         String name = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
-        return Files.exists(directory(link.getAddr()).resolve(name + ".sent"));
+        return Files.exists(directory(address).resolve(name + ".sent"));
     }
 
     public synchronized void enqueue(String key, Link link, Message message) throws IOException {

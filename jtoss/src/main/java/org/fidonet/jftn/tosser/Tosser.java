@@ -58,9 +58,11 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -398,6 +400,27 @@ public class Tosser extends HasEventBus {
         }
         MessageIds.ensure(message, Path.of(config.getTmpDir()));
         base.addMessage(message, message.getArea().toLowerCase(Locale.ROOT));
+    }
+
+    public List<FTNAddr> submissionTargets(Message message) throws IOException {
+        List<FTNAddr> result = new ArrayList<>();
+        if (message.isEchomail()) {
+            for (Link link : new EchoExporter(config,
+                                              base,
+                                              new OutboundSpool(config)).recipients(message)) {
+                result.add(link.getAddr());
+            }
+            if (result.isEmpty()) {
+                throw new IllegalStateException("No configured recipients for local echomail");
+            }
+        } else if (!config.getLocalAddresses().contains(message.getTAddr())) {
+            Link route = new NetmailRouter(config).route(message);
+            if (route == null) {
+                throw new IllegalStateException("No route for " + message.getTAddr());
+            }
+            result.add(route.getAddr());
+        }
+        return result;
     }
 
     public EchoMgr getAreamgr() {
