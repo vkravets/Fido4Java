@@ -79,6 +79,12 @@ public class FilesSender<T extends Session> implements Runnable {
     }
 
     public boolean send(FileData<InputStream> data) throws Exception {
+        try (FileData.SendResource resource = data.getSendResource()) {
+            return sendFile(data);
+        }
+    }
+
+    private boolean sendFile(FileData<InputStream> data) throws Exception {
         // The caller owns this stream; GET may reset and reuse it for a resend.
         final InputStream reader = data.getStream();
         FileInfo fileInfo = data.getInfo();
@@ -278,10 +284,7 @@ public class FilesSender<T extends Session> implements Runnable {
             requests.offer(fileInfo);
         }
         if (isResend) {
-            FileData<InputStream> resend = new FileData<>(fileInfo, data.getStream());
-            resend.setRewindBeforeSend(true);
-            resend.setResumeResponse(true);
-            files.addFirst(resend);
+            files.addFirst(data.resend(fileInfo));
         }
         synchronized (sessionContext) {
             sessionContext.notifyAll();

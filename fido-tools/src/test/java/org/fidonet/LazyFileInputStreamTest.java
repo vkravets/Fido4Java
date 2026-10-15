@@ -25,6 +25,7 @@ public class LazyFileInputStreamTest {
             input.mark(Integer.MAX_VALUE);
             assertEquals(3, input.skip(3));
             assertEquals(4, input.read());
+            input.release();
             input.reset();
             assertEquals(1, input.read());
             input.mark(1);
