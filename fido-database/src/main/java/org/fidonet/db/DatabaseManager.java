@@ -40,6 +40,8 @@ import org.fidonet.db.objects.NetmailRouteRecord;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.ArchiveStore;
+import org.fidonet.echobase.EchoHistory;
+import org.fidonet.echobase.EchoRoutingStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.IncrementalEchoStore;
 import org.fidonet.echobase.MessageIteration;
@@ -53,6 +55,7 @@ import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.UpdateBuilder;
 import com.j256.ormlite.stmt.Where;
@@ -81,7 +84,63 @@ public class DatabaseManager
             NetmailStore,
             ArchiveStore,
             IncrementalEchoStore,
-            NetmailRoutingStore {
+            NetmailRoutingStore,
+            EchoRoutingStore {
+
+    @Override
+    public synchronized void configureEchoSubscription(Link link,
+                                                       String area,
+                                                       AccessLevel access,
+                                                       EchoHistory history) {
+        if (access == null || history == null || area == null || area.trim().isEmpty()) {
+            throw new IllegalArgumentException("Echo area, access and history policy are required");
+        }
+        try {
+            dbManager.inTransaction(() -> {
+                if (subscriptions.findLink(link) == null) {
+                    throw new IllegalArgumentException("Configure the echo link before subscribing");
+                }
+                configureSubscription(link, area, access);
+                if (access != AccessLevel.WRITE) {
+                    new EchoRepository(dbManager).initializeConsumer(area,
+                                                                     "outbound:" + link.getAddr(),
+                                                                     history == EchoHistory.NEW_ONLY);
+                }
+                return null;
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to configure echo routing", e);
+        }
+    }
+
+    @Override
+    public synchronized void removeEchoSubscription(Link link, String area) {
+        try {
+            ConfigurationLink configured = subscriptions.findLink(link);
+            Echoarea echo = areas.findByName(area.toLowerCase(Locale.ROOT));
+            if (configured == null || echo == null) {
+                return;
+            }
+            DeleteBuilder<Subscription, Object> delete = dbManager.<Subscription, Object>getDao(Subscription.class)
+                                                                  .deleteBuilder();
+            delete.where()
+                  .eq(Subscription.ID_LINK_COLUMN, configured.getId())
+                  .and()
+                  .eq(Subscription.ID_AREA_COLUMN, echo.getId());
+            delete.delete();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to remove echo subscription", e);
+        }
+    }
+
+    @Override
+    public void visitEchoRange(String area,
+                               long firstId,
+                               long lastId,
+                               MessageIteration.Handler handler)
+            throws IOException {
+        new EchoRepository(dbManager).visitRange(area, firstId, lastId, handler);
+    }
 
     @Override
     public List<NetmailRoute> getNetmailRoutes() {

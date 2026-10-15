@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.Locale;
 import java.util.UUID;
 
-/** SQL cursors are independent of reader last-read positions and transport acknowledgements. */
+/** SQL cursors are independent of reader positions and transport acknowledgements. */
 final class EchoRepository {
     private final OrmManager orm;
 
@@ -23,18 +23,64 @@ final class EchoRepository {
 
     void visitNew(String area, String consumer, MessageIteration.Handler handler)
             throws IOException {
-        String key = UUID.nameUUIDFromBytes((consumer + "\0"
-                + area.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8)).toString();
-        try (QueryCursor<Echomail> rows = new QueryCursor<>(query(area, key))) {
-            visitRows(rows, key, handler);
+        String key = key(area, consumer);
+        try {
+            MessageCheckpoint checkpoint = orm.<MessageCheckpoint, String>getDao(MessageCheckpoint.class)
+                                              .queryForId(key);
+            QueryBuilder<Echomail, Object> query = query(area,
+                                                         checkpoint == null
+                                                                 ? 0
+                                                                 : checkpoint.getLastId(),
+                                                         Long.MAX_VALUE,
+                                                         false);
+            try (QueryCursor<Echomail> rows = new QueryCursor<>(query)) {
+                visitRows(rows, key, handler);
+            }
         } catch (SQLException e) {
             throw new IOException("Unable to scan new echo messages", e);
         }
     }
 
-    private QueryBuilder<Echomail, Object> query(String name, String key) throws SQLException {
-        MessageCheckpoint checkpoint = orm.<MessageCheckpoint, String>getDao(MessageCheckpoint.class)
-                                          .queryForId(key);
+    void initializeConsumer(String area, String consumer, boolean onlyNew) throws SQLException {
+        String key = key(area, consumer);
+        if (orm.<MessageCheckpoint, String>getDao(MessageCheckpoint.class)
+               .queryForId(key) != null) {
+            return;
+        }
+        Echomail latest = onlyNew
+                ? query(area, 0, Long.MAX_VALUE, true).limit(1L).queryForFirst()
+                : null;
+        orm.getDao(MessageCheckpoint.class)
+           .create(new MessageCheckpoint(key, latest == null ? 0 : latest.getId()));
+    }
+
+    void visitRange(String area, long firstId, long lastId, MessageIteration.Handler handler)
+            throws IOException {
+        if (firstId < 0 || lastId < firstId) {
+            throw new IllegalArgumentException("Invalid echo message ID range");
+        }
+        try (QueryCursor<Echomail> rows = new QueryCursor<>(query(area,
+                                                                  firstId - 1,
+                                                                  lastId,
+                                                                  false))) {
+            visitRangeRows(rows, handler);
+        } catch (SQLException e) {
+            throw new IOException("Unable to read echo history", e);
+        }
+    }
+
+    private void visitRangeRows(QueryCursor<Echomail> rows, MessageIteration.Handler handler)
+            throws IOException {
+        while (rows.hasNext()) {
+            handler.accept(rows.next().toMessage());
+        }
+    }
+
+    private QueryBuilder<Echomail, Object> query(String name,
+                                                 long after,
+                                                 long through,
+                                                 boolean descending)
+            throws SQLException {
         Echoarea area = orm.<Echoarea, Object>getDao(Echoarea.class)
                            .queryBuilder()
                            .where()
@@ -45,11 +91,13 @@ final class EchoRepository {
         }
         QueryBuilder<Echomail, Object> query = orm.<Echomail, Object>getDao(Echomail.class)
                                                   .queryBuilder();
-        query.orderBy(Echomail.ID_COLUMN, true)
+        query.orderBy(Echomail.ID_COLUMN, !descending)
              .where()
              .eq(Echomail.ID_AREA_COLUMN, area.getId())
              .and()
-             .gt(Echomail.ID_COLUMN, checkpoint == null ? 0 : checkpoint.getLastId());
+             .gt(Echomail.ID_COLUMN, after)
+             .and()
+             .le(Echomail.ID_COLUMN, through);
         return query;
     }
 
@@ -61,5 +109,10 @@ final class EchoRepository {
             orm.getDao(MessageCheckpoint.class)
                .createOrUpdate(new MessageCheckpoint(key, row.getId()));
         }
+    }
+
+    private String key(String area, String consumer) {
+        return UUID.nameUUIDFromBytes((consumer + "\0"
+                + area.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

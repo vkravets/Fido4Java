@@ -15,6 +15,8 @@ import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.echobase.AccessLevel;
+import org.fidonet.echobase.EchoHistory;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
@@ -47,6 +49,31 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class MailServiceTest {
+    @Test
+    public void managedSubscriptionsAreNotRecreatedFromConfigOnRestart() throws Exception {
+        JFtnConfig config = config("1:500/102", "1:500/101", "EchoSubscriptions=database\n");
+        DatabaseManager base = database();
+        FTNAddr peer = new FTNAddr("1:500/101");
+        try {
+            try (MailService service = new MailService(config, base)) {
+                assertFalse(base.isAreaExists("test"));
+                service.getTosser()
+                       .configureEchoSubscription(peer,
+                                                  "test",
+                                                  AccessLevel.READ,
+                                                  EchoHistory.NEW_ONLY);
+                assertTrue(base.canReadEcho(config.getLink(peer), "test"));
+                service.getTosser().removeEchoSubscription(peer, "test");
+            }
+            try (MailService service = new MailService(config, base)) {
+                service.processPending();
+                assertFalse(base.canReadEcho(config.getLink(peer), "test"));
+            }
+        } finally {
+            base.close();
+        }
+    }
+
     @Test
     public void disabledJamDoesNotValidateBindingsOrCreateFilesAndStillExportsPackets()
             throws Exception {

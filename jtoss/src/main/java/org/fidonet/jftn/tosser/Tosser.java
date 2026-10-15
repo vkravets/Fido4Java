@@ -29,7 +29,10 @@
 package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.echobase.AccessLevel;
+import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.EchoMgr;
+import org.fidonet.echobase.EchoRoutingStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.NetmailRoutingStore;
 import org.fidonet.echobase.NetmailStore;
@@ -79,6 +82,7 @@ public class Tosser extends HasEventBus {
     private final NetmailStore netmailStore;
     private final IBase base;
     private final NetmailRouter netmailRouter;
+    private final EchoRouter echoRouter;
 
     public Tosser(JFtnConfig config, IBase base) throws IOException {
         this.config = config;
@@ -89,6 +93,10 @@ public class Tosser extends HasEventBus {
                                                        ? (NetmailRoutingStore) base
                                                        : null);
         this.areamgr = new EchoMgr(base);
+        this.echoRouter = new EchoRouter(config, base);
+        if (EchoRouter.databaseSubscriptions(config) && !(base instanceof EchoRoutingStore)) {
+            throw new IllegalArgumentException("Database echo subscriptions require an EchoRoutingStore");
+        }
         this.bunlderegex = Pattern.compile(".*\\.[STFWMstfwm][ouaherOUAHER][0-9A-Za-z]");
     }
 
@@ -467,5 +475,71 @@ public class Tosser extends HasEventBus {
 
     public NetmailRouter getNetmailRouter() {
         return netmailRouter;
+    }
+
+    public EchoRouter getEchoRouter() {
+        return echoRouter;
+    }
+
+    public synchronized void configureEchoSubscription(FTNAddr peer,
+                                                       String area,
+                                                       AccessLevel access,
+                                                       EchoHistory history) {
+        requireManagedEcho();
+        echoStore().configureEchoSubscription(echoLink(peer), echoArea(area), access, history);
+    }
+
+    public synchronized void removeEchoSubscription(FTNAddr peer, String area) {
+        requireManagedEcho();
+        echoStore().removeEchoSubscription(echoLink(peer), echoArea(area));
+    }
+
+    public synchronized void rescanEcho(String area,
+                                        FTNAddr peer,
+                                        long firstId,
+                                        long lastId,
+                                        String requestId)
+            throws IOException {
+        if (requestId == null || !requestId.matches("[A-Za-z0-9_-]{1,80}")) {
+            throw new IllegalArgumentException("A stable rescan request ID is required");
+        }
+        Link link = echoLink(peer);
+        String name = echoArea(area);
+        if (!base.isAreaExists(name) || !base.canReadEcho(link, name)) {
+            throw new IllegalArgumentException("Rescan requires an existing readable subscription");
+        }
+        EchoExporter exporter = new EchoExporter(config, base, new OutboundSpool(config));
+        echoStore().visitEchoRange(name,
+                                   firstId,
+                                   lastId,
+                                   message -> exporter.rescan(message, link, requestId));
+    }
+
+    private void requireManagedEcho() {
+        if (!EchoRouter.databaseSubscriptions(config)) {
+            throw new IllegalStateException("Enable EchoSubscriptions=database to administer subscriptions");
+        }
+    }
+
+    private EchoRoutingStore echoStore() {
+        if (!(base instanceof EchoRoutingStore)) {
+            throw new UnsupportedOperationException("This store does not support managed echo routing");
+        }
+        return (EchoRoutingStore) base;
+    }
+
+    private Link echoLink(FTNAddr peer) {
+        Link link = config.getLink(peer);
+        if (link == null || config.getLocalAddresses().contains(peer)) {
+            throw new IllegalArgumentException("Echo peer must be a configured remote link");
+        }
+        return link;
+    }
+
+    private String echoArea(String area) {
+        if (area == null || area.trim().isEmpty()) {
+            throw new IllegalArgumentException("Echo area is required");
+        }
+        return area.trim().toLowerCase(Locale.ROOT);
     }
 }
