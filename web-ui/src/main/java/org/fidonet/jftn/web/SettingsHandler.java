@@ -1,9 +1,11 @@
 package org.fidonet.jftn.web;
 
+import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.NodeLookup;
 import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.SetupStatus;
+import org.fidonet.jftn.rpc.TosserConfiguration;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
@@ -138,6 +140,47 @@ public final class SettingsHandler implements SettingsService.Iface {
             store.save(configuration, authPath);
             saved = true;
             completed.run();
+            return true;
+        });
+    }
+
+    private void authorizeMailSettings(String authorization) throws UiError {
+        if (!setupToken.isEmpty()) {
+            throw new UiError("FORBIDDEN", "Complete setup and sign in as administrator first");
+        }
+        sessions.requireAdminUser(sessions.require(authorization));
+    }
+
+    @Override
+    public synchronized List<MailLinkConfiguration> links(String authorization) throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> new MailConfigurationStore(store).links());
+    }
+
+    @Override
+    public synchronized boolean saveLinks(String authorization, List<MailLinkConfiguration> links)
+            throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> {
+            new MailConfigurationStore(store).saveLinks(links);
+            saved = true;
+            return true;
+        });
+    }
+
+    @Override
+    public synchronized TosserConfiguration tosser(String authorization) throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> new MailConfigurationStore(store).tosser());
+    }
+
+    @Override
+    public synchronized boolean saveTosser(String authorization, TosserConfiguration configuration)
+            throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> {
+            new MailConfigurationStore(store).saveTosser(configuration);
+            saved = true;
             return true;
         });
     }
