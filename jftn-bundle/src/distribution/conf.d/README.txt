@@ -16,7 +16,11 @@ Restart the node after editing configuration. Keep private configuration outside
 Git. When upgrading, preserve your jftn.conf and conf.d directory.
 
 Plugin templates are supplied as *.conf.example. Startup creates missing
-commented *.conf files once, never overwriting existing operator settings.
+*.conf files once, never overwriting existing operator settings.
 See docs/plugin-configuration.md for the file/key map. Keep all MailScript
 entries together in 40-mail-scripts.conf to preserve handler registration order.
 The database and scheduler plugins currently have no configurable options.
+
+Default mail scripts load from ./scripts/mail-scripts/ as external files.
+AreaFix uses database subscriptions. Configure peer/area/feed rules explicitly;
+no directory catalog is opened when DirectoryFeed is absent.

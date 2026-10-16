@@ -42,7 +42,10 @@ catalog = null
 
 def register(api) {
     def feeds = (api.config.getValuesAsList('DirectoryFeed') ?: []).collect { new DirectoryFeed(it) }
-    if (feeds.isEmpty() || feeds.collect { it.source.id }.toSet().size() != feeds.size()
+    if (feeds.isEmpty()) {
+        return
+    }
+    if (feeds.collect { it.source.id }.toSet().size() != feeds.size()
             || feeds.collect { it.source.path }.toSet().size() != feeds.size()) {
         throw new IllegalArgumentException('DirectoryFeed IDs and base paths must be unique')
     }

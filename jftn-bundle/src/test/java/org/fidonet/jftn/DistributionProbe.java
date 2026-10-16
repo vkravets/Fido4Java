@@ -1,8 +1,15 @@
 package org.fidonet.jftn;
 
+import org.fidonet.config.JFtnConfig;
+import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.plugins.Plugin;
+import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.tosser.Tosser;
 
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -32,6 +39,39 @@ public final class DistributionProbe {
         if (script == null || !script.getProtocol().equals("file")) {
             throw new IllegalStateException("Mail scripts must be loaded from the external scripts directory");
         }
+        verifyDefaultMailScripts();
         System.out.println("Packaged plugins, Groovy, H2 and external scripts verified");
+    }
+
+    private static void verifyDefaultMailScripts() throws Exception {
+        NodeDirectories.defaults(Path.of("."));
+        Path configuration = Path.of("jftn.conf");
+        Files.writeString(configuration,
+                          "SysOp=Test\nLink=1:500/101,1:500/100,-\nInbound=mail/inbound\nOutbound=mail/outbound\nTmp=mail/tmp\nEchoPath=mail/echo\n");
+        JFtnConfig config = new JFtnConfig();
+        config.load(configuration.toString());
+        if (config.getValuesAsList("MailScript").size() != 3) {
+            throw new IllegalStateException("Expected three default handlers");
+        }
+        for (String name : config.getValuesAsList("MailScript")) {
+            if (name.startsWith("classpath:") || !Files.isRegularFile(Path.of(name))) {
+                throw new IllegalStateException("Default scripts must use external paths: " + name);
+            }
+        }
+        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:defaultScripts"));
+        try {
+            if (!database.open()) {
+                throw new IllegalStateException("Cannot initialize script test database");
+            }
+            Tosser tosser = new Tosser(config, database);
+            try (MailScripts scripts = new MailScripts(config, database, tosser)) {
+                scripts.beforeExport(tosser);
+            }
+            if (Files.exists(Path.of("database/nodelist"))) {
+                throw new IllegalStateException("Unconfigured directory feeds must not open a catalog");
+            }
+        } finally {
+            database.close();
+        }
     }
 }
