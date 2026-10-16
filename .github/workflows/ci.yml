@@ -76,7 +76,7 @@ jobs:
 
   package:
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    needs: build
+    needs: [build, integration]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
