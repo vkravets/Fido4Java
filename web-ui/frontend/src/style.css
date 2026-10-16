@@ -17,6 +17,8 @@
     --accent-soft: #f8ecd5;
     --danger: #a32f40;
     --danger-soft: #fbedee;
+    --warning: #895400;
+    --warning-soft: #f8ecd5;
     --success: #317259;
     --shadow: 0 8px 28px #35302508;
     --focus: #89540040;
@@ -37,6 +39,8 @@
     --accent-soft: #343025;
     --danger: #ffadb6;
     --danger-soft: #38262c;
+    --warning: #efbc65;
+    --warning-soft: #343025;
     --success: #8dc5a7;
     --shadow: 0 8px 28px #00000024;
     --focus: #efbc6540;
@@ -669,29 +673,65 @@ footer.actions {
     margin-bottom: 24px;
 }
 .messages {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 4;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(760px, calc(100% - 32px));
     max-height: 50dvh;
+    margin: 0 auto;
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: 8px;
     overflow-y: auto;
+    pointer-events: none;
+}
+.message {
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
     box-shadow: var(--shadow);
-}
-.messages p {
-    margin: 0;
-    border-bottom: 1px solid var(--line);
-    padding: 14px 38px;
+    background: var(--surface-raised);
+    color: var(--text);
     font-size: 13px;
+    line-height: 1.6;
+    pointer-events: auto;
 }
-.error {
+.message-text {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.message.warning {
+    background: var(--warning-soft);
+    color: var(--warning);
+    border-left-color: var(--warning);
+}
+.message.error {
     background: var(--danger-soft);
     color: var(--danger);
+    border-left-color: var(--danger);
 }
-.notice {
-    background: var(--accent-soft);
-    color: var(--text);
-    padding: 16px;
-    border-radius: 5px;
-    font-size: 13px;
+.message-close {
+    flex-shrink: 0;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    color: inherit;
+    font-size: 24px;
+    line-height: 1;
+}
+.message-close:not(:disabled):hover {
+    background: var(--surface);
 }
 .loading {
     padding: 120px 30px;
@@ -880,9 +920,6 @@ footer.actions {
     }
     dl {
         grid-template-columns: 100px 1fr;
-    }
-    .messages p {
-        padding: 13px 20px;
     }
 }
 @media (prefers-reduced-motion: reduce) {

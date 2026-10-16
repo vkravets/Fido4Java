@@ -9,6 +9,7 @@ import NodeSettings from './components/NodeSettings.vue';
 import Sidebar from './components/Sidebar.vue';
 import RobotAccess from './components/RobotAccess.vue';
 import Connections from './components/Connections.vue';
+import NotificationBanner from './components/NotificationBanner.vue';
 const state = createState();
 const page = ref('settings');
 onMounted(state.start);
@@ -58,24 +59,18 @@ function logout() {
             </button>
         </div>
     </header>
-    <div
-        class="messages"
-        aria-live="polite"
-    >
-        <p
-            v-if="state.error.value"
-            role="alert"
-            class="error"
-        >
-            {{ state.error.value }}
-        </p>
-        <p
-            v-if="state.notice.value"
-            class="notice"
-        >
-            {{ state.notice.value }}
-        </p>
-    </div>
+    <Teleport to="body">
+        <section
+            id="notifications"
+            class="messages"
+            aria-label="Уведомления"
+        ></section>
+    </Teleport>
+    <NotificationBanner
+        :message="state.error.value"
+        kind="error"
+    />
+    <NotificationBanner :message="state.notice.value" />
     <main
         v-if="!state.ready.value"
         class="loading"

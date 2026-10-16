@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { api, bindings } from '../api.ts';
 import { createRobotEditor } from '../robot-rules.ts';
+import NotificationBanner from './NotificationBanner.vue';
 import type { AppState } from '../state.ts';
 
 const props = defineProps<{ state: AppState }>();
@@ -42,14 +43,11 @@ function remove() {
         Обновить
     </button>
     <template v-if="configuration">
-        <p
+        <NotificationBanner
             v-if="configuration.source !== 'database'"
-            class="notice"
-        >
-            Источник правил — файлы, доступен только просмотр. Для редактирования выберите
-            RobotAccessSource=database в conf.d/40-mail-scripts.conf и перезапустите ноду. Перенос
-            существующих правил выполняется явно через --import-robot-access.
-        </p>
+            kind="warning"
+            message="Источник правил — файлы, доступен только просмотр. Для редактирования выберите RobotAccessSource=database в conf.d/40-mail-scripts.conf и перезапустите ноду. Перенос существующих правил выполняется явно через --import-robot-access."
+        />
         <p
             v-else
             class="muted"
@@ -131,12 +129,10 @@ function remove() {
             @submit.prevent="save"
         >
             <h2>{{ editing ? 'Изменить правило' : 'Новое правило' }}</h2>
-            <p
+            <NotificationBanner
                 v-if="!configuration.peers.length"
-                class="notice"
-            >
-                Сначала настройте линк станции.
-            </p>
+                message="Сначала настройте линк станции."
+            />
             <fieldset :disabled="state.busy.value || !configuration.peers.length">
                 <div class="form-grid">
                     <label
