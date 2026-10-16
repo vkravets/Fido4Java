@@ -16,9 +16,11 @@ import org.fidonet.types.Link;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,10 +29,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class PollServiceTest {
+    @TempDir
+    Path root;
+
+    private String storage(String text) {
+        return text.replace("Tmp=tmp\n", "Tmp=" + root.toString().replace('\\', '/') + "\n");
+    }
     @Test
     void scheduledFailuresDidNotBlockOtherLinksAndEachAttemptOwnedItsContext() throws Exception {
         JFtnConfig config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(("SysOp=Test\nInbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\n"
+        config.load(new ByteArrayInputStream(storage("SysOp=Test\nInbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\n"
                 + "Link=1:500/101,1:500/100,secret,localhost\nLink=1:500/102,1:500/100,secret,localhost\n").getBytes(StandardCharsets.UTF_8)));
         SessionContext template = new SessionContext(new StationConfig("Test",
                                                                        "Sysop",
@@ -49,6 +57,8 @@ class PollServiceTest {
                 if (link.getAddr().getNode() == 101) {
                     throw new IllegalStateException("Rejected");
                 }
+                context.setSendingIsFinish(true);
+                context.setReceivingIsFinish(true);
                 context.setState(SessionState.STATE_END);
             }
 
@@ -84,7 +94,7 @@ class PollServiceTest {
                           + "Link=1:500/101,1:500/100,secret,127.0.0.1:"
                           + remote.getLocalPort()
                           + "\n";
-            config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+            config.load(new ByteArrayInputStream(storage(text).getBytes(StandardCharsets.UTF_8)));
             SessionContext local = new SessionContext(new StationConfig("Local",
                                                                         "Sysop",
                                                                         "",
@@ -114,7 +124,7 @@ class PollServiceTest {
                       + "Link=1:500/101,1:500/100,secret,localhost\n"
                       + "Link=1:500/102,1:500/100,secret,localhost\n";
         JFtnConfig config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        config.load(new ByteArrayInputStream(storage(text).getBytes(StandardCharsets.UTF_8)));
         SessionContext template = new SessionContext(new StationConfig("Test",
                                                                        "Sysop",
                                                                        "",

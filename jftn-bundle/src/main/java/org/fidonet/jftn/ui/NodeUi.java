@@ -113,8 +113,8 @@ public final class NodeUi implements UiService.Iface {
         Runtime runtime = Runtime.getRuntime();
         int active = (int) polls.list()
                                 .stream()
-                                .filter(poll -> List.of("CONNECTING", "TRANSFERRING")
-                                                    .contains(poll.getState()))
+                                .filter(poll -> poll.isActive()
+                                        && !poll.getState().equals("QUEUED"))
                                 .count();
         return new NodeStatus("2.0",
                               (System.nanoTime() - started) / 1000000000,

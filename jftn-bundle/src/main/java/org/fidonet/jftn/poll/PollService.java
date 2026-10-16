@@ -7,9 +7,12 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,12 +24,16 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-/** A bounded, cancellable queue for manual and scheduled polls; each owns a session context. */
+/** One bounded outgoing queue for the scheduler and every administrative transport. */
 public class PollService implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PollService.class);
     private final JFtnConfig config;
     private final SessionContext template;
     private final Function<Link, Client> clients;
     private final Map<String, Job> jobs = new LinkedHashMap<>();
+    private final PollHistory history;
+    private final int historyLimit;
+    private final long timeoutSeconds;
     private final ThreadPoolExecutor worker = new ThreadPoolExecutor(1,
                                                                      1,
                                                                      0,
@@ -34,19 +41,17 @@ public class PollService implements AutoCloseable {
                                                                      new ArrayBlockingQueue<>(64),
                                                                      task -> new Thread(task,
                                                                                         "jftn-poll"));
+    private boolean closed;
 
     private static final class Job {
         private final PollAttempt info;
         private volatile Client client;
         private volatile boolean cancelled;
+        private boolean running;
         private Future<?> future;
 
-        private Job(String address) {
-            info = new PollAttempt(UUID.randomUUID().toString(),
-                                   address,
-                                   "QUEUED",
-                                   System.currentTimeMillis(),
-                                   "");
+        private Job(PollAttempt info) {
+            this.info = info;
         }
     }
 
@@ -58,86 +63,185 @@ public class PollService implements AutoCloseable {
         this.config = config;
         this.template = template;
         this.clients = clients;
+        historyLimit = setting(config, "PollHistoryLimit", 256, 1, 10000);
+        timeoutSeconds = setting(config, "PollTimeoutSeconds", 120, 1, 86400);
+        try {
+            history = new PollHistory(Path.of(config.getTmpDir(), "polls"));
+            restore();
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
+        }
     }
 
-    public synchronized PollAttempt poll(String address) {
+    private static int setting(JFtnConfig config, String key, int fallback, int min, int max) {
+        int value = Integer.parseInt(config.getValue(key, Integer.toString(fallback)));
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(key + " is outside its allowed range");
+        }
+        return value;
+    }
+
+    private void restore() throws IOException {
+        try {
+            for (PollAttempt attempt : history.load()) {
+                if (attempt.isActive()) {
+                    attempt.setState("INTERRUPTED")
+                           .setDetail("Node stopped before this attempt finished")
+                           .finished(System.currentTimeMillis());
+                    history.save(attempt);
+                }
+                jobs.put(attempt.getId(), new Job(attempt));
+            }
+            prune();
+        } catch (IOException | RuntimeException failure) {
+            history.close();
+            throw failure;
+        }
+    }
+
+    public PollAttempt poll(String address) {
+        return enqueue(address, "MANUAL");
+    }
+
+    private synchronized PollAttempt enqueue(String address, String source) {
+        if (closed || worker.isShutdown()) {
+            throw new IllegalArgumentException("Poll service is stopped");
+        }
         Link link = config.getLink(new FTNAddr(address));
         if (link == null || config.getLocalAddresses().contains(link.getAddr())) {
             throw new IllegalArgumentException("Unknown remote link");
         }
         for (Job job : jobs.values()) {
-            if (job.info.getAddress().equals(link.getAddr().toString()) && active(job)) {
+            if (job.info.getAddress().equals(link.getAddr().toString()) && occupied(job)) {
                 return job.info.copy();
             }
         }
-        if (jobs.size() >= 128) {
-            jobs.values().removeIf(job -> !active(job));
+        if (worker.getQueue().remainingCapacity() == 0) {
+            throw new IllegalArgumentException("Poll queue is full");
         }
-        if (jobs.size() >= 128 || worker.getQueue().remainingCapacity() == 0
-                || worker.isShutdown()) {
-            throw new IllegalArgumentException("Poll queue is full or stopped");
-        }
-        Job job = new Job(link.getAddr().toString());
-        jobs.put(job.info.getId(), job);
+        PollAttempt attempt = new PollAttempt(UUID.randomUUID().toString(),
+                                              link.getAddr().toString(),
+                                              "QUEUED",
+                                              System.currentTimeMillis(),
+                                              "").source(source);
+        history.save(attempt);
+        Job job = new Job(attempt);
+        jobs.put(attempt.getId(), job);
         job.future = worker.submit(() -> run(job, link));
-        return job.info.copy();
+        prune();
+        return attempt.copy();
     }
 
     public void pollAll() {
-        for (Link link : config.getConfiguredLinks()) {
-            enqueueScheduled(link);
-        }
+        config.getConfiguredLinks().forEach(this::enqueueScheduled);
     }
 
     private void enqueueScheduled(Link link) {
         try {
-            poll(link.getAddr().toString());
-        } catch (IllegalArgumentException failure) {
-            LoggerFactory.getLogger(PollService.class)
-                         .warn("Scheduled poll could not be queued for {}", link.getAddr());
+            enqueue(link.getAddr().toString(), "SCHEDULED");
+        } catch (RuntimeException failure) {
+            LOGGER.warn("Scheduled poll could not be queued for {}", link.getAddr());
         }
     }
 
-    private boolean active(Job job) {
-        return List.of("QUEUED", "CONNECTING", "TRANSFERRING").contains(job.info.getState());
+    private boolean occupied(Job job) {
+        return job.running || job.info.isActive();
     }
 
     private synchronized void state(Job job, String state, String detail) {
-        if (!job.cancelled) {
-            job.info.setState(state).setDetail(detail);
+        if (job.cancelled || job.info.getState().equals(state)) {
+            return;
         }
+        job.info.setState(state).setDetail(detail);
+        if (!job.info.isActive()) {
+            job.info.finished(System.currentTimeMillis());
+        }
+        history.save(job.info);
     }
 
     private void run(Job job, Link link) {
         SessionContext context = new SessionContext(template);
-        Client client = clients.apply(link);
-        job.client = client;
-        try {
+        synchronized (this) {
             if (job.cancelled) {
                 return;
             }
+            job.running = true;
+            job.info.started(System.currentTimeMillis());
+        }
+        try {
             state(job, "CONNECTING", "");
-            client.run(context);
-            state(job, "TRANSFERRING", "");
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(120);
-            while (!context.isTransferComplete() && context.getState() != SessionState.STATE_END) {
-                if (job.cancelled || context.getState() == SessionState.STATE_ERR
-                        || context.getState() == SessionState.STATE_BSY
-                        || System.nanoTime() >= deadline) {
-                    throw new IOException("Session failed or timed out");
-                }
-                Thread.sleep(100);
+            job.client = clients.apply(link);
+            if (job.cancelled) {
+                return;
             }
-            state(job, "SUCCEEDED", "");
-        } catch (InterruptedException e) {
+            job.client.run(context);
+            awaitSession(job, context);
+        } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
-            state(job, "FAILED", "Interrupted");
-        } catch (Exception e) {
+            state(job, "INTERRUPTED", "Poll worker interrupted");
+        } catch (Exception failure) {
             state(job, "FAILED", "Connection or session failed");
         } finally {
-            client.stop();
+            cleanup(job, context);
+        }
+    }
+
+    private void awaitSession(Job job, SessionContext context) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+        while (!job.cancelled) {
+            if (finished(job, context)) {
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                state(job, "TIMED_OUT", "Session deadline exceeded");
+                return;
+            }
+            SessionState current = context.getState();
+            boolean transferring = current == SessionState.STATE_TRANSFER
+                    || current == SessionState.STATE_WAITGET;
+            state(job, transferring ? "TRANSFERRING" : "AUTHENTICATING", "");
+            Thread.sleep(100);
+        }
+    }
+
+    private boolean finished(Job job, SessionContext context) {
+        SessionState current = context.getState();
+        if (current == SessionState.STATE_BSY) {
+            state(job, "BUSY", "Remote node is busy");
+        } else if (current == SessionState.STATE_ERR) {
+            state(job, "FAILED", "Authentication or protocol error");
+        } else if (context.isTransferComplete()) {
+            state(job, "SUCCEEDED", "Exchange completed");
+        } else if (current == SessionState.STATE_END) {
+            state(job, "FAILED", "Connection closed before the exchange completed");
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    private void cleanup(Job job, SessionContext context) {
+        try {
+            if (job.client != null) {
+                job.client.stop();
+            }
+        } finally {
             context.closeReceiveStreams();
-            job.client = null;
+            synchronized (this) {
+                job.client = null;
+                job.running = false;
+                prune();
+            }
+        }
+    }
+
+    private void prune() {
+        List<Job> terminal = new ArrayList<>();
+        jobs.values().stream().filter(job -> !occupied(job)).forEach(terminal::add);
+        for (int index = 0; index < terminal.size() - historyLimit; index++) {
+            Job job = terminal.get(index);
+            history.delete(job.info.getId());
+            jobs.remove(job.info.getId());
         }
     }
 
@@ -147,38 +251,62 @@ public class PollService implements AutoCloseable {
         return result;
     }
 
+    public synchronized PollAttempt get(String id) {
+        Job job = jobs.get(id);
+        if (job == null) {
+            throw new IllegalArgumentException("Unknown poll");
+        }
+        return job.info.copy();
+    }
+
     public synchronized void cancel(String id) {
         Job job = jobs.get(id);
         if (job == null) {
             throw new IllegalArgumentException("Unknown poll");
         }
-        if (!active(job)) {
+        stop(job, "CANCELLED");
+    }
+
+    private void stop(Job job, String state) {
+        if (!job.info.isActive()) {
             return;
         }
         job.cancelled = true;
-        job.info.setState("CANCELLED");
-        job.future.cancel(true);
+        job.info.setState(state)
+                .setDetail(state.equals("CANCELLED")
+                        ? "Cancelled by administrator"
+                        : "Node stopped")
+                .finished(System.currentTimeMillis());
+        if (job.future != null) {
+            job.future.cancel(true);
+        }
         if (job.client != null) {
             job.client.stop();
         }
         worker.purge();
+        history.save(job.info);
     }
 
     @Override
     public void close() {
         synchronized (this) {
-            for (String id : jobs.keySet()) {
-                cancel(id);
+            if (closed) {
+                return;
             }
+            closed = true;
+            jobs.values().forEach(job -> stop(job, "INTERRUPTED"));
             worker.shutdownNow();
         }
         try {
             if (!worker.awaitTermination(35, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("UI poll worker did not stop");
+                throw new IllegalStateException("Poll worker did not stop");
             }
-        } catch (InterruptedException e) {
+            history.close();
+        } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("UI poll shutdown interrupted", e);
+            throw new IllegalStateException("Poll shutdown interrupted", failure);
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
         }
     }
 }
