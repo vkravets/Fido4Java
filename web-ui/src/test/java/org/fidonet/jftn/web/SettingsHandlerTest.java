@@ -152,6 +152,32 @@ class SettingsHandlerTest {
     }
 
     @Test
+    void savedStationSettingsWithoutManagingPluginFilesOrReenablingRpc() throws Exception {
+        Path config = directory.resolve("jftn.conf");
+        Path auth = directory.resolve("accounts");
+        new NodeConfigurationStore(config).save(valid(), auth);
+        Files.writeString(config,
+                          Files.readString(config).replace("rpcenabled=true", "rpcenabled=false"));
+        Files.createDirectories(directory.resolve("conf.d"));
+        Path jam = directory.resolve("conf.d/20-jam-bridge.conf");
+        String jamText = "# Operator settings\nJamBridgeEnabled=false\nJamCharset=CP866\n";
+        Files.writeString(jam, jamText);
+        Path scripts = directory.resolve("conf.d/40-mail-scripts.conf");
+        String scriptsText = "MailScript=custom.groovy\nMailScript=other.groovy\n";
+        Files.writeString(scripts, scriptsText);
+        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        store.save(store.current().setSystem("Edited station"), auth);
+        assertEquals(jamText, Files.readString(jam));
+        assertEquals(scriptsText, Files.readString(scripts));
+        JFtnConfig loaded = new JFtnConfig();
+        loaded.load(config.toString());
+        assertEquals("false", loaded.getValue("RpcEnabled"));
+        assertEquals("false", loaded.getValue("JamBridgeEnabled"));
+        assertEquals(List.of("custom.groovy", "other.groovy"),
+                     loaded.getValuesAsList("MailScript"));
+    }
+
+    @Test
     void editedTheFirstLinkPreservedOtherLinksAndEnabledLocalhostPasskeys() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
