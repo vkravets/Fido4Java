@@ -68,14 +68,15 @@ export function createState() {
     }
 
     async function start() {
-        await run(async () => {
+        const started = await run(async () => {
             setup.value = (await api.settings.status()).required;
             if (!setup.value) {
                 Object.assign(methods, await api.auth.methods());
                 registration.value = await api.profile.registrationEnabled();
             }
-            ready.value = true;
+            return true;
         });
+        if (started) ready.value = true;
     }
 
     async function logout() {
