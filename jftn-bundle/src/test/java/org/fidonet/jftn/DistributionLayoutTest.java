@@ -28,6 +28,10 @@ class DistributionLayoutTest {
             assertTrue(Files.isRegularFile(home.resolve(launcher)));
         }
         assertFalse(Files.exists(home.resolve("jftn.conf")));
+        for (String name : PluginConfigurationFiles.NAMES) {
+            assertTrue(Files.isRegularFile(home.resolve("conf.d").resolve(name + ".example")));
+            assertFalse(Files.exists(home.resolve("conf.d").resolve(name)));
+        }
         assertTrue(Files.isRegularFile(home.resolve("scripts/mail-scripts/areafix.groovy")));
         try (var plugins = Files.list(home.resolve("plugins"));
                 var groovy = Files.list(home.resolve("lib/groovy"))) {

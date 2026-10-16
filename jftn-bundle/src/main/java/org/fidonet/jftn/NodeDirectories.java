@@ -25,11 +25,14 @@ final class NodeDirectories {
                                         "fileecho")) {
             Files.createDirectories(root.resolve(directory));
         }
+        PluginConfigurationFiles.createMissing(root.resolve("conf.d"));
     }
 
     static void configured(JFtnConfig config) throws IOException {
         if (config.getSourcePath() != null) {
-            Files.createDirectories(config.getSourcePath().getParent().resolve("conf.d"));
+            PluginConfigurationFiles.createMissing(config.getSourcePath()
+                                                         .getParent()
+                                                         .resolve("conf.d"));
         }
         for (String key : List.of("Inbound", "Outbound", "Tmp", "EchoPath")) {
             Files.createDirectories(Path.of(config.getValue(key)));

@@ -141,6 +141,7 @@ the UI neither exposes them nor rewrites the fragments. Unknown settings already
 present in the main file continue to be preserved on UI saves.
 
 Restart after manual edits. On upgrade, preserve your main configuration and
-`conf.d/`; distribution archives contain only instructions there, not active
-manual overrides. Private `conf.d/*.conf` files and the default received archive
+`conf.d/`; distribution archives contain instructions and `*.conf.example` templates there,
+not active manual overrides. Startup creates missing commented plugin files; see
+[plugin settings](plugin-configuration.md). Private `conf.d/*.conf` files and the default received archive
 are ignored by Git.

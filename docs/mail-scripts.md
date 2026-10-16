@@ -1,5 +1,12 @@
 # Scripted mail services
 
+Configure the script list in `conf.d/40-mail-scripts.conf`, AreaFix peers in
+`41-areafix.conf`, file echo settings in `42-filefix.conf`, and directory feeds in
+`43-directory-feed.conf`. Shared catalog options belong in `30-nodelist.conf`.
+See [plugin configuration](plugin-configuration.md) for startup and upgrade rules.
+Keep every `MailScript` line from the examples below in the one script-list file;
+place the remaining lines in the corresponding service file.
+
 `MailScript` is repeatable. A value is a local Groovy filename or a bundled
 resource such as `classpath:mail-scripts/areafix.groovy`. Scripts are trusted
 operator code and have the JVM's permissions.

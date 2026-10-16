@@ -207,7 +207,8 @@ duplicate checking makes repeated imports safe.
 
 ## External JAM editor
 
-SQL remains the authoritative store. Optional editor views are configured with
+SQL remains the authoritative store. Configure the optional JAM plugin in
+`conf.d/20-jam-bridge.conf`. Optional editor views are configured with
 repeated `JamEcho=AREA,path[,AKA]` and `JamNetmail=path[,AKA]` entries. Paths omit
 the `.jhr` suffix. The default AKA is the first configured local address;
 `JamCharset=CP866` supplies the decoding fallback when no CHRS is present.
