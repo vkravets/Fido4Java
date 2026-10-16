@@ -2,7 +2,7 @@ JFtn v0.1
 =========
 
 ### BUILD STATUS:
-[![CircleCI](https://circleci.com/gh/vkravets/Fido4Java.svg?style=svg)](https://circleci.com/gh/vkravets/Fido4Java)
+[![CI](https://github.com/vkravets/Fido4Java/actions/workflows/ci.yml/badge.svg)](https://github.com/vkravets/Fido4Java/actions/workflows/ci.yml)
 
 ### ABOUT
 JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.

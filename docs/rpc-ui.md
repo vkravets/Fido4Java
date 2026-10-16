@@ -171,11 +171,11 @@ On PowerShell, set `$env:THRIFT_BROWSER_RUNTIME` before `node --test`. These tes
 cover concurrent calls, typed errors, HTTP/network errors, request timeout and
 oneway logout completion. They do not require a running JFtn node or a browser.
 
-CircleCI uses the OpenJDK image with Node.js preinstalled. The compiler cache
-key stays unchanged; a separate version-only cache stores `thrift.js` extracted
-from the same official Apache Thrift archive. Missing browser runtime cache does
-not cause a cached compiler to be rebuilt. Browser results are published by the
-main build job, so failed JS tests prevent the dependent binkd/HPT jobs starting.
+GitHub Actions sets up Java 17 and Node.js 24. A version/platform cache stores
+both the Thrift compiler and `thrift.js` from the same official Apache archive.
+A missing browser runtime does not cause a cached compiler to be rebuilt.
+Browser results are saved by the main build job, so failed browser tests prevent
+the dependent binkd/HPT jobs from starting.
 
 ## Mail
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
-  echo "Expected a vMAJOR.MINOR.PATCH tag with optional prerelease suffix" >&2
-  exit 1
+version=1.0-SNAPSHOT
+if [ "${GITHUB_REF_TYPE:-}" = tag ]; then
+  if [[ ! "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+    echo "Expected a vMAJOR.MINOR.PATCH tag with optional prerelease suffix" >&2
+    exit 1
+  fi
+  version="${GITHUB_REF_NAME#v}"
 fi
-version="${GITHUB_REF_NAME#v}"
 bash ./gradlew build :binkp-root:binkp-netty:prepareCiIntegration \
   :binkp-root:binkp-mina2:prepareCiIntegration :jtoss:prepareCiIntegration \
   "-PreleaseVersion=$version" --warning-mode fail --no-daemon --console=plain
