@@ -36,10 +36,16 @@ public class JFtnRunnerTest {
         Runner runner = recordingRunner(calls);
         Scheduler scheduler = recordingScheduler(calls, false);
         SessionContext context = context(link("1:500/101"));
-        JFtnRunner.runNode(runner, scheduler, context, 0, () -> calls.add("wait"), () -> {
-            scheduler.stop();
-            runner.shutdown();
-        });
+        JFtnRunner.runNode(runner,
+                           scheduler,
+                           context,
+                           () -> calls.add("poll"),
+                           0,
+                           () -> calls.add("wait"),
+                           () -> {
+                               scheduler.stop();
+                               runner.shutdown();
+                           });
         assertEquals(Arrays.asList("bind",
                                    "start",
                                    "schedule",
@@ -56,15 +62,11 @@ public class JFtnRunnerTest {
         Runner runner = recordingRunner(calls);
         Scheduler scheduler = recordingScheduler(calls, true);
         try {
-            JFtnRunner.runNode(runner,
-                               scheduler,
-                               context(),
-                               0,
-                               () -> fail("Failed startup must not wait"),
-                               () -> {
-                                   scheduler.stop();
-                                   runner.shutdown();
-                               });
+            JFtnRunner.runNode(runner, scheduler, context(), () -> {
+            }, 0, () -> fail("Failed startup must not wait"), () -> {
+                scheduler.stop();
+                runner.shutdown();
+            });
             fail("Expected startup failure");
         } catch (IllegalStateException expected) {
             assertEquals("Scheduler failed", expected.getMessage());
@@ -78,7 +80,8 @@ public class JFtnRunnerTest {
         Runner runner = recordingRunner(calls);
         Scheduler scheduler = recordingScheduler(calls, false);
         try {
-            JFtnRunner.runNode(runner, scheduler, context(), 0, () -> {
+            JFtnRunner.runNode(runner, scheduler, context(), () -> {
+            }, 0, () -> {
                 throw new InterruptedException("Stop requested");
             }, () -> {
                 scheduler.stop();
@@ -106,27 +109,6 @@ public class JFtnRunnerTest {
             } catch (IllegalStateException expected) {
                 assertTrue(expected.getMessage().contains("test"));
             }
-        }
-    }
-
-    @Test
-    public void failedPollDoesNotPreventRemainingLinks() {
-        List<Link> attempted = new ArrayList<>();
-        Link first = link("1:500/101"), second = link("1:500/102");
-        Runner runner = new Runner() {
-            @Override
-            public void poll(Link link, SessionContext context) throws Exception {
-                attempted.add(link);
-                if (link == first) {
-                    throw new Exception("Poll rejected");
-                }
-            }
-        };
-        try {
-            JFtnRunner.poolLinks(context(first, second), runner);
-            assertEquals(Arrays.asList(first, second), attempted);
-        } finally {
-            runner.shutdown();
         }
     }
 
@@ -197,58 +179,6 @@ public class JFtnRunnerTest {
             plugin.unload();
         }
         assertNull(plugin.getContext().get());
-    }
-
-    @Test
-    public void pollingLinksKeepsSessionStateSeparateFromOtherLinksAndServer() {
-        Link first = link("1:500/101");
-        Link second = link("1:500/102");
-        StationConfig config = new StationConfig("Test station",
-                                                 "Sysop",
-                                                 "Test location",
-                                                 "TCP,BINKP",
-                                                 "1:500/100");
-        SessionContext server = new SessionContext(config,
-                                                   new LinksInfo(new ArrayList<>(Arrays.asList(first,
-                                                                                               second))));
-        server.setState(SessionState.STATE_IDLE);
-        List<SessionContext> sessions = new ArrayList<>();
-        List<Link> polled = new ArrayList<>();
-        Runner runner = new Runner() {
-            @Override
-            public void poll(Link link, SessionContext context) {
-                polled.add(link);
-                sessions.add(context);
-                context.getLinksInfo().setCurLink(link.getAddr());
-            }
-        };
-        try {
-            JFtnRunner.poolLinks(server, runner);
-
-            assertEquals(Arrays.asList(first, second), polled);
-            assertEquals(2, sessions.size());
-            SessionContext firstSession = sessions.get(0);
-            SessionContext secondSession = sessions.get(1);
-            assertNotSame(server, firstSession);
-            assertNotSame(server, secondSession);
-            assertNotSame(firstSession, secondSession);
-            assertSame(config, firstSession.getStationConfig());
-            assertSame(config, secondSession.getStationConfig());
-            assertSame(first, firstSession.getLinksInfo().getCurLink());
-            assertSame(second, secondSession.getLinksInfo().getCurLink());
-            assertNull(server.getLinksInfo().getCurLink());
-            assertNotSame(firstSession.getSendFiles(), secondSession.getSendFiles());
-            assertNotSame(server.getSendFiles(), firstSession.getSendFiles());
-
-            firstSession.setState(SessionState.STATE_END);
-            firstSession.setSendingIsFinish(true);
-            assertEquals(SessionState.STATE_IDLE, server.getState());
-            assertNotEquals(SessionState.STATE_END, secondSession.getState());
-            assertFalse(server.isSendingIsFinish());
-            assertFalse(secondSession.isSendingIsFinish());
-        } finally {
-            runner.shutdown();
-        }
     }
 
     private static Link link(String address) {

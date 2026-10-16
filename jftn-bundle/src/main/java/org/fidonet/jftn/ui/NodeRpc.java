@@ -4,6 +4,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.MailService;
+import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.ui.transport.RpcTransports;
 
 /** Owns the optional node RPC runtime. Close before the mail service and database. */
@@ -21,13 +22,25 @@ public final class NodeRpc implements AutoCloseable {
                                MailService mail,
                                SessionContext context)
             throws Exception {
+        return open(config, base, mail, context, null);
+    }
+
+    public static NodeRpc open(JFtnConfig config,
+                               DatabaseManager base,
+                               MailService mail,
+                               SessionContext context,
+                               PollService sharedPolls)
+            throws Exception {
         if (!RpcConfiguration.enabled(config, "RpcEnabled")) {
             return null;
         }
         RpcResources resources = new RpcResources();
         try {
             RpcIdentity identity = resources.add(RpcIdentity.open(config));
-            NodeUi backend = resources.add(new NodeUi(config, base, mail, context));
+            PollService polls = sharedPolls == null
+                    ? resources.add(new PollService(config, context))
+                    : sharedPolls;
+            NodeUi backend = new NodeUi(config, base, mail, polls);
             NodeRpcHandlers handlers = new NodeRpcHandlers(identity, backend);
             RpcTransports transports = resources.add(RpcTransports.open(config, handlers));
             return new NodeRpc(resources, transports);

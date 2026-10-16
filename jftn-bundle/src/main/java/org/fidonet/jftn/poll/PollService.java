@@ -1,12 +1,13 @@
-package org.fidonet.jftn.ui;
+package org.fidonet.jftn.poll;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.jftn.rpc.PollInfo;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,8 +21,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-/** A bounded, cancellable queue for operator-initiated polls; each owns a session context. */
-final class UiPolls implements AutoCloseable {
+/** A bounded, cancellable queue for manual and scheduled polls; each owns a session context. */
+public class PollService implements AutoCloseable {
     private final JFtnConfig config;
     private final SessionContext template;
     private final Function<Link, Client> clients;
@@ -32,42 +33,41 @@ final class UiPolls implements AutoCloseable {
                                                                      TimeUnit.SECONDS,
                                                                      new ArrayBlockingQueue<>(64),
                                                                      task -> new Thread(task,
-                                                                                        "jftn-ui-poll"));
+                                                                                        "jftn-poll"));
 
     private static final class Job {
-        private final PollInfo info;
+        private final PollAttempt info;
         private volatile Client client;
         private volatile boolean cancelled;
         private Future<?> future;
 
         private Job(String address) {
-            info = new PollInfo(UUID.randomUUID()
-                                    .toString(),
-                                address,
-                                "QUEUED",
-                                System.currentTimeMillis(),
-                                "");
+            info = new PollAttempt(UUID.randomUUID().toString(),
+                                   address,
+                                   "QUEUED",
+                                   System.currentTimeMillis(),
+                                   "");
         }
     }
 
-    UiPolls(JFtnConfig config, SessionContext template) {
+    public PollService(JFtnConfig config, SessionContext template) {
         this(config, template, Client::new);
     }
 
-    UiPolls(JFtnConfig config, SessionContext template, Function<Link, Client> clients) {
+    public PollService(JFtnConfig config, SessionContext template, Function<Link, Client> clients) {
         this.config = config;
         this.template = template;
         this.clients = clients;
     }
 
-    synchronized PollInfo poll(String address) {
+    public synchronized PollAttempt poll(String address) {
         Link link = config.getLink(new FTNAddr(address));
         if (link == null || config.getLocalAddresses().contains(link.getAddr())) {
             throw new IllegalArgumentException("Unknown remote link");
         }
         for (Job job : jobs.values()) {
             if (job.info.getAddress().equals(link.getAddr().toString()) && active(job)) {
-                return job.info.deepCopy();
+                return job.info.copy();
             }
         }
         if (jobs.size() >= 128) {
@@ -80,7 +80,22 @@ final class UiPolls implements AutoCloseable {
         Job job = new Job(link.getAddr().toString());
         jobs.put(job.info.getId(), job);
         job.future = worker.submit(() -> run(job, link));
-        return job.info.deepCopy();
+        return job.info.copy();
+    }
+
+    public void pollAll() {
+        for (Link link : config.getConfiguredLinks()) {
+            enqueueScheduled(link);
+        }
+    }
+
+    private void enqueueScheduled(Link link) {
+        try {
+            poll(link.getAddr().toString());
+        } catch (IllegalArgumentException failure) {
+            LoggerFactory.getLogger(PollService.class)
+                         .warn("Scheduled poll could not be queued for {}", link.getAddr());
+        }
     }
 
     private boolean active(Job job) {
@@ -126,13 +141,13 @@ final class UiPolls implements AutoCloseable {
         }
     }
 
-    synchronized List<PollInfo> list() {
-        List<PollInfo> result = new ArrayList<>();
-        jobs.values().forEach(job -> result.add(job.info.deepCopy()));
+    public synchronized List<PollAttempt> list() {
+        List<PollAttempt> result = new ArrayList<>();
+        jobs.values().forEach(job -> result.add(job.info.copy()));
         return result;
     }
 
-    synchronized void cancel(String id) {
+    public synchronized void cancel(String id) {
         Job job = jobs.get(id);
         if (job == null) {
             throw new IllegalArgumentException("Unknown poll");

@@ -242,7 +242,7 @@ export; call processMail to request an immediate processing pass.
 | `subscribe`, `unsubscribe` | Managed SQL echo subscriptions; new subscriptions use NEW_ONLY |
 | `rescan` | Explicit repeat-safe rescan of 1..10000 recent messages with a stable requestId |
 | `processMail` | Run the existing inbound/scripts/export processing cycle |
-| `poll`, `polls`, `cancelPoll` | Queue, inspect and cancel operator-initiated connections |
+| `poll`, `polls`, `cancelPoll` | Queue, inspect and cancel manual and scheduled outgoing connections |
 | `outbound` | Up to 200 prepared mail packets and the next file/TIC pair for a configured peer |
 | `logs` | Bounded reads from the configured log file; no client-selected filesystem paths |
 
@@ -253,11 +253,12 @@ cannot race scripts or inbound/outbound scans.
 Polls own independent SessionContexts and use the same Netty transport/mail
 callbacks. States are QUEUED, CONNECTING, TRANSFERRING, SUCCEEDED, FAILED and
 CANCELLED. Repeated poll requests for an already queued/active peer return the
-existing job. One operator poll runs at a time, up to 64 wait; recent history is
+existing job. Manual and scheduled polls share one node-owned queue that works
+without RPC. One outgoing poll runs at a time, up to 64 wait; recent history is
 bounded to 128 and kept in memory. Cancellation interrupts the job and closes
 its client. Connection timeout is 30 seconds; transfer timeout is 120 seconds.
-Only configured links can be dialed. Existing scheduler polls and incoming
-connections are outside this UI queue and are not included in activePolls.
+Only configured links can be dialed. Scheduler polls use this same service and
+are visible through RPC when enabled. Incoming connections are outside this queue.
 
 The outbound method is a snapshot of prepared disk files, including held mail;
 it does not enumerate all unexported database deliveries or every queued file
