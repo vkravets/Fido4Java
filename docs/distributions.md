@@ -80,15 +80,15 @@ optional prerelease suffix before building.
 ```mermaid
 flowchart LR
     event[Push branch / PR / version tag] --> build[Build and test]
-    build --> package[Package and smoke test ZIPs: tags only]
     build --> binkd[binkd integration]
     build --> hpt[HPT integration]
+    binkd --> package[Package and smoke test ZIPs: tags only]
+    hpt --> package
     package --> publish[Publish GitHub Release: tags only]
-    binkd --> publish
-    hpt --> publish
 ```
 
-Packaging and both integrations require the main build. They verify checksums
+Both integrations require the main build. Packaging waits for both integrations
+to succeed before starting. These jobs verify checksums
 and the source revision and use the compiled snapshot without rebuilding Java,
 Thrift or Vue sources. Packaging uses `-PdistributionInput=<sealed-no-jre.zip>`.
 It smoke tests the bundled Linux launcher, JRE, first-run directories and embedded
