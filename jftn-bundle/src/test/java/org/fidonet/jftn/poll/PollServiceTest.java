@@ -1,11 +1,13 @@
-package org.fidonet.jftn.ui;
+package org.fidonet.jftn.poll;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
@@ -19,11 +21,51 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class UiPollsTest {
+class PollServiceTest {
+    @Test
+    void scheduledFailuresDidNotBlockOtherLinksAndEachAttemptOwnedItsContext() throws Exception {
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(("SysOp=Test\nInbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\n"
+                + "Link=1:500/101,1:500/100,secret,localhost\nLink=1:500/102,1:500/100,secret,localhost\n").getBytes(StandardCharsets.UTF_8)));
+        SessionContext template = new SessionContext(new StationConfig("Test",
+                                                                       "Sysop",
+                                                                       "",
+                                                                       "",
+                                                                       "1:500/100"),
+                                                     new LinksInfo(new ArrayList<>(config.getConfiguredLinks())));
+        List<SessionContext> contexts = new CopyOnWriteArrayList<>();
+        CountDownLatch entered = new CountDownLatch(2);
+        try (PollService polls = new PollService(config, template, link -> new Client(link) {
+            @Override
+            public void run(SessionContext context) {
+                contexts.add(context);
+                context.getLinksInfo().setCurLink(link.getAddr());
+                entered.countDown();
+                if (link.getAddr().getNode() == 101) {
+                    throw new IllegalStateException("Rejected");
+                }
+                context.setState(SessionState.STATE_END);
+            }
+
+            @Override
+            public void stop() {
+            }
+        })) {
+            polls.pollAll();
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            assertEquals("FAILED", polls.list().get(0).getState());
+            assertTrue(contexts.get(0) != contexts.get(1));
+            assertTrue(contexts.get(0) != template);
+            assertTrue(contexts.get(0).getSendFiles() != contexts.get(1).getSendFiles());
+            assertNull(template.getLinksInfo().getCurLink());
+        }
+    }
+
     @Test
     @Timeout(value = 20, unit = TimeUnit.SECONDS)
     void completesARealNettyPollAgainstAListeningBinkpPeer() throws Exception {
@@ -49,7 +91,7 @@ class UiPollsTest {
                                                                         "",
                                                                         "1:500/100"),
                                                       new LinksInfo(new ArrayList<Link>(config.getConfiguredLinks())));
-            try (UiPolls polls = new UiPolls(config, local)) {
+            try (PollService polls = new PollService(config, local)) {
                 var job = polls.poll("1:500/101");
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
                 while (System.nanoTime() < deadline) {
@@ -82,7 +124,7 @@ class UiPollsTest {
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch stopped = new CountDownLatch(1);
         AtomicInteger clients = new AtomicInteger();
-        try (UiPolls polls = new UiPolls(config, template, link -> new Client(link) {
+        try (PollService polls = new PollService(config, template, link -> new Client(link) {
             @Override
             public void run(SessionContext context) throws Exception {
                 clients.incrementAndGet();
@@ -98,6 +140,8 @@ class UiPollsTest {
             var first = polls.poll("1:500/101");
             assertTrue(entered.await(5, TimeUnit.SECONDS));
             assertEquals(first.getId(), polls.poll("1:500/101").getId());
+            polls.pollAll();
+            assertEquals(2, polls.list().size());
             var second = polls.poll("1:500/102");
             polls.cancel(second.getId());
             polls.cancel(first.getId());

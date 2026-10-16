@@ -38,6 +38,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
@@ -105,6 +106,10 @@ public class JFtnRunner {
         default Iterable<MailExtensionFactory> mailExtensions() {
             return Collections.emptyList();
         }
+
+        default PollService polling(JFtnConfig config, SessionContext context) {
+            return new PollService(config, context);
+        }
     }
 
     private static PluginContexts pluginContexts(PluginManager manager) {
@@ -135,6 +140,7 @@ public class JFtnRunner {
         SessionContext context;
         MailService mail = null;
         NodeRpc rpc = null;
+        PollService polls = null;
         try {
             loadPlugins.run();
             runner = Runner.class.cast(requireContext(plugins.getContext(NettyPlugin.BINKP_PLUGIN_ID),
@@ -147,8 +153,12 @@ public class JFtnRunner {
             mail = new MailService(config, database, plugins.mailExtensions());
             mail.attach(context);
             mail.start();
-            rpc = NodeRpc.open(config, database, mail, context);
+            polls = plugins.polling(config, context);
+            rpc = NodeRpc.open(config, database, mail, context, polls);
         } catch (Exception failure) {
+            if (polls != null) {
+                polls.close();
+            }
             if (rpc != null) {
                 rpc.close();
             }
@@ -164,21 +174,29 @@ public class JFtnRunner {
         }
         MailService activeMail = mail;
         NodeRpc activeRpc = rpc;
+        PollService activePolls = polls;
         runNode(runner,
                 scheduler,
                 context,
+                activePolls::pollAll,
                 Integer.parseInt(config.getValue("BinkpPort",
                                                  Integer.toString(Connector.BINK_PORT))),
                 waiter,
-                () -> stopServices(scheduler, runner, activeMail, activeRpc, unloadPlugins));
+                () -> stopServices(scheduler,
+                                   runner,
+                                   activeMail,
+                                   activeRpc,
+                                   activePolls,
+                                   unloadPlugins));
     }
 
     private static void stopServices(Scheduler scheduler,
                                      Runner runner,
                                      MailService mail,
                                      NodeRpc rpc,
+                                     PollService polls,
                                      Runnable unloadPlugins) {
-        try (mail) {
+        try (mail; polls) {
             try {
                 if (rpc != null) {
                     rpc.close();
@@ -257,6 +275,7 @@ public class JFtnRunner {
     static void runNode(Runner runner,
                         Scheduler scheduler,
                         SessionContext context,
+                        Runnable pollAll,
                         int port,
                         ShutdownWaiter waitForShutdown,
                         Runnable shutdown)
@@ -264,7 +283,7 @@ public class JFtnRunner {
         try {
             runner.bindServer(context, port);
             scheduler.start();
-            scheduler.schedule("*/10 * * * *", () -> poolLinks(context, runner), true);
+            scheduler.schedule("*/10 * * * *", pollAll, true);
             waitForShutdown.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -274,16 +293,4 @@ public class JFtnRunner {
         }
     }
 
-    public static void poolLinks(SessionContext binkpSession, Runner runner) {
-        logger.info("Pooling all uplinks");
-        for (Link link : binkpSession.getLinksInfo().getLinks()) {
-            try {
-                // The server context is a configuration template; each outgoing
-                // connection owns its link, state and transfer queues.
-                runner.poll(link, new SessionContext(binkpSession));
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
 }

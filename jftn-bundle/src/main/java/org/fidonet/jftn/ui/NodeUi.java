@@ -7,6 +7,8 @@ import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.StoredMail;
 import org.fidonet.jftn.MailService;
+import org.fidonet.jftn.poll.PollAttempt;
+import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
 import org.fidonet.jftn.rpc.LinkInfo;
 import org.fidonet.jftn.rpc.LogPage;
@@ -43,24 +45,24 @@ import java.util.Locale;
 import java.util.Set;
 
 /** Sysop UI adapter. Authentication is supplied by AuthenticatedUi at the RPC boundary. */
-public final class NodeUi implements UiService.Iface, AutoCloseable {
+public final class NodeUi implements UiService.Iface {
     private static final Logger logger = LoggerFactory.getLogger(NodeUi.class);
     private final JFtnConfig config;
     private final DatabaseManager base;
     private final MailService mail;
     private final UiState state;
-    private final UiPolls polls;
+    private final PollService polls;
     private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
 
-    public NodeUi(JFtnConfig config, DatabaseManager base, MailService mail, SessionContext context)
+    public NodeUi(JFtnConfig config, DatabaseManager base, MailService mail, PollService polls)
             throws Exception {
         this.config = config;
         this.base = base;
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
         state = new UiState(Path.of(config.getTmpDir(), "ui-state"));
-        polls = new UiPolls(config, context);
+        this.polls = polls;
     }
 
     @FunctionalInterface
@@ -403,12 +405,22 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
 
     @Override
     public PollInfo poll(String owner, String peer) {
-        return polls.poll(peer);
+        return pollInfo(polls.poll(peer));
     }
 
     @Override
     public List<PollInfo> polls(String owner) {
-        return polls.list();
+        List<PollInfo> result = new ArrayList<>();
+        polls.list().forEach(attempt -> result.add(pollInfo(attempt)));
+        return result;
+    }
+
+    private PollInfo pollInfo(PollAttempt attempt) {
+        return new PollInfo(attempt.getId(),
+                            attempt.getAddress(),
+                            attempt.getState(),
+                            attempt.getCreated(),
+                            attempt.getDetail());
     }
 
     @Override
@@ -458,8 +470,4 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
         return call(() -> NodeLogReader.read(Path.of(filename), offset, limit));
     }
 
-    @Override
-    public void close() {
-        polls.close();
-    }
 }
