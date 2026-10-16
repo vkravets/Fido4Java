@@ -28,7 +28,11 @@ function logout() {
             href="/"
             class="brand"
             aria-label="JFtn, главная"
-            ><span class="brand-mark">J</span>JFtn<span class="version">NODE / WEB</span></a
+            ><img
+                class="brand-mark"
+                src="/jftn.svg"
+                alt=""
+            />JFtn<span class="version">NODE / WEB</span></a
         >
         <div class="topbar-actions">
             <span
