@@ -58,7 +58,7 @@ public final class DistributionProbe {
         }
         JFtnConfig config = new JFtnConfig();
         config.load("jftn.conf");
-        if (!config.getValue("RobotAccessSource").equals("files")) {
+        if (!config.getValue("RobotAccessSource").equals("database")) {
             throw new IllegalStateException("Import must not switch the active source automatically");
         }
     }
@@ -70,6 +70,9 @@ public final class DistributionProbe {
                           "SysOp=Test\nLink=1:500/101,1:500/100,-\nInbound=mail/inbound\nOutbound=mail/outbound\nTmp=mail/tmp\nEchoPath=mail/echo\n");
         JFtnConfig config = new JFtnConfig();
         config.load(configuration.toString());
+        if (!config.getValue("RobotAccessSource").equals("database")) {
+            throw new IllegalStateException("The full distribution must default to database rules");
+        }
         if (config.getValuesAsList("MailScript").size() != 3) {
             throw new IllegalStateException("Expected three default handlers");
         }

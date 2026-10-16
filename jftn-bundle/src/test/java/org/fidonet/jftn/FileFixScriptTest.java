@@ -51,6 +51,16 @@ class FileFixScriptTest {
 
     @BeforeEach
     void open() throws Exception {
+        config = configuration("files");
+        Files.createDirectories(Path.of(config.getTmpDir()));
+        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:filefix" + System.nanoTime()));
+        assertTrue(base.open());
+        config.getConfiguredLinks().forEach(link -> base.configureLink(link, "secret"));
+        tosser = new Tosser(config, base);
+        scripts = new MailScripts(config, base, tosser);
+    }
+
+    private JFtnConfig configuration(String source) throws Exception {
         String path = root.toString().replace('\\', '/');
         String text = "SysOp=Test\nInbound="
                       + path
@@ -71,14 +81,10 @@ class FileFixScriptTest {
                       + "/private\n"
                       + "FileFixPeer=1:500/102|robot-pass|lists\n"
                       + "TicPeer=1:500/101|in-pass|lists\nTicPeer=1:500/102|out-pass|lists\n";
-        config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-        Files.createDirectories(Path.of(config.getTmpDir()));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:filefix" + System.nanoTime()));
-        assertTrue(base.open());
-        config.getConfiguredLinks().forEach(link -> base.configureLink(link, "secret"));
-        tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(("RobotAccessSource=" + source + "\n"
+                + text).getBytes(StandardCharsets.UTF_8)));
+        return config;
     }
 
     @AfterEach
@@ -133,7 +139,8 @@ class FileFixScriptTest {
     @Test
     void databaseTicAuthorizationAppliedLiveWithoutUsingFileCredentials() throws Exception {
         scripts.close();
-        config.load(new ByteArrayInputStream("RobotAccessSource=database\n".getBytes(StandardCharsets.UTF_8)));
+        config = configuration("database");
+        tosser = new Tosser(config, base);
         scripts = new MailScripts(config, base, tosser);
         AtomicInteger delivered = new AtomicInteger();
         scripts.onFile((area, file, name, peer, receipt) -> delivered.incrementAndGet());

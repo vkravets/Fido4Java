@@ -20,7 +20,7 @@ MailService loads scripts before its first inbound scan. Each script supplies
 fails. Scripts unload in reverse order after processing stops. Automatic hot
 reload is deliberately not enabled while messages are being processed.
 
-Authorization can use `RobotAccessSource=files` (default) or `database`, regardless
+Authorization can use `RobotAccessSource=database` (default) or `files`, regardless
 of whether UI/RPC is enabled. See [access sources and offline administration](robot-access.md).
 Scripts use `api.robotAccess` for credential checks; inactive file rules are not
 parsed or used as a fallback in database mode. Technical areas/feed settings

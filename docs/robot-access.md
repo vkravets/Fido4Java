@@ -5,9 +5,14 @@ providers. This is independent of whether the UI/RPC listeners run. The node sti
 uses its normal mail database, subscription state and durable delivery queues.
 The selected source controls authorization rules, not message storage.
 
-## File-only administration (default)
+The full distribution defaults to `RobotAccessSource=database`, including when
+the setting is absent. UI/RPC rule editing is a separate next step; the repository
+API and explicit file import are available now. Existing configuration files are
+never overwritten: an explicit `RobotAccessSource=files` keeps file mode active.
 
-Keep this in `conf.d/40-mail-scripts.conf`:
+## File-only administration
+
+Select file mode explicitly with this in `conf.d/40-mail-scripts.conf`:
 
 ```ini
 RobotAccessSource=files
@@ -62,8 +67,8 @@ It always validates the file rules, including when preparing an import.
 
 ## Database administration
 
-Set `RobotAccessSource=database` in `conf.d/40-mail-scripts.conf` when the database
-should own access rules.
+The packaged `conf.d/40-mail-scripts.conf` selects `RobotAccessSource=database`.
+This is also the runtime default when the setting is absent.
 Only one source is active for all three services. There is no merge, automatic
 import or fallback: an empty store, disabled rule or deleted rule denies access.
 A file rule cannot restore permissions revoked in the database. An unknown mode

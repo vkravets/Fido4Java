@@ -28,7 +28,7 @@ class DirectoryFeedScriptTest {
 
     private JFtnConfig config() throws Exception {
         String path = root.toString().replace('\\', '/');
-        String text = "SysOp=Test\nInbound="
+        String text = "RobotAccessSource=files\nSysOp=Test\nInbound="
                       + path
                       + "/in\nOutbound="
                       + path

@@ -30,7 +30,7 @@ public final class RobotAccess {
     }
 
     public static String source(JFtnConfig config) {
-        String source = config.getValue("RobotAccessSource", "files").trim();
+        String source = config.getValue("RobotAccessSource", "database").trim();
         if (!source.equals("files") && !source.equals("database")) {
             throw new IllegalArgumentException("RobotAccessSource must be files or database");
         }
