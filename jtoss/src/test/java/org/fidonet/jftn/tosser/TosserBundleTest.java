@@ -176,6 +176,47 @@ public class TosserBundleTest {
     }
 
     @Test
+    public void ignoresReceiptMetadataAndOtherFilesWithBundleNamesInTheirPrefix() throws Exception {
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "inbound-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "bad-");
+        String[] names = {"mail.MO0.received", "mail.mo0.tmp", "mail.fr0.bak", "mail.pkt.received"};
+        for (String name : names) {
+            Files.writeString(inbound.resolve(name), "0000FF8F.MO0");
+        }
+        Tosser tosser = tosser(bad, 1, true);
+        tosser.runFast(inbound.toString());
+        tosser.runFast(inbound.toString());
+        for (String name : names) {
+            assertEquals("0000FF8F.MO0", Files.readString(inbound.resolve(name)));
+        }
+        assertFalse(Files.exists(bad.resolve("received")),
+                    "Metadata must not be archived or passed to the packet unpacker");
+        assertEquals(0, base.getMessageSize("test"));
+    }
+
+    @Test
+    public void processesUppercaseBundleAndKeepsItsReceiptMetadata() throws Exception {
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "inbound-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "bad-");
+        Path source = bundle(inbound, "mail.MO0", packet("secret", "AREA:TEST\rHello\r"));
+        Path metadata = inbound.resolve("mail.MO0.received");
+        Files.writeString(metadata, "0000FF8F.MO0");
+        byte[] original = Files.readAllBytes(source);
+        Tosser tosser = tosser(bad, 1, true);
+        tosser.runFast(inbound.toString());
+        tosser.runFast(inbound.toString());
+        assertEquals(1, base.getMessageSize("test"));
+        assertFalse(Files.exists(source));
+        assertEquals("0000FF8F.MO0", Files.readString(metadata));
+        assertArrayEquals(original, archivedBundle(bad));
+        try (Stream<Path> files = Files.walk(bad.resolve("received"))) {
+            assertEquals(1L,
+                         files.filter(Files::isRegularFile).count(),
+                         "Only the actual bundle must be archived");
+        }
+    }
+
+    @Test
     public void corruptArchiveOrPacketIsRetainedForDiagnosis() throws Exception {
         Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
         Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
