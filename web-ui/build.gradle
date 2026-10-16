@@ -10,7 +10,18 @@ dependencies {
     runtimeOnly 'com.h2database:h2:2.5.252'
 }
 
-def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def nodeExecutable = providers.gradleProperty('nodeExecutable').map {
+    File candidate = rootProject.file(it)
+    candidate.isFile() ? candidate.absolutePath : it
+}
+        .orElse(providers.provider {
+            String os = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+            String platform = os.contains('windows') ? 'win' : os.contains('mac') ? 'darwin' : 'linux'
+            String architecture = System.getProperty('os.arch') in ['aarch64', 'arm64'] ? 'arm64' : 'x64'
+            String binary = platform == 'win' ? 'node.exe' : 'bin/node'
+            File downloaded = rootProject.file("build/node-v24.22.0-${platform}-${architecture}/${binary}")
+            downloaded.isFile() ? downloaded.absolutePath : 'node'
+        })
 def npmExecutable = providers.gradleProperty('npmExecutable').orElse(
         System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'npm.cmd' : 'npm')
 def thriftRuntime = providers.gradleProperty('thriftBrowserRuntime')
@@ -123,6 +134,56 @@ tasks.register('typecheckFrontend', Exec) {
     dependsOn prepareFrontendRpc
     workingDir file('frontend')
     commandLine nodeExecutable.get(), file('frontend/node_modules/vue-tsc/bin/vue-tsc.js'), '--noEmit'
+}
+
+// Interactive developer tasks stay outside build/check and keep serving until Ctrl+C.
+def storybookPort = providers.gradleProperty('storybookPort').orElse('6006')
+
+def configureStorybookProcess = { Exec task ->
+    task.group = 'application'
+    task.workingDir file('frontend')
+    task.doFirst {
+        int port = Integer.parseInt(storybookPort.get())
+        if (port < 1 || port > 65535) {
+            throw new GradleException('storybookPort must be in 1..65535')
+        }
+        File node = file(nodeExecutable.get())
+        if (node.isFile()) {
+            task.environment 'PATH', node.parentFile.absolutePath + File.pathSeparator + System.getenv('PATH')
+        }
+        logger.lifecycle("Storybook: http://127.0.0.1:${port}/ (Ctrl+C to stop)")
+    }
+}
+
+tasks.register('storybook', Exec) {
+    description = 'Starts isolated Storybook examples without requiring the Thrift compiler.'
+    // Stories use RPC contracts only in import type declarations, erased by Vite.
+    // Full contract checking remains in typecheckStorybook/buildStorybook.
+    dependsOn npmCi
+    configureStorybookProcess(delegate)
+    commandLine nodeExecutable.get(), file('frontend/node_modules/storybook/dist/bin/dispatcher.js'),
+            'dev', '--host', '127.0.0.1', '--port', storybookPort.get(), '--ci',
+            '--no-open', '--disable-telemetry'
+}
+
+tasks.register('previewStorybook', Exec) {
+    description = 'Serves a compiled Storybook catalogue, optionally from an extracted CI artifact.'
+    dependsOn npmCi
+    def directory = providers.gradleProperty('storybookDirectory')
+            .map { rootProject.file(it).absolutePath }
+            .orElse(layout.buildDirectory.dir('storybook').map { it.asFile.absolutePath })
+    if (!providers.gradleProperty('storybookDirectory').isPresent()) {
+        dependsOn 'buildStorybook'
+    }
+    configureStorybookProcess(delegate)
+    doFirst {
+        if (!new File(directory.get(), 'iframe.html').isFile()) {
+            throw new GradleException('storybookDirectory must contain the extracted catalogue with iframe.html')
+        }
+    }
+    commandLine nodeExecutable.get(), file('frontend/node_modules/vite/bin/vite.js'),
+            'preview', '--host', '127.0.0.1', '--port', storybookPort.get(), '--strictPort',
+            '--outDir', directory.get()
 }
 
 tasks.register('buildStorybook', Exec) {

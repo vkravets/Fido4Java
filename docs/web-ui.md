@@ -157,12 +157,56 @@ connecting to a node. The toolbar switches between light/dark themes and
 English/Ukrainian. Stories cover administrator/point navigation, notifications,
 station forms, poll states and journals, including empty and long-content cases.
 
-Prepare the generated RPC types once with `./gradlew :web-ui:prepareFrontendRpc`
-(using the same Thrift runtime settings as a normal build). Then run
-`npm run storybook` from `web-ui/frontend` and open `http://127.0.0.1:6006`.
+From the repository root, start the live component catalogue through Gradle:
+
+```powershell
+.\gradlew.bat :web-ui:storybook
+```
+
+This prepares npm dependencies and starts Storybook at `http://127.0.0.1:6006/`
+with live updates when sources change. Keep the terminal running; Ctrl+C stops
+it. The interactive catalogue uses sample data and type-only RPC imports, so it
+requires neither the Thrift compiler nor the browser runtime/generated RPC files.
+Full contract/type checking remains in `typecheckStorybook` and `buildStorybook`,
+which still use the normal Thrift build prerequisites.
+
+Frontend Gradle tasks prefer an explicit `-PnodeExecutable`, then an existing
+`build/node-v24.22.0-<platform>-<arch>` portable installation, then `node` on PATH.
+Gradle does not currently download Node.js; keep the portable installation or
+provide an installed executable. Its directory is added to the Storybook process
+PATH so subprocesses can find Node too. Set `-PstorybookPort=6008` to choose a
+port. These interactive tasks are not part of `build` or `check`.
+
+`./gradlew :web-ui:previewStorybook` builds and serves the static catalogue.
+For an already extracted CI artifact, skip compilation with:
+
+```powershell
+.\gradlew.bat :web-ui:previewStorybook "-PstorybookDirectory=C:/Downloads/storybook"
+```
+
+The selected directory must contain `iframe.html`. This mode prepares the local
+npm preview tool but requires no Thrift compiler, browser runtime or Python.
+Relative paths are resolved from the repository root. On Linux/macOS use `./gradlew`.
+Direct `npm run storybook` remains available when Node/npm are already on PATH
+and npm dependencies are installed.
 `./gradlew :web-ui:buildStorybook` builds a standalone catalogue under
 `web-ui/build/storybook`. CI publishes it as the `storybook` artifact; it is not
 included in the application distribution.
+
+To view the downloaded GitHub Actions artifact, extract the complete `storybook`
+ZIP and serve its root over HTTP. Double-clicking `index.html` (`file://`) is not
+supported. From the extracted directory containing `index.html` and `iframe.html`:
+
+```powershell
+py -3 -m http.server 6006 --bind 127.0.0.1
+```
+
+This requires Python 3; on Linux/macOS use `python3` instead of `py -3`. Open
+`http://127.0.0.1:6006/`, keep the terminal running, and stop it with Ctrl+C.
+No Java server, Thrift compiler, npm dependencies or Docker engine is needed to
+view an already built catalogue. The artifact includes these instructions in
+`README.txt`. GitHub's artifact download page does not host the catalogue itself.
+
 Stories and Storybook configuration have their own `tsconfig.storybook.json`:
 story source is checked, while upstream toolkit declaration files are skipped
 because Storybook currently ships incompatible declarations for TypeScript 6.
@@ -207,6 +251,14 @@ Chromium and Linux dependencies and uploads browser diagnostics. The separate
 VRT job runs next; both UI and VRT checks gate release packaging.
 
 ## Visual regression tests
+
+Expected images are committed under
+`web-ui/frontend/test/browser/snapshots/desktop/` and `mobile/`. CI uploads all of
+them as the separate `vrt-baselines` artifact from the main build, before any
+integration/browser tests. Download/extract it to open PNGs directly, without a
+server. Names identify the scenario, theme and language. Successful VRT runs need
+not attach every expected image to their report; `vrt-reports` is for comparison
+results and failure diagnostics. Both artifacts are retained for 15 days.
 
 `./gradlew :web-ui:playwrightVisualTest` compares 64 committed PNG test fixtures:
 administrator/point navigation, station settings, poll queue/details, and
