@@ -90,7 +90,7 @@ th {
     font-weight: 500;
 }
 .selected {
-    background: var(--bg);
+    background: var(--accent-soft);
 }
 .failed {
     color: var(--danger);
