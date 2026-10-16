@@ -114,7 +114,8 @@ watch(
 
 <style scoped>
 .poll-log {
-    background: var(--bg);
+    background: var(--field);
+    color: var(--text);
     border: 1px solid var(--line);
     padding: 16px;
     border-radius: 8px;

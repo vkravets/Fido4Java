@@ -142,7 +142,13 @@ function claimLabel(state: string): string {
                     :disabled="state.busy.value"
                     @click="preferences(theme, state.profile.value.defaultAka)"
                 >
-                    <span class="preview-window"><i></i><i></i><i></i></span
+                    <span
+                        class="preview-window"
+                        aria-hidden="true"
+                    >
+                        <span class="preview-header"></span>
+                        <span class="preview-sidebar"></span>
+                        <span class="preview-sections"><i></i><i></i></span> </span
                     >{{ theme === 'light' ? 'Светлая · Дневная станция' : 'Тёмная · Ночная смена' }}
                 </button>
             </div>
