@@ -251,12 +251,16 @@ WRITE or BOTH. All mutations use MailService's processing lock, so UI operations
 cannot race scripts or inbound/outbound scans.
 
 Polls own independent SessionContexts and use the same Netty transport/mail
-callbacks. States are QUEUED, CONNECTING, TRANSFERRING, SUCCEEDED, FAILED and
-CANCELLED. Repeated poll requests for an already queued/active peer return the
+callbacks. States are QUEUED, CONNECTING, AUTHENTICATING, TRANSFERRING, SUCCEEDED,
+BUSY, TIMED_OUT, FAILED, CANCELLED and INTERRUPTED. A closed socket is successful
+only when the protocol exchange actually completed. Repeated requests for a queued/active peer return the
 existing job. Manual and scheduled polls share one node-owned queue that works
-without RPC. One outgoing poll runs at a time, up to 64 wait; recent history is
-bounded to 128 and kept in memory. Cancellation interrupts the job and closes
-its client. Connection timeout is 30 seconds; transfer timeout is 120 seconds.
+without RPC. One outgoing poll runs at a time, up to 64 wait. History is persisted
+under `Tmp/polls` with source and timestamps; unfinished records become INTERRUPTED
+after restart and are not silently redialled. `PollHistoryLimit` retains the last
+256 completed attempts by default (1..10000). Cancellation interrupts the job and
+closes its client; the peer stays reserved until cleanup completes. Connection
+timeout is 30 seconds; `PollTimeoutSeconds` defaults to 120 (1..86400) after connection.
 Only configured links can be dialed. Scheduler polls use this same service and
 are visible through RPC when enabled. Incoming connections are outside this queue.
 
