@@ -257,9 +257,12 @@ Expected images are committed under
 `web-ui/frontend/test/browser/snapshots/desktop/` and `mobile/`. CI uploads all of
 them as the separate `vrt-baselines` artifact from the main build, before any
 integration/browser tests. Download/extract it to open PNGs directly, without a
-server. Names identify the scenario, theme and language. Successful VRT runs need
-not attach every expected image to their report; `vrt-reports` is for comparison
-results and failure diagnostics. Both artifacts are retained for 15 days.
+server. Names identify the scenario, theme and language. Each VRT test also
+attaches its committed reference as **Baseline** in the HTML report, including
+successful comparisons. Open a test to view that image; mismatches additionally
+retain Playwright's actual/expected/diff diagnostics. A missing baseline still
+fails comparison and is never silently created during an ordinary run. Both
+artifacts are retained for 15 days.
 
 `./gradlew :web-ui:playwrightVisualTest` compares 64 committed PNG test fixtures:
 administrator/point navigation, station settings, poll queue/details, and
