@@ -7,6 +7,7 @@ import AccountSettings from './components/AccountSettings.vue';
 import AccountModeration from './components/AccountModeration.vue';
 import NodeSettings from './components/NodeSettings.vue';
 import Sidebar from './components/Sidebar.vue';
+import RobotAccess from './components/RobotAccess.vue';
 const state = createState();
 const page = ref('settings');
 onMounted(state.start);
@@ -111,6 +112,9 @@ function logout() {
                 :state="state"
             /><NodeSettings
                 v-if="page === 'node' && state.profile.value.role === 'ADMIN'"
+                :state="state"
+            /><RobotAccess
+                v-if="page === 'robots' && state.profile.value.role === 'ADMIN'"
                 :state="state"
             /><AccountModeration
                 v-if="page === 'accounts' && state.profile.value.role === 'ADMIN'"
