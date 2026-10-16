@@ -41,37 +41,8 @@ deletetossed=1
 
 Outbound = ./mail/outbound/
 
-# Optional bundled mail robots. Configure the corresponding Link entries first.
-# See docs/mail-scripts.md for supported commands, authorization and retention.
-# EchoSubscriptions=database
-# MailScript=classpath:mail-scripts/areafix.groovy
-# AreaFixPeer=1:500/101|change-this-areafix-password|test.*|READ
-# MailScript=classpath:mail-scripts/filefix.groovy
-# FileArea=lists|./fileecho/lists|Node and point lists
-# FileFixPeer=1:500/101|change-this-filefix-password|lists
-# TicPeer=1:500/101|change-this-tic-password|lists
-# MailScript=classpath:mail-scripts/directory-import.groovy
-# NodeDirectoryPath=./database/nodelist/catalog
-# DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|1:500/101|1|500
-# DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/points.lst|1:500/101
-
-# Optional sysop UI RPC (framed binary Thrift, local listener).
-# RpcEnabled=true
-# RpcBind=127.0.0.1
-# RpcPort=9090
-# RpcUser=sysop
-# RpcPassword=replace-with-a-private-password
-# RpcSessionSeconds=3600
-# RpcRegistrationEnabled=true
-# RpcAuthPath=./database/rpc-auth
-# RpcPasskeysEnabled=true
-# RpcWebAuthnRpId=node.example
-# RpcWebAuthnOrigin=https://node.example
-# RpcLogFile=./logs/jftn.log
-# Optional browser HTTP/JSON transport alongside TCP. Requires RpcEnabled=true.
-# RpcHttpEnabled=true
-# RpcHttpBind=127.0.0.1
-# RpcHttpPort=9091
-# Exact browser origin, repeat for each permitted UI. No wildcard or trailing slash.
-# RpcHttpOrigin=http://localhost:5173
-# RpcHttpOrigin=https://node.example
+# Plugin internals and mail robots are configured in conf.d/*.conf.
+# First startup creates commented examples without replacing existing files.
+# See conf.d/README.txt and docs/plugin-configuration.md.
+# This browser origin is UI-managed; do not move it to a fragment.
+# RpcHttpOrigin=http://localhost:9091

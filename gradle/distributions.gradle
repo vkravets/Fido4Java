@@ -32,6 +32,10 @@ def baseFiles = copySpec {
             into('lib/groovy') { from groovyJars }
             into('scripts/mail-scripts') { from 'src/main/resources/mail-scripts' }
             from('src/distribution')
+            from('src/main/resources/plugin-config') {
+                into 'conf.d'
+                rename { it + '.example' }
+            }
             from('src/main/static-content/jftn.conf-dist') { rename { 'jftn.conf.example' } }
             from(rootProject.file('LICENSE'))
             from(rootProject.file('docs')) { into 'docs' }

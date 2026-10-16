@@ -28,7 +28,7 @@ jftn-<version>/
   scripts/mail-scripts/   Editable AreaFix, FileFix and directory import scripts
   jre/                    Only present in a platform-specific runtime package
   jftn.conf.example       Manual configuration template, never activated automatically
-  conf.d/                 Manual file-only configuration; never rewritten by the UI
+  conf.d/                 Plugin *.conf.example templates; UI never writes active *.conf
   database/ logs/ lists/ fileecho/
   mail/inbound/ mail/outbound/ mail/tmp/ mail/echo/ mail/received/
   docs/ LICENSE README.txt
@@ -131,3 +131,6 @@ checks, replace them with the GitHub Actions `build` and both `integration`
 matrix checks after the first successful run. Repository/organization settings
 are not changed automatically by committing workflow files. The workflow does
 not publish a release until a matching tag is pushed.
+
+Plugin configuration is separated by service; see [plugin settings](plugin-configuration.md).
+Startup creates missing commented `*.conf` files, preserving existing edits.

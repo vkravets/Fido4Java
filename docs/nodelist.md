@@ -8,7 +8,7 @@ outbound packets or routing rules.
 
 ## Configuration and import
 
-Add to `jftn.conf` (paths are relative to the working directory):
+Edit `conf.d/30-nodelist.conf` (paths are relative to the working directory):
 
 ```ini
 NodeDirectoryEnabled=true
