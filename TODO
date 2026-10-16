@@ -1,12 +1,22 @@
-1. Scheduler Plugin
-2. ScriptEngine Plugin
-3. Finish tosser
-4. Dupe catch script
-5. Netmail processing
-4. Rewrite/Forward netmail messages
-6. AreaFix robot script
-7. Test test and test
+JFtn follow-up work
+===================
 
-100. RSS poster robot script
+Implemented services and their limitations are documented under docs/.
+This list records remaining work, not a claim that the existing features are absent.
 
+- Implement browser netmail/echomail readers and composition over the existing RPC API.
+- Define scoped point mailbox access before exposing administrator mail APIs to points.
+- Add administration for arbitrary links and routing rules beyond the primary-link form.
+- Decide the future of legacy JAMEchoBase read/delete facade methods.
+- Add automatic poll retry policy, incoming-session tracking and queue administration.
+- Add retention/cleanup policies for delivery receipts, processing journals and archives.
+- Expand controlled timeout, disk-failure and crash-recovery testing across platforms.
+- Consider additional binkp/TIC services only with explicit protocol and security tests.
+- Consider a lightweight distribution without the UI/RPC modules.
+- Optional future robot: RSS posting.
 
+Current scope and test limits:
+- docs/tosser.md
+- docs/rpc-ui.md
+- docs/web-ui.md
+- docs/test-coverage.md

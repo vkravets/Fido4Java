@@ -1,8 +1,11 @@
 # Scripted mail services
 
-Configure the script list in `conf.d/40-mail-scripts.conf`, AreaFix peers in
-`41-areafix.conf`, file echo settings in `42-filefix.conf`, and directory feeds in
-`43-directory-feed.conf`. Shared catalog options belong in `30-nodelist.conf`.
+Configure the script list in `conf.d/40-mail-scripts.conf`, file areas in
+`42-filefix.conf`, and directory feeds in `43-directory-feed.conf`. Shared catalog
+options belong in `30-nodelist.conf`. Manage AreaFix/FileFix/TIC authorization in
+the **Mail robots** UI by default. For file-only authorization, select
+`RobotAccessSource=files` and put AreaFix peers in `41-areafix.conf` and
+FileFix/TIC peers in `42-filefix.conf`.
 See [plugin configuration](plugin-configuration.md) for startup and upgrade rules.
 Keep every `MailScript` line from the examples below in the one script-list file;
 place the remaining lines in the corresponding service file.
@@ -47,6 +50,10 @@ Failed scans are logged and retried on subsequent scans; they must preserve
 their source inputs until completion.
 
 ## AreaFix
+
+The `*Peer` examples below apply to explicit file mode. In the default database
+mode, create equivalent access rules in the UI or perform a deliberate one-time
+file import; merely adding a peer line to a fragment does not grant access.
 
 ```ini
 EchoSubscriptions=database
@@ -121,8 +128,10 @@ is provided.
 The transport queue stores a private file/TIC pair and publishes it atomically.
 Payload precedes TIC; each is removed only after its own M_GOT acknowledgement.
 An interrupted pair is retried; completed receipts prevent re-queuing the same
-job. Currently one pair is loaded per connection, alongside ordinary mail.
-File queues are not polled automatically: existing polling/session scheduling
+job. One pending pair is loaded per outbound batch, alongside ordinary mail.
+A binkp 1.1 session can load subsequent pairs at later batch boundaries; a 1.0
+session needs another connection for the next pair. File queues do not trigger
+an immediate poll automatically: existing polling/session scheduling
 must connect to the recipient.
 
 `onFile { area, storedPath, originalName, peer, receipt -> ... }` callbacks run

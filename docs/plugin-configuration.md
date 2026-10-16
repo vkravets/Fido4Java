@@ -10,14 +10,15 @@ node creates missing editable `*.conf` files from the bundled templates, keeping
 all existing files byte-for-byte. The default script list enables AreaFix, FileFix and directory import using
 external `./scripts/mail-scripts/*.groovy` files, in that order, with
 `EchoSubscriptions=database`. Authorization and feed examples remain commented:
-configure trusted peers, areas and feeds explicitly, then restart. An empty feed
+configure trusted peers through the Mail robots UI (or explicit file mode), and
+configure file areas/feeds in fragments. Restart after fragment edits. An empty feed
 list is supported and does not create a directory catalog. Other plugin examples
 remain commented. Existing active files are never rewritten, including older
 script lists; update those manually to adopt the new defaults.
 
 | File | Configuration |
 | --- | --- |
-| `10-binkp.conf` | Transport listen port/capabilities (`BinkpPort`, `NDL`); poll retention, deadline and journal limit (`PollHistoryLimit`, `PollTimeoutSeconds`, `PollLogLimitBytes`) |
+| `10-binkp.conf` | Transport listen port/advertised flags (`BinkpPort`, `NDL`); poll retention, deadline and journal limit (`PollHistoryLimit`, `PollTimeoutSeconds`, `PollLogLimitBytes`) |
 | `20-jam-bridge.conf` | `JamBridgeEnabled`, `JamCharset`, `JamEcho`, `JamNetmail` |
 | `30-nodelist.conf` | `NodeDirectoryEnabled`, `NodeDirectoryPath`, `DirectoryRefreshSeconds`, `DirectorySource` |
 | `40-mail-scripts.conf` | `RobotAccessSource` and all `MailScript` entries, in handler registration order |
@@ -28,8 +29,9 @@ script lists; update those manually to adopt the new defaults.
 | `90-rpc.conf` | File-only listener, session, registration and passkey internals |
 
 The database and scheduler plugins currently expose no configuration keys.
-The database URL and scheduler policy are implemented in code; no dummy options
-are provided for them. Station links and AKAs are shared node data, not private
+The database URL and scheduled poll cadence are implemented in code; no dummy
+options are provided for them. This does not cover the separate configurable
+`PollTimeoutSeconds` deadline or `TossIntervalSeconds` mail-scan interval. Station links and AKAs are shared node data, not private
 transport plugin options, and remain in the main configuration.
 
 `NodeListUrl` and `NodeListCharset` configure the UI's lookup/download operation;

@@ -1,7 +1,9 @@
 # Node and point directory plugin
 
-The optional `nodelist` module imports local node/point lists into a separate H2
-catalog. The application bundle includes the plugin, disabled by default.
+The `nodelist` module imports node/point lists into a separate H2 catalog.
+The full application includes it for setup/settings lookup and scripted feeds.
+Only its automatic `DirectorySource` refresh is disabled by default; this switch
+does not disable explicit imports or the UI's lookup/download operation.
 Its two tables belong to the plugin; the mail database schema is unchanged.
 Imported records never create trusted `Link` entries, passwords, subscriptions,
 outbound packets or routing rules.
@@ -56,6 +58,10 @@ Offline import uses the same service without starting a mailer:
 
 The offline configuration needs only the directory settings; the enable switch
 controls automatic operation only. A failed source produces a nonzero exit.
+This command uses `BaseConfig`, so it reads only the named file, not adjacent
+`conf.d` fragments. Put `DirectorySource`, `NodeDirectoryPath` and any refresh
+settings directly in `directory.conf`; pointing it at a main file whose directory
+settings exist only in `conf.d` will not import those sources.
 
 ## Formats and validation
 
@@ -120,6 +126,15 @@ lookup returns all matches; no silent precedence is chosen. Records include
 source, line, status/keyword, address, names, phone, speed, region, current hub
 and original flags. Removing a source from configuration retains its stored
 snapshot until `removeSource` is called. Keep unrelated FTN domains under
-separate source IDs. RPC endpoints and automatic nodelist routing remain future
-work. The existing mail-extension SPI owns automatic import lifecycle; the
-parser and catalog are also usable directly without a running mail service.
+separate source IDs.
+
+The `settings.lookup` RPC already provides exact-address lookup and optional HTTP
+full-list download during setup or for an administrator. It is not a general
+paged catalog/search API. If several sources match, the settings handler uses the
+first returned record; the catalog API itself returns all matches. Setup lookup
+can fall back to a point's boss, without claiming the boss's sysop is the point.
+Automatic nodelist-based mail routing remains future work.
+
+The mail-extension SPI owns automatic file refresh; the parser and catalog are
+also usable directly without a running mail service. See
+[UI lookup](web-ui.md#nodelist-lookup) for its separate download settings.

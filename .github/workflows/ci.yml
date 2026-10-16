@@ -83,7 +83,7 @@ jobs:
 
   package:
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    needs: [build, integration, ui]
+    needs: [build, integration, vrt, ui]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -151,7 +151,7 @@ jobs:
           retention-days: 15
 
   ui:
-    needs: build
+    needs: [build, integration]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -186,7 +186,7 @@ jobs:
         run: |
           test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
           (cd build/ci-integration && sha256sum --check SHA256SUMS --quiet)
-          bash ./gradlew :web-ui:playwrightComponentsTest :web-ui:playwrightTest :web-ui:playwrightVisualTest \
+          bash ./gradlew :web-ui:playwrightComponentsTest :web-ui:playwrightTest \
             -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
       - name: Save browser reports, screenshots and traces
         if: always()
@@ -198,6 +198,35 @@ jobs:
             web-ui/build/reports/tests/playwrightTest/**
             web-ui/build/test-results/playwright/**
             web-ui/build/test-results/playwrightTest/**
+          retention-days: 15
+
+  vrt:
+    needs: [build, integration, ui]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v7
+        with:
+          name: storybook
+          path: web-ui/build/storybook
+      - name: Compare visual baselines using compiled catalogue
+        working-directory: web-ui/frontend
+        run: npm run test:vrt
+      - name: Save visual regression reports, screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: vrt-reports
+          path: |
+            web-ui/build/reports/playwright/visual/**
+            web-ui/build/reports/playwright/visual-results/**
+            web-ui/build/reports/playwright/visual.xml
           retention-days: 15
 
   publish:

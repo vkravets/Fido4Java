@@ -110,7 +110,8 @@ Set `EchoSubscriptions=database` to administer subscriptions with the synchroniz
 `Tosser.configureEchoSubscription(peer, area, access, history)` and
 `removeEchoSubscription(peer, area)` methods. The Runner then stops reapplying
 `EchoArea` declarations at startup; existing SQL subscriptions remain authoritative.
-In the default `config` mode the previous additive `EchoArea` behavior is retained.
+With `EchoSubscriptions=config`, the additive `EchoArea` behavior is retained.
+The packaged mail-script configuration selects `database` mode for AreaFix.
 READ, WRITE and BOTH are relative to the remote link. New areas can be created
 by subscription administration, but peers must already be configured links.
 
@@ -380,7 +381,8 @@ acknowledgement recovery, subscriber access, echo fan-out, control-line ordering
 legacy MSGID-free messages, JAM UTF-8 storage, receive publication failure and
 real TCP exchange of both message kinds between two production Netty peers.
 Existing historical inbound bundle fixtures remain part of the regression suite.
-No new interoperability claim is made for an external tosser.
+The explicit HPT tests additionally check the JAM/PKT scenarios described above;
+they do not certify every external editor or tosser implementation.
 
 References used for the wire formats and control lines:
 

@@ -24,6 +24,22 @@ HTML/CSS/JavaScript into the `web-ui` JAR. It does not install Node.js system-wi
 ./gradlew :web-ui:frontendTest
 ```
 
+If `thrift` is not on PATH, pass `-PthriftExecutable` with an absolute path to
+its native executable. Installing the Java/JavaScript Thrift libraries does not
+install this compiler. `prepareFrontendRpc` needs both the compiler and the
+matching browser runtime. For example, from the repository root in PowerShell,
+using locally downloaded tools (adjust the paths to your installation):
+
+```powershell
+.\gradlew.bat :web-ui:prepareFrontendRpc `
+    "-PthriftExecutable=$PWD/build/thrift-0.25.0.exe" `
+    "-PthriftBrowserRuntime=$PWD/build/thrift-browser-official/thrift-0.25.0/lib/js/src/thrift.js" `
+    "-PnodeExecutable=$PWD/build/node-v24.22.0-win-x64/node.exe"
+```
+
+These `build/` paths are local build outputs, not files supplied by Git; restore
+or download the tools again after deleting that directory. The same properties
+apply to `build`, `buildStorybook` and the other frontend tasks.
 `nodeExecutable` and `npmExecutable` Gradle properties can select existing tools.
 GitHub Actions sets up Java 17 and Node.js 24, caches npm downloads by lockfile,
 and saves Java and TypeScript test reports. The integration jobs continue to use the
@@ -36,6 +52,15 @@ settings or with the header toggle and are saved in the signed-in profile.
 Session tokens remain in browser memory: reloading the page requires signing in
 again. Public registration submits a point AKA claim for administrator approval.
 The sidebar reserves navigation for future mail readers; those items are disabled.
+
+English is the default language; Ukrainian is the other supported language.
+The header selector is available during setup and before sign-in. Its choice is
+stored locally in the browser (`jftn-language`), independently of the account's
+theme preference. Russian is not an interface language.
+
+Notifications appear at the top of the browser viewport, including while the
+page is scrolled. Information and warning notices have a close button. Error
+notices stay visible until the underlying error is cleared or the action succeeds.
 
 Frontend formatting uses Prettier with four-space indentation and a 100-column
 limit: run `npm run format` from `web-ui/frontend`.
@@ -66,12 +91,15 @@ edit detected before replacement prevents saving. Existing unrelated options and
 additional links are retained; the settings form edits the first configured link.
 Link and administrator passwords are never returned by the settings RPC. Leaving
 the link password empty when editing preserves it. Config changes require a node
-restart. Existing storage is not moved by this form; SQL database location is not
-changed by the mail directory selection.
+restart. The mail-directory field is editable only during initial setup and is
+read-only afterwards. Initial setup derives Inbound/Outbound/Tmp/EchoPath from it;
+later saves do not rewrite those paths, even if an API client changes `storage`.
+The SQL mail database location is independent. Moving existing storage requires a
+stopped-node migration and explicit path edits in configuration.
 
 ## Mail robot access
 
-Administrators have a **Почтовые роботы** page under node management. It lists
+Administrators have a **Mail robots** page under node management. It lists
 AreaFix, FileFix and TIC access rules with their link, area masks, enabled state
 and AreaFix rights (READ/BOTH). Create a rule for a configured link, edit its
 policy/password, disable it temporarily or delete it with confirmation. Changes
@@ -87,8 +115,8 @@ configuration remain in `conf.d`; see [robot access](robot-access.md).
 
 ## Outgoing connections
 
-Administrators have a **Соединения** page with active/waiting attempts, paged
-history and a **Полл сейчас** action for configured links. Scheduled and manual
+Administrators have a **Connections** page with active/waiting attempts, paged
+history and a **Poll now** action for configured links. Scheduled and manual
 attempts use the same queue and duplicate active requests select the existing
 job. Attempts can be cancelled or retried; cancellation closes the connection
 without deleting queued outgoing files. Incoming server sessions are not listed.
@@ -109,15 +137,18 @@ this section or call the underlying administrative methods.
 
 ## Nodelist lookup
 
-Setup can query the local directory or explicitly download a full nodelist from
-`NodeListUrl`. The default mirror is
+Setup and administrator station settings can query the local directory or
+explicitly download a full nodelist from `NodeListUrl`. An empty URL in a lookup
+request means local lookup only; a nonempty URL requests a download/import. The default mirror is
 `https://nodelist.fidonet.cc/download/latest?domain=fidonet`; availability is outside
 JFtn's control and another HTTP(S) source may be configured. `NodeListCharset`
 defaults to `CP866`. Downloads have size/time limits; parsing and checksum validation
 must pass before publication. Setup imports into `NodeDirectoryPath` (default
 `database/nodelist/catalog`). Lookup metadata is not proof of address ownership.
 When only a point's boss is found, the result is marked as a boss record and does
-not supply a sysop identity for the point.
+not supply a sysop identity for the point. With matching records from several
+sources, this settings lookup currently uses the first returned record; it has
+no source-selection control.
 
 ## Component catalogue
 
@@ -161,15 +192,19 @@ opt-in tests are excluded from ordinary `test`/`check`; the existing Java and
 TypeScript tests continue to run normally. Hardware passkey dialogs and actual
 binkp polling are outside these browser scenarios.
 
-HTML/JUnit reports live in `web-ui/build/reports/playwright` and
-`web-ui/build/test-results/playwright`. Failures include screenshots, video and
+Playwright HTML reports live under `web-ui/build/reports/playwright` in
+`components`, `application` and `setup`; their JUnit XML files are under
+`web-ui/build/test-results/playwright`. The Java wrapper task also writes its own
+report to `web-ui/build/reports/tests/playwrightTest` and XML to
+`web-ui/build/test-results/playwrightTest`. Failures include screenshots, video and
 Playwright traces. Open a trace from the frontend directory with
 `npx playwright show-trace <trace.zip>`. These reports contain test account/session
 data and should be shared only as debugging artifacts.
 
-CI runs the UI job after the main build, using its compiled test/runtime snapshot
-and Storybook artifact. It installs Chromium and Linux dependencies, uploads
-browser diagnostics, and gates release packaging alongside the other integrations.
+CI runs the UI job after both binkd/HPT integrations succeed, using the main
+build's compiled test/runtime snapshot and Storybook artifact. It installs
+Chromium and Linux dependencies and uploads browser diagnostics. The separate
+VRT job runs next; both UI and VRT checks gate release packaging.
 
 ## Visual regression tests
 
@@ -202,8 +237,14 @@ design change. Updates are rejected in CI; missing or different references fail
 the build. `npm run test:vrt -- --project desktop --grep administrator-navigation`
 limits a comparison when debugging. Reports are in
 `web-ui/build/reports/playwright/visual/index.html`; mismatches retain actual,
-expected and diff images plus a trace. CI uploads them with the other browser
-reports and blocks release packaging on failure. PNGs in the source tree are
+expected and diff images plus a trace. CI uploads them in the separate
+`vrt-reports` artifact (retained for 15 days). The `vrt` job runs after both
+integration suites and the functional `ui` job, and blocks release packaging
+on failure. It uses the build's Storybook artifact without
+rebuilding the catalogue; no host Java or Chromium installation is required for
+this job. VRT's JUnit XML is
+`web-ui/build/reports/playwright/visual.xml`, separate from the other browser XML
+results. PNGs in the source tree are
 test fixtures; runtime/build reports remain untracked.
 
 ## Accounts and access
@@ -222,7 +263,7 @@ automatically enable passkeys. Existing passkey configuration is preserved.
 
 ## Received originals and file-only configuration
 
-Station settings include **Save original received files**, enabled by default.
+Station settings include **Keep original received files**, enabled by default.
 The main configuration stores this as `PreserveReceivedFiles=true` (or `false`).
 Settings changes require restarting the node, like the other station settings.
 The running service keeps its current configuration until restart.

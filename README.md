@@ -1,37 +1,56 @@
-JFtn v0.1
-=========
+JFtn
+====
 
 ### BUILD STATUS:
 [![CI](https://github.com/vkravets/Fido4Java/actions/workflows/ci.yml/badge.svg)](https://github.com/vkravets/Fido4Java/actions/workflows/ci.yml)
 
 ### ABOUT
-JFtn is a ftn-tosser written in Java. This is the fork from the origin http://sourceforge.net/projects/jftn/ project.
-To use JFtn you need Java 11 or newer.
+JFtn is a Java FTN mail node and tosser, derived from the original
+[JFtn project](https://sourceforge.net/projects/jftn/). It is under active development.
+The standalone distribution requires Java 17+ or a package with a bundled JRE.
 The application bundle uses Netty as its default BinkP transport.
 `JFtnRunner` reads connections and local AKAs from the `Link` entries in `jftn.conf`.
 Station metadata uses `SysOp` and the optional `System`, `Location` and `NDL` keys
 (defaults: `JFtn`, an empty location and `BINKP`).
-Feel free to report bugs and request for features.
-Its very simple for now and can be used only for read-only system. It can toss netmail, have bugs,
-and still under develompent.
+Report bugs and feature requests through the repository's issue tracker.
 
 ### FEATURES
-Can store echomail in jam-base.
-Support several echo-links.
-Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
+- SQL-backed netmail and echomail, routing, subscriptions and durable outbound queues.
+- Binkp 1.0/1.1, NR and resumable transfers; Netty by default, with MINA2 available.
+- Optional JAM editor views and historical archive import, checked against HPT.
+- Scripted AreaFix, FileFix, TIC distribution and node/point directory imports.
+- Embedded Vue/TypeScript UI with English/Ukrainian, light/dark themes, password
+  and passkey login, point registration, node settings and outgoing connection logs.
+- Thrift RPC over framed TCP and HTTP for administration and mail APIs.
 
-### TODO
+The browser mail readers are planned; their navigation is reserved in the UI.
+See [remaining work](TODO) and the limitations in each service guide.
 
 ### INSTALL
-To install simply copy the file jftn.jar to the desired location. Edit jftn.conf-dist to your liking and
-save it in the same directory called jftn.conf.
+Download and unpack a [release](https://github.com/vkravets/Fido4Java/releases).
+Packages contain separate application libraries, plugins and editable scripts.
+Use `jftn.cmd` on Windows, `./jftn.ps1` in PowerShell or `./jftn.sh` on Linux/macOS.
+On first start, open the private setup URL printed in the console to configure the
+station and create its administrator. Missing working directories are created.
+See [distribution layout, upgrades and releases](docs/distributions.md).
 
 ### USAGE
-Starting from the command line. The first parameter must be action. Action can be:
+Start a launcher without arguments to run the node. `--version` prints its version.
+Offline [robot rule validation, import and export](docs/robot-access.md) are also
+available. For operation without UI/RPC, create `jftn.conf` from the supplied
+example and disable RPC explicitly; see the same guide.
 
-    help - print help for possible command-line options
-    tosss - start tossing mail in inbound directory
-    pull - start pulling the node via binkp.
+### DOCUMENTATION
+
+- [Browser setup, settings and UI testing](docs/web-ui.md)
+- [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
+- [RPC contracts, transports and authentication](docs/rpc-ui.md)
+- [Plugin configuration and upgrade rules](docs/plugin-configuration.md)
+- [AreaFix, FileFix, TIC and directory feed scripts](docs/mail-scripts.md)
+- [Mail robot access and offline administration](docs/robot-access.md)
+- [Node and point directory parsing](docs/nodelist.md)
+- [Binkp references](docs/binkp/README.md)
+- [Test coverage and its limitations](docs/test-coverage.md)
 
 ### DEVELOPERS
 All tests use JUnit Jupiter 5.14.4 directly through Gradle's JUnit Platform
@@ -98,7 +117,8 @@ it returns; the protocol does not wait indefinitely for future files.
 
 The implementation follows the batch completion and command activity logic in
 [binkd protocol.c, revision 5a84e85](https://github.com/pgul/binkd/blob/5a84e8596a96ca8b1f4ec69d9a608cd264aa06ba/protocol.c#L3113),
-alongside `docs/binkp/binkp11.rus.txt`. ND/NDA, compression, CRC and a FREQ service
+alongside the [English protocol references](docs/binkp/README.md).
+ND/NDA, compression, CRC and a FREQ service
 are separate extensions and are not advertised by this change.
 
 NR policy is identical for client and server sessions. `setNREnabled(false)`
@@ -146,7 +166,10 @@ Keep the original files and SQL backup until the imported mail and subscriptions
 have been checked. The default database path is `./database/jftn10`: after
 validation, use the new database files at that path while JFtn is stopped.
 See the [H2 migration guide](https://h2database.github.io/html/migration-to-v2.html).
-The application does not convert old database files automatically.
+The application does not convert old database files automatically. H2's export/import
+only changes the database engine format; it does not migrate an old JFtn schema.
+The current application schema is the baseline, so incompatible older schemas
+require a separately planned data conversion before use.
 
 The Runner now connects received binkp files to the tosser and sends queued
 netmail and subscribed echomail. See [mail processing, configuration and limitations](docs/tosser.md).
@@ -161,11 +184,21 @@ passkeys as an additional login method.
 
 The embedded [Vue/TypeScript browser interface](docs/web-ui.md) provides initial
 node setup, sign-in, moderated point registration, approved AKA selection,
-light/dark themes and account security settings. It is served by the same JVM as
+light/dark themes, English/Ukrainian, robot access rules, outgoing connection
+queues/logs and account security settings. It is served by the same JVM as
 HTTP RPC; Node.js 22.12+ and npm are needed only to build and test it.
 
-The RPC module requires the Apache Thrift 0.25.0 compiler on `PATH`.
-Run the full build, including tests:
+A clean full build requires JDK 17+, Node.js 22.12+, npm and the Apache Thrift
+0.25.0 compiler. Supply its matching `lib/js/src/thrift.js` browser runtime as well;
+the compiler executable alone is insufficient. For example, in PowerShell:
+
+```powershell
+$env:THRIFT_BROWSER_RUNTIME = 'C:/tools/thrift-0.25.0/lib/js/src/thrift.js'
+```
+
+On Linux/macOS, export the same variable with an absolute local path, or pass
+`-PthriftBrowserRuntime=/absolute/path/to/thrift.js` on either platform.
+Run the full build, including ordinary tests:
 
 ```powershell
 .\gradlew.bat build
@@ -184,6 +217,9 @@ Optional Docker interoperability tests for Netty and MINA2 exchange files with a
 peer using both JFtn client and server roles. They run only through each backend's explicit
 `binkdDockerTest` task; see the [test plan, container lifecycle and diagnostics](binkp/src/integrationTestShared/README.md).
 Ordinary transfer and JFtn-requested NR were verified in both roles with binkd in Podman on Windows.
+HPT and Playwright also have explicit tasks; see [HPT checks](docs/tosser.md#real-hpt-interoperability-tests)
+and [UI tests](docs/web-ui.md#browser-tests). Ordinary `build` does not run these
+container/browser suites. CI runs them afterwards and gates release packaging.
 
 Coverage reports are reproducible through `./gradlew coverageStatistics` (or
 `.\gradlew.bat coverageStatistics` on Windows). Add `-PcoverageWithBinkd` to run
@@ -193,12 +229,12 @@ are written to `build/reports/coverage/unit` / `unit.xml`, or `all` / `all.xml`
 with the Docker option. Generated Thrift sources are excluded; handwritten
 application code is included. See [coverage scenarios and remaining gaps](docs/test-coverage.md).
 
-For now there are a few developers (see below list), but you can join for develompent anytime.
-You can always get a fresh version at GitHub: github.com/vkravets/Fido4Java.git or git://github.com/vkravets/Fido4Java.git
+Contributions are welcome. Source code is available at
+[vkravets/Fido4Java](https://github.com/vkravets/Fido4Java).
 
 JFtn team members:
 
 * Vladimir Kravets -- (vova.kravets\<at\>gmail.com or 2:467/1313 AKA 2:467/70.113 )
 * Dmitriy Tochansky -- (tochansky\<at\>gmail.com or 2:5030/1111) original author of JFtn
 
-Feel free to contact to us!
+Feel free to contact us.
