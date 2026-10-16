@@ -159,6 +159,11 @@ drafts and submission, echo subscriptions, manual polls, queues and node logs.
 RPC accounts are stored separately with hashed passwords and optional WebAuthn
 passkeys as an additional login method.
 
+The embedded [Vue/TypeScript browser interface](docs/web-ui.md) provides initial
+node setup, sign-in, moderated point registration, approved AKA selection,
+light/dark themes and account security settings. It is served by the same JVM as
+HTTP RPC; Node.js 22.12+ and npm are needed only to build and test it.
+
 The RPC module requires the Apache Thrift 0.25.0 compiler on `PATH`.
 Run the full build, including tests:
 
