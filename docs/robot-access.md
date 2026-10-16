@@ -6,8 +6,8 @@ uses its normal mail database, subscription state and durable delivery queues.
 The selected source controls authorization rules, not message storage.
 
 The full distribution defaults to `RobotAccessSource=database`, including when
-the setting is absent. UI/RPC rule editing is a separate next step; the repository
-API and explicit file import are available now. Existing configuration files are
+the setting is absent. Administrative RPC rule editing and explicit file import
+use the same repository. Existing configuration files are
 never overwritten: an explicit `RobotAccessSource=files` keeps file mode active.
 
 ## File-only administration
@@ -78,8 +78,20 @@ The independent `mail_robot_access` table is part of the mail database, not the
 RPC account database. `DatabaseManager.getRobotRules()` exposes the repository
 for trusted administration code. Updates/deletions are read on the next command
 or TIC authorization without restarting scripts. Existing accepted/queued work
-is not cancelled retroactively. UI/RPC editing will use this same repository;
-this change adds the provider/API foundation and offline operation, not UI forms.
+is not cancelled retroactively.
+
+The authenticated `ui` RPC service exposes `robotAccess`, `saveRobotRule` and
+`deleteRobotRule` over both HTTP/JSON and TCP. Every method requires an administrator
+session; point accounts cannot read or change these rules. Responses contain only
+service, address, area masks, AreaFix rights and enabled state, never credentials.
+A new rule requires a password. Omit it (or send an empty string) when editing to
+keep the existing credential, including while disabling/re-enabling a rule. A
+nonempty password replaces it. Each service/address pair identifies one rule;
+to change its identity, create a new rule and delete the old one.
+
+In file mode the API returns the file snapshot for inspection, but save/delete
+fail with `READ_ONLY`. It never writes configuration fragments, switches sources
+or imports rules implicitly. Switch the source explicitly and restart if needed.
 
 AreaFix/FileFix passwords are salted PBKDF2-HMAC-SHA256 verifiers (600000
 iterations). The public rule API does not expose their plaintext. TIC forwarding

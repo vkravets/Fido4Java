@@ -17,6 +17,8 @@ import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.NodeStatus;
 import org.fidonet.jftn.rpc.PollInfo;
 import org.fidonet.jftn.rpc.QueueItem;
+import org.fidonet.jftn.rpc.RobotAccessConfiguration;
+import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.script.FileDeliveryQueue;
@@ -48,6 +50,7 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
     private final MailService mail;
     private final UiState state;
     private final UiPolls polls;
+    private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
 
     public NodeUi(JFtnConfig config, DatabaseManager base, MailService mail, SessionContext context)
@@ -55,6 +58,7 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
         this.config = config;
         this.base = base;
         this.mail = mail;
+        robotRules = new NodeRobotRules(config, base);
         state = new UiState(Path.of(config.getTmpDir(), "ui-state"));
         polls = new UiPolls(config, context);
     }
@@ -73,6 +77,27 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
             logger.error("UI operation failed", e);
             throw new UiError("OPERATION_FAILED", "Node operation failed; inspect the node log");
         }
+    }
+
+    @Override
+    public RobotAccessConfiguration robotAccess(String owner) throws UiError {
+        return call(robotRules::current);
+    }
+
+    @Override
+    public void saveRobotRule(String owner, RobotRuleChange change) throws UiError {
+        call(() -> {
+            robotRules.save(change);
+            return null;
+        });
+    }
+
+    @Override
+    public void deleteRobotRule(String owner, String service, String address) throws UiError {
+        call(() -> {
+            robotRules.delete(service, address);
+            return null;
+        });
     }
 
     private List<String> localAddresses() {
