@@ -108,8 +108,9 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
         session.channel().attr(SessionKeys.TRAFFIC_CRYPTER_KEY).set(new TrafficCrypter());
 
         SessionContext sessionContext = getSessionContext(session);
-        log.debug("Session is opened with {}",
-                  sessionContext.getLinksInfo().getCurLink().toString());
+        log.info("binkp TCP connection opened: remote={}, role={}",
+                 session.channel().remoteAddress(),
+                 sessionContext.getServerRole());
 
         sendGreeting(session, sessionContext);
     }
@@ -238,6 +239,9 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
             }
             context.closeReceiveStreams();
         }
+        log.info("binkp TCP connection closed: remote={}, state={}",
+                 ctx.channel().remoteAddress(),
+                 context == null ? "unknown" : context.getState());
         super.channelInactive(ctx);
     }
 }

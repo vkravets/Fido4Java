@@ -77,6 +77,7 @@ public class Runner {
     private void runClient(Link link, SessionContext context) {
         Client client = null;
         try {
+            logConnection(link);
             client = createClient(link);
             client.run(context);
             if (client.isConnect()) {
@@ -91,6 +92,16 @@ public class Runner {
                 client.stop();
             }
         }
+    }
+
+    private void logConnection(Link link) {
+        if (link == null) {
+            return;
+        }
+        logger.info("binkp connecting: peer={}, host={}, port={}",
+                    link.getAddr(),
+                    link.getHostAddress(),
+                    link.getPort() == 0 ? 24554 : link.getPort());
     }
 
     private void waitSessionFinish(SessionContext context) throws InterruptedException {
@@ -108,6 +119,7 @@ public class Runner {
         server = new Server(port);
         try {
             server.run(context);
+            logger.info("binkp server listening: port={}", server.getLocalPort());
         } catch (Exception e) {
             logger.error("Server unexpectedly stops", e);
         }

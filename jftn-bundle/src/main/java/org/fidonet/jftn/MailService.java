@@ -200,12 +200,17 @@ public final class MailService implements AutoCloseable {
     }
 
     public void start() throws Exception {
+        logger.info("Starting mail processing: inbound={}, outbound={}, preserveReceivedFiles={}",
+                    config.getInbound(),
+                    config.getOutbound(),
+                    config.isPreserveReceivedFiles());
         processPending();
         long seconds = Long.parseLong(config.getValue("TossIntervalSeconds", "5"));
         if (seconds < 1) {
             throw new IllegalArgumentException("TossIntervalSeconds must be positive");
         }
         worker.scheduleWithFixedDelay(this::processSafely, seconds, seconds, TimeUnit.SECONDS);
+        logger.info("Mail processing started: interval={}s", seconds);
     }
 
     private void processSafely() {

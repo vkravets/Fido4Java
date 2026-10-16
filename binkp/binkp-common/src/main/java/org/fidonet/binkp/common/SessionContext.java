@@ -32,7 +32,11 @@ import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
+import org.fidonet.binkp.common.events.ConnectedEvent;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
+import org.fidonet.binkp.common.events.FileEvent;
+import org.fidonet.binkp.common.events.FileReceivedEvent;
+import org.fidonet.binkp.common.events.FileSendEvent;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.FilesSender;
@@ -41,6 +45,9 @@ import org.fidonet.events.Event;
 import org.fidonet.events.EventBus;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +70,7 @@ import java.util.function.Consumer;
  * Time: 3:49 PM
  */
 public class SessionContext extends HasEventBus {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionContext.class);
 
     // send size
     private long sendMailSize;
@@ -238,6 +246,7 @@ public class SessionContext extends HasEventBus {
     }
 
     public void receiveEvent(Event event) {
+        logEvent(event);
         (receiveEventBus == null ? getEventBus() : receiveEventBus).publish(event);
     }
 
@@ -526,7 +535,40 @@ public class SessionContext extends HasEventBus {
     }
 
     public void sendEvent(Event event) {
+        logEvent(event);
         getEventBus().publish(event);
+    }
+
+    private void logEvent(Event event) {
+        if (event instanceof ConnectedEvent) {
+            LOGGER.info("binkp session ready: peer={}, role={}, NR={}",
+                        logPeer(),
+                        serverRole,
+                        isNRMode());
+        } else if (event instanceof DisconnectedEvent) {
+            LOGGER.info("binkp transfer ended: peer={}, role={}, state={}",
+                        logPeer(),
+                        serverRole,
+                        state);
+        } else if (event instanceof FileReceivedEvent) {
+            logFile("received", (FileEvent<?>) event);
+        } else if (event instanceof FileSendEvent) {
+            logFile("sent and acknowledged", (FileEvent<?>) event);
+        }
+    }
+
+    private Object logPeer() {
+        Link link = linksInfo == null ? null : linksInfo.getCurLink();
+        return link == null ? "unidentified" : link.getAddr();
+    }
+
+    private void logFile(String action, FileEvent<?> event) {
+        FileInfo info = event.getFile().getInfo();
+        LOGGER.info("binkp file {}: peer={}, name={}, bytes={}",
+                    action,
+                    logPeer(),
+                    info.getName(),
+                    info.getSize());
     }
 
     public boolean isBusy() {
