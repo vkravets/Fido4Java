@@ -59,5 +59,9 @@ if ! compiler_is_cached || ! runtime_is_cached; then
 fi
 
 sudo install "$thrift_cached_bin" /usr/local/bin/thrift
-printf 'export THRIFT_BROWSER_RUNTIME=%q\n' "$thrift_cached_runtime" >> "$BASH_ENV"
+if [ -n "${GITHUB_ENV:-}" ]; then
+  printf 'THRIFT_BROWSER_RUNTIME=%s\n' "$thrift_cached_runtime" >> "$GITHUB_ENV"
+else
+  printf 'export THRIFT_BROWSER_RUNTIME=%q\n' "$thrift_cached_runtime" >> "$BASH_ENV"
+fi
 thrift -version

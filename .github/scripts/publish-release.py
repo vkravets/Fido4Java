@@ -20,7 +20,7 @@ class GitHub:
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "jftn-circleci-release",
+            "User-Agent": "jftn-github-release",
         }
 
     def request(self, method, path, payload=None):
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "build/release")
     token = os.environ.get("GH_TOKEN", "")
     if not token:
-        raise SystemExit("Configure GH_TOKEN in the restricted github-release CircleCI context")
-    repository = os.environ["CIRCLE_PROJECT_USERNAME"] + "/" + os.environ["CIRCLE_PROJECT_REPONAME"]
-    publish(GitHub(repository, token), root, os.environ["CIRCLE_TAG"],
+        raise SystemExit("Pass the GitHub Actions token as GH_TOKEN with contents: write permission")
+    repository = os.environ["GITHUB_REPOSITORY"]
+    publish(GitHub(repository, token), root, os.environ["GITHUB_REF_NAME"],
             (root / "revision.txt").read_text().strip())
