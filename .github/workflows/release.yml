@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web-ui/frontend/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/thrift/0.25.0
+          key: thrift-0.25.0-${{ runner.os }}-${{ runner.arch }}
+      - name: Prepare Thrift compiler and browser runtime
+        run: bash .circleci/setup-thrift.sh
+      - name: Build, test and seal compiled artifacts
+        run: bash .github/scripts/build-release.sh
+      - uses: actions/upload-artifact@v6
+        with:
+          name: compiled-release
+          path: build/compiled-release.tar
+          if-no-files-found: error
+          retention-days: 15
+      - name: Save build test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-test-reports
+          path: |
+            **/build/test-results/**
+            **/build/reports/tests/**
+          retention-days: 15
+
+  package:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v7
+        with:
+          name: compiled-release
+          path: build
+      - run: tar -xf build/compiled-release.tar -C build
+      - uses: actions/cache@v4
+        with:
+          path: jftn-bundle/build/runtime-downloads
+          key: temurin-jre-${{ hashFiles('gradle/runtime-lock.json') }}
+      - name: Package tested binaries and smoke test Linux ZIP
+        run: bash .circleci/package-distributions.sh
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-distributions
+          path: build/release/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 15
+
+  integration:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [binkd, hpt]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v7
+        with:
+          name: compiled-release
+          path: build
+      - run: tar -xf build/compiled-release.tar -C build
+      - name: Test interoperability using compiled snapshot
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: bash .github/scripts/test-integration.sh "$SUITE"
+      - name: Save integration reports and protocol logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: integration-${{ matrix.suite }}-reports
+          path: |
+            **/build/test-results/**
+            **/build/reports/**
+          retention-days: 15
+
+  publish:
+    needs: [package, integration]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v7
+        with:
+          name: release-distributions
+          path: build/release
+      - name: Verify publisher and compiled revision
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+          test "$(cat build/release/revision.txt)" = "$(git rev-parse HEAD)"
+      - name: Publish verified assets using the automatic GitHub token
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/publish-release.py build/release

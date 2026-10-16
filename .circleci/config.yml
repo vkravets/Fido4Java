@@ -110,23 +110,6 @@ jobs:
           paths:
             - build/release
 
-  github-release:
-    docker:
-      - image: cimg/python:3.13
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Verify release publisher
-          command: python3 -m unittest discover -s .circleci -p 'test_*.py'
-      - run:
-          name: Publish complete GitHub Release for the tested tag
-          command: |
-            set -euo pipefail
-            test "$(cat build/release/revision.txt)" = "$(git rev-parse HEAD)"
-            python3 .circleci/publish-release.py build/release
-
   binkd-integration:
     machine:
       image: ubuntu-2404:2026.05.1
@@ -263,33 +246,22 @@ workflows:
       - build:
           filters:
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
+              ignore: /.*/
       - binkd-integration:
           requires:
             - build
           filters:
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
+              ignore: /.*/
       - hpt-integration:
           requires:
             - build
           filters:
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
+              ignore: /.*/
       - package-distributions:
           requires:
             - build
           filters:
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
-      - github-release:
-          requires:
-            - package-distributions
-            - binkd-integration
-            - hpt-integration
-          context: github-release
-          filters:
-            branches:
               ignore: /.*/
-            tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
