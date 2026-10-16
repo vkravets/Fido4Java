@@ -37,6 +37,13 @@ jftn-<version>/
   docs/ LICENSE README.txt
 ```
 
+The default Log4j2 configuration writes INFO and higher to both the console and
+`logs/jftn.log`, rotating the file at 10 MB. It includes binkp connection and
+authentication events, completed file transfers, mail-service startup, and tosser
+file/packet processing. Idle inbound scans and protocol-frame details remain at
+DEBUG. PKT password mismatches identify the peer and destination without logging
+passwords. Exceptions include full stack traces in both outputs.
+
 Launchers set the working directory to the installation root and load `scripts/`,
 `lib/*`, `lib/groovy/*` and `plugins/*` as the classpath. They prefer the bundled
 JRE, then `JAVA_HOME`, then Java on `PATH`. PowerShell uses the platform's classpath

@@ -149,7 +149,14 @@ public class Tosser extends HasEventBus {
 
     private void processInboundFileSafely(File file, FTNAddr authenticatedPeer) {
         try {
+            long started = System.currentTimeMillis();
+            logger.info("Processing inbound mail: file={}, sessionPeer={}",
+                        file.getAbsolutePath(),
+                        authenticatedPeer);
             processInboundFile(file, authenticatedPeer);
+            logger.info("Finished processing inbound mail: file={}, elapsed={}ms",
+                        file.getAbsolutePath(),
+                        System.currentTimeMillis() - started);
         } catch (IOException | RuntimeException | EchoBaseException e) {
             logger.error("Failed to unpack {}. Details: {}",
                          file.getAbsolutePath(),
@@ -208,14 +215,16 @@ public class Tosser extends HasEventBus {
     private void processPacket(PktTemp packet, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
         if (!tosspkt(packet.getPkt(), authenticatedPeer)) {
-            logger.info("Save to Tmp");
             saveBad(packet);
+            logger.warn("Rejected packet retained in temporary directory: packet={}, directory={}",
+                        packet.getName(),
+                        config.getTmpDir());
         }
     }
 
     private void deleteTossedFile(File file) {
         if (config.isDeleteTossedFiles() != 0 && !file.delete()) {
-            logger.error("Error while deleting tossed boundle!");
+            logger.error("Cannot delete processed inbound mail: {}", file.getAbsolutePath());
         }
     }
     private void saveBad(PktTemp pkt) throws IOException, TosserException {
@@ -276,7 +285,9 @@ public class Tosser extends HasEventBus {
             return false;
         }
         if (!packet.getPass().equals(config.getPacketPassword(link))) {
-            logger.error("Bad PASSWORD! Drop it.");
+            logger.error("PKT password mismatch: peer={}, destination={}; packet will be quarantined",
+                         origin,
+                         destination);
             return false;
         }
         return importPacketMessages(packet.getMsgs(), buf, link, origin, destination);
@@ -296,7 +307,7 @@ public class Tosser extends HasEventBus {
             return zoneLessOriginLink(packet.getOrigaddr(), authenticatedPeer);
         }
         if (link == null) {
-            logger.error("Unknown Link! Drop it.");
+            logger.error("Unknown packet origin link: {}", packet.getOrigaddr());
         }
         return link;
     }
@@ -315,7 +326,7 @@ public class Tosser extends HasEventBus {
             resolved = candidate;
         }
         if (resolved == null) {
-            logger.error("Unknown Link! Drop it.");
+            logger.error("Unknown zone-less packet origin link: {}", origin);
         }
         return resolved;
     }
@@ -364,9 +375,14 @@ public class Tosser extends HasEventBus {
                                          FTNAddr destination)
             throws IOException, EchoBaseException {
         TossJournal journal = new TossJournal(new File(config.getTmpDir()).toPath(), buffer);
-        logger.debug("Find {} messages in the bundle", messages.length);
+        logger.info("Importing packet: origin={}, destination={}, messages={}",
+                    origin,
+                    destination,
+                    messages.length);
+        int resumed = 0;
         for (int index = 0; index < messages.length; index++) {
             if (journal.contains(index)) {
+                resumed++;
                 continue;
             }
             Message message = new Message(messages[index], origin.getZone(), destination.getZone());
@@ -376,6 +392,11 @@ public class Tosser extends HasEventBus {
             }
             journal.complete(index);
         }
+        logger.info("Packet processed: origin={}, destination={}, handled={}, alreadyProcessed={}",
+                    origin,
+                    destination,
+                    messages.length - resumed,
+                    resumed);
         return true;
     }
 
