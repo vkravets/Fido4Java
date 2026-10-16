@@ -8,6 +8,7 @@ import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.StoredMail;
 import org.fidonet.jftn.MailService;
 import org.fidonet.jftn.poll.PollAttempt;
+import org.fidonet.jftn.poll.PollLogSlice;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
 import org.fidonet.jftn.rpc.LinkInfo;
@@ -18,6 +19,8 @@ import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.NodeStatus;
 import org.fidonet.jftn.rpc.PollInfo;
+import org.fidonet.jftn.rpc.PollLogPage;
+import org.fidonet.jftn.rpc.PollPage;
 import org.fidonet.jftn.rpc.QueueItem;
 import org.fidonet.jftn.rpc.RobotAccessConfiguration;
 import org.fidonet.jftn.rpc.RobotRuleChange;
@@ -420,7 +423,46 @@ public final class NodeUi implements UiService.Iface {
                             attempt.getAddress(),
                             attempt.getState(),
                             attempt.getCreated(),
-                            attempt.getDetail());
+                            attempt.getDetail()).setSource(attempt.getSource())
+                                                .setStarted(attempt.getStarted())
+                                                .setFinished(attempt.getFinished());
+    }
+
+    @Override
+    public PollInfo pollDetails(String owner, String id) throws UiError {
+        return call(() -> pollInfo(polls.get(id)));
+    }
+
+    @Override
+    public List<PollInfo> pollQueue(String owner) {
+        List<PollInfo> result = new ArrayList<>();
+        polls.list()
+             .stream()
+             .filter(PollAttempt::isActive)
+             .forEach(attempt -> result.add(pollInfo(attempt)));
+        return result;
+    }
+
+    @Override
+    public PollPage pollHistory(String owner, String before, int limit) throws UiError {
+        if (limit < 1 || limit > 200) {
+            throw new IllegalArgumentException("Page size must be 1..200");
+        }
+        return call(() -> {
+            List<PollAttempt> rows = polls.page(before, limit + 1);
+            List<PollInfo> items = new ArrayList<>();
+            rows.subList(0, Math.min(limit, rows.size())).forEach(row -> items.add(pollInfo(row)));
+            String next = items.isEmpty() ? before : PollService.cursor(rows.get(items.size() - 1));
+            return new PollPage(items, next, rows.size() > limit);
+        });
+    }
+
+    @Override
+    public PollLogPage pollLog(String owner, String id, long offset, int limit) throws UiError {
+        return call(() -> {
+            PollLogSlice slice = polls.logs(id, offset, limit);
+            return new PollLogPage(slice.getLines(), slice.getNextOffset(), slice.isHasMore());
+        });
     }
 
     @Override

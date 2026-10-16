@@ -243,6 +243,9 @@ export; call processMail to request an immediate processing pass.
 | `rescan` | Explicit repeat-safe rescan of 1..10000 recent messages with a stable requestId |
 | `processMail` | Run the existing inbound/scripts/export processing cycle |
 | `poll`, `polls`, `cancelPoll` | Queue, inspect and cancel manual and scheduled outgoing connections |
+| `pollQueue`, `pollDetails` | Active/waiting attempts and one retained attempt, including source/start/end timestamps |
+| `pollHistory` | Newest-first history pages (1..200) using an opaque `nextCursor` |
+| `pollLog` | One attempt's safe journal, byte cursor and bounded line count (1..200) |
 | `outbound` | Up to 200 prepared mail packets and the next file/TIC pair for a configured peer |
 | `logs` | Bounded reads from the configured log file; no client-selected filesystem paths |
 
@@ -270,6 +273,12 @@ the poll worker flushes them. Protocol payloads, PWD values and CRAM responses a
 not journalled. `PollLogLimitBytes` defaults to 262144 per attempt (4096..16777216);
 when full, a marker is written and subsequent events are omitted. Pruning history
 also removes its journals. Readers use bounded UTF-8 pages and byte cursors.
+All poll methods require an administrator session. `pollHistory` uses a stable
+timestamp/ID cursor, so insertion of newer jobs does not shift older pages. Start
+with an empty cursor; reset to it to refresh recent attempts. `pollLog` starts at
+offset zero, and its `nextOffset` is scoped to the selected attempt ID. Logs remain
+available after restart until history pruning removes the attempt. No RPC method
+accepts a log path supplied by the browser.
 
 The outbound method is a snapshot of prepared disk files, including held mail;
 it does not enumerate all unexported database deliveries or every queued file

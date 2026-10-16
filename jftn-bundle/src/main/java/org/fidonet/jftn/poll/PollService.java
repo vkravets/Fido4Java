@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** One bounded outgoing queue for the scheduler and every administrative transport. */
 public class PollService implements AutoCloseable {
@@ -284,6 +286,42 @@ public class PollService implements AutoCloseable {
             throw new IllegalArgumentException("Unknown poll");
         }
         return job.info.copy();
+    }
+
+    public static String cursor(PollAttempt attempt) {
+        return attempt.getCreated() + ":" + attempt.getId();
+    }
+
+    public synchronized List<PollAttempt> page(String before, int limit) {
+        if (limit < 1 || limit > 201 || before == null || before.length() > 100) {
+            throw new IllegalArgumentException("Invalid history cursor or page size");
+        }
+        long timestamp = Long.MAX_VALUE;
+        String id = "~";
+        if (!before.isEmpty()) {
+            String[] parts = before.split(":", -1);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid history cursor");
+            }
+            timestamp = Long.parseLong(parts[0]);
+            id = UUID.fromString(parts[1]).toString();
+            if (timestamp < 0 || !id.equals(parts[1])) {
+                throw new IllegalArgumentException("Invalid history cursor");
+            }
+        }
+        long boundary = timestamp;
+        String boundaryId = id;
+        return jobs.values()
+                   .stream()
+                   .map(job -> job.info)
+                   .filter(info -> info.getCreated() < boundary || info.getCreated() == boundary
+                           && info.getId().compareTo(boundaryId) < 0)
+                   .sorted(Comparator.comparingLong(PollAttempt::getCreated)
+                                     .thenComparing(PollAttempt::getId)
+                                     .reversed())
+                   .limit(limit)
+                   .map(PollAttempt::copy)
+                   .collect(Collectors.toList());
     }
 
     public synchronized PollLogSlice logs(String id, long offset, int limit) throws IOException {
