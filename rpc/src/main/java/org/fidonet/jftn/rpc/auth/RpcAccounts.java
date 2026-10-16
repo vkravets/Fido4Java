@@ -45,6 +45,11 @@ public final class RpcAccounts implements AutoCloseable {
             try (Statement sql = keeper.createStatement()) {
                 sql.execute("CREATE TABLE IF NOT EXISTS rpc_users (login VARCHAR(100) PRIMARY KEY, password_hash VARCHAR(256) NOT NULL, user_handle VARBINARY(64) NOT NULL UNIQUE, enabled BOOLEAN NOT NULL)");
                 sql.execute("CREATE TABLE IF NOT EXISTS rpc_passkeys (credential_id VARCHAR(2048) NOT NULL, rp_id VARCHAR(255) NOT NULL, owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login), public_key BLOB NOT NULL, sign_count BIGINT NOT NULL, backup_eligible BOOLEAN NOT NULL, backup_state BOOLEAN NOT NULL, label VARCHAR(100) NOT NULL, created BIGINT NOT NULL, PRIMARY KEY(rp_id,credential_id))");
+                sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'ADMIN'");
+                sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS theme VARCHAR(8) NOT NULL DEFAULT 'light'");
+                sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS default_aka VARCHAR(40) NOT NULL DEFAULT ''");
+                sql.execute("CREATE TABLE IF NOT EXISTS rpc_akas (owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login), address VARCHAR(40) NOT NULL, state VARCHAR(16) NOT NULL, PRIMARY KEY(owner,address))");
+                sql.execute("CREATE TABLE IF NOT EXISTS rpc_point_addresses (address VARCHAR(40) PRIMARY KEY, owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login))");
             } catch (SQLException failure) {
                 keeper.close();
                 throw failure;
@@ -54,7 +59,7 @@ public final class RpcAccounts implements AutoCloseable {
         }
     }
 
-    private Connection open() throws SQLException {
+    Connection open() throws SQLException {
         if (closed) {
             throw new SQLException("Authentication database is closed");
         }
@@ -75,18 +80,41 @@ public final class RpcAccounts implements AutoCloseable {
     }
 
     public synchronized void createUser(String user, String password) throws IOException {
+        try (Connection connection = open()) {
+            insertUser(connection, user, password, "ADMIN", true);
+        } catch (SQLException e) {
+            throw new IOException("Cannot create RPC account", e);
+        }
+    }
+
+    void insertUser(Connection connection,
+                    String user,
+                    String password,
+                    String role,
+                    boolean enabled)
+            throws IOException, SQLException {
         if (user == null || !user.matches("[A-Za-z0-9_.@-]{1,100}") || password == null
                 || password.isEmpty() || password.length() > 1024) {
             throw new IllegalArgumentException("Initial RPC account needs a valid login and password");
         }
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("INSERT INTO rpc_users(login,password_hash,user_handle,enabled) VALUES(?,?,?,TRUE)")) {
+        try (PreparedStatement sql = connection.prepareStatement("INSERT INTO rpc_users(login,password_hash,user_handle,role,enabled) VALUES(?,?,?,?,?)")) {
             sql.setString(1, user);
             sql.setString(2, passwordHash(password));
             sql.setBytes(3, randomBytes(32));
+            sql.setString(4, role);
+            sql.setBoolean(5, enabled);
             sql.executeUpdate();
-        } catch (SQLException e) {
-            throw new IOException("Cannot create RPC account", e);
+        }
+    }
+
+    public boolean hasUsers() throws IOException {
+        try (Connection connection = open();
+                Statement sql = connection.createStatement();
+                ResultSet rows = sql.executeQuery("SELECT COUNT(*) FROM rpc_users")) {
+            rows.next();
+            return rows.getLong(1) != 0;
+        } catch (SQLException failure) {
+            throw new IOException("Cannot inspect RPC accounts", failure);
         }
     }
 
