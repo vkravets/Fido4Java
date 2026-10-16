@@ -30,4 +30,5 @@ English/Ukrainian. These are isolated component examples, not a running node.
 
 The separate vrt-baselines artifact contains the committed expected screenshots,
 under desktop/ and mobile/. They are available even when VRT has no mismatches.
-VRT failure reports and actual/expected/diff images are in vrt-reports.
+The vrt-reports HTML report attaches a Baseline image to each test, including
+successful comparisons. Failures additionally include actual/expected/diff images.

@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import type { TestInfo } from '@playwright/test';
+import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
@@ -12,15 +14,22 @@ const screens = [
     { name: 'error', story: 'feedback-notificationbanner--error', notification: true }
 ];
 
+async function attachBaseline(info: TestInfo, filename: string) {
+    const path = info.snapshotPath(filename);
+    if (!existsSync(path)) return;
+    await info.attach('Baseline', { path, contentType: 'image/png' });
+}
+
 for (const theme of ['light', 'dark']) {
     for (const locale of ['en', 'uk']) {
         for (const screen of screens) {
-            test(`${theme}/${locale}/${screen.name}`, async ({ page }) => {
+            test(`${theme}/${locale}/${screen.name}`, async ({ page }, info) => {
+                const filename = `${screen.name}-${theme}-${locale}.png`;
+                await attachBaseline(info, filename);
                 await page.clock.setFixedTime(new Date('2026-10-16T12:00:00Z'));
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
-                const filename = `${screen.name}-${theme}-${locale}.png`;
                 if (screen.notification) {
                     await expect(page.locator('.message')).toBeVisible();
                     await expect(page).toHaveScreenshot(filename);
