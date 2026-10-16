@@ -81,12 +81,19 @@ def bundleThriftBrowser = tasks.register('bundleThriftBrowser') {
     dependsOn compileThriftBrowser
     inputs.dir(generatedBrowserSources)
     def bundle = layout.buildDirectory.file('generated/browser-module/bindings.mjs')
+    def declarations = layout.buildDirectory.file('generated/browser-module/bindings.d.mts')
     outputs.file(bundle)
+    outputs.file(declarations)
     doLast {
         def sources = fileTree(generatedBrowserSources) { include '*.js' }.files.sort { a, b ->
             (a.name.endsWith('_types.js') ? 0 : 1) <=> (b.name.endsWith('_types.js') ? 0 : 1) ?:
                     a.name <=> b.name
-        }.collect { it.getText('UTF-8') }
+        }.collect {
+            // The factory receives Int64 explicitly; the compiler's Node-only fallback is dead
+            // code in a browser and otherwise makes Vite try to bundle CommonJS require().
+            it.getText('UTF-8').replace('\r\n', '\n')
+                    .replace("if (typeof Int64 === 'undefined' && typeof require === 'function') {\n  const Int64 = require('node-int64');\n}", '')
+        }
         def symbols = sources.collectMany { source ->
             (source =~ /(?m)^([A-Za-z_][A-Za-z0-9_]*) = /).collect { it[1] }
         }.unique().sort()
@@ -96,6 +103,19 @@ def bundleThriftBrowser = tasks.register('bundleThriftBrowser') {
                 'export function createBindings(Thrift, Int64) {\n' +
                 'let ' + symbols.join(', ') + ';\n' + sources.join('\n') +
                 '\nreturn { ' + symbols.join(', ') + ' };\n}\n', 'UTF-8')
+        def types = fileTree(generatedBrowserSources) { include '*.d.ts' }.files.sort().collect {
+            it.getText('UTF-8').replaceAll(/(?m)^import .*;\r?\n/, '')
+                    .replaceAll(/(?m)^type uuid = string;\r?\n/, '')
+        }.join('\n')
+        def exports = (types =~ /export declare (?:class|enum) (\w+)/).collect { it[1] }.unique().sort()
+        declarations.get().asFile.setText('''// Generated from the same Thrift contracts as the runtime bindings.
+import type Int64Object from 'node-int64';
+type Int64 = Int64Object | number | string;
+type uuid = string;
+declare namespace Thrift { interface TJSONProtocol {} class TException extends Error {} }
+''' + types +
+                '\nexport declare function createBindings(runtime: unknown, int64: unknown): {\n' +
+                exports.collect { "    ${it}: typeof ${it};" }.join('\n') + '\n};\n', 'UTF-8')
     }
 }
 

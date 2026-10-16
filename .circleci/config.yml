@@ -15,12 +15,15 @@ jobs:
       - restore_cache:
           keys:
             - v1-thrift-browser-0.25.0
+      - restore_cache:
+          keys:
+            - v1-web-ui-npm-{{ checksum "web-ui/frontend/package-lock.json" }}
       - run:
           name: Check Java and Node.js runtimes
           command: |
             java -version
             node --version
-            node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { throw new Error("RPC browser tests require Node.js 22 or newer"); }'
+            node -e 'const [major,minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 12)) { throw new Error("Web UI build requires Node.js 22.12 or newer"); }'
       - run:
           name: Prepare Apache Thrift compiler and browser runtime
           command: bash .circleci/setup-thrift.sh
@@ -40,6 +43,15 @@ jobs:
               --no-daemon --console=plain
       - store_test_results:
           path: rpc/build/test-results/browserTest
+      - save_cache:
+          key: v1-web-ui-npm-{{ checksum "web-ui/frontend/package-lock.json" }}
+          paths:
+            - ~/.npm
+      - store_test_results:
+          path: web-ui/build/test-results/frontendTest
+      - store_artifacts:
+          path: web-ui/build/reports/tests/test
+          destination: web-ui-java-tests
       - store_artifacts:
           path: rpc/build/test-results/browserTest
           destination: rpc-browser-tests

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "strict": true,
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "verbatimModuleSyntax": true,
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "types": ["vite/client", "node"],
+        "paths": {
+            "@rpc/*": ["../build/frontend-generated/*"],
+            "node-int64": ["./node_modules/@types/node-int64/index.d.ts"]
+        },
+        "skipLibCheck": false
+    },
+    "include": ["src/**/*.ts", "src/**/*.vue", "test/**/*.ts", "vite.config.ts"]
+}

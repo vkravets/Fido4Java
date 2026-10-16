@@ -9,3 +9,117 @@ dependencies {
     implementation project(':nodelist')
     runtimeOnly 'com.h2database:h2:2.5.252'
 }
+
+def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def npmExecutable = providers.gradleProperty('npmExecutable').orElse(
+        System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'npm.cmd' : 'npm')
+def thriftRuntime = providers.gradleProperty('thriftBrowserRuntime')
+        .orElse(providers.environmentVariable('THRIFT_BROWSER_RUNTIME'))
+def generated = layout.buildDirectory.dir('frontend-generated')
+def rpcBindings = project(':rpc').layout.buildDirectory.file('generated/browser-module/bindings.mjs')
+def rpcAdapter = project(':rpc').file('src/main/browser/client.mjs')
+def rpcDeclarations = project(':rpc').layout.buildDirectory.file('generated/browser-module/bindings.d.mts')
+
+def npmCi = tasks.register('npmCi', Exec) {
+    group = 'build'
+    workingDir file('frontend')
+    inputs.files('frontend/package.json', 'frontend/package-lock.json')
+    outputs.dir('frontend/node_modules')
+    doFirst {
+        def node = file(nodeExecutable.get())
+        def npmCli = new File(node.parentFile, 'node_modules/npm/bin/npm-cli.js')
+        if (node.isFile() && npmCli.isFile()) {
+            commandLine node.absolutePath, npmCli.absolutePath, 'ci', '--no-audit', '--no-fund'
+            environment 'PATH', node.parentFile.absolutePath + File.pathSeparator + System.getenv('PATH')
+        } else {
+            commandLine npmExecutable.get(),
+                    'ci', '--no-audit', '--no-fund'
+        }
+        if (providers.gradleProperty('npmCache').isPresent()) {
+            environment 'npm_config_cache', rootProject.file(providers.gradleProperty('npmCache').get()).absolutePath
+        }
+    }
+}
+
+def prepareFrontendRpc = tasks.register('prepareFrontendRpc') {
+    dependsOn ':rpc:bundleThriftBrowser', npmCi
+    inputs.file(rpcBindings)
+    inputs.file(rpcAdapter)
+    inputs.file(rpcDeclarations)
+    inputs.files(thriftRuntime.map { rootProject.file(it) }).optional()
+    outputs.dir(generated)
+    doLast {
+        if (!thriftRuntime.isPresent() || !rootProject.file(thriftRuntime.get()).isFile()) {
+            throw new GradleException('Set THRIFT_BROWSER_RUNTIME to the matching Apache Thrift lib/js/src/thrift.js.')
+        }
+        def directory = generated.get().asFile
+        directory.mkdirs()
+        copy {
+            from rpcBindings
+            from rpcAdapter
+            from rpcDeclarations
+            into directory
+        }
+        new File(directory, 'runtime.mjs').setText('''// Official Thrift browser runtime plus exact i64 JSON support.
+import Int64 from '../../frontend/node_modules/node-int64/Int64.js';
+import parse from '../../frontend/node_modules/thrift/lib/nodejs/lib/thrift/json_parse.js';
+import Int64Util from '../../frontend/node_modules/thrift/lib/nodejs/lib/thrift/int64_util.js';
+import { Buffer } from '../../frontend/node_modules/buffer/index.js';
+globalThis.Buffer ??= Buffer;
+const JSONInt64 = { parse };
+''' + rootProject.file(thriftRuntime.get()).getText('UTF-8') +
+                '\nexport { Thrift, Int64 };\n', 'UTF-8')
+        new File(directory, 'runtime.d.mts').setText('export const Thrift: unknown;\nexport const Int64: unknown;\n', 'UTF-8')
+        new File(directory, 'client.d.mts').setText('export declare function createRpcClient<T>(runtime: unknown, client: { prototype: T }, endpoint: string, timeoutMillis?: number): T;\n', 'UTF-8')
+    }
+}
+
+def buildFrontend = tasks.register('buildFrontend', Exec) {
+    group = 'build'
+    dependsOn prepareFrontendRpc
+    dependsOn 'typecheckFrontend'
+    workingDir file('frontend')
+    inputs.files(fileTree('frontend') { exclude 'node_modules/**' })
+    inputs.dir(generated)
+    outputs.dir(layout.buildDirectory.dir('frontend-dist'))
+    commandLine nodeExecutable.get(), file('frontend/node_modules/vite/bin/vite.js'), 'build'
+}
+
+tasks.named('processResources') {
+    dependsOn buildFrontend
+    from(layout.buildDirectory.dir('frontend-dist')) { into 'web-ui' }
+}
+
+def frontendTest = tasks.register('frontendTest', Exec) {
+    group = 'verification'
+    dependsOn prepareFrontendRpc
+    workingDir file('frontend')
+    inputs.files(fileTree('frontend/src'), fileTree('frontend/test'))
+    inputs.dir(generated)
+    outputs.upToDateWhen { false }
+    def report = layout.buildDirectory.file('test-results/frontendTest/results.xml')
+    outputs.file(report)
+    doFirst {
+        report.get().asFile.parentFile.mkdirs()
+        commandLine nodeExecutable.get(), '--test', '--test-reporter=spec', '--test-reporter=junit',
+                '--test-reporter-destination=stdout',
+                '--test-reporter-destination=' + report.get().asFile.absolutePath,
+                '--experimental-strip-types',
+                *fileTree('frontend/test').matching { include '*.test.ts' }.files.sort().collect { it.absolutePath }
+    }
+}
+
+tasks.named('check') { dependsOn frontendTest }
+
+tasks.named('test', Test) {
+    systemProperty 'ui.node', nodeExecutable.get()
+    systemProperty 'ui.workflow', file('frontend/test/rpc-workflow.ts').absolutePath
+    inputs.file('frontend/test/rpc-workflow.ts')
+}
+
+tasks.register('typecheckFrontend', Exec) {
+    group = 'verification'
+    dependsOn prepareFrontendRpc
+    workingDir file('frontend')
+    commandLine nodeExecutable.get(), file('frontend/node_modules/vue-tsc/bin/vue-tsc.js'), '--noEmit'
+}
