@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 const props = defineProps<{ model: NodeConfiguration; initial: boolean }>();
@@ -13,15 +14,17 @@ const aliases = computed({
 <template>
     <div class="form-grid">
         <label
-            >Основной АКА<input
+            >{{ t('Default AKA')
+            }}<input
                 v-model="model.address"
                 placeholder="1:500/100"
                 required
         /></label>
         <label
-            >Дополнительные АКА<input
+            >{{ t('Additional AKAs')
+            }}<input
                 v-model="aliases"
-                placeholder="Через пробел"
+                :placeholder="t('Space-separated')"
         /></label>
         <div
             v-if="$slots.lookup"
@@ -30,36 +33,42 @@ const aliases = computed({
             <slot name="lookup" />
         </div>
         <label
-            >Имя станции<input
+            >{{ t('Station name')
+            }}<input
                 v-model="model.system"
                 required
                 maxlength="200"
         /></label>
         <label
-            >Сисоп<input
+            >{{ t('Sysop')
+            }}<input
                 v-model="model.sysop"
                 required
                 maxlength="200"
         /></label>
         <label class="wide"
-            >Местоположение<input
+            >{{ t('Location')
+            }}<input
                 v-model="model.location"
                 maxlength="200"
         /></label>
         <label
-            >Аплинк / линк<input
+            >{{ t('Uplink / link')
+            }}<input
                 v-model="model.uplink"
                 placeholder="1:500/101"
                 required
         /></label>
         <label
-            >Сервер binkp<input
+            >{{ t('binkp server')
+            }}<input
                 v-model="model.host"
                 placeholder="binkp.example.org"
                 required
         /></label>
         <label
-            >Порт<input
+            >{{ t('Port')
+            }}<input
                 v-model.number="model.port"
                 type="number"
                 required
@@ -67,27 +76,34 @@ const aliases = computed({
                 max="65535"
         /></label>
         <label
-            >Пароль линка<input
+            >{{ t('Link password')
+            }}<input
                 v-model="model.linkPassword"
                 type="password"
                 autocomplete="new-password"
-                :placeholder="initial ? 'Или − для открытого линка' : 'Пусто — сохранить текущий'"
+                :placeholder="
+                    initial
+                        ? t('Or − for an unprotected link')
+                        : t('Leave empty to keep the current password')
+                "
         /></label>
         <label class="wide"
-            >Каталог почты<input
+            >{{ t('Mail directory')
+            }}<input
                 v-model="model.storage"
                 :readonly="!initial"
                 required
-            /><small v-if="!initial"
-                >Перенос существующего хранилища выполняется отдельно.</small
-            ></label
+            /><small v-if="!initial">{{
+                t('Existing storage must be migrated separately.')
+            }}</small></label
         >
         <label class="wide"
-            >Адрес веб-интерфейса (origin)<input
+            >{{ t('Web interface address (origin)')
+            }}<input
                 v-model="model.browserOrigin"
                 placeholder="http://localhost:9091"
                 required
-            /><small>Для удалённого доступа используйте HTTPS через обратный прокси.</small></label
+            /><small>{{ t('Use HTTPS through a reverse proxy for remote access.') }}</small></label
         >
         <label class="wide">
             <span
@@ -95,25 +111,26 @@ const aliases = computed({
                     v-model="model.preserveReceivedFiles"
                     type="checkbox"
                 />
-                Сохранять оригиналы полученных файлов</span
+                {{ t('Keep original received files') }}</span
             >
-            <small
-                >Включено по умолчанию. Оригиналы PKT, бандлов, TIC и других принятых файлов
-                сохраняются в архиве без автоматической очистки. Изменение применяется после
-                перезапуска.</small
-            >
+            <small>{{
+                t(
+                    'Enabled by default. Original PKT files, bundles, TIC files and other received files are archived without automatic cleanup. Changes apply after restarting.'
+                )
+            }}</small>
         </label>
         <label class="wide"
-            >HTTP-источник нодлиста<input
+            >{{ t('Nodelist HTTP source')
+            }}<input
                 v-model="model.nodeListUrl"
                 type="url"
-            /><small
-                >Можно указать своё зеркало. Загрузка выполняется по кнопке, не при каждом
-                старте.</small
-            ></label
+            /><small>{{
+                t('You can use your own mirror. Downloads start on request, not at every startup.')
+            }}</small></label
         >
         <label
-            >Кодировка нодлиста<input
+            >{{ t('Nodelist encoding')
+            }}<input
                 v-model="model.charset"
                 required
                 placeholder="CP866"

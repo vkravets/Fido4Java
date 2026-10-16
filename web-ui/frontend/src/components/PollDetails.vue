@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { nextTick, ref, watch } from 'vue';
 import { activePoll, pollState, pollTime } from '../polling.ts';
 import type { PollInfo, QueueItem } from '@rpc/bindings.mjs';
@@ -26,17 +27,17 @@ watch(
 <template>
     <section class="card">
         <div class="section-title">
-            <h2>Полл {{ attempt.address }}</h2>
+            <h2>{{ t('Poll {address}', { address: attempt.address }) }}</h2>
             <span class="badge">{{ pollState(attempt.state) }}</span>
         </div>
         <dl>
-            <dt>Идентификатор</dt>
+            <dt>{{ t('ID') }}</dt>
             <dd class="mono">{{ attempt.id }}</dd>
-            <dt>Источник</dt>
-            <dd>{{ attempt.source === 'SCHEDULED' ? 'Планировщик' : 'Администратор' }}</dd>
-            <dt>Начало</dt>
+            <dt>{{ t('Source') }}</dt>
+            <dd>{{ attempt.source === 'SCHEDULED' ? t('Scheduler') : t('Administrator') }}</dd>
+            <dt>{{ t('Started') }}</dt>
             <dd>{{ pollTime(attempt.started) }}</dd>
-            <dt>Завершение</dt>
+            <dt>{{ t('Finished') }}</dt>
             <dd>{{ pollTime(attempt.finished) }}</dd>
         </dl>
         <p v-if="attempt.detail">{{ attempt.detail }}</p>
@@ -47,7 +48,7 @@ watch(
                 :disabled="busy"
                 @click="emit('cancel', attempt.id)"
             >
-                Отменить полл
+                {{ t('Cancel poll') }}
             </button>
             <button
                 v-else
@@ -55,47 +56,50 @@ watch(
                 :disabled="busy"
                 @click="emit('retry', attempt.address)"
             >
-                Повторить полл
+                {{ t('Retry poll') }}
             </button>
         </div>
-        <h3>Журнал попытки</h3>
+        <h3>{{ t('Attempt log') }}</h3>
         <label class="inline-option"
             ><input
                 v-model="follow"
                 type="checkbox"
             />
-            Прокручивать к новым событиям</label
+            {{ t('Follow new events') }}</label
         >
         <p
             v-if="clipped"
             class="muted"
         >
-            В браузере показаны последние 1000 загруженных строк.
+            {{ t('The browser shows the latest 1000 loaded lines.') }}
         </p>
         <pre
             ref="output"
             class="poll-log"
             tabindex="0"
-            aria-label="Журнал выбранного полла"
-            >{{ lines.length ? lines.join('\n') : 'Событий пока нет.' }}</pre>
+            :aria-label="t('Selected poll log')"
+            >{{ lines.length ? lines.join('\n') : t('No events yet.') }}</pre>
         <button
             v-if="more"
             class="secondary"
             :disabled="busy"
             @click="emit('more')"
         >
-            Загрузить следующие события
+            {{ t('Load more events') }}
         </button>
-        <h3>Подготовленные файлы для линка</h3>
+        <h3>{{ t('Prepared files for this link') }}</h3>
         <p class="muted">
-            До 50 файлов в исходящем спуле. Это отдельная очередь от заданий подключения; новые
-            письма могут ещё ожидать упаковки.
+            {{
+                t(
+                    'Up to 50 files in the outbound spool. This queue is separate from connection jobs; new messages may still be waiting to be packed.'
+                )
+            }}
         </p>
         <p
             v-if="!files.length"
             class="muted"
         >
-            Подготовленных файлов нет.
+            {{ t('No prepared files.') }}
         </p>
         <ul
             v-else
@@ -106,7 +110,9 @@ watch(
                 :key="`${file.kind}:${file.name}`"
             >
                 <span class="mono">{{ file.name }}</span
-                ><span>{{ file.bytes }} байт · {{ file.kind }}</span>
+                ><span>{{
+                    t('{bytes} bytes · {kind}', { bytes: String(file.bytes), kind: file.kind })
+                }}</span>
             </li>
         </ul>
     </section>

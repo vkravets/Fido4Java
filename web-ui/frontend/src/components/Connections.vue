@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { api } from '../api.ts';
 import { createPolling, startPollRefresh } from '../polling.ts';
@@ -38,7 +39,7 @@ onMounted(() => {
         },
         (failure) => {
             const reason = failure as { message?: string; code?: string };
-            refreshError.value = reason?.message || 'Не удалось обновить соединения.';
+            refreshError.value = reason?.message || t('Could not refresh connections.');
             if (['UNAUTHORIZED', 'SESSION_EXPIRED'].includes(reason?.code || '')) {
                 void props.state.run(async () => {
                     throw failure;
@@ -60,13 +61,13 @@ async function refresh() {
 function start(address: string) {
     props.state.run(async () => {
         await model.start(address);
-        props.state.notice.value = 'Полл запрошен.';
+        props.state.notice.value = t('Poll requested.');
     });
 }
 function cancel(id: string) {
     props.state.run(async () => {
         await model.cancel(id);
-        props.state.notice.value = 'Отмена запрошена. Исходящие файлы сохраняются.';
+        props.state.notice.value = t('Cancellation requested. Outbound files are retained.');
     });
 }
 function select(attempt: PollInfo) {
@@ -76,9 +77,9 @@ function select(attempt: PollInfo) {
 
 <template>
     <div class="page-heading">
-        <span class="eyebrow">УПРАВЛЕНИЕ НОДОЙ</span>
-        <h1>Соединения</h1>
-        <p>Исходящие поллы: общая очередь планировщика и ручных запусков.</p>
+        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
+        <h1>{{ t('Connections') }}</h1>
+        <p>{{ t('Outgoing polls: one queue for scheduled and manual attempts.') }}</p>
     </div>
     <div class="actions refresh-controls">
         <button
@@ -86,14 +87,14 @@ function select(attempt: PollInfo) {
             :disabled="state.busy.value || refreshing"
             @click="state.run(refresh)"
         >
-            Обновить
+            {{ t('Refresh') }}
         </button>
         <label class="inline-option"
             ><input
                 v-model="automatic"
                 type="checkbox"
             />
-            Автообновление каждые 2 секунды</label
+            {{ t('Refresh automatically every 2 seconds') }}</label
         >
     </div>
     <NotificationBanner
@@ -104,15 +105,16 @@ function select(attempt: PollInfo) {
         v-if="!loaded"
         class="muted"
     >
-        Загружаем очередь соединений…
+        {{ t('Loading the connection queue…') }}
     </p>
     <form
         class="card"
         @submit.prevent="start(peer)"
     >
-        <h2>Ручной полл</h2>
+        <h2>{{ t('Manual poll') }}</h2>
         <label
-            >Настроенный линк<select
+            >{{ t('Configured link')
+            }}<select
                 v-model="peer"
                 required
                 :disabled="state.busy.value || !links.length"
@@ -130,23 +132,25 @@ function select(attempt: PollInfo) {
             v-if="loaded && !links.length"
             class="muted"
         >
-            Сначала настройте линк станции.
+            {{ t('Configure a station link first.') }}
         </p>
         <button
             class="primary"
             :disabled="state.busy.value || !peer"
         >
-            Полл сейчас
+            {{ t('Poll now') }}
         </button>
-        <p class="muted">Для линка с активной попыткой будет выбрано существующее задание.</p>
+        <p class="muted">
+            {{ t('If the link already has an active attempt, the existing job will be selected.') }}
+        </p>
     </form>
     <section class="card">
-        <h2>Активные и ожидающие · {{ queue.length }}</h2>
+        <h2>{{ t('Active and queued · {count}', { count: queue.length }) }}</h2>
         <p
             v-if="loaded && !queue.length"
             class="muted"
         >
-            Очередь пуста.
+            {{ t('The queue is empty.') }}
         </p>
         <PollAttempts
             v-if="queue.length"
@@ -171,12 +175,12 @@ function select(attempt: PollInfo) {
         @more="state.run(model.readSelected)"
     />
     <section class="card">
-        <h2>История попыток</h2>
+        <h2>{{ t('Attempt history') }}</h2>
         <p
             v-if="loaded && !history.length"
             class="muted"
         >
-            Попыток на этой странице нет.
+            {{ t('No attempts on this page.') }}
         </p>
         <PollAttempts
             v-if="history.length"
@@ -194,7 +198,7 @@ function select(attempt: PollInfo) {
                 :disabled="state.busy.value"
                 @click="state.run(model.newest)"
             >
-                К новым попыткам
+                {{ t('Latest attempts') }}
             </button>
             <button
                 v-if="hasOlder"
@@ -202,7 +206,7 @@ function select(attempt: PollInfo) {
                 :disabled="state.busy.value"
                 @click="state.run(model.older)"
             >
-                Более ранние
+                {{ t('Older attempts') }}
             </button>
         </footer>
     </section>

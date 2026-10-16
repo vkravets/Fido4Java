@@ -1,3 +1,4 @@
+import { initializeLocale, t } from './i18n.ts';
 import { reactive, ref } from 'vue';
 import { api, bindings, loginSession } from './api.ts';
 import { credentialJson, publicKeyOptions } from './webauthn.ts';
@@ -7,6 +8,7 @@ export type Theme = 'light' | 'dark';
 export type AppState = ReturnType<typeof createState>;
 
 export function createState() {
+    initializeLocale();
     const profile = ref<UserProfile | null>(null);
     const session = ref('');
     const busy = ref(false);
@@ -42,7 +44,7 @@ export function createState() {
             return await operation();
         } catch (failure) {
             const reason = failure as { message?: string; code?: string } | null;
-            error.value = reason?.message || 'Не удалось выполнить запрос. Попробуйте снова.';
+            error.value = reason?.message || t('The request failed. Please try again.');
             if (reason?.code === 'UNAUTHORIZED' || reason?.code === 'SESSION_EXPIRED') {
                 session.value = '';
                 profile.value = null;
@@ -88,13 +90,13 @@ export function createState() {
 
     async function passkeyLogin() {
         if (!window.isSecureContext || !navigator.credentials) {
-            throw new Error('Passkey требует HTTPS или localhost и совместимый браузер.');
+            throw new Error(t('Passkeys require HTTPS or localhost and a compatible browser.'));
         }
         const request = await api.auth.beginPasskeyLogin();
         const credential = await navigator.credentials.get({
             publicKey: publicKeyOptions<PublicKeyCredentialRequestOptions>(request.optionsJson)
         });
-        if (!(credential instanceof PublicKeyCredential)) throw new Error('Вход отменён.');
+        if (!(credential instanceof PublicKeyCredential)) throw new Error(t('Sign-in cancelled.'));
         await enter(
             await api.auth.finishPasskeyLogin(request.requestId, credentialJson(credential))
         );

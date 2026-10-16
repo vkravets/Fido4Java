@@ -166,6 +166,11 @@ input[type='checkbox'] {
 .topbar-actions {
     font-size: 13px;
 }
+.language-selector {
+    width: auto;
+    max-width: 140px;
+    padding: 8px;
+}
 .icon-button {
     font-size: 22px;
     padding: 5px 12px;

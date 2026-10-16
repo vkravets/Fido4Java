@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { t } from '../i18n.ts';
+import { computed, ref } from 'vue';
 import { api } from '../api.ts';
 import SecuritySettings from './SecuritySettings.vue';
 import type { AppState } from '../state.ts';
@@ -11,7 +12,7 @@ function preferences(theme: Theme, aka: string) {
     props.state.run(async () => {
         await api.profile.savePreferences(props.state.session.value, theme, aka);
         await props.state.refreshProfile();
-        props.state.notice.value = 'Настройки сохранены.';
+        props.state.notice.value = t('Settings saved.');
     });
 }
 function requestAka() {
@@ -19,33 +20,37 @@ function requestAka() {
         await api.profile.requestAka(props.state.session.value, requested.value);
         requested.value = '';
         await props.state.refreshProfile();
-        props.state.notice.value = 'Заявка на АКА отправлена.';
+        props.state.notice.value = t('AKA request submitted.');
     });
 }
-const labels = { PENDING: 'На проверке', APPROVED: 'Подтверждён', REJECTED: 'Отклонён' };
+const labels = computed(() => ({
+    PENDING: t('Pending review'),
+    APPROVED: t('Approved'),
+    REJECTED: t('Rejected')
+}));
 const themes: Theme[] = ['light', 'dark'];
 function claimLabel(state: string): string {
-    return labels[state as keyof typeof labels] ?? state;
+    return labels.value[state as keyof typeof labels.value] ?? state;
 }
 </script>
 
 <template>
     <template v-if="state.profile.value">
         <div class="page-heading">
-            <span class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</span>
-            <h1>Настройки</h1>
-            <p>Ваш аккаунт, адреса и безопасность.</p>
+            <span class="eyebrow">{{ t('MY ACCOUNT') }}</span>
+            <h1>{{ t('Settings') }}</h1>
+            <p>{{ t('Your account, addresses and security.') }}</p>
         </div>
         <nav
             class="tabs"
-            aria-label="Личные настройки"
+            :aria-label="t('Personal settings')"
         >
             <button
                 v-for="item in [
-                    ['profile', 'Профиль'],
-                    ['aka', 'Мои АКА'],
-                    ['security', 'Безопасность'],
-                    ['theme', 'Внешний вид']
+                    ['profile', t('Profile')],
+                    ['aka', t('My AKAs')],
+                    ['security', t('Security')],
+                    ['theme', t('Appearance')]
                 ]"
                 :key="item[0]"
                 :class="{ selected: tab === item[0] }"
@@ -58,25 +63,26 @@ function claimLabel(state: string): string {
             v-if="tab === 'profile'"
             class="card"
         >
-            <h2>Профиль</h2>
+            <h2>{{ t('Profile') }}</h2>
             <dl>
-                <dt>Логин</dt>
+                <dt>{{ t('Username') }}</dt>
                 <dd>{{ state.profile.value.login }}</dd>
-                <dt>Доступ</dt>
-                <dd>{{ state.profile.value.role === 'ADMIN' ? 'Администратор' : 'Поинт' }}</dd>
-                <dt>Основной АКА</dt>
-                <dd>{{ state.profile.value.defaultAka || 'Не выбран' }}</dd>
+                <dt>{{ t('Access') }}</dt>
+                <dd>
+                    {{ state.profile.value.role === 'ADMIN' ? t('Administrator') : t('Point') }}
+                </dd>
+                <dt>{{ t('Default AKA') }}</dt>
+                <dd>{{ state.profile.value.defaultAka || t('Not selected') }}</dd>
             </dl>
-            <p class="hint">Для каждого адреса поинта требуется одобрение администратора.</p>
+            <p class="hint">{{ t('Each point address requires administrator approval.') }}</p>
         </section>
         <section
             v-if="tab === 'aka'"
             class="card"
         >
-            <h2>Мои адреса</h2>
+            <h2>{{ t('My addresses') }}</h2>
             <p>
-                Выберите подтверждённый АКА по умолчанию. Выбор будет использоваться будущим
-                почтовым ридером.
+                {{ t('Choose an approved default AKA for the future mail reader.') }}
             </p>
             <div class="aka-list">
                 <label
@@ -90,7 +96,7 @@ function claimLabel(state: string): string {
                         :disabled="state.busy.value"
                         @change="preferences(state.theme.value, aka)"
                     /><span>{{ aka }}</span
-                    ><span class="badge">Доступен</span></label
+                    ><span class="badge">{{ t('Available') }}</span></label
                 >
             </div>
             <ul class="rows">
@@ -111,7 +117,8 @@ function claimLabel(state: string): string {
                 @submit.prevent="requestAka"
             >
                 <label
-                    >Добавить АКА поинта<input
+                    >{{ t('Add a point AKA')
+                    }}<input
                         v-model="requested"
                         required
                         placeholder="1:500/100.1" /></label
@@ -119,7 +126,7 @@ function claimLabel(state: string): string {
                     class="secondary"
                     :disabled="state.busy.value"
                 >
-                    Отправить заявку
+                    {{ t('Submit request') }}
                 </button>
             </form>
         </section>
@@ -131,8 +138,8 @@ function claimLabel(state: string): string {
             v-if="tab === 'theme'"
             class="card"
         >
-            <h2>Внешний вид</h2>
-            <p>Выбранная тема сохраняется в вашем профиле.</p>
+            <h2>{{ t('Appearance') }}</h2>
+            <p>{{ t('Your selected theme is saved in your profile.') }}</p>
             <div class="theme-options">
                 <button
                     v-for="theme in themes"
@@ -149,7 +156,7 @@ function claimLabel(state: string): string {
                         <span class="preview-header"></span>
                         <span class="preview-sidebar"></span>
                         <span class="preview-sections"><i></i><i></i></span> </span
-                    >{{ theme === 'light' ? 'Светлая · Дневная станция' : 'Тёмная · Ночная смена' }}
+                    >{{ theme === 'light' ? t('Light · Day station') : t('Dark · Night shift') }}
                 </button>
             </div>
         </section>

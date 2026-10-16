@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { ref } from 'vue';
 import { api } from '../api.ts';
 import type { AppState } from '../state.ts';
@@ -17,7 +18,7 @@ function submit() {
             password.value = '';
             return;
         }
-        if (password.value !== confirmation.value) throw new Error('Пароли не совпадают.');
+        if (password.value !== confirmation.value) throw new Error(t('Passwords do not match.'));
         await api.profile.register(login.value, password.value, address.value);
         password.value = confirmation.value = '';
         pending.value = true;
@@ -28,23 +29,28 @@ function submit() {
 <template>
     <main class="auth-layout">
         <section class="intro">
-            <span class="eyebrow">FIDONET · СВЯЗЬ БЕЗ ГРАНИЦ</span>
-            <h1>Ваша почта.<br />Ваша станция.</h1>
-            <p>Один интерфейс для личной почты, эхоконференций и вашей ноды.</p>
+            <span class="eyebrow">{{ t('FIDONET · CONNECTIONS WITHOUT BORDERS') }}</span>
+            <h1>{{ t('Your mail.') }}<br />{{ t('Your station.') }}</h1>
+            <p>{{ t('One interface for personal mail, echomail and your node.') }}</p>
             <div
                 class="network-art"
                 aria-hidden="true"
             >
                 <i></i><i></i><i></i><i></i><b>JFtn</b>
             </div>
-            <small>Netmail и эхоконференции появятся на следующем этапе.</small>
+            <small>{{ t('Netmail and echomail are coming in the next stage.') }}</small>
         </section>
         <section class="card auth-card">
             <template v-if="pending">
-                <span class="badge">Заявка отправлена</span>
-                <h2>Осталось подтверждение</h2>
+                <span class="badge">{{ t('Request submitted') }}</span>
+                <h2>{{ t('Awaiting confirmation') }}</h2>
                 <p>
-                    Администратор проверит аккаунт и адрес {{ address }}. До одобрения вход закрыт.
+                    {{
+                        t(
+                            'The administrator will review your account and address {address}. Sign-in is unavailable until approval.',
+                            { address }
+                        )
+                    }}
                 </p>
                 <button
                     @click="
@@ -52,22 +58,23 @@ function submit() {
                         mode = 'login';
                     "
                 >
-                    Вернуться ко входу
+                    {{ t('Back to sign-in') }}
                 </button>
             </template>
             <template v-else>
-                <span class="eyebrow">ДОБРО ПОЖАЛОВАТЬ</span>
-                <h2>{{ mode === 'login' ? 'Вход в JFtn' : 'Создать аккаунт' }}</h2>
+                <span class="eyebrow">{{ t('WELCOME') }}</span>
+                <h2>{{ mode === 'login' ? t('Sign in to JFtn') : t('Create an account') }}</h2>
                 <p>
                     {{
                         mode === 'login'
-                            ? 'Используйте пароль аккаунта или passkey.'
-                            : 'Укажите АКА поинта. Заявку подтвердит администратор.'
+                            ? t('Use your account password or a passkey.')
+                            : t('Enter a point AKA. An administrator will review your request.')
                     }}
                 </p>
                 <form @submit.prevent="submit">
                     <label
-                        >Логин<input
+                        >{{ t('Username')
+                        }}<input
                             v-model="login"
                             required
                             maxlength="100"
@@ -75,7 +82,8 @@ function submit() {
                             pattern="[A-Za-z0-9_.@-]+"
                     /></label>
                     <label
-                        >Пароль<input
+                        >{{ t('Password')
+                        }}<input
                             v-model="password"
                             required
                             :minlength="mode === 'register' ? 12 : 1"
@@ -85,7 +93,8 @@ function submit() {
                     /></label>
                     <template v-if="mode === 'register'">
                         <label
-                            >Повторите пароль<input
+                            >{{ t('Confirm password')
+                            }}<input
                                 v-model="confirmation"
                                 required
                                 type="password"
@@ -93,7 +102,8 @@ function submit() {
                                 minlength="12"
                         /></label>
                         <label
-                            >Адрес поинта<input
+                            >{{ t('Point address')
+                            }}<input
                                 v-model="address"
                                 required
                                 placeholder="1:500/100.1"
@@ -104,7 +114,7 @@ function submit() {
                         class="primary"
                         :disabled="state.busy.value"
                     >
-                        {{ mode === 'login' ? 'Войти' : 'Отправить заявку' }} <span>→</span>
+                        {{ mode === 'login' ? t('Sign in') : t('Submit request') }} <span>→</span>
                     </button>
                 </form>
                 <button
@@ -113,7 +123,7 @@ function submit() {
                     :disabled="state.busy.value"
                     @click="state.run(state.passkeyLogin)"
                 >
-                    Войти с passkey
+                    {{ t('Sign in with a passkey') }}
                 </button>
                 <p
                     v-if="state.registration.value"
@@ -125,8 +135,8 @@ function submit() {
                     >
                         {{
                             mode === 'login'
-                                ? 'Нет аккаунта? Зарегистрироваться'
-                                : 'Уже есть аккаунт? Войти'
+                                ? t('No account? Register')
+                                : t('Already have an account? Sign in')
                         }}
                     </button>
                 </p>

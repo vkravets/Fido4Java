@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from './i18n.ts';
 import { onMounted, ref } from 'vue';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
@@ -10,6 +11,7 @@ import Sidebar from './components/Sidebar.vue';
 import RobotAccess from './components/RobotAccess.vue';
 import Connections from './components/Connections.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
+import LanguageSelector from './components/LanguageSelector.vue';
 const state = createState();
 const page = ref('settings');
 onMounted(state.start);
@@ -24,13 +26,13 @@ function logout() {
         v-if="state.busy.value"
         class="progress"
         role="status"
-        aria-label="Выполняется запрос"
+        :aria-label="t('Request in progress')"
     ></div>
     <header class="topbar">
         <a
             href="/"
             class="brand"
-            aria-label="JFtn, главная"
+            :aria-label="t('JFtn, home')"
             ><img
                 class="brand-mark"
                 src="/jftn.svg"
@@ -38,13 +40,14 @@ function logout() {
             />JFtn<span class="version">NODE / WEB</span></a
         >
         <div class="topbar-actions">
+            <LanguageSelector />
             <span
                 v-if="state.profile.value"
                 class="user-name"
                 >{{ state.profile.value.login }}</span
             ><button
                 class="icon-button"
-                :aria-label="state.theme.value === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
+                :aria-label="state.theme.value === 'dark' ? t('Light theme') : t('Dark theme')"
                 :disabled="state.busy.value"
                 @click="state.run(state.toggleTheme)"
             >
@@ -55,7 +58,7 @@ function logout() {
                 :disabled="state.busy.value"
                 @click="logout"
             >
-                Выйти
+                {{ t('Sign out') }}
             </button>
         </div>
     </header>
@@ -63,7 +66,7 @@ function logout() {
         <section
             id="notifications"
             class="messages"
-            aria-label="Уведомления"
+            :aria-label="t('Notifications')"
         ></section>
     </Teleport>
     <NotificationBanner
@@ -76,13 +79,13 @@ function logout() {
         class="loading"
     >
         <h1>JFtn</h1>
-        <p>Подключаемся к станции…</p>
+        <p>{{ t('Connecting to the station…') }}</p>
         <button
             v-if="state.error.value"
             class="secondary"
             @click="state.start"
         >
-            Повторить
+            {{ t('Retry') }}
         </button>
     </main>
     <SetupWizard

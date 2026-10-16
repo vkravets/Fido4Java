@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { onMounted, ref } from 'vue';
 import { api } from '../api.ts';
 import type { PasskeyInfo } from '@rpc/bindings.mjs';
@@ -19,11 +20,11 @@ onMounted(() => props.state.run(refresh));
 
 function changePassword() {
     props.state.run(async () => {
-        if (password.value !== confirmation.value) throw new Error('Пароли не совпадают.');
+        if (password.value !== confirmation.value) throw new Error(t('Passwords do not match.'));
         await api.auth.changePassword(props.state.session.value, current.value, password.value);
         current.value = password.value = confirmation.value = '';
         await props.state.logout();
-        props.state.notice.value = 'Пароль изменён. Войдите снова.';
+        props.state.notice.value = t('Password changed. Sign in again.');
     });
 }
 
@@ -40,7 +41,7 @@ function addPasskey() {
             publicKey: publicKeyOptions<PublicKeyCredentialCreationOptions>(request.optionsJson)
         });
         if (!(credential instanceof PublicKeyCredential))
-            throw new Error('Добавление passkey отменено.');
+            throw new Error(t('Passkey registration cancelled.'));
         await api.auth.finishPasskeyRegistration(
             session,
             request.requestId,
@@ -48,13 +49,13 @@ function addPasskey() {
         );
         label.value = '';
         await refresh();
-        props.state.notice.value = 'Passkey добавлен.';
+        props.state.notice.value = t('Passkey added.');
     });
 }
 
 function removeKey(id: string) {
     props.state.run(async () => {
-        if (!keyPassword.value) throw new Error('Подтвердите удаление текущим паролем.');
+        if (!keyPassword.value) throw new Error(t('Confirm deletion with your current password.'));
         await api.auth.removePasskey(props.state.session.value, keyPassword.value, id);
         keyPassword.value = '';
         await refresh();
@@ -64,21 +65,23 @@ function removeKey(id: string) {
 
 <template>
     <section class="card">
-        <h2>Пароль</h2>
-        <p>После изменения все сеансы аккаунта будут завершены.</p>
+        <h2>{{ t('Password') }}</h2>
+        <p>{{ t('Changing the password will end all account sessions.') }}</p>
         <form
             class="narrow-form"
             @submit.prevent="changePassword"
         >
             <label
-                >Текущий пароль<input
+                >{{ t('Current password')
+                }}<input
                     v-model="current"
                     type="password"
                     required
                     autocomplete="current-password"
             /></label>
             <label
-                >Новый пароль<input
+                >{{ t('New password')
+                }}<input
                     v-model="password"
                     type="password"
                     required
@@ -87,7 +90,8 @@ function removeKey(id: string) {
                     autocomplete="new-password"
             /></label>
             <label
-                >Повторите пароль<input
+                >{{ t('Confirm password')
+                }}<input
                     v-model="confirmation"
                     type="password"
                     required
@@ -98,39 +102,42 @@ function removeKey(id: string) {
                 class="primary"
                 :disabled="state.busy.value"
             >
-                Изменить пароль
+                {{ t('Change password') }}
             </button>
         </form>
     </section>
     <section class="card">
-        <h2>Passkey</h2>
-        <p>Вход по отпечатку, распознаванию лица или аппаратному ключу.</p>
+        <h2>{{ t('Passkeys') }}</h2>
+        <p>{{ t('Sign in with a fingerprint, face recognition or a security key.') }}</p>
         <p
             v-if="!state.methods.passkey || !supported"
             class="hint"
         >
-            Добавление passkey доступно при включённом WebAuthn на сервере и в браузере с HTTPS или
-            localhost.
+            {{
+                t(
+                    'Passkeys can be added when WebAuthn is enabled on the server and the browser uses HTTPS or localhost.'
+                )
+            }}
         </p>
         <ul class="rows">
             <li
                 v-for="key in keys"
                 :key="key.credentialId"
             >
-                <span>{{ key.label || 'Passkey' }}</span
+                <span>{{ key.label || t('Passkey') }}</span
                 ><button
                     class="text-button danger"
                     :disabled="state.busy.value"
                     @click="removeKey(key.credentialId)"
                 >
-                    Удалить
+                    {{ t('Delete') }}
                 </button>
             </li>
             <li
                 v-if="!keys.length"
                 class="muted"
             >
-                Passkey пока нет
+                {{ t('No passkeys yet') }}
             </li>
         </ul>
         <form
@@ -138,24 +145,26 @@ function removeKey(id: string) {
             @submit.prevent="addPasskey"
         >
             <label
-                >Текущий пароль для добавления или удаления<input
+                >{{ t('Current password to add or remove a passkey')
+                }}<input
                     v-model="keyPassword"
                     type="password"
                     required
                     autocomplete="current-password"
             /></label>
             <label
-                >Название нового ключа<input
+                >{{ t('New passkey name')
+                }}<input
                     v-model="label"
                     required
                     maxlength="100"
-                    placeholder="Например, мой ноутбук"
+                    :placeholder="t('For example, my laptop')"
             /></label>
             <button
                 class="secondary"
                 :disabled="state.busy.value || !state.methods.passkey || !supported"
             >
-                Добавить passkey
+                {{ t('Add passkey') }}
             </button>
         </form>
     </section>

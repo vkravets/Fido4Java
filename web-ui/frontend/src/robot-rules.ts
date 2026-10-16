@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import { reactive, ref } from 'vue';
 import type {
     createBindings,
@@ -48,7 +49,7 @@ export function createRobotEditor(
 
     function writable() {
         if (configuration.value?.source !== 'database') {
-            throw new Error('Правила управляются через файлы конфигурации.');
+            throw new Error(t('Rules are managed through configuration files.'));
         }
     }
 

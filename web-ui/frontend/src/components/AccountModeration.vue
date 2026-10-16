@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { onMounted, ref } from 'vue';
 import { api } from '../api.ts';
 import type { UserProfile } from '@rpc/bindings.mjs';
@@ -14,24 +15,24 @@ function decide(owner: string, address: string, approve: boolean) {
         await api.profile.decideAka(props.state.session.value, owner, address, approve);
         await refresh();
         props.state.notice.value = approve
-            ? 'Адрес подтверждён, аккаунт активирован.'
-            : 'Заявка отклонена.';
+            ? t('Address approved and account activated.')
+            : t('Request rejected.');
     });
 }
 </script>
 
 <template>
     <div class="page-heading">
-        <span class="eyebrow">УПРАВЛЕНИЕ НОДОЙ</span>
-        <h1>Аккаунты и заявки</h1>
-        <p>Проверьте право пользователя на адрес перед подтверждением.</p>
+        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
+        <h1>{{ t('Accounts and requests') }}</h1>
+        <p>{{ t('Verify that the user owns the address before approving it.') }}</p>
     </div>
     <button
         class="secondary refresh"
         :disabled="state.busy.value"
         @click="state.run(refresh)"
     >
-        Обновить
+        {{ t('Refresh') }}
     </button>
     <section
         v-for="account in accounts"
@@ -42,10 +43,10 @@ function decide(owner: string, address: string, approve: boolean) {
             <h2>{{ account.login }}</h2>
             <span class="badge">{{
                 account.role === 'ADMIN'
-                    ? 'Администратор'
+                    ? t('Administrator')
                     : account.enabled
-                      ? 'Активен'
-                      : 'Ожидает одобрения'
+                      ? t('Active')
+                      : t('Awaiting approval')
             }}</span>
         </div>
         <ul class="rows">
@@ -63,19 +64,19 @@ function decide(owner: string, address: string, approve: boolean) {
                         :disabled="state.busy.value"
                         @click="decide(account.login, claim.address, false)"
                     >
-                        Отклонить</button
+                        {{ t('Reject') }}</button
                     ><button
                         class="primary"
                         :disabled="state.busy.value"
                         @click="decide(account.login, claim.address, true)"
                     >
-                        Подтвердить
+                        {{ t('Approve') }}
                     </button>
                 </div>
                 <span
                     v-else
                     class="badge"
-                    >{{ claim.state === 'APPROVED' ? 'Подтверждён' : 'Отклонён' }}</span
+                    >{{ claim.state === 'APPROVED' ? t('Approved') : t('Rejected') }}</span
                 >
             </li>
         </ul>
@@ -83,7 +84,7 @@ function decide(owner: string, address: string, approve: boolean) {
             v-if="!account.claims.length"
             class="muted"
         >
-            Нет заявок на адреса
+            {{ t('No address requests') }}
         </p>
     </section>
 </template>
