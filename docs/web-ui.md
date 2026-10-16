@@ -69,6 +69,22 @@ the link password empty when editing preserves it. Config changes require a node
 restart. Existing storage is not moved by this form; SQL database location is not
 changed by the mail directory selection.
 
+## Mail robot access
+
+Administrators have a **Почтовые роботы** page under node management. It lists
+AreaFix, FileFix and TIC access rules with their link, area masks, enabled state
+and AreaFix rights (READ/BOTH). Create a rule for a configured link, edit its
+policy/password, disable it temporarily or delete it with confirmation. Changes
+are applied to subsequent requests without restarting the node. Existing accepted
+work is retained. Passwords are never returned to the browser; an empty password
+while editing preserves the existing secret.
+
+The default source is the mail database. With `RobotAccessSource=files`, the page
+is read-only and explains how to select database mode and explicitly import file
+rules. Point accounts have neither this navigation entry nor RPC permission to
+inspect/change rules. Technical script loading, file-area paths and directory-feed
+configuration remain in `conf.d`; see [robot access](robot-access.md).
+
 ## Nodelist lookup
 
 Setup can query the local directory or explicitly download a full nodelist from

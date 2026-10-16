@@ -43,6 +43,7 @@ test('point navigation contains mail placeholders and personal settings without 
     assert.ok(html.includes('Мои настройки'));
     assert.ok(!html.includes('УПРАВЛЕНИЕ НОДОЙ'));
     assert.ok(!html.includes('Аккаунты и заявки'));
+    assert.ok(!html.includes('Почтовые роботы'));
     assert.ok(html.includes('disabled'));
 });
 
@@ -51,4 +52,5 @@ test('administrator navigation exposes station configuration and account moderat
     assert.ok(html.includes('УПРАВЛЕНИЕ НОДОЙ'));
     assert.ok(html.includes('Аккаунты и заявки'));
     assert.ok(html.includes('Станция'));
+    assert.ok(html.includes('Почтовые роботы'));
 });

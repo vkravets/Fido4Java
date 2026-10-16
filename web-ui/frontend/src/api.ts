@@ -5,6 +5,7 @@ import type { LoginResponse } from '@rpc/bindings.mjs';
 
 export const bindings = createBindings(Thrift, Int64);
 export const api = {
+    ui: createRpcClient(Thrift, bindings.UiServiceClient, '/rpc/ui'),
     login: createRpcClient(Thrift, bindings.LoginServiceClient, '/rpc/login'),
     auth: createRpcClient(Thrift, bindings.AuthServiceClient, '/rpc/auth'),
     profile: createRpcClient(Thrift, bindings.ProfileServiceClient, '/rpc/profile'),
