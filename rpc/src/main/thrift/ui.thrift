@@ -59,6 +59,21 @@ struct PollInfo {
     3: required string state,
     4: required i64 created,
     5: required string detail
+    6: optional string source,
+    7: optional i64 started,
+    8: optional i64 finished
+}
+
+struct PollPage {
+    1: required list<PollInfo> items,
+    2: required string nextCursor,
+    3: required bool hasMore
+}
+
+struct PollLogPage {
+    1: required list<string> lines,
+    2: required i64 nextOffset,
+    3: required bool hasMore
 }
 
 struct QueueItem {
@@ -121,6 +136,10 @@ service UiService {
     void processMail(1:string session) throws (1:UiError error),
     PollInfo poll(1:string session, 2:string peer) throws (1:UiError error),
     list<PollInfo> polls(1:string session) throws (1:UiError error),
+    list<PollInfo> pollQueue(1:string session) throws (1:UiError error),
+    PollInfo pollDetails(1:string session, 2:string id) throws (1:UiError error),
+    PollPage pollHistory(1:string session, 2:string before, 3:i32 limit) throws (1:UiError error),
+    PollLogPage pollLog(1:string session, 2:string id, 3:i64 offset, 4:i32 limit) throws (1:UiError error),
     void cancelPoll(1:string session, 2:string id) throws (1:UiError error),
     list<QueueItem> outbound(1:string session, 2:string peer, 3:i32 limit) throws (1:UiError error),
     LogPage logs(1:string session, 2:i64 offset, 3:i32 limit) throws (1:UiError error)

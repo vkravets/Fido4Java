@@ -5,10 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.SessionState;
+import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.LoginService;
@@ -81,6 +85,67 @@ class UiRpcIntegrationTest {
                                                                                      "login"));
         token = login.login(new Credential("sysop", password)).getSession_id();
         ui = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport), "ui"));
+    }
+
+    @Test
+    void exposedPagedPollHistoryAndPerAttemptLogsAcrossBothTransports() throws Exception {
+        transport.close();
+        rpc.close();
+        PollService shared = new PollService(config,
+                                             JFtnRunner.createSessionContext(config),
+                                             link -> new Client(link) {
+                                                 @Override
+                                                 public void run(SessionContext context) {
+                                                     context.setState(SessionState.STATE_WAITOK);
+                                                     context.setState(SessionState.STATE_TRANSFER);
+                                                     context.setSendingIsFinish(true);
+                                                     context.setReceivingIsFinish(true);
+                                                     context.setState(SessionState.STATE_END);
+                                                 }
+                                                 @Override
+                                                 public void stop() {
+                                                 }
+                                             });
+        try (shared) {
+            rpc = NodeRpc.open(config, base, mail, JFtnRunner.createSessionContext(config), shared);
+            transport = new TFramedTransport(new TSocket("127.0.0.1", rpc.getPort(), 5000));
+            transport.open();
+            LoginService.Client login = new LoginService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                         "login"));
+            token = login.login(new Credential("sysop", "ui-secret")).getSession_id();
+            ui = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                               "ui"));
+            String id = ui.poll(token, "1:500/101").getId();
+            long deadline = System.nanoTime() + 5_000_000_000L;
+            while (shared.get(id).isActive() && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+            try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                    + "/rpc/ui")) {
+                UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+                assertEquals("SUCCEEDED", browser.pollDetails(token, id).getState());
+                assertEquals("MANUAL", browser.pollDetails(token, id).getSource());
+                assertTrue(browser.pollDetails(token, id).getStarted() > 0);
+                assertEquals(id, browser.pollHistory(token, "", 1).getItems().get(0).getId());
+                String cursor = browser.pollHistory(token, "", 1).getNextCursor();
+                assertTrue(browser.pollHistory(token, cursor, 1).getItems().isEmpty());
+                assertEquals(1, browser.pollLog(token, id, 0, 1).getLinesSize());
+                long next = browser.pollLog(token, id, 0, 1).getNextOffset();
+                assertTrue(browser.pollLog(token, id, next, 100)
+                                  .getLines()
+                                  .stream()
+                                  .anyMatch(line -> line.contains("STATE_TRANSFER")));
+                assertTrue(browser.pollQueue(token).isEmpty());
+                assertEquals("UNAUTHORIZED",
+                             assertThrows(UiError.class,
+                                          () -> browser.pollLog("bad", id, 0, 10)).getCode());
+                assertEquals("INVALID_ARGUMENT",
+                             assertThrows(UiError.class,
+                                          () -> browser.pollHistory(token, "invalid", 10))
+                                                                                          .getCode());
+            }
+            rpc.close();
+        }
     }
 
     @Test
