@@ -203,7 +203,7 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData(), StandardCharsets.UTF_8));
+            log.debug("Command payload length: {} bytes", binkData.getData().length);
             try {
                 command.handle(nettySession,
                                sessionContext,

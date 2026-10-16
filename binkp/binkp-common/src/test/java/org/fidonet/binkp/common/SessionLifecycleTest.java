@@ -26,6 +26,27 @@ import java.util.List;
 
 public class SessionLifecycleTest {
     @Test
+    public void activityWasSessionScopedAndBrokenDiagnosticsDidNotBreakTheProtocol()
+            throws Exception {
+        SessionContext original = context();
+        List<String> events = new ArrayList<>();
+        original.setActivityListener((kind,
+                                      name,
+                                      bytes) -> events.add(kind + ":" + name + ":" + bytes));
+        original.setState(SessionState.STATE_WAITOK);
+        original.commitSentFile(file("outgoing.pkt"));
+        SessionContext copy = new SessionContext(original);
+        copy.setState(SessionState.STATE_ERR);
+        assertEquals(List.of("STATE:STATE_WAITOK:0", "SENT:outgoing.pkt:1"), events);
+        original.setActivityListener((kind, name, bytes) -> {
+            throw new IllegalStateException("diagnostics failed");
+        });
+        original.setState(SessionState.STATE_TRANSFER);
+        original.commitSentFile(file("confirmed.pkt"));
+        assertEquals(SessionState.STATE_TRANSFER, original.getState());
+    }
+
+    @Test
     public void localNrDisableOverridesPreviouslyReceivedRequest() {
         SessionContext context = context();
         context.setNRMode(true);

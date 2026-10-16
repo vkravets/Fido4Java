@@ -122,6 +122,23 @@ public class SessionContext extends HasEventBus {
     private ReceivedFileHandler receivedFileHandler;
     private SentFileHandler sentFileHandler;
     private Consumer<SessionContext> sessionClosedHandler;
+    private volatile SessionActivityListener activityListener;
+
+    public void setActivityListener(SessionActivityListener listener) {
+        activityListener = listener;
+    }
+
+    private void activity(SessionActivityListener.Kind kind, String name, long bytes) {
+        SessionActivityListener listener = activityListener;
+        if (listener == null) {
+            return;
+        }
+        try {
+            listener.record(kind, name, bytes);
+        } catch (RuntimeException ignored) {
+            // Diagnostics must not change protocol or file acknowledgement behavior.
+        }
+    }
 
     @FunctionalInterface
     public interface ReceivedFileHandler {
@@ -149,12 +166,18 @@ public class SessionContext extends HasEventBus {
         if (receivedFileHandler != null) {
             receivedFileHandler.accept(this, file);
         }
+        activity(SessionActivityListener.Kind.RECEIVED,
+                 file.getInfo().getName(),
+                 file.getInfo().getSize());
     }
 
     public void commitSentFile(FileData<InputStream> file) throws IOException {
         if (sentFileHandler != null) {
             sentFileHandler.accept(this, file);
         }
+        activity(SessionActivityListener.Kind.SENT,
+                 file.getInfo().getName(),
+                 file.getInfo().getSize());
     }
 
     public synchronized void setRemoteProtocol(int major, int minor) {
@@ -352,6 +375,7 @@ public class SessionContext extends HasEventBus {
 
     public void setState(SessionState state) {
         this.state = state;
+        activity(SessionActivityListener.Kind.STATE, state.name(), 0);
     }
 
     public SessionState getState() {

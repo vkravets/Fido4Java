@@ -264,6 +264,13 @@ timeout is 30 seconds; `PollTimeoutSeconds` defaults to 120 (1..86400) after con
 Only configured links can be dialed. Scheduler polls use this same service and
 are visible through RPC when enabled. Incoming connections are outside this queue.
 
+Each attempt has a dedicated `Tmp/polls/<id>.log` journal of protocol states and
+confirmed sent/received file metadata. Netty callbacks only enqueue bounded events;
+the poll worker flushes them. Protocol payloads, PWD values and CRAM responses are
+not journalled. `PollLogLimitBytes` defaults to 262144 per attempt (4096..16777216);
+when full, a marker is written and subsequent events are omitted. Pruning history
+also removes its journals. Readers use bounded UTF-8 pages and byte cursors.
+
 The outbound method is a snapshot of prepared disk files, including held mail;
 it does not enumerate all unexported database deliveries or every queued file
 job. Request processMail before reading it when you need freshly exported mail.
