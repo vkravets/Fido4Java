@@ -267,7 +267,7 @@ artifacts are retained for 15 days.
 `./gradlew :web-ui:playwrightVisualTest` compares 64 committed PNG test fixtures:
 administrator/point navigation, station settings, poll queue/details, and
 information/warning/error notifications. Each has light/dark and English/Ukrainian
-variants at desktop (1280×900) and mobile (375×812) sizes.
+variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
 
 Both Windows and CI run these comparisons in the same pinned Linux/amd64
 Playwright image. Docker is used on Linux; Podman is the default on Windows.
@@ -346,7 +346,6 @@ under `conf.d/` **beside that configuration file**, for example:
 ```ini
 # conf.d/50-local.conf
 ReceivedArchivePath=./mail/received
-Deletetossed=1
 ```
 
 Only `*.conf` files are loaded, in filename order. Each file replaces all values
@@ -358,7 +357,7 @@ loading has no source directory and does not load fragments.
 UI-managed fields are rejected in fragments: `Link`, `System`, `SysOp`,
 `Location`, `NodeListUrl`, `NodeListCharset`, `RpcHttpOrigin`, `UiMailStorage`,
 `PreserveReceivedFiles`. This prevents a saved UI value from being silently
-masked by a manual override. Other settings remain available through files only;
+masked by a manual override. Other advanced settings remain available through files only;
 the UI neither exposes them nor rewrites the fragments. Unknown settings already
 present in the main file continue to be preserved on UI saves.
 
@@ -367,3 +366,43 @@ Restart after manual edits. On upgrade, preserve your main configuration and
 not active manual overrides. Startup creates missing plugin files; see
 [plugin settings](plugin-configuration.md). Private `conf.d/*.conf` files and the default received archive
 are ignored by Git.
+
+### Mail links and tosser
+
+Administrators can edit links and basic tosser settings under **Station settings**.
+Point accounts and the initial setup token cannot access these RPC operations.
+Changes are written atomically to `jftn.conf` and apply after a node restart;
+current connections retain their existing configuration. Restart the process
+after an external file edit before saving from the UI.
+
+Each link has a remote address, local AKAs, optional DNS/IPv4 host (empty for incoming-only links), port and a write-only
+binkp session password. Empty password fields retain stored values; `-` removes
+the session password. PKT passwords have three explicit modes:
+
+- **Use binkp password**: no `PacketPassword` override; the session password must
+  fit the PKT format (at most eight ASCII characters).
+- **Separate PKT password**: write a `PacketPassword=address,password` override.
+  The password must match the peer's packet configuration, which can differ from
+  its binkp password. An empty field retains an existing separate password.
+- **Unprotected packets**: write `PacketPassword=address,-`; incoming packets
+  must have an empty PKT password. This does not disable validation of protected
+  packets or make a wrong packet password acceptable.
+
+Passwords are never returned by the settings RPC. Links can be added and edited;
+existing link addresses cannot be renamed or removed in the UI, because routes,
+subscriptions and queued mail must first be reviewed manually. The primary link
+remains first. Station AKAs in the main form belong to this primary link; each
+additional link can advertise its own local AKAs.
+
+The tosser form manages `TossIntervalSeconds`, `Deletetossed`, `EnforceEchoAccess`
+and `AutoCreateEcho`. Received-file archiving remains a separate station option:
+removing processed inbound files does not remove their archived originals.
+Routes, transit policies, subscriptions and plugin configuration retain their
+existing management mechanisms. If a mail setting is already overridden in
+`conf.d/*.conf`, the UI reads that effective value but refuses to save that group
+until its options are moved into `jftn.conf`; it never rewrites manual fragments.
+
+Changing a PKT password does not automatically recover quarantined `.bad` files
+or delete conflicting rejected packets. Retained bundles are retried by the
+tosser; resolve any reported quarantine conflicts separately without overwriting
+previously rejected mail.

@@ -315,16 +315,27 @@ SETTINGS_FAILED. This is not a closed enumeration; clients should display a safe
 fallback for unknown codes. Detailed backend failures remain in the node log.
 
 The browser UI implements setup, account approval, personal settings, station
-settings, robot access rules and outgoing poll management. Its mail-reader
+settings (including links and basic tosser options), robot access rules and outgoing poll management. Its mail-reader
 navigation is reserved for future work; the administrative mail APIs above are
 already available. See [browser interface](web-ui.md).
 
 Remaining API/UI work includes tracking or terminating incoming sessions,
-full-text mail search, trash, message editing, arbitrary link/routing-rule CRUD,
+full-text mail search, trash, message editing, safe link removal/renaming and routing-rule CRUD,
 directory search, file subscription administration and durable automatic poll
-retry scheduling. Station settings currently edit the primary link, preserving
-additional links. AreaFix/FileFix can be addressed through ordinary netmail sends;
+retry scheduling. Station settings support adding and editing all configured links,
+including separate PKT passwords. AreaFix/FileFix can be addressed through ordinary netmail sends;
 their authorization rules can be managed through the administrative UI/API.
+
+`SettingsService.links/saveLinks` manage the link list, preserving its primary-link
+order. Link session and packet passwords are write-only; returned fields are empty.
+An empty submitted password retains its previous value. Packet password modes are
+`INHERIT`, `SEPARATE` and `UNPROTECTED`; the last writes an explicit empty-password
+override rather than disabling PKT validation. Existing links cannot be removed
+or renamed through this API until their dependent configuration is reviewed.
+`SettingsService.tosser/saveTosser` manage the processing interval, processed-file
+cleanup, echo access checks and automatic area creation. All four methods require
+an administrator session; the setup token is not accepted. Saves require a node
+restart and share the station configuration's atomic, external-edit-aware writer.
 
 ## Database accounts and optional passkeys
 

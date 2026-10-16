@@ -2,6 +2,39 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('link password modes expose a separate PKT field without revealing stored secrets', async ({
+    page
+}) => {
+    await story(page, 'settings-maillinkform--existing');
+    await expect(page.getByLabel('Link address', { exact: true })).toHaveAttribute('readonly');
+    await expect(page.getByLabel('binkp session password')).toHaveValue('');
+    await expect(page.getByLabel('Separate PKT password')).toHaveCount(0);
+    await page.getByLabel('PKT password mode').selectOption('SEPARATE');
+    const packet = page.getByLabel('Separate PKT password');
+    await expect(packet).toHaveValue('');
+    await expect(packet).toHaveAttribute('type', 'password');
+    await expect(packet).toHaveAttribute('maxlength', '8');
+    await page.getByLabel('binkp session password').fill('session-secret');
+    await packet.fill('pktpass');
+    await expect(page.getByLabel('binkp session password')).toHaveValue('session-secret');
+    await page.getByLabel('PKT password mode').selectOption('UNPROTECTED');
+    await expect(packet).toHaveCount(0);
+    await expect(page.getByText('Incoming packets for this link', { exact: false })).toBeVisible();
+});
+
+test('tosser defaults keep echo access checks enabled', async ({ page }) => {
+    await story(page, 'settings-tosserform--defaults');
+    await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('5');
+    await expect(page.getByLabel('Check echomail permissions for each link')).toBeChecked();
+    await expect(page.getByLabel('Create unknown echo areas automatically')).not.toBeChecked();
+    await page.getByLabel('Processing interval (seconds)').fill('0');
+    expect(
+        await page
+            .getByLabel('Processing interval (seconds)')
+            .evaluate((input: HTMLInputElement) => input.validity.valid)
+    ).toBe(false);
+});
+
 test('every catalogue story renders without browser errors', async ({ page, request }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
