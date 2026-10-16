@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
@@ -92,6 +93,11 @@ public class TestTosser {
             @Override
             public String getTmpDir() {
                 return temporary.getAbsolutePath();
+            }
+
+            @Override
+            public Path getReceivedArchivePath() {
+                return temporary.toPath().resolve("received");
             }
         };
         InputStream configStream = TestTosser.class.getClassLoader()

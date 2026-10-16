@@ -44,6 +44,7 @@ import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.exception.TosserException;
 import org.fidonet.misc.PacketArchive;
 import org.fidonet.misc.PktTemp;
+import org.fidonet.misc.ReceivedFileArchive;
 import org.fidonet.misc.Zipper;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -164,6 +165,7 @@ public class Tosser extends HasEventBus {
 
     private void processInboundFile(File file, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
+        ReceivedFileArchive.preserve(config, file.toPath(), file.getName());
         if (!isPacket(file)) {
             processBundle(file, authenticatedPeer);
             deleteTossedFile(file);

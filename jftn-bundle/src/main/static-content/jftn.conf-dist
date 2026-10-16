@@ -1,5 +1,9 @@
 # Manual configuration example. Not installed as jftn.conf: first launch uses the wizard.
 System=JFtn
+PreserveReceivedFiles=true
+# Original received files are retained without automatic expiration.
+# File-only settings can be placed in conf.d/*.conf beside jftn.conf.
+# ReceivedArchivePath=./mail/received
 Location=Your Location
 
 #

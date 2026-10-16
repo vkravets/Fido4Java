@@ -111,6 +111,10 @@ small {
     color: var(--text);
     letter-spacing: -0.7px;
 }
+input[type='checkbox'] {
+    width: auto;
+    accent-color: var(--accent);
+}
 .brand-mark {
     display: grid;
     place-items: center;

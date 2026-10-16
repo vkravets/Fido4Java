@@ -89,6 +89,20 @@ const aliases = computed({
                 required
             /><small>Для удалённого доступа используйте HTTPS через обратный прокси.</small></label
         >
+        <label class="wide">
+            <span
+                ><input
+                    v-model="model.preserveReceivedFiles"
+                    type="checkbox"
+                />
+                Сохранять оригиналы полученных файлов</span
+            >
+            <small
+                >Включено по умолчанию. Оригиналы PKT, бандлов, TIC и других принятых файлов
+                сохраняются в архиве без автоматической очистки. Изменение применяется после
+                перезапуска.</small
+            >
+        </label>
         <label class="wide"
             >HTTP-источник нодлиста<input
                 v-model="model.nodeListUrl"

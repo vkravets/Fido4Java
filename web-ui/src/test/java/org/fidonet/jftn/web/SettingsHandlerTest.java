@@ -131,6 +131,27 @@ class SettingsHandlerTest {
     }
 
     @Test
+    void savedRetentionToggleWithoutChangingFileOnlyConfiguration() throws Exception {
+        Path config = directory.resolve("jftn.conf");
+        Path auth = directory.resolve("accounts");
+        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        store.save(valid().setPreserveReceivedFiles(false), auth);
+        assertFalse(store.current().isPreserveReceivedFiles());
+        Files.createDirectory(directory.resolve("conf.d"));
+        Path manual = directory.resolve("conf.d/manual.conf");
+        String text = "# Never rewritten by UI\nReceivedArchivePath=private-archive\nCustomOption=preserved\n";
+        Files.writeString(manual, text);
+        NodeConfiguration edit = store.current().setPreserveReceivedFiles(true);
+        store.save(edit, auth);
+        assertTrue(store.current().isPreserveReceivedFiles());
+        assertEquals(text, Files.readString(manual));
+        JFtnConfig loaded = new JFtnConfig();
+        loaded.load(config.toString());
+        assertEquals(Path.of("private-archive"), loaded.getReceivedArchivePath());
+        assertEquals("preserved", loaded.getValue("CustomOption"));
+    }
+
+    @Test
     void editedTheFirstLinkPreservedOtherLinksAndEnabledLocalhostPasskeys() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");

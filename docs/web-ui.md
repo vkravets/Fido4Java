@@ -94,3 +94,53 @@ Passkeys are an additional sign-in method. A new localhost setup enables WebAuth
 for `localhost`. Remote access requires an HTTPS reverse proxy and matching
 `RpcHttpOrigin`, `RpcWebAuthnOrigin` and `RpcWebAuthnRpId`. Numeric IP origins do not
 automatically enable passkeys. Existing passkey configuration is preserved.
+
+## Received originals and file-only configuration
+
+Station settings include **Save original received files**, enabled by default.
+The main configuration stores this as `PreserveReceivedFiles=true` (or `false`).
+Settings changes require restarting the node, like the other station settings.
+The running service keeps its current configuration until restart.
+
+Completed binkp transfers are copied before processing can remove them. The
+standalone tosser also preserves loose PKT/bundle inputs before importing them.
+The UI's HTTP nodelist download preserves the received response before parsing.
+Archiving errors stop the destructive processing path; the source remains for
+retry. Partial/incomplete network transfers are not archived as complete files.
+
+The default archive is `received` beside the configured inbound directory,
+usually `mail/received`. Originals are stored as `<SHA-256>/<filename>` with
+streamed copies, without loading entire files into memory. Identical bytes and
+names reuse an archive entry; different contents with the same name are kept
+separately. There is no automatic expiration or quota: remove old archives
+manually when they are no longer needed. Disabling preservation affects future
+processing and never removes existing archives. `Deletetossed` retains its legacy
+meaning for clearing the processed inbound queue; leaving it at its default `1`
+avoids repeatedly tossing retained inputs. Originals live outside that queue.
+
+The main `jftn.conf` remains managed by the UI. Create additional manual files
+under `conf.d/` **beside that configuration file**, for example:
+
+```ini
+# conf.d/50-local.conf
+ReceivedArchivePath=./mail/received
+Deletetossed=1
+```
+
+Only `*.conf` files are loaded, in filename order. Each file replaces all values
+of the same key from earlier layers; repeated entries within one file remain a
+list. Manual file-only options override the main file. Relative value paths
+continue to resolve from the node's working directory. Stream-based configuration
+loading has no source directory and does not load fragments.
+
+UI-managed fields are rejected in fragments: `Link`, `System`, `SysOp`,
+`Location`, `NodeListUrl`, `NodeListCharset`, `RpcHttpOrigin`, `UiMailStorage`,
+`PreserveReceivedFiles`. This prevents a saved UI value from being silently
+masked by a manual override. Other settings remain available through files only;
+the UI neither exposes them nor rewrites the fragments. Unknown settings already
+present in the main file continue to be preserved on UI saves.
+
+Restart after manual edits. On upgrade, preserve your main configuration and
+`conf.d/`; distribution archives contain only instructions there, not active
+manual overrides. Private `conf.d/*.conf` files and the default received archive
+are ignored by Git.

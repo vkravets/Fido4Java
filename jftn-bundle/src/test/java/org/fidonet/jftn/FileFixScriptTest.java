@@ -16,6 +16,7 @@ import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
+import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
@@ -151,6 +152,10 @@ class FileFixScriptTest {
             partial.write("hello".getBytes(StandardCharsets.UTF_8));
             partial.close();
             context.commitReceivedFile(new FileData<>(new FileInfo("NODELIST.288", 5, 1), partial));
+            assertEquals("hello",
+                         Files.readString(config.getReceivedArchivePath()
+                                                .resolve(ScriptState.digest("hello"))
+                                                .resolve("NODELIST.288")));
             assertTrue(ReceivedFile.list(config)
                                    .stream()
                                    .anyMatch(file -> file.getName().equals("NODELIST.288")
