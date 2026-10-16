@@ -29,5 +29,6 @@ include "message.thrift"
 include "statistics.thrift"
 include "ui.thrift"
 include "auth.thrift"
+include "profile.thrift"
 
 

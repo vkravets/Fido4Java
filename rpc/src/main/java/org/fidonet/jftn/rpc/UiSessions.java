@@ -1,9 +1,11 @@
 package org.fidonet.jftn.rpc;
 
+import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -87,6 +89,17 @@ public final class UiSessions implements LoginService.Iface {
 
     public synchronized void invalidate(String owner) {
         sessions.values().removeIf(session -> session.owner.equals(owner));
+    }
+
+    public void requireAdminUser(String owner) throws UiError {
+        try {
+            if (!new AccountDirectory(accounts).profile(owner).role.equals("ADMIN")) {
+                throw new UiError("FORBIDDEN",
+                                  "Node administration requires an administrator account");
+            }
+        } catch (SQLException failure) {
+            throw new UiError("FORBIDDEN", "Cannot verify administrator permissions");
+        }
     }
 
     @Override

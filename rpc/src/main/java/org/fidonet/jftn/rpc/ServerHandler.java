@@ -36,6 +36,9 @@ package org.fidonet.jftn.rpc;
  * Time: 3:27 PM
  */
 public interface ServerHandler {
+    default ProfileService.Iface getProfileHandler() {
+        return null;
+    }
     default AuthService.Iface getAuthHandler() {
         return null;
     }
