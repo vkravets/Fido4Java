@@ -119,6 +119,24 @@ must pass before publication. Setup imports into `NodeDirectoryPath` (default
 When only a point's boss is found, the result is marked as a boss record and does
 not supply a sysop identity for the point.
 
+## Component catalogue
+
+Storybook renders the actual Vue components with isolated sample data, without
+connecting to a node. The toolbar switches between light/dark themes and
+English/Ukrainian. Stories cover administrator/point navigation, notifications,
+station forms, poll states and journals, including empty and long-content cases.
+
+Prepare the generated RPC types once with `./gradlew :web-ui:prepareFrontendRpc`
+(using the same Thrift runtime settings as a normal build). Then run
+`npm run storybook` from `web-ui/frontend` and open `http://127.0.0.1:6006`.
+`./gradlew :web-ui:buildStorybook` builds a standalone catalogue under
+`web-ui/build/storybook`. CI publishes it as the `storybook` artifact; it is not
+included in the application distribution.
+Stories and Storybook configuration have their own `tsconfig.storybook.json`:
+story source is checked, while upstream toolkit declaration files are skipped
+because Storybook currently ships incompatible declarations for TypeScript 6.
+The application keeps its existing strict declaration checking.
+
 ## Accounts and access
 
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts

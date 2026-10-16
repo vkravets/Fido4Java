@@ -1,0 +1,26 @@
+.storybook-stage {
+    padding: 32px;
+    max-width: 1120px;
+    margin: auto;
+}
+.storybook-sidebar {
+    width: 248px;
+    min-height: 650px;
+    display: flex;
+}
+.storybook-sidebar > .sidebar {
+    width: 100%;
+}
+.storybook-scroll {
+    min-height: 2000px;
+    padding-top: 120px;
+}
+@media (max-width: 760px) {
+    .storybook-stage {
+        padding: 16px;
+    }
+    .storybook-sidebar {
+        width: 100%;
+        min-height: 0;
+    }
+}

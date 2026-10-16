@@ -1,0 +1,6 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": { "skipLibCheck": true },
+    "include": ["stories/**/*.ts", ".storybook/**/*.ts", "src/**/*.vue", "src/**/*.ts"],
+    "exclude": ["test"]
+}

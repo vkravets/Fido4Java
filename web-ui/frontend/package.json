@@ -9,23 +9,28 @@
     "scripts": {
         "build": "vue-tsc --noEmit && vite build",
         "typecheck": "vue-tsc --noEmit",
-        "format": "prettier --write src test *.ts *.json index.html",
-        "format:check": "prettier --check src test *.ts *.json index.html",
+        "format": "prettier --write src test stories .storybook *.ts *.json index.html",
+        "format:check": "prettier --check src test stories .storybook *.ts *.json index.html",
+        "storybook": "storybook dev --port 6006 --host 127.0.0.1 --no-open --disable-telemetry",
+        "build-storybook": "storybook build --output-dir ../build/storybook --disable-telemetry",
+        "typecheck:storybook": "vue-tsc --noEmit -p tsconfig.storybook.json",
         "test": "node --experimental-strip-types --test test/*.test.ts"
     },
     "dependencies": {
-        "vue": "3.5.44",
-        "node-int64": "0.4.0",
         "buffer": "6.0.3",
-        "thrift": "0.25.0"
+        "node-int64": "0.4.0",
+        "thrift": "0.25.0",
+        "vue": "3.5.44"
     },
     "devDependencies": {
-        "vite": "8.3.4",
-        "@vitejs/plugin-vue": "6.0.10",
-        "typescript": "6.0.3",
-        "vue-tsc": "3.3.13",
-        "prettier": "3.9.10",
+        "@storybook/vue3-vite": "10.6.2",
+        "@types/node": "26.6.5",
         "@types/node-int64": "0.4.32",
-        "@types/node": "26.6.5"
+        "@vitejs/plugin-vue": "6.0.10",
+        "prettier": "3.9.10",
+        "storybook": "10.6.2",
+        "typescript": "6.0.3",
+        "vite": "8.3.4",
+        "vue-tsc": "3.3.13"
     }
 }
