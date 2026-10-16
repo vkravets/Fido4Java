@@ -58,3 +58,53 @@ a required directory path is an error, not a reason to overwrite it.
 For upgrades, unpack into a new directory and deliberately move/copy your existing
 configuration and data after making a backup. ZIP packaging does not migrate or
 replace a running installation. See [browser setup](web-ui.md) for account setup.
+
+## CircleCI and GitHub Releases
+
+The main `build` job compiles/tests the application and seals the no-JRE ZIP with
+the source revision and SHA-256 checksums. The separate `package-distributions`
+job requires `build` and creates the runtime packages from that ZIP using
+`-PdistributionInput=<zip>`. No application Java, Thrift or Vue sources are
+recompiled in the packaging job. OpenJDK downloads are cached by the runtime lock
+checksum; restored archives are verified before use.
+
+Packaging also starts the Linux ZIP using its own launcher and bundled JRE, checks
+the embedded browser page and first-run RPC, and verifies missing directories were
+recreated. All three ZIPs, `runtime-lock.json` and `SHA256SUMS` are saved as CircleCI
+artifacts and passed to the release job through the workspace.
+
+```mermaid
+flowchart LR
+    build --> package[package-distributions]
+    build --> binkd[binkd-integration]
+    build --> hpt[hpt-integration]
+    package --> release[github-release: version tags only]
+    binkd --> release
+    hpt --> release
+```
+
+GitHub Actions is not required. To enable publication:
+
+1. Create a CircleCI context named **`github-release`**, restricted to the release
+   workflow's trusted maintainers, containing **`GH_TOKEN`**. Use a fine-grained
+   GitHub token limited to this repository with **Contents: read and write**.
+   Do not put the token in Git, Gradle properties or the archives.
+2. Ensure the CircleCI project is triggered by tag pushes. A GitHub App pipeline
+   may need its tag-push trigger enabled in project settings; workflow tag filters
+   alone do not configure the GitHub event subscription.
+3. Push an existing commit with a tag such as `v1.2.3` or `v1.2.3-rc.1`. The tag
+   determines `releaseVersion`. Branch builds create snapshot artifacts without
+   publishing a GitHub Release.
+
+The `github-release` job requires successful packaging, binkd and HPT integrations.
+It verifies artifact hashes and checks that the GitHub tag resolves to the compiled
+revision, including annotated tags. It first creates a draft, uploads/validates all
+assets, then publishes the complete release with generated notes. Tags containing
+a suffix become prereleases. An interrupted upload can resume its own draft;
+existing assets with a different hash are never overwritten. Repeating a completed
+release succeeds only if its assets match. A conflicting release requires explicit
+manual resolution.
+
+The pipeline configuration is supplied in this repository. Creating the context,
+granting its token access and enabling the tag event are CircleCI/GitHub account
+settings; they cannot be provisioned from this configuration file alone.
