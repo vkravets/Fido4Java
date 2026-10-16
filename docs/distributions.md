@@ -1,6 +1,9 @@
 # Standalone distributions
 
-JFtn uses an ordinary classpath distribution, not a fat JAR. Run:
+JFtn uses an ordinary classpath distribution, not a fat JAR. Building from source
+needs the same Java, Node/npm and Thrift compiler/browser-runtime prerequisites
+as the [full build](../README.md#developers); packaging includes the compiled UI.
+Run:
 
 ```sh
 ./gradlew :jftn-bundle:distZip
@@ -75,6 +78,10 @@ passing this snapshot to dependent jobs. A portable ZIP is also saved separately
 for download on branch/PR builds, with version `1.0-SNAPSHOT`.
 
 Both binkd and HPT integrations run after the build on every supported event.
+After both integration suites pass, the `ui` job runs functional component and
+real HTTP browser tests. Only after UI tests succeed does the separate `vrt` job
+compare visual baselines against the build's compiled Storybook artifact in the
+pinned container; see [UI tests](web-ui.md#browser-tests).
 Only tag pushes additionally run `package` and `publish`. The tag determines the
 release version; `ci/build.sh` strictly validates `vMAJOR.MINOR.PATCH` with an
 optional prerelease suffix before building.
@@ -84,15 +91,18 @@ flowchart LR
     event[Push branch / PR / version tag] --> build[Build and test]
     build --> binkd[binkd integration]
     build --> hpt[HPT integration]
-    binkd --> package[Package and smoke test ZIPs: tags only]
-    hpt --> package
+    binkd --> ui[UI browser tests]
+    hpt --> ui
+    ui --> vrt[Visual regression tests]
+    vrt --> package[Package and smoke test ZIPs: tags only]
     package --> publish[Publish GitHub Release: tags only]
 ```
 
-Both integrations require the main build. Packaging waits for both integrations
-to succeed before starting. These jobs verify checksums
-and the source revision and use the compiled snapshot without rebuilding Java,
-Thrift or Vue sources. Packaging uses `-PdistributionInput=<sealed-no-jre.zip>`.
+Integrations, VRT and functional UI checks must all succeed before packaging.
+The integration and UI jobs verify the compiled snapshot's checksums and source
+revision. VRT downloads the Storybook artifact from the same workflow run and
+installs browser test dependencies inside its container. No downstream test job
+rebuilds Java, Thrift or Vue application sources. Packaging uses `-PdistributionInput=<sealed-no-jre.zip>`.
 It smoke tests the bundled Linux launcher, JRE, first-run directories and embedded
 UI before saving all three ZIPs, `runtime-lock.json` and `SHA256SUMS`.
 Thrift and locked OpenJDK downloads are cached. Intermediate workflow artifacts
@@ -119,19 +129,17 @@ version validation before any build or publication. Re-running a failed workflow
 uses the same tag; concurrency serializes runs for that tag. New branch/PR runs
 cancel older runs for the same event/reference; release runs are not cancelled.
 
-Publication requires successful packaging and both binkd/HPT integrations. The
+Publication requires successful packaging, binkd/HPT integration, VRT and UI checks. The
 publisher verifies hashes, ZIP names and that the remote GitHub tag resolves to
 the compiled revision, including annotated tags. It creates a draft first,
 uploads and verifies every asset, then publishes it with generated release notes.
 An interrupted upload can resume its own draft. Conflicting assets are never
 overwritten; a conflicting release requires manual resolution.
 
-After pushing this migration, stop building the project in CircleCI and remove
-unused release contexts/tokens there. If branch protection requires CircleCI
-checks, replace them with the GitHub Actions `build` and both `integration`
-matrix checks after the first successful run. Repository/organization settings
-are not changed automatically by committing workflow files. The workflow does
-not publish a release until a matching tag is pushed.
+Configure branch protection to require the GitHub Actions `build`, both
+`integration` matrix checks, `vrt` and `ui`. Repository/organization settings are not
+changed automatically by committing workflow files. The workflow does not publish
+a release until a matching tag is pushed.
 
 Plugin configuration is separated by service; see [plugin settings](plugin-configuration.md).
 Startup creates missing `*.conf` files, preserving existing edits. The script

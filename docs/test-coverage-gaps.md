@@ -1,6 +1,10 @@
-# Remaining source coverage gaps
+# Historical source coverage gaps (2026-10-14)
 
-Snapshot from the combined JaCoCo report, 2026-10-14. Counts include every handwritten source file.
+This inventory records the combined JaCoCo report from 2026-10-14 and the source
+modules present at that time. It is not a current task list: subsequent refactoring
+changed line numbers, and later modules are absent. Regenerate `coverageStatistics`
+and inspect its HTML/XML reports for current gaps. Counts below are preserved as
+historical measurements rather than silently presented as fresh results.
 These are unexecuted lines/branch outcomes, not a claim that each is a missing feature or impossible to test.
 See [functional scenarios and limitations](test-coverage.md) for interpretation and proposed approaches.
 Exception constructors and unused helpers are included; generated Thrift sources are excluded.

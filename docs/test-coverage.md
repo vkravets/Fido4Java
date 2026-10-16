@@ -10,8 +10,24 @@ whole feature is correct.
 
 Run `./gradlew coverageStatistics` for unit tests and real TCP tests. Add
 `-PcoverageWithBinkd` to run the Docker interoperability scenarios for both Netty
-and MINA2. On Windows use `gradlew.bat`. RPC compilation requires Thrift 0.25.0:
-add `-PthriftExecutable=/path/to/thrift` if it is not on PATH.
+and MINA2. On Windows use `gradlew.bat`. The task runs each Java module's `test`
+task, not the complete `check` lifecycle. It does not run the standalone RPC
+JavaScript tests, frontend unit tests, Storybook, Playwright or HPT integration.
+Even running those suites separately does not add their execution data to this
+aggregate; its inputs are `test.exec` and, optionally, `binkdDockerTest.exec`.
+
+Compilation/resource preparation still builds the embedded Vue assets. A clean
+checkout therefore needs Java 17+, Thrift 0.25.0, Node.js 22.12+, npm and the
+matching Thrift browser runtime. For example:
+
+```sh
+THRIFT_BROWSER_RUNTIME=/path/to/thrift/lib/js/src/thrift.js ./gradlew coverageStatistics -PthriftExecutable=/path/to/thrift
+```
+
+Alternatively pass `-PthriftBrowserRuntime=/absolute/path/to/thrift.js`. On
+PowerShell set `$env:THRIFT_BROWSER_RUNTIME` before invoking `gradlew.bat`.
+Use `build` for the ordinary Java and JavaScript/TypeScript checks, and the
+explicit integration/browser tasks for their separate results.
 
 Reports: `build/reports/coverage/unit/index.html` and `unit.xml`, or
 `build/reports/coverage/all/index.html` and `all.xml` with Docker enabled.
@@ -27,12 +43,14 @@ Docker scenarios remain optional for ordinary `build` and `test` runs.
 | FTN formats | Type-2 and extended packets; unsigned address fields; legacy zone fallback; capability words and points; packet/message truncation, field limits and terminators; charset aliases; routing lists; address identity and ordering; text wrapping. |
 | Configuration | Required options, repeated values, case/locale-independent keys, equals in values, comments, whitespace, empty entries, malformed lines, input closure, directories and area-list creation. |
 | Message/EchoList | Message addressing, malformed controls and hook edits; repeated kludges; serialization; echo-list parsing, all supported options, append/reload, duplicate areas and preservation after failed I/O. |
-| Database | Real H2 round trips, transactions and rollback, area/subscription queries, paging through multiple pages, invalid bounds, failed queries/conversion, version tracking, initialization failure/retry and baseline storage/index persistence across restart. |
-| JAM | File layout, CRCs, append/reopen, timestamps, malformed signatures/subfields, resource cleanup, unknown areas, invalid dates and truncated indexes. |
-| Tosser | ZIP to FTN packet to H2; duplicate suppression, netmail separation, packet authentication, quarantine and configured bundle deletion; corrupt bundles; safe quarantine paths. |
+| Database | Real H2 round trips, transactions and rollback, area/subscription queries, paging through multiple pages, invalid bounds, failed queries/conversion, initialization failure/retry and baseline storage/index persistence across restart. |
+| JAM and bridge | File layout, CRCs, append/readback, deletion flags, timestamps, malformed signatures/subfields and truncated indexes; SQL/editor synchronization, submission policy, receipts and recovery. The explicit HPT suite checks real external JAM/PKT interchange and cross-process locking. |
+| Tosser | ZIP/loose PKT intake, packet authentication and quarantine; netmail route/transit/Hold policy, echo access and fan-out, duplicate receipts, local submissions, outbound acknowledgement recovery and historical JAM import. |
 | Plugins/scripts | Dependency order; absent/cyclic dependencies; failed load/unload; context cleanup; command/hook registration; reload, unload retry, GC survival, manager isolation, empty/broken/missing scripts and missing/non-invocable engines. |
 | Scheduler/tools | Immediate/deferred and cron execution; cancellation and lifecycle/reload; concurrent date formatting/parsing, cache hash collisions and locale changes; file-resource closure. |
-| RPC/Runner | Actual framed multiplexed TCP calls to RPC services; port conflicts and repeated stop/start; runner startup, cleanup on failure, shutdown-hook coordination, interrupted waits and isolated link polling. |
+| RPC/Runner | Real framed TCP and HTTP calls, account/password/passkey verification, roles and moderated AKA claims, mail/draft operations, robot access, poll queue/history/journals, transport lifecycle and startup cleanup. Distribution tests check layout and launch behavior. |
+| Directory and mail scripts | Full/ZIP lists, hierarchy, CRC, endpoint interpretation, transactional catalog replacement, HTTP downloads and diff recovery; AreaFix/FileFix authorization, subscriptions, TIC delivery and directory feeds. |
+| Browser UI | TypeScript checks and unit tests run in the normal build. Opt-in Playwright tests exercise components and real HTTP setup/login/settings flows; VRT checks 64 fixed screenshot cases. CI runs integrations, then functional browser checks, then VRT, using main-build artifacts. |
 
 ## Limits and decisions still needed
 
@@ -41,21 +59,28 @@ uncovered source lines and branches is in the generated HTML/XML report.
 
 | Area | Gap and proposed approach |
 | --- | --- |
-| Unfinished functionality | `JAMEchoBase.getMessage()` and `delMessage()` have empty bodies. Tests cannot prove reading/deletion works until behavior is implemented. RPC default login returns a constant session and message handling is a stub; current tests prove routing only. Define storage/authentication behavior before adding acceptance tests. |
-| Runner process lifecycle | `JFtnRunner.main`, `System.exit` and a real JVM shutdown must be checked in a child process. The in-process startup/shutdown collaborators are tested. Use a temporary config, isolated ports and a separate JaCoCo agent/output for child-JVM tests. |
-| Long protocol timeouts and races | `FilesSender` hardcodes 300-second waits for GET/acknowledgement; transport limits include connection-count and busy timeout paths. Cancellation/resume are tested, but deadline expiry and every packet/thread ordering are not. Add a configurable timeout/clock for deterministic fault scenarios rather than wait five minutes per test. |
-| OS-level I/O failures | Disk full, failure during close/fsync, a lock held by a different process, canonical-path failures, quarantine symlinks and the TEMP environment differ by OS. Current tests cover same-process lock conflicts and actual Windows readback. Use platform-specific subprocess tests or injectable file factories; do not rely on chmod behaving the same under Windows or root in CI. |
-| Database fault injection | Secondary failures while closing after SQLException and every failure stage inside a transaction need controllable DAO/connection factories. Real-H2 happy paths, conflicts, query errors and rollback are checked; a mock-only success is not evidence for JDBC behavior. |
-| Alternative script runtime | `JythonScriptManager` needs a Python JSR-223 engine; the current runtime supplies Groovy. Decide whether Jython is supported and add its dependency/contract tests, or remove the unused manager. Missing/unsupported engine handling is tested. |
-| Dead/internal paths | `FtsMsg` is package-private, has no consumers and exposes no parsed fields. Private unused helpers such as `ADRCommand.findLink`, `EchoMgr.createArea` and `PluginManager.removePlugin` need a decision to remove or expose them. Several branches check null in constructor-initialized fields (`FTNAddr`, `Password`), empty private config lists, or private equality checks never called by HashMap for identity/null. Reflection can force those branches, but would not validate public functionality. |
-| Other reachable gaps | Some metadata/accessor combinations, malformed routing inputs and transport error branches still need tests. They remain in the report and are not classified as impossible. There is no claim of complete functional coverage or 100% branch coverage. |
+| Legacy JAM facade | `JAMEchoBase.getMessage()` and `delMessage()` still have empty bodies. The newer `JamArea` API and bridge provide the exercised read/write path; do not infer support for those legacy methods from bridge coverage. |
+| Browser mail reader | The RPC mail APIs exist, but browser netmail/echo readers are not implemented. Navigation is reserved. UI screenshots do not prove mailbox reading or composition works. |
+| Runner process lifecycle | Startup collaborators and distribution subprocess probes are tested. These are not exhaustive checks of forced termination, shutdown races or crash recovery at every persistence boundary. |
+| Long protocol timeouts and races | `FilesSender` still uses 300-second GET/acknowledgement waits. Poll deadlines are configurable and have separate tests; that does not cover every sender deadline or packet/thread ordering. Prefer controlled clocks/fault injection to five-minute tests. |
+| OS-level I/O failures | HPT tests exercise a JAM lock held by another process in Linux. Disk full, close/fsync failure, symlink/path races and behavior across Windows/Linux still need targeted fault injection. Permission-only tests are not portable to Windows or root CI. |
+| Database fault injection | Real-H2 transactions, conflicts, errors and rollback are tested. Secondary cleanup failures and interruption at every transaction/publication stage still need controlled DAO/connection factories. |
+| Alternative script runtime | `JythonScriptManager` needs a Python JSR-223 engine; the packaged runtime supplies Groovy. Python runtime compatibility is not covered by Groovy tests. |
+| Physical authenticators | Software passkey tests verify signed ceremonies and validation. Real Windows Hello, Chrome password-manager sync, mobile/security-key UX and HTTPS proxy deployments need device/browser checks. |
+| External interoperability | HPT and binkd cover the documented scenarios, not every FTN implementation or optional extension. Interactive GoldED+ compatibility has not been certified. |
+| Other reachable gaps | Regenerate the report to locate current missed paths. Refactoring and new modules have invalidated old source line numbers. There is no claim of complete functional or 100% branch coverage. |
 
-The next useful work is to agree on unfinished features and add controlled fault
-injection for timeouts/I/O, while continuing ordinary reachable-case tests from
-the report. A blanket 100% threshold would currently include dead paths and
-unfinished stubs; it should not substitute for those decisions.
+See [browser testing](web-ui.md#browser-tests),
+[HPT scenarios](tosser.md#real-hpt-interoperability-tests) and
+[binkd scenarios](../binkp/src/integrationTestShared/README.md) for commands and scope.
+Browser/VRT results are separate from the Java JaCoCo percentages. Neither a
+screenshot match nor a covered branch replaces behavior assertions.
 
-## Measured snapshot (2026-10-14)
+## Historical measured snapshot (2026-10-14)
+
+The following figures describe the earlier coverage round, not the current tree.
+Later additions include the JAM bridge, directory services, expanded RPC and UI.
+No new coverage measurement was taken for this documentation update.
 
 Full build and eight Docker scenarios passed. The final unit-report refresh also passed.
 83 new test methods were added in the coverage round; the style cleanup adds no test cases.

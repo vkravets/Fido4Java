@@ -1,36 +1,39 @@
-JFtn readme v0.1
+JFtn
+====
 
-ABOUT
+JFtn is a Java FTN node and tosser, derived from the original JFtn project.
+Source and releases: https://github.com/vkravets/Fido4Java
 
-JFtn is a ftn-tosser written in Java.
-To use JFtn you need installed JVM with at least 1.6.
-Projects web is http://sourceforge.net/projects/jftn/. Feel free to report bugs and request for features.
-Its very simple for now and can be used only for read-only system. It cant toss netmail, have bugs,
-and still under develompent.
+Use the standalone ZIP distribution. It contains separate libraries, plugins and
+editable Groovy mail scripts. Run jftn.cmd (Windows), ./jftn.ps1 (PowerShell), or
+./jftn.sh (Linux/macOS) from the unpacked installation. A no-JRE package requires
+Java 17 or newer; platform packages provide their own runtime.
 
-FEATURES
-Can store echomail in jam-base.
-Support several echo-links.
-Store areas configuration in popular fidoconfig format. So you can use it with your favorite message editor.
+The first start creates missing directories and prints a private browser setup
+URL. Open the complete URL to create the administrator and station configuration.
+For a manually configured node without UI/RPC, use jftn.conf.example, provide all
+station/link settings and disable RPC explicitly. See docs/robot-access.md.
 
-INSTALL
-To install simply copy the file jftn.jar to the desired location. Edit jftn.conf-dist to your liking and
-save it in the same directory called jftn.conf.
+The default transport is Netty. Mail is stored in SQL, with optional JAM views
+for external editors. Netmail and echomail are routed into durable outbound
+packets; binkp acknowledgements complete deliveries. AreaFix, FileFix and directory
+feeds are supplied as external scripts. The embedded browser UI supports English
+and Ukrainian, light/dark themes, account security, node settings and outgoing
+poll management. Browser mail readers are still planned.
 
-USAGE
+Keep jftn.conf, conf.d/, scripts and all databases/mail/state together in backups.
+Unpack upgrades separately and preserve operator configuration and data. Do not
+replace a running installation or assume old database schemas are auto-migrated.
 
-Starting from the command line. The first parameter must be action. Action can be:
+Documentation in the distribution:
+- README.txt: launcher and directory overview
+- docs/distributions.md: packages, upgrades and GitHub releases
+- docs/web-ui.md: setup, sign-in, settings and UI tests
+- docs/tosser.md: mail processing, routing, JAM and recovery
+- docs/plugin-configuration.md: file-only plugin options
+- docs/robot-access.md: robot rules and offline commands
+- docs/rpc-ui.md: TCP/HTTP APIs and authentication
 
-help - print help for possible command-line options
-toss - start tossing mail in inbound directory
-pull - start pulling the node via binkp.
-
-DEVELOPERS
-For now there are a few developers (see below list), but you can join for develompent anytime.
-You can always get a fresh version at GitHub: https://github.com/dtoch/jftn.git or git://github.com/dtoch/jftn.git
-
-JFtn team members:
-    * Dmitriy Tochansky - tochansky<at>gmail.com or 2:5030/1111
-    * Vladimir Kravets - vova.kravets<at>gmail.com or 2:467/70.113
-
-Feel free to contact to us!
+Original JFtn author: Dmitriy Tochansky.
+Fido4Java maintainer: Vladimir Kravets.
+See LICENSE for redistribution terms.

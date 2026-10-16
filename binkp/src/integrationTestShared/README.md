@@ -36,7 +36,7 @@ diagnostics before closing them. The `binkd.cfg` resource is a template:
 
 ## Container lifecycle
 
-1. The explicitly requested `binkdDockerTest` task loads Testcontainers 1.21.4.
+1. The explicitly requested `binkdDockerTest` task loads Testcontainers 2.0.5.
 2. Testcontainers builds the small [Dockerfile](resources/binkd/Dockerfile),
    using Debian bookworm and the pinned `binkd=1.1a-115-1` package.
 3. Each parameter case gets a fresh container, configuration and outbound file.
@@ -110,35 +110,36 @@ There is no automatic skip when Docker is missing: an explicitly requested run
 fails with Testcontainers' diagnostic instead of reporting an unexecuted test
 as successful. Each explicit invocation runs again, even with unchanged sources.
 
-## CircleCI
+## GitHub Actions
 
-The `binkd-integration` and `hpt-integration` jobs both require a successful `build`
-in the `build-and-test` workflow, then run in parallel. They use the compiled
-integration runtimes published by `build` through a CircleCI workspace. The jobs
-check the Git revision and SHA-256 checksums before running tests.
+The `integration` matrix job in `.github/workflows/ci.yml` runs `binkd` and `hpt`
+suites after a successful `build`, on Ubuntu 24.04 with Java 17 and the runner's
+Docker daemon. No remote Docker setup, Podman host override or Thrift compiler
+is needed in the integration jobs.
 
-The `binkd-integration` job uses the pinned `ubuntu-2404:2026.05.1` machine image,
-installs Java 17 and uses the VM's Docker daemon. No `setup_remote_docker`, Podman,
-WSL host override or Thrift compiler is needed for this job.
-
-The job explicitly runs `binkdDockerTest` in the Netty and MINA2 backend modules, caches Gradle
-downloads, publishes JUnit XML to the Tests tab, and stores the HTML report,
-per-case protocol/binkd logs, Gradle output and Docker diagnostics as artifacts. Reports from all backends are collected under `build/binkd-integration`, with separate backend directories. `--continue` allows the other backends to finish even if one fails.
-Diagnostics are collected even after a failed step; failure is preserved through
-`pipefail` when capturing Gradle output. Ryuk remains enabled.
+The build publishes a compiled snapshot as the `compiled-release` artifact.
+`ci/test-integration.sh` verifies its Git revision and SHA-256 checksums before
+running tests. The binkd suite runs `binkdDockerTest` for Netty and MINA2, with
+`--continue` so both backends can produce diagnostics if one fails. Reports and
+per-case logs remain under each backend's `build/reports/binkdDockerTest`, with
+JUnit XML under `build/test-results/binkdDockerTest`. The workflow uploads those
+module report/result directories as `integration-binkd-reports`, including after
+failure; there is no additional `build/binkd-integration` collection step.
+Ryuk remains enabled.
 
 `prepareCiIntegration` packages each module's compiled integration test classes,
-resources and complete ordered runtime classpath under
-`build/ci-integration/<module>/`. The HPT package also contains its Java worker
-JARs. `-PciIntegrationSnapshot` switches integration tasks to these files without
-depending on application compilation or JAR packaging tasks. Local commands keep
-their normal compile-and-test behavior unless this property is supplied. Gradle
-may still compile `buildSrc`, which contains build tooling rather than application
-classes. The workspace belongs to the current workflow; Gradle download caches
-are only an optimization and never supply the application classes being tested.
+resources and ordered runtime classpath under `build/ci-integration/<module>/`.
+The HPT snapshot also contains Java worker JARs. `-PciIntegrationSnapshot` uses
+these files without compiling application/test sources or repackaging their JARs.
+Gradle may still compile `buildSrc`, which is build tooling. Local commands retain
+their normal compile-and-test behavior unless this property is supplied.
+Download caches are an optimization; they never supply the application classes
+under test.
 
-The scenarios have passed locally with Podman. The new CircleCI job still needs
-its first actual pipeline run to verify the VM image and CI network environment.
+After both integration suites succeed, the `ui` job tests component behavior and
+the compiled browser application. A separate `vrt` job then compares the compiled
+Storybook catalogue with visual baselines. Tag-only packaging waits for
+integrations, VRT and UI checks, then packages the same tested binaries. See [distribution and release flow](../../../docs/distributions.md).
 
 ## Diagnostics and manual observation
 

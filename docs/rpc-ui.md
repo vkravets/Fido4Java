@@ -15,14 +15,17 @@ RpcSessionSeconds=3600
 RpcLogFile=./logs/jftn.log
 ```
 
-RPC is disabled by default. The first enabled startup requires explicit
-RpcUser/RpcPassword bootstrap credentials. They create the initial account only
-when the authentication database is empty; later restarts never reset its
-password from configuration. Remove RpcPassword after successful provisioning.
-The
-listener, authentication sessions and UI poll worker are owned by Runner and
-stop before MailService/database shutdown. Startup failure releases resources.
-The standalone default RPC handler no longer authenticates arbitrary users.
+RPC defaults to disabled when the setting is absent. A new full installation
+uses the [browser setup wizard](web-ui.md#initial-configuration) to create its initial
+administrator and enable HTTP access. For manual provisioning without the wizard,
+set RpcUser/RpcPassword explicitly. These credentials create an account only when
+the authentication database is empty; restarts never reset its password. Remove
+RpcPassword after successful provisioning.
+
+Runner owns the listeners and authentication sessions. The node-owned poll service
+also works without RPC. These services stop before MailService/database shutdown;
+startup failure releases resources. The standalone default RPC handler rejects
+unconfigured authentication.
 
 ## Transport and authentication
 
@@ -36,7 +39,8 @@ as the first argument of every method. `logout` invalidates it.
 Tokens contain 256 random bits, are held in memory, expire after the configured
 fixed lifetime (60..86400 seconds), and are lost on restart. At most 64 sessions
 can exist. Accounts and public passkey credentials persist in the authentication
-database; every provisioned account currently has full sysop privileges.
+database. ADMIN accounts can use node administration methods; POINT accounts
+use the scoped profile/authentication APIs described below.
 Disabling an account rejects both login methods and its existing sessions.
 Unauthenticated UI calls fail with a typed UiError; credentials and transport
 passwords are never included in link/status DTOs.
@@ -44,7 +48,8 @@ passwords are never included in link/status DTOs.
 The listener defaults to loopback and has no built-in TLS. Keep it behind a
 local client, SSH tunnel or a protected gateway when used remotely. A browser
 cannot directly open this TCP protocol. The optional HTTP/JSON listener described
-below exposes the same handlers and sessions to browsers. No frontend is included.
+below exposes the same handlers and sessions to browsers. The optional `web-ui`
+module supplies the embedded Vue/TypeScript interface in the full distribution.
 Legacy `api` ping/version remain public; the old unauthenticated `messages`
 service is disabled in the application runtime. `statistics` remains unavailable;
 use `ui.status` instead. Worker threads handle calls outside the selector loop,
@@ -108,6 +113,8 @@ Generate the browser clients with the same native compiler used for Java:
 
 - `generated/`: native ES6/Promise clients and the compiler's raw `.d.ts` output.
 - `bindings.mjs`: an ES module factory enclosing generated globals for Vue/Vite.
+- `bindings.d.mts`: combined module declarations for that factory, used by the
+  Vue/TypeScript build, including the supported i64 input types.
 - `client.mjs`: asynchronous fetch adapter with timeout, HTTP error propagation,
   independent buffers per call, and completion handling for oneway logout.
 
@@ -118,9 +125,11 @@ the Apache distribution). Configure its `JSONInt64.parse` using Thrift's
 clients. These helpers preserve signed i64 values beyond JavaScript's safe
 integer range. Use `Int64Util.fromDecimalString` for large outgoing IDs and
 `Int64Util.toDecimalString` for display; never round-trip SQL IDs through Number.
-The raw generated declarations are not a complete Vue TypeScript facade: they
-retain upstream global protocol references and require integration into the UI
-type setup. The `.mjs` entry point is directly usable from JavaScript components.
+The raw declarations under `generated/` retain upstream global protocol references.
+For module imports, use `bindings.d.mts` alongside `bindings.mjs`; the build
+combines the declarations and supplies their Thrift/Int64 types. The `.mjs` entry
+point also works for JavaScript callers. Runtime initialization remains necessary
+regardless of whether the caller uses TypeScript.
 
 Example after the UI has initialized the runtime and imported the generated
 archive files:
@@ -145,8 +154,8 @@ const areas = await ui.areas(response.session_id);
 
 Serve the UI and proxy `/rpc/` from one origin, or use the configured CORS origin
 during development. Account/password/passkey storage and validation are shared
-with the TCP service. Browser WebAuthn option/response conversion is still UI
-work; the transport sends the existing `optionsJson` and `responseJson` strings.
+with the TCP service. The Vue interface implements WebAuthn option/response
+conversion; the transport carries `optionsJson` and `responseJson` strings.
 
 Browser adapter regression tests use the actual generated clients and the
 official browser runtime. `:rpc:check` (and therefore `build`) runs
@@ -237,7 +246,7 @@ export; call processMail to request an immediate processing pass.
 
 | Methods | Behavior |
 | --- | --- |
-| `status` | API version 2.0, RPC-service uptime, local AKAs, heap usage, active UI polls |
+| `status` | API version 2.0, RPC-service uptime, local AKAs, heap usage, active outgoing polls (manual and scheduled; excludes waiting jobs) |
 | `links` | Configured peer addresses, hosts, ports, local AKAs and echo subscriptions |
 | `subscribe`, `unsubscribe` | Managed SQL echo subscriptions; new subscriptions use NEW_ONLY |
 | `rescan` | Explicit repeat-safe rescan of 1..10000 recent messages with a stable requestId |
@@ -299,14 +308,23 @@ larger file replacement cannot be detected by this cursor alone: reset offset
 when switching a rotated log. RpcLogFile selects an existing log, it does not
 configure logging or create a log file.
 
-Errors use codes UNAUTHORIZED, INVALID_ARGUMENT, NOT_FOUND, UNSUPPORTED and
-OPERATION_FAILED. Detailed backend failures remain in the node log.
+Common errors include UNAUTHORIZED (missing/expired session), FORBIDDEN (role or
+setup authorization), INVALID_ARGUMENT, NOT_FOUND, UNSUPPORTED and OPERATION_FAILED.
+Robot editing in file mode returns READ_ONLY; settings failures can return
+SETTINGS_FAILED. This is not a closed enumeration; clients should display a safe
+fallback for unknown codes. Detailed backend failures remain in the node log.
 
-Not implemented here: browser gateway, account administration UI/roles, global tracking
-or termination of incoming/scheduled sessions, full-text mail search, trash,
-message editing, remote configuration/link/routing-rule CRUD, directory search,
-file subscription administration, and durable automatic retry scheduling for
-polls. Existing AreaFix/FileFix can be addressed through ordinary netmail sends.
+The browser UI implements setup, account approval, personal settings, station
+settings, robot access rules and outgoing poll management. Its mail-reader
+navigation is reserved for future work; the administrative mail APIs above are
+already available. See [browser interface](web-ui.md).
+
+Remaining API/UI work includes tracking or terminating incoming sessions,
+full-text mail search, trash, message editing, arbitrary link/routing-rule CRUD,
+directory search, file subscription administration and durable automatic poll
+retry scheduling. Station settings currently edit the primary link, preserving
+additional links. AreaFix/FileFix can be addressed through ordinary netmail sends;
+their authorization rules can be managed through the administrative UI/API.
 
 ## Database accounts and optional passkeys
 
@@ -315,9 +333,9 @@ WebAuthn user handle. `rpc_passkeys` stores credential ID, owner, RP ID, public
 COSE key, signature counter, backup flags, label and creation time. Private keys
 and biometric data are never sent to the node or stored here. The tables belong
 to the separate RPC authentication H2 database, not the FTN link configuration.
-Existing mail schemas are unchanged. The account repository has an explicit
-createUser API for provisioning; remote account creation and roles are not
-provided in this version.
+The mail database remains separate. The account repository has a createUser API
+for trusted provisioning. Public point registration and ADMIN approval use the
+`profile` service; they do not grant administrative access to new point accounts.
 
 Passwords use PBKDF2-HMAC-SHA256, a random 16-byte salt, 600000 iterations and a
 256-bit derived key. Hash format/iterations are stored with each hash. This
@@ -375,7 +393,8 @@ Login uses `beginPasskeyLogin()`, `parseRequestOptionsFromJSON`,
 relays server-provided options and browser responses without inventing its own
 challenges. These snippets assume a Promise-based gateway adapter and browser
 WebAuthn JSON conversion support; older browsers need base64url/ArrayBuffer
-conversion. No browser UI or HTTP gateway is implemented by these RPC changes.
+conversion. The bundled TypeScript WebAuthn adapter handles this conversion
+for the Vue UI; the HTTP transport passes the signed response to server validation.
 
 Registration/login requests are held server-side, expire after 120 seconds,
 are single-use even after a failed response, and are capped at 128 outstanding
