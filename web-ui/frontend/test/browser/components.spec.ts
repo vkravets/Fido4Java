@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
-
-async function story(page: Page, id: string, theme = 'light', locale = 'en') {
-    await page.goto(`/iframe.html?id=${id}&viewMode=story&globals=theme:${theme};locale:${locale}`);
-    await expect(page.locator('.storybook-stage')).toBeVisible();
-}
+import { openStory as story } from './story.ts';
 
 test('every catalogue story renders without browser errors', async ({ page, request }) => {
     const errors: string[] = [];

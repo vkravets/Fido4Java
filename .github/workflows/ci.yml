@@ -186,7 +186,7 @@ jobs:
         run: |
           test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
           (cd build/ci-integration && sha256sum --check SHA256SUMS --quiet)
-          bash ./gradlew :web-ui:playwrightComponentsTest :web-ui:playwrightTest \
+          bash ./gradlew :web-ui:playwrightComponentsTest :web-ui:playwrightTest :web-ui:playwrightVisualTest \
             -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
       - name: Save browser reports, screenshots and traces
         if: always()
