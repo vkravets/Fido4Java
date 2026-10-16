@@ -38,9 +38,13 @@ jobs:
       - run:
           name: Build, test and package integration runtimes
           command: |
+            set -euo pipefail
+            release_tag="${CIRCLE_TAG:-}"
+            release_version="${release_tag#v}"
+            release_version="${release_version:-1.0-SNAPSHOT}"
             bash ./gradlew build :binkp-root:binkp-netty:prepareCiIntegration \
               :binkp-root:binkp-mina2:prepareCiIntegration :jtoss:prepareCiIntegration \
-              --no-daemon --console=plain
+              "-PreleaseVersion=$release_version" --no-daemon --console=plain
       - store_test_results:
           path: rpc/build/test-results/browserTest
       - save_cache:
@@ -62,10 +66,66 @@ jobs:
             git rev-parse HEAD > build/ci-integration/revision.txt
             cd build/ci-integration
             find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+            cd ../..
+            mkdir -p build/ci-release
+            release_tag="${CIRCLE_TAG:-}"
+            release_version="${release_tag#v}"
+            release_version="${release_version:-1.0-SNAPSHOT}"
+            cp "jftn-bundle/build/distributions/jftn-$release_version-no-jre.zip" build/ci-release/
+            printf '%s\n' "$release_version" > build/ci-release/version.txt
+            git rev-parse HEAD > build/ci-release/revision.txt
+            cd build/ci-release
+            sha256sum ./*.zip version.txt revision.txt > SHA256SUMS
       - persist_to_workspace:
           root: .
           paths:
             - build/ci-integration
+            - build/ci-release
+
+  package-distributions:
+    docker:
+      - image: cimg/openjdk:17.0-node
+    retention:
+      caches: 15d
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - v1-temurin-jre-{{ checksum "gradle/runtime-lock.json" }}
+      - run:
+          name: Package tested binaries with pinned OpenJDK runtimes and smoke test Linux ZIP
+          no_output_timeout: 15m
+          command: bash .circleci/package-distributions.sh
+      - save_cache:
+          key: v1-temurin-jre-{{ checksum "gradle/runtime-lock.json" }}
+          paths:
+            - jftn-bundle/build/runtime-downloads
+      - store_artifacts:
+          path: build/release
+          destination: distributions
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build/release
+
+  github-release:
+    docker:
+      - image: cimg/python:3.13
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Verify release publisher
+          command: python3 -m unittest discover -s .circleci -p 'test_*.py'
+      - run:
+          name: Publish complete GitHub Release for the tested tag
+          command: |
+            set -euo pipefail
+            test "$(cat build/release/revision.txt)" = "$(git rev-parse HEAD)"
+            python3 .circleci/publish-release.py build/release
 
   binkd-integration:
     machine:
@@ -200,10 +260,36 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
       - binkd-integration:
           requires:
             - build
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
       - hpt-integration:
           requires:
             - build
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
+      - package-distributions:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/
+      - github-release:
+          requires:
+            - package-distributions
+            - binkd-integration
+            - hpt-integration
+          context: github-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$/

@@ -36,9 +36,10 @@ def baseFiles = copySpec {
             from(rootProject.file('LICENSE'))
             from(rootProject.file('docs')) { into 'docs' }
             from(layoutDirectory)
-            filesMatching('**/jftn.sh') { permissions { unix('rwxr-xr-x') } }
         }
     }
+    // Windows zipTree staging cannot retain Unix mode bits from a sealed input ZIP.
+    filesMatching('**/jftn.sh') { permissions { unix('rwxr-xr-x') } }
 }
 
 def zipWithoutJre = tasks.register('distZip', Zip) {
@@ -93,6 +94,11 @@ def bundledZips = ['linux-x64', 'windows-x64'].collect { platform ->
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+}
+
+tasks.withType(Zip).matching { it.name.startsWith('distZip') }.configureEach {
+    // Copy actions (including Unix mode fixes) must invalidate an already staged archive.
+    inputs.file(rootProject.file('gradle/distributions.gradle'))
 }
 
 tasks.register('releaseDistributions') {
