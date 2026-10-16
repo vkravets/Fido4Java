@@ -24,15 +24,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -43,21 +43,21 @@ jobs:
           key: thrift-0.25.0-${{ runner.os }}-${{ runner.arch }}
       - name: Prepare Thrift compiler and browser runtime
         run: bash ci/setup-thrift.sh
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Test release publisher
         run: python3 -m unittest discover -s ci -p 'test_*.py'
       - name: Build, test and seal compiled artifacts
         run: bash ci/build.sh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: compiled-release
           path: build/compiled-release.tar
           if-no-files-found: error
           retention-days: 15
       - name: Save portable ZIP
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: portable-distribution
           path: jftn-bundle/build/distributions/*-no-jre.zip
@@ -66,7 +66,7 @@ jobs:
           retention-days: 15
       - name: Save build test reports
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: build-test-reports
           path: |
@@ -74,7 +74,7 @@ jobs:
             **/build/reports/tests/**
           retention-days: 15
       - name: Save component catalogue
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: storybook
           path: web-ui/build/storybook/
@@ -87,15 +87,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: compiled-release
           path: build
@@ -106,7 +106,7 @@ jobs:
           key: temurin-jre-${{ hashFiles('gradle/runtime-lock.json') }}
       - name: Package tested binaries and smoke test Linux ZIP
         run: bash ci/package-distributions.sh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: release-distributions
           path: build/release/
@@ -123,15 +123,15 @@ jobs:
       matrix:
         suite: [binkd, hpt]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: compiled-release
           path: build
@@ -142,7 +142,7 @@ jobs:
         run: bash ci/test-integration.sh "$SUITE"
       - name: Save integration reports and protocol logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: integration-${{ matrix.suite }}-reports
           path: |
@@ -155,25 +155,25 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: web-ui/frontend/package-lock.json
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: compiled-release
           path: build
       - run: tar -xf build/compiled-release.tar -C build
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: storybook
           path: web-ui/build/storybook
@@ -190,7 +190,7 @@ jobs:
             -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
       - name: Save browser reports, screenshots and traces
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ui-browser-reports
           path: |
@@ -205,13 +205,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: storybook
           path: web-ui/build/storybook
@@ -220,7 +220,7 @@ jobs:
         run: npm run test:vrt
       - name: Save visual regression reports, screenshots and traces
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vrt-reports
           path: |
@@ -237,13 +237,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release-distributions
           path: build/release
