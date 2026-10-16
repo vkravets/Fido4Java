@@ -76,6 +76,10 @@ It seals the no-JRE ZIP and compiled integration runtimes with the source revisi
 and SHA-256 checksums. A tar preserves permissions and hidden resources when
 passing this snapshot to dependent jobs. A portable ZIP is also saved separately
 for download on branch/PR builds, with version `1.0-SNAPSHOT`.
+The `storybook` artifact contains the interactive component catalogue and HTTP
+viewing instructions. `vrt-baselines` contains every committed expected PNG in
+its desktop/mobile directories, independently of whether VRT finds a mismatch.
+See [viewing UI artifacts](web-ui.md#component-catalogue).
 
 Both binkd and HPT integrations run after the build on every supported event.
 After both integration suites pass, the `ui` job runs functional component and

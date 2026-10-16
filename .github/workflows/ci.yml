@@ -50,6 +50,8 @@ jobs:
         run: python3 -m unittest discover -s ci -p 'test_*.py'
       - name: Build, test and seal compiled artifacts
         run: bash ci/build.sh
+      - name: Add component catalogue viewing instructions
+        run: cp ci/storybook-artifact-README.txt web-ui/build/storybook/README.txt
       - uses: actions/upload-artifact@v7
         with:
           name: compiled-release
@@ -78,6 +80,13 @@ jobs:
         with:
           name: storybook
           path: web-ui/build/storybook/
+          if-no-files-found: error
+          retention-days: 15
+      - name: Save committed visual baselines
+        uses: actions/upload-artifact@v7
+        with:
+          name: vrt-baselines
+          path: web-ui/frontend/test/browser/snapshots/
           if-no-files-found: error
           retention-days: 15
 
