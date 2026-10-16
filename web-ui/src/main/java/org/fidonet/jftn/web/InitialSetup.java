@@ -56,7 +56,11 @@ public final class InitialSetup {
                     return settings;
                 }
             };
-            try (HttpRpcServer server = new HttpRpcServer(9091, "127.0.0.1", handlers, Set.of())) {
+            try (HttpRpcServer server = new HttpRpcServer(Integer.getInteger("jftn.setup.port",
+                                                                             9091),
+                                                          "127.0.0.1",
+                                                          handlers,
+                                                          Set.of())) {
                 Thread shutdown = new Thread(completion::countDown, "setup-shutdown");
                 Runtime.getRuntime().addShutdownHook(shutdown);
                 try {

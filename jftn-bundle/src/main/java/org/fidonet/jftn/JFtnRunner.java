@@ -72,7 +72,12 @@ public class JFtnRunner {
     }
 
     public static void main(String[] args) throws Exception {
-
+        if (args.length == 1 && args[0].equals("--version")) {
+            String version = JFtnRunner.class.getPackage().getImplementationVersion();
+            System.out.println("JFtn " + (version == null ? "development" : version));
+            return;
+        }
+        NodeDirectories.defaults(Path.of("."));
         logger.info("Starting JFtnNode...");
         InitialSetup.prepare(Path.of("jftn.conf"));
         final long starttime = System.currentTimeMillis();
@@ -121,6 +126,7 @@ public class JFtnRunner {
             throws Exception {
         JFtnConfig config = new JFtnConfig();
         config.load(configFile);
+        NodeDirectories.configured(config);
         Runner runner;
         Scheduler scheduler;
         SessionContext context;

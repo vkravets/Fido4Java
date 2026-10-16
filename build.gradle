@@ -5,9 +5,14 @@ plugins {
 
 apply from: "$rootDir/gradle/formatting.gradle"
 
+def releaseVersion = providers.gradleProperty('releaseVersion').orElse('1.0-SNAPSHOT').get()
+if (!(releaseVersion ==~ /[0-9]+(?:\.[0-9]+){1,2}(?:-[A-Za-z0-9.-]+)?/)) {
+    throw new GradleException('releaseVersion must be a numeric version with an optional suffix')
+}
+
 allprojects {
     group = 'org.fidonet'
-    version = '1.0-SNAPSHOT'
+    version = releaseVersion
 }
 
 apply from: "$rootDir/gradle/coverage.gradle"

@@ -1,4 +1,15 @@
-description = ''
+description = 'JFtn node application and standalone distributions'
+
+tasks.named('jar') {
+    manifest.attributes('Main-Class': 'org.fidonet.jftn.JFtnRunner',
+            'Implementation-Version': project.version)
+    // Editable scripts are shipped separately and loaded from the scripts/ classpath root.
+    exclude 'mail-scripts/**'
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+apply from: rootProject.file('gradle/distributions.gradle')
 
 tasks.register('importJamArchive', JavaExec) {
     group = 'application'
