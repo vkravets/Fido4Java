@@ -51,14 +51,19 @@ class RobotAccessTest {
     }
 
     @Test
-    void databaseModeNeverFellBackToFilesAndObservedRevocationWithoutRestart() throws Exception {
+    void defaultDatabaseModeNeverFellBackToFilesAndObservedRevocationWithoutRestart()
+            throws Exception {
         DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:robot-source"
                                                                       + System.nanoTime()));
         assertTrue(database.open());
         try {
-            RobotAccess access = new RobotAccess(config("database",
-                                                        "FileFixPeer=ignored inactive malformed entry\n"),
-                                                 database);
+            JFtnConfig config = new JFtnConfig();
+            String configuration = text("database",
+                                        "FileFixPeer=ignored inactive malformed entry\n").replace("RobotAccessSource=database\n",
+                                                                                                  "");
+            config.load(new ByteArrayInputStream(configuration.getBytes(StandardCharsets.UTF_8)));
+            assertEquals("database", RobotAccess.source(config));
+            RobotAccess access = new RobotAccess(config, database);
             FTNAddr peer = new FTNAddr("1:500/101");
             assertNull(access.authorize("FileFix", peer, "file-password"));
             database.getRobotRules()

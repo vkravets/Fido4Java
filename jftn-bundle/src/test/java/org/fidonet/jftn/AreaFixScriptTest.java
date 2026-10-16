@@ -43,6 +43,19 @@ class AreaFixScriptTest {
 
     @BeforeEach
     void open() throws Exception {
+        config = configuration("files");
+        Files.createDirectories(Path.of(config.getTmpDir()));
+        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:areafix" + System.nanoTime()));
+        assertTrue(base.open());
+        peer = config.getLink(new FTNAddr("1:500/101"));
+        base.configureLink(peer, "secret");
+        base.createArea("test.one");
+        base.createArea("private");
+        tosser = new Tosser(config, base);
+        scripts = new MailScripts(config, base, tosser);
+    }
+
+    private JFtnConfig configuration(String source) throws Exception {
         String path = root.toString().replace('\\', '/');
         String text = "SysOp=Test\nInbound="
                       + path
@@ -56,17 +69,10 @@ class AreaFixScriptTest {
                       + "Link=1:500/101,1:500/100,secret,localhost\nEchoSubscriptions=database\n"
                       + "MailScript=classpath:mail-scripts/areafix.groovy\n"
                       + "AreaFixPeer=1:500/101|robot-password|test.*|READ\n";
-        config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-        Files.createDirectories(Path.of(config.getTmpDir()));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:areafix" + System.nanoTime()));
-        assertTrue(base.open());
-        peer = config.getLink(new FTNAddr("1:500/101"));
-        base.configureLink(peer, "secret");
-        base.createArea("test.one");
-        base.createArea("private");
-        tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(("RobotAccessSource=" + source + "\n"
+                + text).getBytes(StandardCharsets.UTF_8)));
+        return config;
     }
 
     @AfterEach
@@ -114,7 +120,8 @@ class AreaFixScriptTest {
     @Test
     void databaseAuthorizationAppliedLiveAndIgnoredFileCredentials() throws Exception {
         scripts.close();
-        config.load(new ByteArrayInputStream("RobotAccessSource=database\n".getBytes(StandardCharsets.UTF_8)));
+        config = configuration("database");
+        tosser = new Tosser(config, base);
         scripts = new MailScripts(config, base, tosser);
         toss(request("1:500/101", "robot-password", "+test.one\r", "file-denied"));
         assertTrue(base.getQueuedNetmail().isEmpty());
