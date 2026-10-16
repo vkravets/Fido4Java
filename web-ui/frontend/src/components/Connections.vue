@@ -4,6 +4,7 @@ import { api } from '../api.ts';
 import { createPolling, startPollRefresh } from '../polling.ts';
 import PollAttempts from './PollAttempts.vue';
 import PollDetails from './PollDetails.vue';
+import NotificationBanner from './NotificationBanner.vue';
 import type { AppState } from '../state.ts';
 import type { PollInfo } from '@rpc/bindings.mjs';
 
@@ -95,13 +96,10 @@ function select(attempt: PollInfo) {
             Автообновление каждые 2 секунды</label
         >
     </div>
-    <p
-        v-if="refreshError"
-        class="error"
-        role="alert"
-    >
-        {{ refreshError }}
-    </p>
+    <NotificationBanner
+        :message="refreshError"
+        kind="error"
+    />
     <p
         v-if="!loaded"
         class="muted"
