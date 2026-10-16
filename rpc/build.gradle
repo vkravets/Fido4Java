@@ -54,3 +54,99 @@ def compileThrift = tasks.register('compileThrift', Exec) {
 
 sourceSets.main.java.srcDir(generatedThriftSources)
 tasks.named('compileJava') { dependsOn compileThrift }
+
+// Browser bindings use native Promises; no jQuery or Node.js server is required.
+def generatedBrowserSources = layout.buildDirectory.dir('generated/browser')
+def compileThriftBrowser = tasks.register('compileThriftBrowser', Exec) {
+    group = 'build'
+    description = 'Generates ES6 browser clients and TypeScript declarations from the RPC contracts.'
+    inputs.files(fileTree('src/main/thrift') { include '**/*.thrift' })
+    inputs.property('thriftExecutable', thriftExecutable)
+    outputs.dir(generatedBrowserSources)
+    doFirst {
+        def outputDir = generatedBrowserSources.get().asFile
+        outputDir.mkdirs()
+        commandLine thriftExecutable.get(), '--nowarn', '--strict', '--recurse',
+                '--gen', 'js:es6,ts', '-out', outputDir.absolutePath,
+                file('src/main/thrift/main.thrift').absolutePath
+    }
+}
+
+tasks.named('assemble') { dependsOn compileThriftBrowser }
+
+// The browser generator emits classic-script globals, even with es6 enabled.
+// Enclose them in a factory so Vue/Vite can import the bindings without global assignments.
+def bundleThriftBrowser = tasks.register('bundleThriftBrowser') {
+    dependsOn compileThriftBrowser
+    inputs.dir(generatedBrowserSources)
+    def bundle = layout.buildDirectory.file('generated/browser-module/bindings.mjs')
+    outputs.file(bundle)
+    doLast {
+        def sources = fileTree(generatedBrowserSources) { include '*.js' }.files.sort { a, b ->
+            (a.name.endsWith('_types.js') ? 0 : 1) <=> (b.name.endsWith('_types.js') ? 0 : 1) ?:
+                    a.name <=> b.name
+        }.collect { it.getText('UTF-8') }
+        def symbols = sources.collectMany { source ->
+            (source =~ /(?m)^([A-Za-z_][A-Za-z0-9_]*) = /).collect { it[1] }
+        }.unique().sort()
+        def output = bundle.get().asFile
+        output.parentFile.mkdirs()
+        output.setText('// Generated from Thrift browser bindings; do not edit.\n' +
+                'export function createBindings(Thrift, Int64) {\n' +
+                'let ' + symbols.join(', ') + ';\n' + sources.join('\n') +
+                '\nreturn { ' + symbols.join(', ') + ' };\n}\n', 'UTF-8')
+    }
+}
+
+tasks.register('browserRpcZip', Zip) {
+    group = 'distribution'
+    description = 'Packages generated browser bindings and the asynchronous fetch adapter.'
+    dependsOn bundleThriftBrowser
+    archiveClassifier = 'browser-rpc'
+    from(generatedBrowserSources) { into 'generated' }
+    from(layout.buildDirectory.dir('generated/browser-module'))
+    from('src/main/browser')
+}
+
+tasks.named('assemble') { dependsOn tasks.named('browserRpcZip') }
+
+def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def thriftBrowserRuntime = providers.gradleProperty('thriftBrowserRuntime')
+        .orElse(providers.environmentVariable('THRIFT_BROWSER_RUNTIME'))
+
+def browserTest = tasks.register('browserTest', Exec) {
+    group = 'verification'
+    description = 'Tests generated browser clients using Node.js and the matching Thrift runtime.'
+    dependsOn bundleThriftBrowser
+    inputs.files(fileTree('src/main/browser') { include '**/*.mjs' })
+    inputs.files(fileTree('src/test/browser') { include '**/*.mjs' })
+    inputs.files(thriftBrowserRuntime.map { file(it) }).withPropertyName('thriftBrowserRuntime').optional()
+    inputs.property('nodeExecutable', nodeExecutable)
+    def report = layout.buildDirectory.file('test-results/browserTest/results.xml')
+    outputs.file(report)
+    // Five small tests also check the active Node/runtime environment on every build.
+    outputs.upToDateWhen { false }
+    workingDir rootProject.projectDir
+    doFirst {
+        if (!thriftBrowserRuntime.isPresent()) {
+            throw new GradleException('RPC browser tests require THRIFT_BROWSER_RUNTIME or -PthriftBrowserRuntime pointing to Apache Thrift 0.25.0 lib/js/src/thrift.js.')
+        }
+        def runtime = file(thriftBrowserRuntime.get())
+        if (!runtime.isFile()) {
+            throw new GradleException("Thrift browser runtime was not found: ${runtime}")
+        }
+        def reportFile = report.get().asFile
+        reportFile.parentFile.mkdirs()
+        if (reportFile.exists() && !reportFile.delete()) {
+            throw new GradleException("Unable to remove stale browser test report: ${reportFile}")
+        }
+        environment 'THRIFT_BROWSER_RUNTIME', runtime.absolutePath
+        commandLine nodeExecutable.get(), '--test',
+                '--test-reporter=spec', '--test-reporter=junit',
+                '--test-reporter-destination=stdout',
+                "--test-reporter-destination=${reportFile.absolutePath}",
+                rootProject.file('rpc/src/test/browser/client.test.mjs').absolutePath
+    }
+}
+
+tasks.named('check') { dependsOn browserTest }

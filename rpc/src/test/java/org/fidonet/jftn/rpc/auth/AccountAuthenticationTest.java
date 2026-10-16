@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.PasskeyOptions;
 import org.fidonet.jftn.rpc.Response;
@@ -16,7 +17,9 @@ import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiSessions;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
+import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.layered.TFramedTransport;
 import org.junit.jupiter.api.AfterEach;
@@ -93,7 +96,35 @@ class AccountAuthenticationTest {
 
     @Test
     void registersAndAuthenticatesOverRealMultiplexedThriftTcp() throws Exception {
-        try (Server server = new Server(0, "127.0.0.1", new DefaultServerHandler() {
+        try (Server server = new Server(0, "127.0.0.1", handlers())) {
+            server.run();
+            try (TFramedTransport connection = new TFramedTransport(new TSocket("127.0.0.1",
+                                                                                server.getLocalPort(),
+                                                                                5000))) {
+                connection.open();
+                AuthService.Client client = new AuthService.Client(new TMultiplexedProtocol(new TBinaryProtocol(connection),
+                                                                                            "auth"));
+                registerAndAuthenticate(client);
+            }
+        }
+    }
+
+    @Test
+    void registersAndAuthenticatesOverRealJsonHttp() throws Exception {
+        try (HttpRpcServer server = new HttpRpcServer(0, "127.0.0.1", handlers(), Set.of(origin))) {
+            server.run();
+            try (THttpClient connection = new THttpClient("http://127.0.0.1:"
+                    + server.getLocalPort() + "/rpc/auth")) {
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                connection.setCustomHeader("Origin", origin);
+                registerAndAuthenticate(new AuthService.Client(new TJSONProtocol(connection)));
+            }
+        }
+    }
+
+    private DefaultServerHandler handlers() {
+        return new DefaultServerHandler() {
             @Override
             public AuthService.Iface getAuthHandler() {
                 return auth;
@@ -103,29 +134,21 @@ class AccountAuthenticationTest {
             public LoginService.Iface getLoginHandler() {
                 return sessions;
             }
-        })) {
-            server.run();
-            try (TFramedTransport connection = new TFramedTransport(new TSocket("127.0.0.1",
-                                                                                server.getLocalPort(),
-                                                                                5000))) {
-                connection.open();
-                AuthService.Client client = new AuthService.Client(new TMultiplexedProtocol(new TBinaryProtocol(connection),
-                                                                                            "auth"));
-                assertTrue(client.methods().isPasskey());
-                PasskeyOptions registration = client.beginPasskeyRegistration(token,
-                                                                              "password",
-                                                                              "Laptop");
-                SoftwarePasskey key = new SoftwarePasskey(registration);
-                client.finishPasskeyRegistration(token,
-                                                 registration.getRequestId(),
-                                                 key.registration(registration, origin, true));
-                PasskeyOptions login = client.beginPasskeyLogin();
-                String session = client.finishPasskeyLogin(login.getRequestId(),
-                                                           key.assertion(login, origin, 1, true))
-                                       .getSession_id();
-                assertEquals("sysop", sessions.require(session));
-            }
-        }
+        };
+    }
+
+    private void registerAndAuthenticate(AuthService.Client client) throws Exception {
+        assertTrue(client.methods().isPasskey());
+        PasskeyOptions registration = client.beginPasskeyRegistration(token, "password", "Laptop");
+        SoftwarePasskey key = new SoftwarePasskey(registration);
+        client.finishPasskeyRegistration(token,
+                                         registration.getRequestId(),
+                                         key.registration(registration, origin, true));
+        PasskeyOptions login = client.beginPasskeyLogin();
+        String session = client.finishPasskeyLogin(login.getRequestId(),
+                                                   key.assertion(login, origin, 1, true))
+                               .getSession_id();
+        assertEquals("sysop", sessions.require(session));
     }
 
     @Test

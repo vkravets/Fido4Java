@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -53,15 +52,20 @@ public final class FileDeliveryQueue {
             Files.write(staging.resolve(id.substring(0, 8) + ".tic"), tic);
             Files.move(staging, destination, StandardCopyOption.ATOMIC_MOVE);
         } finally {
-            if (Files.exists(staging)) {
-                try (Stream<Path> files = Files.list(staging)) {
-                    for (Path file : (Iterable<Path>) files::iterator) {
-                        Files.delete(file);
-                    }
-                }
-                Files.delete(staging);
+            deleteStaging(staging);
+        }
+    }
+
+    private static void deleteStaging(Path staging) throws IOException {
+        if (!Files.exists(staging)) {
+            return;
+        }
+        try (Stream<Path> files = Files.list(staging)) {
+            for (Path file : (Iterable<Path>) files::iterator) {
+                Files.delete(file);
             }
         }
+        Files.delete(staging);
     }
 
     public static void copy(Path source, Path destination) throws IOException {
@@ -97,24 +101,29 @@ public final class FileDeliveryQueue {
                         .collect(Collectors.toList());
         }
         for (Path job : jobs) {
-            List<Path> result = new ArrayList<>();
-            try (Stream<Path> paths = Files.list(job)) {
-                for (Path path : (Iterable<Path>) paths::iterator) {
-                    if (Files.isRegularFile(path) && !path.getFileName().toString().startsWith(".")
-                            && !Files.exists(marker(path))) {
-                        result.add(path);
-                    }
-                }
-            }
-            result.sort(Comparator.comparing(path -> path.getFileName()
-                                                         .toString()
-                                                         .toLowerCase(Locale.ROOT)
-                                                         .endsWith(".tic")));
+            List<Path> result = pendingJob(job);
             if (!result.isEmpty()) {
                 return result;
             }
         }
         return List.of();
+    }
+
+    private List<Path> pendingJob(Path job) throws IOException {
+        List<Path> result;
+        try (Stream<Path> paths = Files.list(job)) {
+            result = paths.filter(this::isPendingFile).collect(Collectors.toList());
+        }
+        result.sort(Comparator.comparing(path -> path.getFileName()
+                                                     .toString()
+                                                     .toLowerCase(Locale.ROOT)
+                                                     .endsWith(".tic")));
+        return result;
+    }
+
+    private boolean isPendingFile(Path path) {
+        return Files.isRegularFile(path) && !path.getFileName().toString().startsWith(".")
+                && !Files.exists(marker(path));
     }
 
     public boolean owns(Path path) {

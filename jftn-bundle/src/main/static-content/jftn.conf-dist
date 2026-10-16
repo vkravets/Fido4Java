@@ -59,3 +59,10 @@ Outbound = /home/toch/ftn/var/spool/outbound
 # RpcWebAuthnRpId=node.example
 # RpcWebAuthnOrigin=https://node.example
 # RpcLogFile=./logs/jftn.log
+# Optional browser HTTP/JSON transport alongside TCP. Requires RpcEnabled=true.
+# RpcHttpEnabled=true
+# RpcHttpBind=127.0.0.1
+# RpcHttpPort=9091
+# Exact browser origin, repeat for each permitted UI. No wildcard or trailing slash.
+# RpcHttpOrigin=http://localhost:5173
+# RpcHttpOrigin=https://node.example

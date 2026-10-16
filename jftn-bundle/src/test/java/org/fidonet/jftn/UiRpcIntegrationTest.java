@@ -21,7 +21,9 @@ import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
+import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.layered.TFramedTransport;
 import org.junit.jupiter.api.AfterEach;
@@ -53,6 +55,7 @@ class UiRpcIntegrationTest {
                 + "/state\nEchoPath=" + path + "/echo\n"
                 + "Link=1:500/101,1:500/100,secret,127.0.0.1\nJamBridgeEnabled=false\n"
                 + "EchoSubscriptions=database\nRpcEnabled=true\nRpcPort=0\nRpcUser=sysop\nRpcPassword=ui-secret\n"
+                + "RpcHttpEnabled=true\nRpcHttpPort=0\nRpcHttpOrigin=http://localhost:5173\n"
                 + "RpcLogFile=" + path + "/node.log\n";
         config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
@@ -75,6 +78,19 @@ class UiRpcIntegrationTest {
                                                                                      "login"));
         token = login.login(new Credential("sysop", password)).getSession_id();
         ui = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport), "ui"));
+    }
+
+    @Test
+    void exposesTheSameAuthenticatedBackendOverHttpAndTcp() throws Exception {
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            connection.setReadTimeout(5000);
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertEquals(ui.status(token).getLocalAddresses(),
+                         browser.status(token).getLocalAddresses());
+            assertEquals("UNAUTHORIZED",
+                         assertThrows(UiError.class, () -> browser.status("bad")).getCode());
+        }
     }
 
     @Test

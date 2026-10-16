@@ -32,38 +32,70 @@ public final class DirectoryDiff {
                 throw new IOException("Diff does not match the base edition header");
             }
             old.pending = header;
-            long bytes = 0;
-            byte[] command;
-            while ((command = edits.next()) != null) {
-                String text = new String(command, StandardCharsets.US_ASCII);
-                if (!text.matches("[ACD][1-9][0-9]{0,4}")) {
-                    throw new IOException("Invalid NODEDIFF command");
-                }
-                int count = Integer.parseInt(text.substring(1));
-                if (count > 32767) {
-                    throw new IOException("NODEDIFF count exceeds 32767");
-                }
-                char operation = text.charAt(0);
-                for (int i = 0; i < count; i++) {
-                    byte[] line = operation == 'A' ? edits.next() : old.next();
-                    if (line == null) {
-                        throw new IOException("NODEDIFF command exceeds available lines");
-                    }
-                    if (operation != 'D') {
-                        bytes += line.length + 2;
-                        if (bytes >= MAX_BYTES) {
-                            throw new IOException("Patched directory exceeds 128 MiB");
-                        }
-                        target.write(line);
-                        target.write('\r');
-                        target.write('\n');
-                    }
-                }
-            }
+            applyCommands(old, edits, new DiffWriter(target));
             if (old.next() != null) {
                 throw new IOException("NODEDIFF leaves unconsumed base lines");
             }
             target.write(26);
+        }
+    }
+
+    private static void applyCommands(Lines old, Lines edits, DiffWriter target)
+            throws IOException {
+        byte[] command;
+        while ((command = edits.next()) != null) {
+            applyCommand(new String(command, StandardCharsets.US_ASCII), old, edits, target);
+        }
+    }
+
+    private static void applyCommand(String text, Lines old, Lines edits, DiffWriter target)
+            throws IOException {
+        int count = commandCount(text);
+        char operation = text.charAt(0);
+        for (int i = 0; i < count; i++) {
+            byte[] line = requiredLine(operation == 'A' ? edits : old);
+            if (operation == 'D') {
+                continue;
+            }
+            target.write(line);
+        }
+    }
+
+    private static int commandCount(String text) throws IOException {
+        if (!text.matches("[ACD][1-9][0-9]{0,4}")) {
+            throw new IOException("Invalid NODEDIFF command");
+        }
+        int count = Integer.parseInt(text.substring(1));
+        if (count > 32767) {
+            throw new IOException("NODEDIFF count exceeds 32767");
+        }
+        return count;
+    }
+
+    private static byte[] requiredLine(Lines input) throws IOException {
+        byte[] line = input.next();
+        if (line == null) {
+            throw new IOException("NODEDIFF command exceeds available lines");
+        }
+        return line;
+    }
+
+    private static final class DiffWriter {
+        private final OutputStream output;
+        private long bytes;
+
+        private DiffWriter(OutputStream output) {
+            this.output = output;
+        }
+
+        private void write(byte[] line) throws IOException {
+            bytes += line.length + 2;
+            if (bytes >= MAX_BYTES) {
+                throw new IOException("Patched directory exceeds 128 MiB");
+            }
+            output.write(line);
+            output.write('\r');
+            output.write('\n');
         }
     }
 
@@ -96,19 +128,11 @@ public final class DirectoryDiff {
             int value;
             while ((value = read()) != -1) {
                 if (value == 26) {
-                    if (!allowEof || line.size() != 0 || read() != -1) {
-                        throw new IOException("Invalid DOS EOF in directory input");
-                    }
+                    validateEof(line);
                     return null;
                 }
                 if (value == '\r' || value == '\n') {
-                    if (value == '\r') {
-                        int next = read();
-                        if (next != '\n' && next != -1) {
-                            input.unread(next);
-                            bytes--;
-                        }
-                    }
+                    consumeLineEnding(value);
                     return line.toByteArray();
                 }
                 if (line.size() == 65536) {
@@ -117,6 +141,23 @@ public final class DirectoryDiff {
                 line.write(value);
             }
             return line.size() == 0 ? null : line.toByteArray();
+        }
+
+        private void validateEof(ByteArrayOutputStream line) throws IOException {
+            if (!allowEof || line.size() != 0 || read() != -1) {
+                throw new IOException("Invalid DOS EOF in directory input");
+            }
+        }
+
+        private void consumeLineEnding(int value) throws IOException {
+            if (value != '\r') {
+                return;
+            }
+            int next = read();
+            if (next != '\n' && next != -1) {
+                input.unread(next);
+                bytes--;
+            }
         }
 
         @Override

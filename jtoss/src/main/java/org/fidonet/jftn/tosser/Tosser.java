@@ -259,136 +259,185 @@ public class Tosser extends HasEventBus {
 
     private boolean tosspkt(ByteBuffer buf, FTNAddr authenticatedPeer)
             throws IOException, EchoBaseException {
-        final FtsPkt q;
-        try {
-            q = new FtsPkt(buf);
-        } catch (IllegalArgumentException e) {
-            throw new IOException("Invalid FTN packet", e);
-        }
-        Link origlink = config.getLink(q.getOrigaddr());
-        if (origlink == null && q.getOrigZone() == 0) {
-            for (Link candidate : config.getConfiguredLinks()) {
-                if (!sameNode(candidate.getAddr(), q.getOrigaddr()) || authenticatedPeer != null
-                        && !authenticatedPeer.equals(candidate.getAddr())) {
-                    continue;
-                }
-                if (origlink != null) {
-                    logger.warn("Ambiguous zone-less packet origin");
-                    return false;
-                }
-                origlink = candidate;
-            }
-        }
-        if (origlink == null) {
-            logger.error("Unknown Link! Drop it.");
+        FtsPkt packet = readPacket(buf);
+        Link link = packetOriginLink(packet, authenticatedPeer);
+        if (link == null) {
             return false;
         }
-        FTNAddr origin = q.getOrigZone() == 0 ? origlink.getAddr() : q.getOrigaddr();
+        FTNAddr origin = packet.getOrigZone() == 0 ? link.getAddr() : packet.getOrigaddr();
         if (authenticatedPeer != null && !authenticatedPeer.equals(origin)) {
             logger.warn("Packet origin does not match the receiving session");
             return false;
         }
-        FTNAddr destination = new FTNAddr(q.getDestZone(),
-                                          q.getDestNet(),
-                                          q.getDestNode(),
-                                          q.getDestPoint());
-        Set<FTNAddr> localAddresses = new LinkedHashSet<>(config.getLocalAddresses());
-        if (origlink.getMyaddr() != null) {
-            localAddresses.addAll(origlink.getMyaddr());
-        }
-        if (destination.getZone() == 0 && !localAddresses.contains(destination)) {
-            FTNAddr resolved = null;
-            for (FTNAddr candidate : localAddresses) {
-                if (!sameNode(candidate, destination)) {
-                    continue;
-                }
-                if (resolved != null) {
-                    logger.warn("Ambiguous zone-less packet destination");
-                    return false;
-                }
-                resolved = candidate;
-            }
-            if (resolved != null) {
-                destination = resolved;
-            }
-        }
-        if (!config.getLocalAddresses().contains(destination)
-                && (origlink.getMyaddr() == null || !origlink.getMyaddr().contains(destination))) {
-            logger.error("Packet addressed to another station: {}", destination);
+        FTNAddr destination = packetDestination(packet, link);
+        if (destination == null) {
             return false;
         }
-        String expectedPassword = config.getPacketPassword(origlink);
-        if (!q.getPass().equals(expectedPassword)) {
+        if (!packet.getPass().equals(config.getPacketPassword(link))) {
             logger.error("Bad PASSWORD! Drop it.");
             return false;
         }
+        return importPacketMessages(packet.getMsgs(), buf, link, origin, destination);
+    }
 
-        final FtsPackMsg[] msgs = q.getMsgs();
-        TossJournal journal = new TossJournal(new File(config.getTmpDir()).toPath(), buf);
-        logger.debug("Find {} messages in the bundle", msgs.length);
-        for (int index = 0; index < msgs.length; index++) {
+    private static FtsPkt readPacket(ByteBuffer buffer) throws IOException {
+        try {
+            return new FtsPkt(buffer);
+        } catch (IllegalArgumentException failure) {
+            throw new IOException("Invalid FTN packet", failure);
+        }
+    }
+
+    private Link packetOriginLink(FtsPkt packet, FTNAddr authenticatedPeer) {
+        Link link = config.getLink(packet.getOrigaddr());
+        if (link == null && packet.getOrigZone() == 0) {
+            return zoneLessOriginLink(packet.getOrigaddr(), authenticatedPeer);
+        }
+        if (link == null) {
+            logger.error("Unknown Link! Drop it.");
+        }
+        return link;
+    }
+
+    private Link zoneLessOriginLink(FTNAddr origin, FTNAddr authenticatedPeer) {
+        Link resolved = null;
+        for (Link candidate : config.getConfiguredLinks()) {
+            if (!sameNode(candidate.getAddr(), origin) || authenticatedPeer != null
+                    && !authenticatedPeer.equals(candidate.getAddr())) {
+                continue;
+            }
+            if (resolved != null) {
+                logger.warn("Ambiguous zone-less packet origin");
+                return null;
+            }
+            resolved = candidate;
+        }
+        if (resolved == null) {
+            logger.error("Unknown Link! Drop it.");
+        }
+        return resolved;
+    }
+
+    private FTNAddr packetDestination(FtsPkt packet, Link link) {
+        FTNAddr destination = new FTNAddr(packet.getDestZone(),
+                                          packet.getDestNet(),
+                                          packet.getDestNode(),
+                                          packet.getDestPoint());
+        Set<FTNAddr> localAddresses = new LinkedHashSet<>(config.getLocalAddresses());
+        if (link.getMyaddr() != null) {
+            localAddresses.addAll(link.getMyaddr());
+        }
+        if (destination.getZone() == 0 && !localAddresses.contains(destination)) {
+            destination = zoneLessDestination(destination, localAddresses);
+        }
+        if (destination == null) {
+            return null;
+        }
+        if (!localAddresses.contains(destination)) {
+            logger.error("Packet addressed to another station: {}", destination);
+            return null;
+        }
+        return destination;
+    }
+
+    private static FTNAddr zoneLessDestination(FTNAddr destination, Set<FTNAddr> localAddresses) {
+        FTNAddr resolved = null;
+        for (FTNAddr candidate : localAddresses) {
+            if (!sameNode(candidate, destination)) {
+                continue;
+            }
+            if (resolved != null) {
+                logger.warn("Ambiguous zone-less packet destination");
+                return null;
+            }
+            resolved = candidate;
+        }
+        return resolved == null ? destination : resolved;
+    }
+
+    private boolean importPacketMessages(FtsPackMsg[] messages,
+                                         ByteBuffer buffer,
+                                         Link link,
+                                         FTNAddr origin,
+                                         FTNAddr destination)
+            throws IOException, EchoBaseException {
+        TossJournal journal = new TossJournal(new File(config.getTmpDir()).toPath(), buffer);
+        logger.debug("Find {} messages in the bundle", messages.length);
+        for (int index = 0; index < messages.length; index++) {
             if (journal.contains(index)) {
                 continue;
             }
-            FtsPackMsg msg1 = msgs[index];
-            final Message msg = new Message(msg1, origin.getZone(), destination.getZone());
-            msg.setUpLink(origin);
-            if (!msg.hasValidAddressing()) {
+            Message message = new Message(messages[index], origin.getZone(), destination.getZone());
+            message.setUpLink(origin);
+            if (!importPacketMessage(message, link, journal.key(index))) {
                 return false;
-            }
-            if (msg.isEchomail()) {
-                if ((!areamgr.isEchoExists(msg.getArea().toLowerCase(Locale.ROOT))
-                        && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false")))
-                        || (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
-                                && !base.canWriteEcho(origlink, msg.getArea()))) {
-                    logger.warn("Echo import is not permitted: {} from {}",
-                                msg.getArea(),
-                                origlink.getAddr());
-                    return false;
-                }
-                if (areamgr.isDupe(msg)) {
-                    journal.complete(index);
-                    continue;
-                }
-                // Call onTossEchoMsg hook
-                getEventBus().publish(new TossEchoMailEvent(msg, areamgr));
-                if (msg.isValid()) {
-                    processEchoMail(msg);
-                } else {
-                    return false;
-                }
-            } else {
-                // Call onTossNetMail hook
-                getEventBus().publish(new TossNetmailEvent(msg));
-                if (netmailStore == null || !msg.isValid()) {
-                    return false;
-                }
-                boolean local = config.getLocalAddresses().contains(msg.getTAddr())
-                        || origlink.getMyaddr() != null
-                                && origlink.getMyaddr().contains(msg.getTAddr());
-                NetmailDecision decision = netmailRouter.explainTransit(msg, origlink.getAddr());
-                Link route = decision.getNextHop();
-                if (!local && (!decision.isPermitted() || (msg.getAttributes() & 0x8810) != 0)) {
-                    logger.warn("Netmail transit refused ({}); quarantining packet",
-                                decision.getReason());
-                    return false;
-                }
-                netmailStore.saveNetmail(msg,
-                                         journal.key(index),
-                                         local ? null : route.getAddr().toString());
-                if (local) {
-                    for (NetmailHandler handler : netmailHandlers) {
-                        if (handler.handle(msg.copy(), origlink, journal.key(index))) {
-                            break;
-                        }
-                    }
-                }
             }
             journal.complete(index);
         }
         return true;
     }
 
+    private boolean importPacketMessage(Message message, Link link, String deliveryKey)
+            throws IOException, EchoBaseException {
+        if (!message.hasValidAddressing()) {
+            return false;
+        }
+        return message.isEchomail()
+                ? importEchoMessage(message, link)
+                : importNetmailMessage(message, link, deliveryKey);
+    }
+
+    private boolean importEchoMessage(Message message, Link link)
+            throws IOException, EchoBaseException {
+        if ((!areamgr.isEchoExists(message.getArea().toLowerCase(Locale.ROOT))
+                && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false")))
+                || (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
+                        && !base.canWriteEcho(link, message.getArea()))) {
+            logger.warn("Echo import is not permitted: {} from {}",
+                        message.getArea(),
+                        link.getAddr());
+            return false;
+        }
+        if (areamgr.isDupe(message)) {
+            return true;
+        }
+        getEventBus().publish(new TossEchoMailEvent(message, areamgr));
+        if (!message.isValid()) {
+            return false;
+        }
+        processEchoMail(message);
+        return true;
+    }
+
+    private boolean importNetmailMessage(Message message, Link link, String deliveryKey)
+            throws IOException {
+        getEventBus().publish(new TossNetmailEvent(message));
+        if (netmailStore == null || !message.isValid()) {
+            return false;
+        }
+        boolean local = config.getLocalAddresses().contains(message.getTAddr())
+                || link.getMyaddr() != null && link.getMyaddr().contains(message.getTAddr());
+        NetmailDecision decision = netmailRouter.explainTransit(message, link.getAddr());
+        Link route = decision.getNextHop();
+        if (!local && (!decision.isPermitted() || (message.getAttributes() & 0x8810) != 0)) {
+            logger.warn("Netmail transit refused ({}); quarantining packet", decision.getReason());
+            return false;
+        }
+        netmailStore.saveNetmail(message, deliveryKey, local ? null : route.getAddr().toString());
+        if (local) {
+            dispatchLocalNetmail(message, link, deliveryKey);
+        }
+        return true;
+    }
+
+    private void dispatchLocalNetmail(Message message, Link link, String deliveryKey)
+            throws IOException {
+        for (NetmailHandler handler : netmailHandlers) {
+            if (handler.handle(message.copy(), link, deliveryKey)) {
+                return;
+            }
+        }
+    }
     private void processEchoMail(Message msg) throws IOException, EchoBaseException {
         areamgr.addMessage(msg);
     }

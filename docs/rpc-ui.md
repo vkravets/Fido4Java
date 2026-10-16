@@ -43,12 +43,139 @@ passwords are never included in link/status DTOs.
 
 The listener defaults to loopback and has no built-in TLS. Keep it behind a
 local client, SSH tunnel or a protected gateway when used remotely. A browser
-cannot directly open this TCP protocol: a web UI needs an HTTP/WebSocket
-gateway using the generated client. No HTTP endpoint or frontend is included.
+cannot directly open this TCP protocol. The optional HTTP/JSON listener described
+below exposes the same handlers and sessions to browsers. No frontend is included.
 Legacy `api` ping/version remain public; the old unauthenticated `messages`
 service is disabled in the application runtime. `statistics` remains unavailable;
 use `ui.status` instead. Worker threads handle calls outside the selector loop,
 with a 2 MiB aggregate incoming frame buffer limit.
+
+### Browser HTTP/JSON transport
+
+The node runtime separates listener lifecycle from application services:
+
+- `NodeRpc` coordinates startup and shutdown.
+- `RpcIdentity` owns the account database, sessions and passkey authentication.
+- `NodeRpcHandlers` binds authenticated application handlers to Thrift.
+- `RpcTransports` owns listeners behind the shared `RpcTransport` interface.
+- TCP and HTTP factories parse only their own transport configuration.
+
+To add a transport, implement `RpcTransport` and `RpcTransportFactory`, then add
+the factory to the default list in `RpcTransports.open`. `NodeRpc` and its
+authentication/service wiring do not need changes. The overload accepting a
+factory list allows alternative compositions and tests without real sockets.
+Disabled factories return null. A created listener is registered before start,
+so a failed start closes that listener and all previously acquired listeners.
+Shutdown runs in reverse acquisition order and continues after cleanup failures;
+startup errors retain cleanup errors as suppressed exceptions. Existing
+`getPort()`/`getHttpPort()` accessors remain available, with `getPort(name)` for
+other transports.
+
+Enable HTTP alongside TCP (requires `RpcEnabled=true`):
+
+```ini
+RpcHttpEnabled=true
+RpcHttpBind=127.0.0.1
+RpcHttpPort=9091
+RpcHttpOrigin=http://localhost:5173
+# Repeat for every permitted browser origin, including the production UI.
+# RpcHttpOrigin=https://node.example
+```
+
+The POST endpoints are `/rpc/login`, `/rpc/auth`, `/rpc/ui`, `/rpc/api` and the
+other configured services. These are separate service processors, without a
+multiplexed service prefix or TCP frame header. The wire format is Thrift
+`TJSONProtocol`, not ordinary DTO JSON. The listener uses the Java 11 JDK HTTP
+server, with no additional servlet container or Java version upgrade.
+
+Browser origins must match an explicit `RpcHttpOrigin` exactly, with no wildcard
+or trailing slash. Unlisted origins (including `null`) are rejected. OPTIONS
+preflights allow POST and Content-Type. Clients without an Origin header can
+connect, but still need authentication for protected methods. RPC tokens remain
+explicit method arguments; no cookie authentication is added. Requests are
+limited to 2 MiB, worker threads and the pending execution queue are bounded.
+Keep the listener on loopback behind an HTTPS reverse proxy for remote access;
+configure proxy request/body timeouts as well as the frontend request timeout.
+`RpcWebAuthnOrigin` remains a separate check for the WebAuthn ceremony itself.
+
+Generate the browser clients with the same native compiler used for Java:
+
+```shell
+./gradlew :rpc:browserRpcZip -PthriftExecutable=/path/to/thrift
+```
+
+`assemble` also runs this task. The archive in `rpc/build/distributions` contains:
+
+- `generated/`: native ES6/Promise clients and the compiler's raw `.d.ts` output.
+- `bindings.mjs`: an ES module factory enclosing generated globals for Vue/Vite.
+- `client.mjs`: asynchronous fetch adapter with timeout, HTTP error propagation,
+  independent buffers per call, and completion handling for oneway logout.
+
+The browser runtime is supplied by the UI build, not downloaded at node startup.
+Use the matching Apache Thrift 0.25.0 browser runtime (`lib/js/src/thrift.js` in
+the Apache distribution). Configure its `JSONInt64.parse` using Thrift's
+`json_parse` helper, and provide `Int64Util` and `node-int64`, before creating
+clients. These helpers preserve signed i64 values beyond JavaScript's safe
+integer range. Use `Int64Util.fromDecimalString` for large outgoing IDs and
+`Int64Util.toDecimalString` for display; never round-trip SQL IDs through Number.
+The raw generated declarations are not a complete Vue TypeScript facade: they
+retain upstream global protocol references and require integration into the UI
+type setup. The `.mjs` entry point is directly usable from JavaScript components.
+
+Example after the UI has initialized the runtime and imported the generated
+archive files:
+
+```javascript
+import { createBindings } from './rpc/bindings.mjs';
+import { createRpcClient } from './rpc/client.mjs';
+
+const bindings = createBindings(Thrift, Int64);
+const login = createRpcClient(Thrift, bindings.LoginServiceClient, '/rpc/login');
+const ui = createRpcClient(Thrift, bindings.UiServiceClient, '/rpc/ui');
+
+const response = await login.login(new bindings.Credential({
+    login: username,
+    password
+}));
+if (response.respose_status !== bindings.Response.OK) {
+    throw new Error('Authentication failed');
+}
+const areas = await ui.areas(response.session_id);
+```
+
+Serve the UI and proxy `/rpc/` from one origin, or use the configured CORS origin
+during development. Account/password/passkey storage and validation are shared
+with the TCP service. Browser WebAuthn option/response conversion is still UI
+work; the transport sends the existing `optionsJson` and `responseJson` strings.
+
+Browser adapter regression tests use the actual generated clients and the
+official browser runtime. `:rpc:check` (and therefore `build`) runs
+`:rpc:browserTest`; Node.js 22 or newer is required for this verification only.
+No npm dependencies or running browser are needed. Configure the runtime path:
+
+```shell
+THRIFT_BROWSER_RUNTIME=/path/to/thrift/lib/js/src/thrift.js ./gradlew :rpc:browserTest
+```
+
+Alternatively pass `-PthriftBrowserRuntime=/path/to/thrift.js`. A portable Node
+executable can be selected with `-PnodeExecutable=/path/to/node`. Missing runtime
+configuration or a failed JS test fails the task; tests are not silently skipped.
+The JUnit report is written to `rpc/build/test-results/browserTest/results.xml`.
+To invoke Node directly after generating bindings:
+
+```shell
+THRIFT_BROWSER_RUNTIME=/path/to/thrift/lib/js/src/thrift.js node --test rpc/src/test/browser/client.test.mjs
+```
+
+On PowerShell, set `$env:THRIFT_BROWSER_RUNTIME` before `node --test`. These tests
+cover concurrent calls, typed errors, HTTP/network errors, request timeout and
+oneway logout completion. They do not require a running JFtn node or a browser.
+
+CircleCI uses the OpenJDK image with Node.js preinstalled. The compiler cache
+key stays unchanged; a separate version-only cache stores `thrift.js` extracted
+from the same official Apache Thrift archive. Missing browser runtime cache does
+not cause a cached compiler to be rebuilt. Browser results are published by the
+main build job, so failed JS tests prevent the dependent binkd/HPT jobs starting.
 
 ## Mail
 

@@ -135,27 +135,35 @@ public final class DirectoryUpdate {
     }
 
     private static String fingerprint(Path file) throws IOException {
+        MessageDigest digest = sha256();
+        try (InputStream input = Files.newInputStream(file)) {
+            updateDigest(input, digest);
+        }
+        StringBuilder value = new StringBuilder();
+        for (byte octet : digest.digest()) {
+            value.append(String.format("%02x", octet & 255));
+        }
+        return value.toString();
+    }
+
+    private static MessageDigest sha256() {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (InputStream input = Files.newInputStream(file)) {
-                byte[] buffer = new byte[65536];
-                int count;
-                long total = 0;
-                while ((count = input.read(buffer)) != -1) {
-                    total += count;
-                    if (total > MAX_BYTES) {
-                        throw new IOException("Directory input exceeds 128 MiB");
-                    }
-                    digest.update(buffer, 0, count);
-                }
-            }
-            StringBuilder value = new StringBuilder();
-            for (byte octet : digest.digest()) {
-                value.append(String.format("%02x", octet & 255));
-            }
-            return value.toString();
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    private static void updateDigest(InputStream input, MessageDigest digest) throws IOException {
+        byte[] buffer = new byte[65536];
+        int count;
+        long total = 0;
+        while ((count = input.read(buffer)) != -1) {
+            total += count;
+            if (total > MAX_BYTES) {
+                throw new IOException("Directory input exceeds 128 MiB");
+            }
+            digest.update(buffer, 0, count);
         }
     }
 
