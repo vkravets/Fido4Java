@@ -205,8 +205,7 @@ public class FilesSender<T extends Session> implements Runnable {
             }
         } catch (Exception e) {
             logger.error("Unable to send files", e);
-            sessionContext.setState(SessionState.STATE_ERR);
-            sessionContext.setLastErrorMessage(e.getMessage());
+            sessionContext.fail(e);
             sendErrorAndClose();
         }
     }
@@ -232,8 +231,7 @@ public class FilesSender<T extends Session> implements Runnable {
             return true;
         } catch (Exception e) {
             logger.error("Unable to send file {}", curFile.getInfo(), e);
-            sessionContext.setLastErrorMessage(e.getMessage());
-            sessionContext.setState(SessionState.STATE_ERR);
+            sessionContext.fail(e);
             sendErrorAndClose();
             return false;
         }

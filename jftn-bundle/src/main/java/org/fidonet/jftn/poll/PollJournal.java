@@ -28,7 +28,7 @@ final class PollJournal {
 
     void record(String kind, String detail, long bytes) {
         String safe = detail.replaceAll("[\\p{Cntrl}]", " ");
-        safe = safe.substring(0, Math.min(safe.length(), 256));
+        safe = safe.substring(0, Math.min(safe.length(), 2048));
         String line = Instant.now()
                       + " "
                       + kind

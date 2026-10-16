@@ -1,6 +1,7 @@
 package org.fidonet.jftn.poll;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -103,6 +106,53 @@ class PollHistoryTest {
         try (PollService service = service(config, context -> {
         })) {
             assertEquals("INTERRUPTED", service.get(id).getState());
+        }
+    }
+
+    @Test
+    void exceptionMessagesCausesAndStacksWereRetainedWithoutConfiguredCredentials()
+            throws Exception {
+        JFtnConfig config = config("");
+        String id;
+        try (PollService service = service(config, context -> {
+            throw new IllegalStateException("Connection failed password=secret",
+                                            new ConnectException("Connection refused on localhost:24554"));
+        })) {
+            id = service.poll("1:500/101").getId();
+            PollAttempt result = finish(service, id);
+            assertTrue(result.getDetail().contains("java.net.ConnectException"));
+            assertTrue(result.getDetail().contains("Connection refused on localhost:24554"));
+            assertFalse(result.getDetail().contains("secret"));
+            String log = String.join("\n", service.logs(id, 0, 200).getLines());
+            assertTrue(log.contains("Caused by: java.net.ConnectException"));
+            assertTrue(log.contains("at org.fidonet.jftn.poll.PollHistoryTest"));
+            assertFalse(log.contains("secret"));
+        }
+        try (PollService service = service(config, context -> {
+        })) {
+            assertTrue(service.get(id).getDetail().contains("Connection refused"));
+            assertTrue(String.join("\n", service.logs(id, 0, 200).getLines())
+                             .contains("Caused by:"));
+        }
+    }
+
+    @Test
+    void asynchronousFailuresAndRemoteErrorsKeptTheirActualReason() throws Exception {
+        JFtnConfig config = config("");
+        try (PollService service = service(config, context -> {
+            new Thread(() -> context.fail(new IOException("Socket reset during transfer"))).start();
+        })) {
+            PollAttempt result = finish(service, service.poll("1:500/101").getId());
+            assertTrue(result.getDetail()
+                             .contains("java.io.IOException: Socket reset during transfer"));
+        }
+        try (PollService service = service(config, context -> {
+            context.setLastErrorMessage("Remote refused authentication: password=secret");
+            context.setState(SessionState.STATE_ERR);
+        })) {
+            PollAttempt result = finish(service, service.poll("1:500/101").getId());
+            assertTrue(result.getDetail().contains("Remote refused authentication"));
+            assertFalse(result.getDetail().contains("secret"));
         }
     }
 
