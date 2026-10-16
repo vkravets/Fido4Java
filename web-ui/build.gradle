@@ -112,6 +112,7 @@ def frontendTest = tasks.register('frontendTest', Exec) {
 tasks.named('check') { dependsOn frontendTest }
 
 tasks.named('test', Test) {
+    useJUnitPlatform { excludeTags 'browser' }
     systemProperty 'ui.node', nodeExecutable.get()
     systemProperty 'ui.workflow', file('frontend/test/rpc-workflow.ts').absolutePath
     inputs.file('frontend/test/rpc-workflow.ts')
@@ -145,4 +146,74 @@ tasks.register('typecheckStorybook', Exec) {
     workingDir file('frontend')
     commandLine nodeExecutable.get(), file('frontend/node_modules/vue-tsc/bin/vue-tsc.js'),
             '--noEmit', '-p', 'tsconfig.storybook.json'
+}
+
+def browserSnapshot = rootProject.layout.buildDirectory.dir('ci-integration/web-ui-browser')
+def useBrowserSnapshot = providers.gradleProperty('ciIntegrationSnapshot').isPresent()
+
+tasks.register('playwrightComponentsTest', Exec) {
+    group = 'verification'
+    description = 'Runs Chromium tests against the compiled Storybook catalogue.'
+    dependsOn npmCi
+    if (!useBrowserSnapshot) {
+        dependsOn 'buildStorybook'
+    }
+    workingDir file('frontend')
+    commandLine nodeExecutable.get(), file('frontend/node_modules/@playwright/test/cli.js'),
+            'test', '--config', 'playwright.config.ts'
+}
+
+tasks.register('playwrightTest', Test) {
+    group = 'verification'
+    description = 'Runs Chromium against real HTTP RPC handlers and compiled Vue assets.'
+    dependsOn npmCi
+    useJUnitPlatform { includeTags 'browser' }
+    include '**/BrowserPlaywrightTest.class'
+    if (useBrowserSnapshot) {
+        testClassesDirs = files(browserSnapshot.map { it.dir('test-classes') })
+        classpath = files(providers.provider {
+            File directory = browserSnapshot.get().asFile
+            File manifest = new File(directory, 'classpath.txt')
+            if (!manifest.isFile()) {
+                throw new GradleException('Missing browser test snapshot. Run :web-ui:prepareBrowserTests in the build job.')
+            }
+            manifest.readLines('UTF-8').collect { new File(directory, it) }
+        })
+    } else {
+        dependsOn tasks.named('testClasses')
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+    }
+    systemProperty 'ui.node', nodeExecutable.get()
+    systemProperty 'ui.frontend', file('frontend').absolutePath
+    systemProperty 'ui.playwright.cli', file('frontend/node_modules/@playwright/test/cli.js').absolutePath
+    systemProperty 'ui.browserReports', layout.buildDirectory.dir('reports/playwright').get().asFile.absolutePath
+    inputs.files(fileTree('frontend/test/browser'), file('frontend/playwright.app.config.ts'))
+    outputs.upToDateWhen { false }
+}
+
+tasks.register('prepareBrowserTests') {
+    group = 'build'
+    description = 'Seals browser test classes, real HTTP handlers and compiled Vue assets for CI.'
+    dependsOn tasks.named('testClasses'), sourceSets.test.runtimeClasspath
+    outputs.dir browserSnapshot
+    outputs.upToDateWhen { false }
+    doLast {
+        File destination = browserSnapshot.get().asFile
+        delete destination
+        copy {
+            from sourceSets.test.output.classesDirs
+            into new File(destination, 'test-classes')
+        }
+        List<String> entries = []
+        sourceSets.test.runtimeClasspath.files.findAll { it.exists() }.eachWithIndex { entry, index ->
+            String relative = entry.isDirectory() ? "runtime/${index}" : "runtime/${index}/${entry.name}"
+            copy {
+                from entry
+                into new File(destination, "runtime/${index}")
+            }
+            entries.add(relative)
+        }
+        new File(destination, 'classpath.txt').setText(entries.join('\n') + '\n', 'UTF-8')
+    }
 }
