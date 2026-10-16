@@ -234,15 +234,15 @@ public final class NodeConfigurationStore {
         result.put("location", value.getLocation());
         result.put("nodelisturl", value.getNodeListUrl());
         result.put("nodelistcharset", value.getCharset());
-        result.put("rpcenabled", "true");
-        result.put("rpchttpenabled", "true");
         result.put("rpchttporigin", value.getBrowserOrigin());
-        result.put("rpcauthpath", authPath.toAbsolutePath().toString());
         result.put("uimailstorage", value.getStorage());
         if (value.isSetPreserveReceivedFiles() || original.length == 0) {
             result.put("preservereceivedfiles", Boolean.toString(value.isPreserveReceivedFiles()));
         }
         if (original.length == 0) {
+            result.put("rpcenabled", "true");
+            result.put("rpchttpenabled", "true");
+            result.put("rpcauthpath", authPath.toAbsolutePath().toString());
             Path storage = Path.of(value.getStorage()).toAbsolutePath();
             result.put("inbound", storage.resolve("inbound").toString());
             result.put("outbound", storage.resolve("outbound").toString());
