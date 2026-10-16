@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { onMounted } from 'vue';
 import { api, bindings } from '../api.ts';
 import { createRobotEditor } from '../robot-rules.ts';
@@ -18,50 +19,57 @@ onMounted(() =>
 function save() {
     props.state.run(async () => {
         await editor.save();
-        props.state.notice.value = 'Правило сохранено. Перезапуск не требуется.';
+        props.state.notice.value = t('Rule saved. No restart required.');
     });
 }
 function remove() {
     props.state.run(async () => {
         await editor.remove();
-        props.state.notice.value = 'Правило удалено.';
+        props.state.notice.value = t('Rule deleted.');
     });
 }
 </script>
 
 <template>
     <div class="page-heading">
-        <span class="eyebrow">УПРАВЛЕНИЕ НОДОЙ</span>
-        <h1>Почтовые роботы</h1>
-        <p>Доступ линков к AreaFix, FileFix и обмену файлами TIC.</p>
+        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
+        <h1>{{ t('Mail robots') }}</h1>
+        <p>{{ t('Link access to AreaFix, FileFix and TIC file exchange.') }}</p>
     </div>
     <button
         class="secondary refresh"
         :disabled="state.busy.value"
         @click="state.run(editor.refresh)"
     >
-        Обновить
+        {{ t('Refresh') }}
     </button>
     <template v-if="configuration">
         <NotificationBanner
             v-if="configuration.source !== 'database'"
             kind="warning"
-            message="Источник правил — файлы, доступен только просмотр. Для редактирования выберите RobotAccessSource=database в conf.d/40-mail-scripts.conf и перезапустите ноду. Перенос существующих правил выполняется явно через --import-robot-access."
+            :message="
+                t(
+                    'Rules come from files and are read-only. To edit them, set RobotAccessSource=database in conf.d/40-mail-scripts.conf and restart the node. Import existing rules explicitly with --import-robot-access.'
+                )
+            "
         />
         <p
             v-else
             class="muted"
         >
-            Источник — БД. Изменения действуют для следующих запросов; принятая ранее работа не
-            отменяется.
+            {{
+                t(
+                    'Source: database. Changes apply to future requests; previously accepted work is not cancelled.'
+                )
+            }}
         </p>
         <section class="card">
-            <h2>Правила доступа</h2>
+            <h2>{{ t('Access rules') }}</h2>
             <p
                 v-if="!configuration.rules.length"
                 class="muted"
             >
-                Правил пока нет. Доступ к роботам закрыт.
+                {{ t('No rules yet. Robot access is denied.') }}
             </p>
             <ul class="rows">
                 <li
@@ -72,7 +80,7 @@ function remove() {
                         <strong>{{ rule.service }} · {{ rule.address }}</strong>
                         <p>
                             {{ rule.masks }} <span v-if="rule.access">· {{ rule.access }}</span> ·
-                            {{ rule.enabled ? 'Включено' : 'Отключено' }}
+                            {{ rule.enabled ? t('Enabled') : t('Disabled') }}
                         </p>
                     </div>
                     <div
@@ -84,14 +92,14 @@ function remove() {
                             :disabled="state.busy.value"
                             @click="editor.edit(rule)"
                         >
-                            Изменить
+                            {{ t('Edit') }}
                         </button>
                         <button
                             class="secondary danger"
                             :disabled="state.busy.value"
                             @click="pendingDelete = rule"
                         >
-                            Удалить
+                            {{ t('Delete') }}
                         </button>
                     </div>
                 </li>
@@ -103,8 +111,12 @@ function remove() {
             role="alert"
         >
             <p>
-                Удалить правило {{ pendingDelete.service }} для {{ pendingDelete.address }}?
-                Следующие запросы будут отклонены.
+                {{
+                    t(
+                        'Delete the {service} rule for {address}? Future requests will be rejected.',
+                        { service: pendingDelete.service, address: pendingDelete.address }
+                    )
+                }}
             </p>
             <div class="actions">
                 <button
@@ -112,14 +124,14 @@ function remove() {
                     :disabled="state.busy.value"
                     @click="pendingDelete = null"
                 >
-                    Отмена
+                    {{ t('Cancel') }}
                 </button>
                 <button
                     class="primary danger"
                     :disabled="state.busy.value"
                     @click="remove"
                 >
-                    Удалить правило
+                    {{ t('Delete rule') }}
                 </button>
             </div>
         </section>
@@ -128,15 +140,16 @@ function remove() {
             class="card"
             @submit.prevent="save"
         >
-            <h2>{{ editing ? 'Изменить правило' : 'Новое правило' }}</h2>
+            <h2>{{ editing ? t('Edit rule') : t('New rule') }}</h2>
             <NotificationBanner
                 v-if="!configuration.peers.length"
-                message="Сначала настройте линк станции."
+                :message="t('Configure a station link first.')"
             />
             <fieldset :disabled="state.busy.value || !configuration.peers.length">
                 <div class="form-grid">
                     <label
-                        >Сервис<select
+                        >{{ t('Service')
+                        }}<select
                             v-model="model.service"
                             :disabled="editing"
                         >
@@ -146,7 +159,8 @@ function remove() {
                         </select></label
                     >
                     <label
-                        >Линк<select
+                        >{{ t('Link')
+                        }}<select
                             v-model="model.address"
                             :disabled="editing"
                             required
@@ -155,7 +169,7 @@ function remove() {
                                 v-if="editing && !configuration.peers.includes(model.address)"
                                 :value="model.address"
                             >
-                                {{ model.address }} (удалён из конфигурации)
+                                {{ model.address }} {{ t('(removed from configuration)') }}
                             </option>
                             <option
                                 v-for="peer in configuration.peers"
@@ -166,24 +180,28 @@ function remove() {
                         </select></label
                     >
                     <label
-                        >Маски областей<input
+                        >{{ t('Area patterns')
+                        }}<input
                             v-model="model.masks"
                             required
                             maxlength="4096"
                             placeholder="test.*,local.news"
-                        /><small
-                            >* — любые символы, ? — один символ; несколько масок через
-                            запятую.</small
-                        ></label
+                        /><small>{{
+                            t(
+                                '* matches any characters, ? matches one character; separate patterns with commas.'
+                            )
+                        }}</small></label
                     >
                     <label v-if="model.service === 'AreaFix'"
-                        >Права<select v-model="model.access">
-                            <option value="READ">READ — чтение</option>
-                            <option value="BOTH">BOTH — чтение и запись</option>
+                        >{{ t('Permissions')
+                        }}<select v-model="model.access">
+                            <option value="READ">{{ t('READ — read') }}</option>
+                            <option value="BOTH">{{ t('BOTH — read and write') }}</option>
                         </select></label
                     >
                     <label
-                        >Пароль<input
+                        >{{ t('Password')
+                        }}<input
                             v-model="model.password"
                             type="password"
                             autocomplete="new-password"
@@ -191,8 +209,8 @@ function remove() {
                             maxlength="256"
                         /><small>{{
                             editing
-                                ? 'Оставьте пустым, чтобы сохранить текущий пароль.'
-                                : 'Для нового правила задайте отдельный пароль робота.'
+                                ? t('Leave empty to keep the current password.')
+                                : t('Set a separate robot password for a new rule.')
                         }}</small></label
                     >
                 </div>
@@ -200,15 +218,18 @@ function remove() {
                     v-if="model.service === 'Tic'"
                     class="muted"
                 >
-                    TIC использует общий пароль при передаче файлов. Пароль хранится в БД для
-                    исходящих TIC, но не возвращается в браузер.
+                    {{
+                        t(
+                            'TIC uses a shared file transfer password. It is stored in the database for outgoing TIC files and is never returned to the browser.'
+                        )
+                    }}
                 </p>
                 <label
                     ><input
                         v-model="model.enabled"
                         type="checkbox"
                     />
-                    Правило включено</label
+                    {{ t('Rule enabled') }}</label
                 >
                 <footer class="actions">
                     <button
@@ -216,9 +237,9 @@ function remove() {
                         class="secondary"
                         @click="editor.reset"
                     >
-                        {{ editing ? 'Отмена' : 'Очистить' }}
+                        {{ editing ? t('Cancel') : t('Clear') }}
                     </button>
-                    <button class="primary">Сохранить правило</button>
+                    <button class="primary">{{ t('Save rule') }}</button>
                 </footer>
             </fieldset>
         </form>

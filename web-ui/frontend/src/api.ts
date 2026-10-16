@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import { Thrift, Int64 } from '@rpc/runtime.mjs';
 import { createBindings } from '@rpc/bindings.mjs';
 import { createRpcClient } from '@rpc/client.mjs';
@@ -14,7 +15,7 @@ export const api = {
 
 export function loginSession(response: LoginResponse): string {
     if (response.respose_status !== bindings.Response.OK || !response.session_id) {
-        throw new Error('Не удалось войти. Проверьте пароль и одобрение аккаунта.');
+        throw new Error(t('Sign-in failed. Check your password and account approval.'));
     }
     return response.session_id;
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { activePoll, pollState, pollTime } from '../polling.ts';
 import type { PollInfo } from '@rpc/bindings.mjs';
 defineProps<{ attempts: PollInfo[]; busy: boolean; selectedId?: string }>();
@@ -14,11 +15,11 @@ const emit = defineEmits<{
         <table>
             <thead>
                 <tr>
-                    <th>Линк</th>
-                    <th>Запуск</th>
-                    <th>Состояние</th>
-                    <th>Поставлен в очередь</th>
-                    <th>Действия</th>
+                    <th>{{ t('Link') }}</th>
+                    <th>{{ t('Trigger') }}</th>
+                    <th>{{ t('Status') }}</th>
+                    <th>{{ t('Queued at') }}</th>
+                    <th>{{ t('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,7 +29,7 @@ const emit = defineEmits<{
                     :class="{ selected: selectedId === attempt.id }"
                 >
                     <td class="mono">{{ attempt.address }}</td>
-                    <td>{{ attempt.source === 'SCHEDULED' ? 'Плановый' : 'Ручной' }}</td>
+                    <td>{{ attempt.source === 'SCHEDULED' ? t('Scheduled') : t('Manual') }}</td>
                     <td>
                         <span
                             class="badge"
@@ -44,7 +45,7 @@ const emit = defineEmits<{
                                 :disabled="busy"
                                 @click="emit('select', attempt)"
                             >
-                                Журнал
+                                {{ t('Log') }}
                             </button>
                             <button
                                 v-if="activePoll(attempt.state)"
@@ -52,7 +53,7 @@ const emit = defineEmits<{
                                 :disabled="busy"
                                 @click="emit('cancel', attempt.id)"
                             >
-                                Отменить
+                                {{ t('Cancel') }}
                             </button>
                             <button
                                 v-else
@@ -60,7 +61,7 @@ const emit = defineEmits<{
                                 :disabled="busy"
                                 @click="emit('retry', attempt.address)"
                             >
-                                Повторить
+                                {{ t('Retry') }}
                             </button>
                         </div>
                     </td>

@@ -5,6 +5,7 @@ import { stripTypeScriptTypes } from 'node:module';
 import { createRenderer, h, nextTick, Teleport } from 'vue';
 import type { Component } from 'vue';
 import { compileScript, parse } from 'vue/compiler-sfc';
+import { setLocale, t } from '../src/i18n.ts';
 
 interface Element {
     tag: string;
@@ -23,10 +24,12 @@ before(async () => {
     );
     const { descriptor } = parse(source);
     const compiled = compileScript(descriptor, { id: 'notifications', inlineTemplate: true });
-    const script = stripTypeScriptTypes(compiled.content).replace(
-        /from ['"]vue['"]/g,
-        `from ${JSON.stringify(import.meta.resolve('vue'))}`
-    );
+    const script = stripTypeScriptTypes(compiled.content)
+        .replace(/from ['"]vue['"]/g, `from ${JSON.stringify(import.meta.resolve('vue'))}`)
+        .replace(
+            /from ['"]\.\.\/i18n\.ts['"]/g,
+            `from ${JSON.stringify(new URL('../src/i18n.ts', import.meta.url).href)}`
+        );
     banner = (await import(`data:text/javascript;base64,${Buffer.from(script).toString('base64')}`))
         .default as Component;
 });
@@ -153,4 +156,25 @@ test('errors have no dismiss action and clear when the source error is resolved'
         undefined
     );
     ui.unmount();
+});
+
+test('existing notifications change language without restoring dismissed notifications', async () => {
+    const ui = fixture();
+    setLocale('uk');
+    await ui.show([{ message: t('Settings saved.'), kind: 'info' }]);
+    assert.ok(find(ui.body, (item) => item.text === 'Налаштування збережено.'));
+    setLocale('en');
+    await nextTick();
+    assert.ok(find(ui.body, (item) => item.text === 'Settings saved.'));
+    const button = find(ui.body, (item) => item.tag === 'button')!;
+    (button.props.onClick as () => void)();
+    await nextTick();
+    setLocale('uk');
+    await nextTick();
+    assert.equal(
+        find(ui.body, (item) => item.props.role === 'status'),
+        undefined
+    );
+    ui.unmount();
+    setLocale('en');
 });

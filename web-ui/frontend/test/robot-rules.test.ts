@@ -75,9 +75,9 @@ test('editing keeps the password absent and deletion requires explicit selection
 test('file mode never sends modifications', async () => {
     const context = fixture('files');
     await context.editor.refresh();
-    await assert.rejects(context.editor.save(), /файлы/);
+    await assert.rejects(context.editor.save(), /configuration files/);
     context.editor.pendingDelete.value = rule();
-    await assert.rejects(context.editor.remove(), /файлы/);
+    await assert.rejects(context.editor.remove(), /configuration files/);
     assert.equal(context.saved(), undefined);
     assert.equal(context.deleted(), '');
 });

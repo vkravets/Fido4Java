@@ -1,3 +1,4 @@
+import { locale, t } from './i18n.ts';
 import { ref } from 'vue';
 import type { LinkInfo, PollInfo, QueueItem, UiServiceClient } from '@rpc/bindings.mjs';
 
@@ -19,23 +20,23 @@ export function activePoll(state: string): boolean {
 
 export function pollState(state: string): string {
     const names: Record<string, string> = {
-        QUEUED: 'В очереди',
-        CONNECTING: 'Подключение',
-        AUTHENTICATING: 'Авторизация',
-        TRANSFERRING: 'Обмен',
-        SUCCEEDED: 'Успешно',
-        BUSY: 'Узел занят',
-        TIMED_OUT: 'Тайм-аут',
-        FAILED: 'Ошибка',
-        CANCELLED: 'Отменён',
-        INTERRUPTED: 'Прерван'
+        QUEUED: t('Queued'),
+        CONNECTING: t('Connecting'),
+        AUTHENTICATING: t('Authenticating'),
+        TRANSFERRING: t('Transferring'),
+        SUCCEEDED: t('Succeeded'),
+        BUSY: t('Node busy'),
+        TIMED_OUT: t('Timed out'),
+        FAILED: t('Failed'),
+        CANCELLED: t('Cancelled'),
+        INTERRUPTED: t('Interrupted')
     };
     return names[state] || state;
 }
 
 export function pollTime(value: unknown): string {
     const stamp = Number(String(value || 0));
-    return stamp ? new Date(stamp).toLocaleString() : '—';
+    return stamp ? new Date(stamp).toLocaleString(locale.value === 'uk' ? 'uk-UA' : 'en-GB') : '—';
 }
 
 export function createPolling(client: PollClient, session: () => string) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../i18n.ts';
 import { onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
@@ -24,14 +25,18 @@ function save() {
 
 <template>
     <div class="page-heading">
-        <span class="eyebrow">УПРАВЛЕНИЕ НОДОЙ</span>
-        <h1>Настройки станции</h1>
-        <p>Основной линк и адреса станции. Другие линки сохраняются.</p>
+        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
+        <h1>{{ t('Station settings') }}</h1>
+        <p>{{ t('Main link and station addresses. Other links are retained.') }}</p>
     </div>
     <NotificationBanner
         v-if="saved"
         kind="warning"
-        message="Конфигурация сохранена. Ожидается перезапуск ноды. Текущие соединения продолжают использовать прежнюю конфигурацию."
+        :message="
+            t(
+                'Configuration saved. Restart the node to apply it. Current connections still use the previous configuration.'
+            )
+        "
     />
     <form
         v-if="model.aliases"
@@ -47,7 +52,7 @@ function save() {
                 class="primary"
                 :disabled="state.busy.value"
             >
-                Сохранить конфигурацию
+                {{ t('Save configuration') }}
             </button>
         </footer>
     </form>

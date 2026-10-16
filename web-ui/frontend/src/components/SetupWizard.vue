@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { t } from '../i18n.ts';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
 import type { AppState } from '../state.ts';
@@ -9,7 +10,7 @@ const done = ref(false);
 const confirmation = ref('');
 const model = reactive(new bindings.NodeConfiguration());
 const token = new URLSearchParams(location.hash.slice(1)).get('setup') || '';
-const steps = ['Администратор', 'Станция', 'Нодлист', 'Подтверждение'];
+const steps = computed(() => [t('Administrator'), t('Station'), t('Nodelist'), t('Confirmation')]);
 onMounted(() =>
     props.state.run(async () => Object.assign(model, await api.settings.current(token)))
 );
@@ -20,7 +21,7 @@ function next() {
             step.value === 0 &&
             (model.password !== confirmation.value || model.password.length < 12)
         ) {
-            throw new Error('Пароли должны совпадать и содержать не менее 12 символов.');
+            throw new Error(t('Passwords must match and contain at least 12 characters.'));
         }
         step.value++;
     });
@@ -34,15 +35,19 @@ function lookup(download: boolean) {
             download ? model.nodeListUrl : '',
             model.charset
         );
-        if (!record.found) throw new Error('Адрес не найден. Можно заполнить данные вручную.');
+        if (!record.found)
+            throw new Error(t('Address not found. You can enter the details manually.'));
         if (record.boss) {
-            props.state.notice.value =
-                'Найден босс поинта. Заполните свои данные вручную: запись босса не подтверждает личность поинта.';
+            props.state.notice.value = t(
+                'Point boss found. Enter your details manually: the boss record does not verify the point identity.'
+            );
             return;
         }
         for (const key of ['system', 'sysop', 'location'] as const)
             if (record[key]) model[key] = record[key];
-        props.state.notice.value = `Данные найдены: ${record.source}. Проверьте их перед сохранением.`;
+        props.state.notice.value = t('Details found in {source}. Review them before saving.', {
+            source: record.source
+        });
     });
 }
 
@@ -59,20 +64,23 @@ function save() {
 <template>
     <main class="setup-layout">
         <div class="page-heading">
-            <span class="eyebrow">ПЕРВЫЙ ЗАПУСК</span>
-            <h1>Настроим вашу станцию</h1>
-            <p>Почтовые службы запустятся после завершения настройки.</p>
+            <span class="eyebrow">{{ t('FIRST START') }}</span>
+            <h1>{{ t('Set up your station') }}</h1>
+            <p>{{ t('Mail services will start after setup is complete.') }}</p>
         </div>
         <section
             v-if="done"
             class="card"
         >
-            <h2>Всё готово</h2>
+            <h2>{{ t('All set') }}</h2>
             <p>
-                Настройки сохранены. Сервер запускает почтовые службы. Откройте настроенный адрес
-                интерфейса и войдите.
+                {{
+                    t(
+                        'Settings saved. The server is starting mail services. Open the configured interface address and sign in.'
+                    )
+                }}
             </p>
-            <a :href="model.browserOrigin">Открыть JFtn →</a>
+            <a :href="model.browserOrigin">{{ t('Open JFtn →') }}</a>
         </section>
         <template v-else-if="model.aliases">
             <ol class="steps">
@@ -90,10 +98,17 @@ function save() {
                 @submit.prevent="step < 3 ? next() : save()"
             >
                 <template v-if="step === 0">
-                    <h2>Ваш аккаунт администратора</h2>
-                    <p>Этот пароль относится к интерфейсу JFtn и отличается от пароля binkp.</p>
+                    <h2>{{ t('Your administrator account') }}</h2>
+                    <p>
+                        {{
+                            t(
+                                'This password is for the JFtn interface and is separate from the binkp password.'
+                            )
+                        }}
+                    </p>
                     <label
-                        >Логин<input
+                        >{{ t('Username')
+                        }}<input
                             v-model="model.login"
                             required
                             pattern="[A-Za-z0-9_.@-]+"
@@ -101,7 +116,8 @@ function save() {
                             autocomplete="username"
                     /></label>
                     <label
-                        >Пароль<input
+                        >{{ t('Password')
+                        }}<input
                             v-model="model.password"
                             required
                             minlength="12"
@@ -110,7 +126,8 @@ function save() {
                             autocomplete="new-password"
                     /></label>
                     <label
-                        >Повторите пароль<input
+                        >{{ t('Confirm password')
+                        }}<input
                             v-model="confirmation"
                             required
                             minlength="12"
@@ -119,13 +136,19 @@ function save() {
                     /></label>
                 </template>
                 <template v-if="step === 1"
-                    ><h2>Станция и связь</h2>
+                    ><h2>{{ t('Station and connection') }}</h2>
                     <NodeForm
                         :model="model"
                         initial
                     >
                         <template #lookup>
-                            <p>Введите основной АКА, чтобы заполнить данные станции по нодлисту.</p>
+                            <p>
+                                {{
+                                    t(
+                                        'Enter the default AKA to fill station details from the nodelist.'
+                                    )
+                                }}
+                            </p>
                             <div class="actions">
                                 <button
                                     type="button"
@@ -133,7 +156,7 @@ function save() {
                                     :disabled="state.busy.value || !model.address"
                                     @click="lookup(false)"
                                 >
-                                    Найти в каталоге
+                                    {{ t('Look up in directory') }}
                                 </button>
                                 <button
                                     type="button"
@@ -143,30 +166,36 @@ function save() {
                                     "
                                     @click="lookup(true)"
                                 >
-                                    Скачать и заполнить
+                                    {{ t('Download and fill') }}
                                 </button>
                             </div>
                         </template>
                     </NodeForm>
                 </template>
                 <template v-if="step === 2">
-                    <h2>Проверим данные по нодлисту</h2>
+                    <h2>{{ t('Check details against the nodelist') }}</h2>
                     <p>
-                        Справочник помогает заполнить станцию, но не подтверждает право владения
-                        адресом. Этот шаг можно пропустить.
+                        {{
+                            t(
+                                'The directory helps fill station details but does not verify address ownership. You can skip this step.'
+                            )
+                        }}
                     </p>
                     <label
-                        >Адрес<input
+                        >{{ t('Address')
+                        }}<input
                             v-model="model.address"
                             required
                     /></label>
                     <label
-                        >HTTP-источник<input
+                        >{{ t('HTTP source')
+                        }}<input
                             v-model="model.nodeListUrl"
                             type="url"
                     /></label>
                     <label
-                        >Кодировка<input
+                        >{{ t('Encoding')
+                        }}<input
                             v-model="model.charset"
                             required
                     /></label>
@@ -177,34 +206,37 @@ function save() {
                             :disabled="state.busy.value"
                             @click="lookup(false)"
                         >
-                            Найти в каталоге</button
+                            {{ t('Look up in directory') }}</button
                         ><button
                             type="button"
                             class="secondary"
                             :disabled="state.busy.value || !model.nodeListUrl"
                             @click="lookup(true)"
                         >
-                            Скачать и проверить
+                            {{ t('Download and check') }}
                         </button>
                     </div>
                 </template>
                 <template v-if="step === 3">
-                    <h2>Готово к запуску</h2>
+                    <h2>{{ t('Ready to start') }}</h2>
                     <dl>
-                        <dt>Станция</dt>
+                        <dt>{{ t('Station') }}</dt>
                         <dd>{{ model.system }} · {{ model.address }}</dd>
-                        <dt>Сисоп</dt>
+                        <dt>{{ t('Sysop') }}</dt>
                         <dd>{{ model.sysop }}</dd>
-                        <dt>Линк</dt>
+                        <dt>{{ t('Link') }}</dt>
                         <dd>{{ model.uplink }} · {{ model.host }}:{{ model.port }}</dd>
-                        <dt>Почта</dt>
+                        <dt>{{ t('Mail') }}</dt>
                         <dd>{{ model.storage }}</dd>
-                        <dt>Администратор</dt>
+                        <dt>{{ t('Administrator') }}</dt>
                         <dd>{{ model.login }}</dd>
                     </dl>
                     <p>
-                        Регистрация поинтов будет открыта. Каждую заявку должен одобрить
-                        администратор.
+                        {{
+                            t(
+                                'Point registration will be open. Each request requires administrator approval.'
+                            )
+                        }}
                     </p>
                 </template>
                 <footer class="actions">
@@ -215,16 +247,16 @@ function save() {
                         :disabled="state.busy.value"
                         @click="step--"
                     >
-                        Назад</button
+                        {{ t('Back') }}</button
                     ><button
                         class="primary"
                         :disabled="state.busy.value"
                     >
-                        {{ step === 3 ? 'Сохранить и запустить' : 'Продолжить →' }}
+                        {{ step === 3 ? t('Save and start') : t('Continue →') }}
                     </button>
                 </footer>
             </form>
         </template>
-        <p v-else>Откройте полную ссылку настройки из консоли сервера.</p>
+        <p v-else>{{ t('Open the complete setup link from the server console.') }}</p>
     </main>
 </template>
