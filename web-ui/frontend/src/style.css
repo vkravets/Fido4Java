@@ -547,8 +547,12 @@ footer.actions {
     margin-bottom: 24px;
 }
 .messages {
-    position: relative;
-    z-index: 2;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    max-height: 50dvh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
 }
 .messages p {
     margin: 0;
