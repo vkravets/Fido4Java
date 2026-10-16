@@ -31,3 +31,7 @@ with RpcEnabled=false. Existing active .conf files are not overwritten.
 Use --check-robot-access to validate file rules without starting the node.
 Use --import-robot-access for an explicit one-time import into an empty database
 rule table, then select RobotAccessSource=database. See docs/robot-access.md.
+Use --export-robot-access conf.d/49-robot-access.conf to export DB rules for
+file-only administration. Stop the node first; the destination must not exist.
+The exported fragment selects files mode and preserves hashes/disabled rules.
+It contains private credentials. Disable RPC separately in 90-rpc.conf.

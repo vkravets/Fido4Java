@@ -14,11 +14,29 @@ public final class FileRobotRules implements RobotRules {
     private final List<RobotAccessRule> rules;
 
     public FileRobotRules(JFtnConfig config) {
+        if (config.getValue("RobotAccessFormat") != null) {
+            rules = validated(config, RobotRuleSnapshot.read(config));
+            return;
+        }
+        if (config.getValuesAsList("RobotAccessRule") != null) {
+            throw new IllegalArgumentException("RobotAccessRule requires RobotAccessFormat=1");
+        }
         List<RobotAccessRule> loaded = new ArrayList<>();
         for (RobotService service : RobotService.values()) {
             load(config, service, loaded);
         }
         rules = List.copyOf(loaded);
+    }
+
+    private static List<RobotAccessRule> validated(JFtnConfig config, List<RobotAccessRule> rules) {
+        Set<String> identities = new HashSet<>();
+        for (RobotAccessRule rule : rules) {
+            if (config.getLink(new FTNAddr(rule.getAddress())) == null
+                    || !identities.add(rule.getService().name() + ":" + rule.getAddress())) {
+                throw new IllegalArgumentException("RobotAccessRule requires unique configured links per service");
+            }
+        }
+        return List.copyOf(rules);
     }
 
     private static void load(JFtnConfig config,

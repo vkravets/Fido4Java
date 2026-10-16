@@ -3,13 +3,17 @@ package org.fidonet.jftn;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.robots.FileRobotRules;
+import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.types.FTNAddr;
 
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -51,6 +55,7 @@ public final class DistributionProbe {
         if (Files.exists(Path.of("database/jftn10.mv.db"))) {
             throw new IllegalStateException("File validation must not open the mail database");
         }
+        verifyExportRequiresExistingDatabase();
         JFtnRunner.main(new String[]{"--import-robot-access"});
         if (!Files.exists(Path.of("database/jftn10.mv.db"))
                 || Files.exists(Path.of("database/rpc-auth.mv.db"))) {
@@ -60,6 +65,37 @@ public final class DistributionProbe {
         config.load("jftn.conf");
         if (!config.getValue("RobotAccessSource").equals("database")) {
             throw new IllegalStateException("Import must not switch the active source automatically");
+        }
+        verifyOfflineExport();
+    }
+
+    private static void verifyExportRequiresExistingDatabase() throws Exception {
+        Path output = Path.of("not-exported.conf");
+        try {
+            JFtnRunner.main(new String[]{"--export-robot-access", output.toString()});
+            throw new IllegalStateException("Export must refuse a missing database");
+        } catch (SQLException expected) {
+            if (Files.exists(output) || Files.exists(Path.of("database/jftn10.mv.db"))) {
+                throw new IllegalStateException("Export must not create a database or output on failure");
+            }
+        }
+    }
+
+    private static void verifyOfflineExport() throws Exception {
+        Path output = Path.of("conf.d/49-robot-access.conf");
+        JFtnRunner.main(new String[]{"--export-robot-access", output.toString()});
+        JFtnConfig config = new JFtnConfig();
+        config.load("jftn.conf");
+        FileRobotRules rules = new FileRobotRules(config);
+        if (!config.getValue("RobotAccessSource").equals("files")
+                || !rules.find(RobotService.AreaFix, new FTNAddr("1:500/101"))
+                         .verifyPassword("probe-robot-password")) {
+            throw new IllegalStateException("Exported rules must authorize with the original password in files mode");
+        }
+        JFtnRunner.main(new String[]{"--check-robot-access"});
+        if (Files.readString(output).contains("probe-robot-password")
+                || Files.exists(Path.of("database/rpc-auth.mv.db"))) {
+            throw new IllegalStateException("Offline export must retain verifiers without starting RPC accounts");
         }
     }
 
