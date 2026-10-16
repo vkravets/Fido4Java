@@ -47,6 +47,7 @@ import java.sql.SQLException;
  * Time: 9:53 AM
  */
 public class DatabasePlugin implements Plugin<DatabaseManager> {
+    public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10";
 
     private DatabaseManager manager;
     private String databaseUrl;
@@ -61,7 +62,7 @@ public class DatabasePlugin implements Plugin<DatabaseManager> {
     public void init(PluginManager manager, EventBus eventBus) {
         // TODO: Load configuration from file
         //        databaseUrl = "jdbc:h2:./database/jftn10;TRACE_LEVEL_FILE=4";
-        databaseUrl = "jdbc:h2:./database/jftn10";
+        databaseUrl = DEFAULT_DATABASE_URL;
     }
 
     @Override

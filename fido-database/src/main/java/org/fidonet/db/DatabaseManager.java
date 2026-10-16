@@ -38,6 +38,7 @@ import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.NetmailRouteRecord;
 import org.fidonet.db.objects.Subscription;
+import org.fidonet.db.robots.DatabaseRobotRules;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.ArchiveStore;
 import org.fidonet.echobase.EchoHistory;
@@ -273,6 +274,10 @@ public class DatabaseManager
         netmailRepository = new NetmailRepository(manager);
         areas = new AreaRepository(manager);
         subscriptions = new SubscriptionRepository(manager, areas);
+    }
+
+    public DatabaseRobotRules getRobotRules() {
+        return new DatabaseRobotRules(dbManager);
     }
 
     public synchronized void configureLink(Link link, String packetPassword) {

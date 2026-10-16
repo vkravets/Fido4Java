@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Version;
+import org.fidonet.db.robots.RobotRuleRecord;
 
 import com.j256.ormlite.dao.Dao;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,8 @@ public class OrmLifecycleTest {
             manager.connect();
             manager.createTables();
             assertTrue(manager.isConnect());
-            assertEquals(12, manager.getAllDaos().size());
+            assertEquals(13, manager.getAllDaos().size());
+            assertTrue(manager.getDao(RobotRuleRecord.class).isTableExists());
             assertEquals(Long.valueOf(Version.UNKNOWN_VERSION), manager.getCurrentVersion());
             Version version = new Version();
             version.setVersion(10L);

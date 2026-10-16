@@ -1,0 +1,63 @@
+package org.fidonet.db.robots;
+
+import org.fidonet.config.JFtnConfig;
+import org.fidonet.types.FTNAddr;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/** Validated snapshot of merged main/conf.d configuration; no RPC or database is required. */
+public final class FileRobotRules implements RobotRules {
+    private final List<RobotAccessRule> rules;
+
+    public FileRobotRules(JFtnConfig config) {
+        List<RobotAccessRule> loaded = new ArrayList<>();
+        for (RobotService service : RobotService.values()) {
+            load(config, service, loaded);
+        }
+        rules = List.copyOf(loaded);
+    }
+
+    private static void load(JFtnConfig config,
+                             RobotService service,
+                             List<RobotAccessRule> result) {
+        List<String> values = config.getValuesAsList(service.name() + "Peer");
+        if (values == null) {
+            return;
+        }
+        Set<String> peers = new HashSet<>();
+        for (String value : values) {
+            String[] fields = value.split("\\|", -1);
+            int expected = service == RobotService.AreaFix ? 4 : 3;
+            if (fields.length != expected) {
+                throw new IllegalArgumentException("Invalid " + service + "Peer field count");
+            }
+            RobotAccessRule rule = RobotAccessRule.create(service,
+                                                          fields[0].trim(),
+                                                          fields[1],
+                                                          fields[2].trim(),
+                                                          expected == 4 ? fields[3].trim() : "",
+                                                          true);
+            if (config.getLink(new FTNAddr(rule.getAddress())) == null
+                    || !peers.add(rule.getAddress())) {
+                throw new IllegalArgumentException(service
+                                                   + "Peer requires unique configured links");
+            }
+            result.add(rule);
+        }
+    }
+
+    @Override
+    public List<RobotAccessRule> list(RobotService service) {
+        return rules.stream()
+                    .filter(rule -> rule.getService() == service)
+                    .collect(Collectors.toUnmodifiableList());
+    }
+
+    public List<RobotAccessRule> all() {
+        return rules;
+    }
+}
