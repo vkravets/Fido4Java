@@ -18,6 +18,7 @@ include ':nodelist'
 include ':scheduler'
 include ':jftn-bundle'
 include ':rpc'
+include ':web-ui'
 
 project(':tools').projectDir = "$rootDir/tools" as File
 project(':event-bus').projectDir = "$rootDir/event-bus" as File

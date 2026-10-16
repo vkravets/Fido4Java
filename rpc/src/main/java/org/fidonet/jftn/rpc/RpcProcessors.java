@@ -15,6 +15,10 @@ final class RpcProcessors {
         Map<String, TProcessor> services = new LinkedHashMap<>();
         services.put("api", new Api.Processor<>(handlers.getApiHandler()));
         services.put("login", new LoginService.Processor<>(handlers.getLoginHandler()));
+        if (handlers.getSettingsHandler() != null) {
+            services.put("settings",
+                         new SettingsService.Processor<>(handlers.getSettingsHandler()));
+        }
         if (handlers.getProfileHandler() != null) {
             services.put("profile", new ProfileService.Processor<>(handlers.getProfileHandler()));
         }

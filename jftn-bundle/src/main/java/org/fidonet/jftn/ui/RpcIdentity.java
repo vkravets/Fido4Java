@@ -1,11 +1,14 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountAuthentication;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
+import org.fidonet.jftn.web.NodeConfigurationStore;
+import org.fidonet.jftn.web.SettingsHandler;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ final class RpcIdentity implements AutoCloseable {
     private final UiSessions sessions;
     private final AccountAuthentication authentication;
     private final ProfileHandler profiles;
+    private SettingsService.Iface settings;
 
     private RpcIdentity(RpcResources resources,
                         UiSessions sessions,
@@ -53,7 +57,17 @@ final class RpcIdentity implements AutoCloseable {
                                                          sessions,
                                                          addresses,
                                                          Boolean.parseBoolean(registration));
-            return new RpcIdentity(resources, sessions, authentication, profiles);
+            RpcIdentity identity = new RpcIdentity(resources, sessions, authentication, profiles);
+            if (config.getSourcePath() != null) {
+                identity.settings = new SettingsHandler(new NodeConfigurationStore(config.getSourcePath()),
+                                                        accounts,
+                                                        sessions,
+                                                        path,
+                                                        "",
+                                                        () -> {
+                                                        });
+            }
+            return identity;
         } catch (Exception failure) {
             resources.closeAfterFailure(failure);
             throw failure;
@@ -80,6 +94,10 @@ final class RpcIdentity implements AutoCloseable {
 
     ProfileHandler profiles() {
         return profiles;
+    }
+
+    SettingsService.Iface settings() {
+        return settings;
     }
 
     AccountAuthentication authentication() {
