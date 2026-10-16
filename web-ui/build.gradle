@@ -163,6 +163,17 @@ tasks.register('playwrightComponentsTest', Exec) {
             'test', '--config', 'playwright.config.ts'
 }
 
+tasks.register('playwrightVisualTest', Exec) {
+    group = 'verification'
+    description = 'Compares committed screenshots in the pinned Linux Playwright container.'
+    dependsOn npmCi
+    if (!useBrowserSnapshot) {
+        dependsOn 'buildStorybook'
+    }
+    workingDir file('frontend')
+    commandLine nodeExecutable.get(), '--experimental-strip-types', file('frontend/test/browser/run-visual.ts')
+}
+
 tasks.register('playwrightTest', Test) {
     group = 'verification'
     description = 'Runs Chromium against real HTTP RPC handlers and compiled Vue assets.'

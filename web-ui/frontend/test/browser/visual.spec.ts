@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+import { openStory } from './story.ts';
+
+const screens = [
+    { name: 'administrator-navigation', story: 'navigation-sidebar--administrator' },
+    { name: 'point-navigation', story: 'navigation-sidebar--point' },
+    { name: 'station-settings', story: 'settings-nodeform--settings' },
+    { name: 'poll-queue', story: 'connections-pollattempts--mixed-states' },
+    { name: 'poll-details', story: 'connections-polldetails--failed' },
+    { name: 'information', story: 'feedback-notificationbanner--information', notification: true },
+    { name: 'warning', story: 'feedback-notificationbanner--warning', notification: true },
+    { name: 'error', story: 'feedback-notificationbanner--error', notification: true }
+];
+
+for (const theme of ['light', 'dark']) {
+    for (const locale of ['en', 'uk']) {
+        for (const screen of screens) {
+            test(`${theme}/${locale}/${screen.name}`, async ({ page }) => {
+                await page.clock.setFixedTime(new Date('2026-10-16T12:00:00Z'));
+                await openStory(page, screen.story, theme, locale);
+                await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+                await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                const filename = `${screen.name}-${theme}-${locale}.png`;
+                if (screen.notification) {
+                    await expect(page.locator('.message')).toBeVisible();
+                    await expect(page).toHaveScreenshot(filename);
+                    return;
+                }
+                await expect(page.locator('.storybook-stage')).toHaveScreenshot(filename);
+            });
+        }
+    }
+}

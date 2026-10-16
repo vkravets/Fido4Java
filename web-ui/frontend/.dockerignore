@@ -1,0 +1,11 @@
+**
+!package.json
+!package-lock.json
+!playwright.config.ts
+!playwright.visual.config.ts
+!vite.config.ts
+!test/
+!test/browser/
+!test/browser/visual.spec.ts
+!test/browser/story.ts
+!test/browser/visual.Dockerfile

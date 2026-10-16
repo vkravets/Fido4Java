@@ -16,6 +16,8 @@
         "typecheck:storybook": "vue-tsc --noEmit -p tsconfig.storybook.json",
         "test:ui": "playwright test --config playwright.config.ts",
         "test:ui:install": "playwright install chromium",
+        "test:vrt": "node --experimental-strip-types test/browser/run-visual.ts",
+        "test:vrt:update": "node --experimental-strip-types test/browser/run-visual.ts --update-snapshots=all",
         "test": "node --experimental-strip-types --test test/*.test.ts"
     },
     "dependencies": {

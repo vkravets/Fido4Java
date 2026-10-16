@@ -171,6 +171,41 @@ CI runs the UI job after the main build, using its compiled test/runtime snapsho
 and Storybook artifact. It installs Chromium and Linux dependencies, uploads
 browser diagnostics, and gates release packaging alongside the other integrations.
 
+## Visual regression tests
+
+`./gradlew :web-ui:playwrightVisualTest` compares 64 committed PNG test fixtures:
+administrator/point navigation, station settings, poll queue/details, and
+information/warning/error notifications. Each has light/dark and English/Ukrainian
+variants at desktop (1280×900) and mobile (375×812) sizes.
+
+Both Windows and CI run these comparisons in the same pinned Linux/amd64
+Playwright image. Docker is used on Linux; Podman is the default on Windows.
+Set `VRT_CONTAINER_ENGINE=docker` or `podman` to select another installed engine.
+The container engine must already be running. The browser receives no external
+network access; Storybook and the expected screenshots are mounted read-only.
+Dates, timezone, locale, pixel scale and animations are fixed, and fonts are
+loaded before capture. A per-pixel threshold of 0.1 permits minor antialiasing
+differences; no pixels above that threshold are allowed to differ.
+This follows [Playwright visual comparisons](https://playwright.dev/docs/test-snapshots)
+and its [container guidance](https://playwright.dev/docs/docker).
+
+After an intentional design change, build Storybook and explicitly regenerate
+the reference images from `web-ui/frontend`:
+
+```sh
+npm run test:vrt:update
+npm run test:vrt
+```
+
+Review the changed images in `test/browser/snapshots` and commit them with the
+design change. Updates are rejected in CI; missing or different references fail
+the build. `npm run test:vrt -- --project desktop --grep administrator-navigation`
+limits a comparison when debugging. Reports are in
+`web-ui/build/reports/playwright/visual/index.html`; mismatches retain actual,
+expected and diff images plus a trace. CI uploads them with the other browser
+reports and blocks release packaging on failure. PNGs in the source tree are
+test fixtures; runtime/build reports remain untracked.
+
 ## Accounts and access
 
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts
