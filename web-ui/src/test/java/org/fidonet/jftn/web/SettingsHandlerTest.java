@@ -16,6 +16,8 @@ import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
+import org.apache.thrift.protocol.TJSONProtocol;
+import org.apache.thrift.transport.THttpClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -98,6 +100,10 @@ class SettingsHandlerTest {
             String point = sessions.login(new Credential("point", "point-password"))
                                    .getSession_id();
             assertThrows(UiError.class, () -> normal.current(point));
+            assertThrows(UiError.class, () -> normal.links(point));
+            assertThrows(UiError.class, () -> normal.tosser(point));
+            assertThrows(UiError.class, () -> normal.saveLinks(point, List.of()));
+            assertThrows(UiError.class, () -> normal.saveTosser(point, null));
             SettingsHandler setup = new SettingsHandler(new NodeConfigurationStore(config),
                                                         accounts,
                                                         sessions,
@@ -105,10 +111,55 @@ class SettingsHandlerTest {
                                                         "resume",
                                                         () -> {
                                                         });
+            assertThrows(UiError.class, () -> setup.links("resume"));
+            assertThrows(UiError.class, () -> setup.tosser("resume"));
             NodeConfiguration wrong = valid().setPassword("another-password");
             assertThrows(UiError.class, () -> setup.save("resume", wrong));
             assertFalse(Files.exists(config));
             assertTrue(setup.save("resume", valid()));
+        }
+    }
+
+    @Test
+    void administratorSavedMailSettingsThroughTheSameStoreAsStationSettings() throws Exception {
+        Path auth = directory.resolve("accounts");
+        NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
+        store.save(valid(), auth);
+        try (RpcAccounts accounts = new RpcAccounts(auth)) {
+            accounts.createUser("admin", "a-long-password");
+            UiSessions sessions = new UiSessions(accounts, 3600);
+            String session = sessions.login(new Credential("admin", "a-long-password"))
+                                     .getSession_id();
+            SettingsHandler handler = new SettingsHandler(store,
+                                                          accounts,
+                                                          sessions,
+                                                          auth,
+                                                          "",
+                                                          () -> {
+                                                          });
+            DefaultServerHandler handlers = new DefaultServerHandler() {
+                @Override
+                public SettingsService.Iface getSettingsHandler() {
+                    return handler;
+                }
+            };
+            try (HttpRpcServer server = new HttpRpcServer(0, "127.0.0.1", handlers, Set.of())) {
+                server.run();
+                try (THttpClient transport = new THttpClient("http://127.0.0.1:"
+                        + server.getLocalPort() + "/rpc/settings")) {
+                    SettingsService.Client client = new SettingsService.Client(new TJSONProtocol(transport));
+                    var links = client.links(session);
+                    links.get(0).setPacketPasswordMode("SEPARATE").setPacketPassword("pktpass");
+                    assertTrue(client.saveLinks(session, links));
+                    var tosser = client.tosser(session).setIntervalSeconds(20);
+                    assertTrue(client.saveTosser(session, tosser));
+                    assertTrue(client.save(session, client.current(session).setSystem("Changed")));
+                    assertEquals(20, client.tosser(session).getIntervalSeconds());
+                    assertEquals("SEPARATE", client.links(session).get(0).getPacketPasswordMode());
+                    assertEquals("", client.links(session).get(0).getPacketPassword());
+                    assertTrue(client.status().isRestartRequired());
+                }
+            }
         }
     }
 

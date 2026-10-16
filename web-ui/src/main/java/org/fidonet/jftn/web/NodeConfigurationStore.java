@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Replaces configuration atomically and refuses to overwrite an external edit. */
 public final class NodeConfigurationStore {
@@ -155,6 +157,9 @@ public final class NodeConfigurationStore {
     public synchronized void save(NodeConfiguration value, Path authPath) throws Exception {
         validate(value);
         Map<String, String> values = values(value, authPath);
+        if (original.length > 0) {
+            configuration().getPacketPassword(new Link(values.get("link")));
+        }
         List<String> lines = new ArrayList<>();
         boolean firstLink = true;
         for (String line : new String(original, StandardCharsets.UTF_8).split("\\R")) {
@@ -174,6 +179,10 @@ public final class NodeConfigurationStore {
         }
         values.forEach((key, entry) -> lines.add(key + "=" + entry));
         byte[] next = (String.join("\n", lines) + "\n").getBytes(StandardCharsets.UTF_8);
+        write(next);
+    }
+
+    private void write(byte[] next) throws IOException {
         Files.createDirectories(directory());
         Path stage = Files.createTempFile(directory(), ".jftn-config-", ".tmp");
         try {
@@ -196,6 +205,55 @@ public final class NodeConfigurationStore {
             original = next;
         } finally {
             Files.deleteIfExists(stage);
+        }
+    }
+
+    synchronized JFtnConfig configuration() throws Exception {
+        JFtnConfig config = new JFtnConfig();
+        config.load(path.toString());
+        return config;
+    }
+
+    synchronized void replaceOptions(Map<String, List<String>> replacements) throws Exception {
+        checkFragments(replacements);
+        List<String> lines = new ArrayList<>();
+        Map<String, List<String>> remaining = new LinkedHashMap<>(replacements);
+        for (String line : new String(original, StandardCharsets.UTF_8).split("\\R")) {
+            String key = line.split("=", 2)[0].trim().toLowerCase(Locale.ROOT);
+            if (!replacements.containsKey(key)) {
+                lines.add(line);
+                continue;
+            }
+            List<String> entries = remaining.remove(key);
+            if (entries != null) {
+                entries.forEach(entry -> lines.add(key + "=" + entry));
+            }
+        }
+        remaining.forEach((key, entries) -> entries.forEach(entry -> lines.add(key + "=" + entry)));
+        write((String.join("\n", lines) + "\n").getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void checkFragments(Map<String, List<String>> replacements) throws IOException {
+        Path fragments = directory().resolve("conf.d");
+        if (!Files.isDirectory(fragments)) {
+            return;
+        }
+        try (Stream<Path> files = Files.list(fragments)) {
+            for (Path fragment : files.filter(file -> file.toString().endsWith(".conf"))
+                                      .collect(Collectors.toList())) {
+                checkFragment(fragment, replacements);
+            }
+        }
+    }
+
+    private void checkFragment(Path fragment, Map<String, List<String>> replacements)
+            throws IOException {
+        for (String line : Files.readAllLines(fragment, StandardCharsets.UTF_8)) {
+            String key = line.split("=", 2)[0].trim().toLowerCase(Locale.ROOT);
+            if (replacements.containsKey(key)) {
+                throw new IllegalArgumentException("Move " + key
+                        + " from conf.d to jftn.conf before editing it in the UI");
+            }
         }
     }
 

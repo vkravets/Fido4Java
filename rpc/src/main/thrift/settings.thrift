@@ -26,6 +26,25 @@ struct SetupStatus {
     2: required bool restartRequired
 }
 
+// Password fields are write-only: empty retains the stored value; '-' clears it.
+struct MailLinkConfiguration {
+    1: required string address,
+    2: required list<string> localAddresses,
+    3: required string host,
+    4: required i32 port,
+    5: required string sessionPassword,
+    6: required string packetPassword,
+    // INHERIT, SEPARATE or UNPROTECTED
+    7: required string packetPasswordMode
+}
+
+struct TosserConfiguration {
+    1: required i32 intervalSeconds,
+    2: required bool deleteProcessedFiles,
+    3: required bool enforceEchoAccess,
+    4: required bool autoCreateEcho
+}
+
 struct NodeLookup {
     1: required bool found,
     2: required bool boss,
@@ -41,5 +60,9 @@ service SettingsService {
     SetupStatus status(),
     NodeConfiguration current(1:string authorization) throws (1:ui.UiError error),
     NodeLookup lookup(1:string authorization, 2:string address, 3:string url, 4:string charset) throws (1:ui.UiError error),
-    bool save(1:string authorization, 2:NodeConfiguration configuration) throws (1:ui.UiError error)
+    bool save(1:string authorization, 2:NodeConfiguration configuration) throws (1:ui.UiError error),
+    list<MailLinkConfiguration> links(1:string authorization) throws (1:ui.UiError error),
+    bool saveLinks(1:string authorization, 2:list<MailLinkConfiguration> links) throws (1:ui.UiError error),
+    TosserConfiguration tosser(1:string authorization) throws (1:ui.UiError error),
+    bool saveTosser(1:string authorization, 2:TosserConfiguration configuration) throws (1:ui.UiError error)
 }
