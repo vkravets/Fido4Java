@@ -137,6 +137,40 @@ story source is checked, while upstream toolkit declaration files are skipped
 because Storybook currently ships incompatible declarations for TypeScript 6.
 The application keeps its existing strict declaration checking.
 
+## Browser tests
+
+Playwright uses headless Chromium. Install its browser once from `web-ui/frontend`
+with `npm run test:ui:install`. To keep downloads inside the checkout, set
+`PLAYWRIGHT_BROWSERS_PATH` to an absolute path such as `<checkout>/build/playwright-browsers`
+for both installation and test runs.
+
+```sh
+./gradlew :web-ui:playwrightComponentsTest
+./gradlew :web-ui:playwrightTest
+```
+
+The first task builds Storybook and checks its components in a browser: both themes
+and languages, notification positioning during scroll, dismissal rules, point/admin
+navigation, mobile forms, disabled actions, and escaped journal text.
+The second starts an isolated Java HTTP server on a system-assigned port, with a
+temporary account database and the compiled production Vue assets. It exercises
+real HTTP Thrift calls for sign-in, registration, administrator approval, point
+navigation and profile/theme changes. A separate fresh server checks initial setup
+and password validation. It never connects to an operator's running node. These
+opt-in tests are excluded from ordinary `test`/`check`; the existing Java and
+TypeScript tests continue to run normally. Hardware passkey dialogs and actual
+binkp polling are outside these browser scenarios.
+
+HTML/JUnit reports live in `web-ui/build/reports/playwright` and
+`web-ui/build/test-results/playwright`. Failures include screenshots, video and
+Playwright traces. Open a trace from the frontend directory with
+`npx playwright show-trace <trace.zip>`. These reports contain test account/session
+data and should be shared only as debugging artifacts.
+
+CI runs the UI job after the main build, using its compiled test/runtime snapshot
+and Storybook artifact. It installs Chromium and Linux dependencies, uploads
+browser diagnostics, and gates release packaging alongside the other integrations.
+
 ## Accounts and access
 
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts

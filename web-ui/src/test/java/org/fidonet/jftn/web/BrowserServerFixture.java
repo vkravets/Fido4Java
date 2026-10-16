@@ -24,9 +24,15 @@ final class BrowserServerFixture implements AutoCloseable {
     private final HttpRpcServer server;
 
     BrowserServerFixture(Path directory) throws Exception {
+        this(directory, "");
+    }
+
+    BrowserServerFixture(Path directory, String setupToken) throws Exception {
         Path authPath = directory.resolve("accounts");
         accounts = new RpcAccounts(authPath);
-        accounts.createUser("admin", "preview-admin-password");
+        if (setupToken.isEmpty()) {
+            accounts.createUser("admin", "preview-admin-password");
+        }
         UiSessions sessions = new UiSessions(accounts, 3600);
         authentication = new AccountAuthentication(accounts, sessions, "", Set.of());
         ProfileHandler profile = new ProfileHandler(new AccountDirectory(accounts),
@@ -37,7 +43,7 @@ final class BrowserServerFixture implements AutoCloseable {
                                                        accounts,
                                                        sessions,
                                                        authPath,
-                                                       "",
+                                                       setupToken,
                                                        () -> {
                                                        });
         server = new HttpRpcServer(0,

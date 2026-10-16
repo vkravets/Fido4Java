@@ -83,7 +83,7 @@ jobs:
 
   package:
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    needs: [build, integration]
+    needs: [build, integration, ui]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -148,6 +148,56 @@ jobs:
           path: |
             **/build/test-results/**
             **/build/reports/**
+          retention-days: 15
+
+  ui:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web-ui/frontend/package-lock.json
+      - uses: actions/download-artifact@v7
+        with:
+          name: compiled-release
+          path: build
+      - run: tar -xf build/compiled-release.tar -C build
+      - uses: actions/download-artifact@v7
+        with:
+          name: storybook
+          path: web-ui/build/storybook
+      - name: Install browser test tools
+        working-directory: web-ui/frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Test compiled components and real HTTP UI
+        run: |
+          test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
+          (cd build/ci-integration && sha256sum --check SHA256SUMS --quiet)
+          bash ./gradlew :web-ui:playwrightComponentsTest :web-ui:playwrightTest \
+            -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
+      - name: Save browser reports, screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ui-browser-reports
+          path: |
+            web-ui/build/reports/playwright/**
+            web-ui/build/reports/tests/playwrightTest/**
+            web-ui/build/test-results/playwright/**
+            web-ui/build/test-results/playwrightTest/**
           retention-days: 15
 
   publish:
