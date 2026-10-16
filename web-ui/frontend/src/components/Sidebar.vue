@@ -2,7 +2,9 @@
 import type { UserProfile } from '@rpc/bindings.mjs';
 
 defineProps<{ profile: UserProfile; page: string }>();
-const emit = defineEmits<{ navigate: [page: 'settings' | 'node' | 'accounts' | 'robots'] }>();
+const emit = defineEmits<{
+    navigate: [page: 'settings' | 'node' | 'accounts' | 'robots' | 'connections'];
+}>();
 </script>
 
 <template>
@@ -30,6 +32,12 @@ const emit = defineEmits<{ navigate: [page: 'settings' | 'node' | 'accounts' | '
                     @click="emit('navigate', 'node')"
                 >
                     <span>⌘</span>Станция
+                </button>
+                <button
+                    :class="{ active: page === 'connections' }"
+                    @click="emit('navigate', 'connections')"
+                >
+                    <span>↔</span>Соединения
                 </button>
                 <button
                     :class="{ active: page === 'robots' }"
