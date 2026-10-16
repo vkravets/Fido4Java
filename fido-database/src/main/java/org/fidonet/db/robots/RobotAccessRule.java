@@ -57,6 +57,11 @@ public final class RobotAccessRule {
         return new RobotAccessRule(service, address, stored, masks, access, enabled);
     }
 
+    /** Changes policy without exposing or rehashing the existing credential. */
+    public RobotAccessRule withPolicy(String masks, String access, boolean enabled) {
+        return new RobotAccessRule(service, address, credential, masks, access, enabled);
+    }
+
     public RobotService getService() {
         return service;
     }

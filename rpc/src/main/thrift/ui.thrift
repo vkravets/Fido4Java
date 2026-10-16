@@ -82,7 +82,29 @@ struct LogPage {
     3: required bool rotated
 }
 
+struct RobotRuleInfo {
+    1: required string service,
+    2: required string address,
+    3: required string masks,
+    4: required string access,
+    5: required bool enabled
+}
+
+struct RobotRuleChange {
+    1: required RobotRuleInfo rule,
+    2: optional string password
+}
+
+struct RobotAccessConfiguration {
+    1: required string source,
+    2: required list<RobotRuleInfo> rules,
+    3: required list<string> peers
+}
+
 service UiService {
+    RobotAccessConfiguration robotAccess(1:string session) throws (1:UiError error),
+    void saveRobotRule(1:string session, 2:RobotRuleChange change) throws (1:UiError error),
+    void deleteRobotRule(1:string session, 2:string service, 3:string address) throws (1:UiError error),
     NodeStatus status(1:string session) throws (1:UiError error),
     list<AreaInfo> areas(1:string session) throws (1:UiError error),
     MailPage messages(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 afterId, 5:i32 limit) throws (1:UiError error),

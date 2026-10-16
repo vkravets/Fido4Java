@@ -8,12 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
+import org.fidonet.jftn.rpc.RobotRuleChange;
+import org.fidonet.jftn.rpc.RobotRuleInfo;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.ui.NodeRpc;
@@ -78,6 +81,38 @@ class UiRpcIntegrationTest {
                                                                                      "login"));
         token = login.login(new Credential("sysop", password)).getSession_id();
         ui = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport), "ui"));
+    }
+
+    @Test
+    void managesRobotRulesAcrossHttpAndTcpWithoutReturningCredentials() throws Exception {
+        RobotRuleInfo rule = new RobotRuleInfo("AreaFix", "1:500/101", "test.*", "READ", true);
+        ui.saveRobotRule(token, new RobotRuleChange(rule).setPassword("robot-secret"));
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertEquals("database", browser.robotAccess(token).getSource());
+            assertEquals(rule.deepCopy().setAddress(new FTNAddr(rule.getAddress()).toString()),
+                         browser.robotAccess(token).getRules().get(0));
+            assertFalse(browser.robotAccess(token).toString().contains("robot-secret"));
+            assertFalse(browser.robotAccess(token).toString().contains("pbkdf2"));
+            browser.saveRobotRule(token, new RobotRuleChange(rule.deepCopy().setEnabled(false)));
+            assertFalse(ui.robotAccess(token).getRules().get(0).isEnabled());
+            browser.saveRobotRule(token, new RobotRuleChange(rule.deepCopy().setAccess("BOTH")));
+            assertTrue(base.getRobotRules()
+                           .find(RobotService.AreaFix, new FTNAddr("1:500/101"))
+                           .verifyPassword("robot-secret"));
+            browser.deleteRobotRule(token, "AreaFix", "1:500/101");
+            assertTrue(ui.robotAccess(token).getRules().isEmpty());
+        }
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveRobotRule(token, new RobotRuleChange(rule)))
+                                                                                           .getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveRobotRule(token,
+                                                         new RobotRuleChange(rule.deepCopy()
+                                                                                 .setAddress("1:500/999")).setPassword("secret"))).getCode());
     }
 
     @Test
