@@ -59,47 +59,45 @@ For upgrades, unpack into a new directory and deliberately move/copy your existi
 configuration and data after making a backup. ZIP packaging does not migrate or
 replace a running installation. See [browser setup](web-ui.md) for account setup.
 
-## CircleCI and GitHub Releases
+## GitHub Actions CI and releases
 
-The main `build` job compiles/tests the application and seals the no-JRE ZIP with
-the source revision and SHA-256 checksums. The separate `package-distributions`
-job requires `build` and creates the runtime packages from that ZIP using
-`-PdistributionInput=<zip>`. No application Java, Thrift or Vue sources are
-recompiled in the packaging job. OpenJDK downloads are cached by the runtime lock
-checksum; restored archives are verified before use.
+The `.github/workflows/ci.yml` workflow runs on branch pushes, pull requests and
+version tag pushes. Shared scripts live in `ci/`. There is no separate release
+build implementation.
 
-Packaging also starts the Linux ZIP using its own launcher and bundled JRE, checks
-the embedded browser page and first-run RPC, and verifies missing directories were
-recreated. All three ZIPs, `runtime-lock.json` and `SHA256SUMS` are saved as CircleCI
-artifacts. CircleCI builds branches only; tag releases run in GitHub Actions.
+The main `build` job runs CI publisher tests and the Gradle build, including Java
+formatting checks, Java tests, RPC browser tests and Vue/TypeScript checks/tests.
+It seals the no-JRE ZIP and compiled integration runtimes with the source revision
+and SHA-256 checksums. A tar preserves permissions and hidden resources when
+passing this snapshot to dependent jobs. A portable ZIP is also saved separately
+for download on branch/PR builds, with version `1.0-SNAPSHOT`.
 
-## GitHub Actions releases
-
-The `.github/workflows/release.yml` workflow starts on version tag pushes. Its
-build job validates `vMAJOR.MINOR.PATCH` (optionally with a prerelease suffix),
-compiles/tests the application, and seals the compiled integration runtimes and
-no-JRE ZIP. Artifacts are passed between jobs in the same workflow run. A tar
-preserves the compiled snapshot's file permissions and hidden resources.
+Both binkd and HPT integrations run after the build on every supported event.
+Only tag pushes additionally run `package` and `publish`. The tag determines the
+release version; `ci/build.sh` strictly validates `vMAJOR.MINOR.PATCH` with an
+optional prerelease suffix before building.
 
 ```mermaid
 flowchart LR
-    tag[Push version tag] --> build[GitHub Actions build]
-    build --> package[Package and smoke test ZIPs]
+    event[Push branch / PR / version tag] --> build[Build and test]
+    build --> package[Package and smoke test ZIPs: tags only]
     build --> binkd[binkd integration]
     build --> hpt[HPT integration]
-    package --> publish[Publish GitHub Release]
+    package --> publish[Publish GitHub Release: tags only]
     binkd --> publish
     hpt --> publish
 ```
 
 Packaging and both integrations require the main build. They verify checksums
 and the source revision and use the compiled snapshot without rebuilding Java,
-Thrift or Vue sources. The packaging job reuses the same script as CircleCI.
+Thrift or Vue sources. Packaging uses `-PdistributionInput=<sealed-no-jre.zip>`.
+It smoke tests the bundled Linux launcher, JRE, first-run directories and embedded
+UI before saving all three ZIPs, `runtime-lock.json` and `SHA256SUMS`.
 Thrift and locked OpenJDK downloads are cached. Intermediate workflow artifacts
 and test reports are retained for 15 days; published release assets are separate
 from these temporary artifacts.
 
-No personal access token, custom GitHub App or CircleCI release context is needed.
+No personal access token or custom GitHub App is needed.
 The publication job uses the automatic `GITHUB_TOKEN` with `contents: write`;
 all other jobs have only `contents: read`. Checkout does not persist credentials.
 Enable GitHub Actions for this repository and allow the official `actions/*`
@@ -116,7 +114,8 @@ git push origin v1.2.3
 Branch builds do not publish releases. Suffix tags such as `v1.2.3-rc.1` become
 prereleases. GitHub tag filters are globs; the build script performs the strict
 version validation before any build or publication. Re-running a failed workflow
-uses the same tag; concurrency serializes runs for that tag.
+uses the same tag; concurrency serializes runs for that tag. New branch/PR runs
+cancel older runs for the same event/reference; release runs are not cancelled.
 
 Publication requires successful packaging and both binkd/HPT integrations. The
 publisher verifies hashes, ZIP names and that the remote GitHub tag resolves to
@@ -125,7 +124,9 @@ uploads and verifies every asset, then publishes it with generated release notes
 An interrupted upload can resume its own draft. Conflicting assets are never
 overwritten; a conflicting release requires manual resolution.
 
-CircleCI's former `github-release` job and context reference have been removed.
-An existing release context/token can be removed from CircleCI if nothing else
-uses it. This change does not publish anything until the workflow is pushed and
-a matching tag is pushed.
+After pushing this migration, stop building the project in CircleCI and remove
+unused release contexts/tokens there. If branch protection requires CircleCI
+checks, replace them with the GitHub Actions `build` and both `integration`
+matrix checks after the first successful run. Repository/organization settings
+are not changed automatically by committing workflow files. The workflow does
+not publish a release until a matching tag is pushed.

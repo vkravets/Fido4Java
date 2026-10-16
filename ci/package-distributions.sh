@@ -10,7 +10,7 @@ bash ./gradlew :jftn-bundle:releaseDistributions \
   "-PdistributionInput=$snapshot/jftn-$version-no-jre.zip" \
   --warning-mode fail --no-daemon --console=plain
 
-bash .circleci/smoke-distribution.sh "jftn-bundle/build/distributions/jftn-$version-linux-x64.zip"
+bash ci/smoke-distribution.sh "jftn-bundle/build/distributions/jftn-$version-linux-x64.zip"
 output="$PWD/build/release"
 mkdir -p "$output"
 for suffix in no-jre linux-x64 windows-x64; do

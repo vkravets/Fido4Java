@@ -25,8 +25,8 @@ HTML/CSS/JavaScript into the `web-ui` JAR. It does not install Node.js system-wi
 ```
 
 `nodeExecutable` and `npmExecutable` Gradle properties can select existing tools.
-CircleCI uses its Node-enabled Java image, caches npm downloads by lockfile, and
-publishes the TypeScript test results. The integration jobs continue to use the
+GitHub Actions sets up Java 17 and Node.js 24, caches npm downloads by lockfile,
+and saves Java and TypeScript test reports. The integration jobs continue to use the
 compiled runtimes produced by the main build.
 
 For an already configured node, enable `RpcEnabled` and `RpcHttpEnabled`, then open
