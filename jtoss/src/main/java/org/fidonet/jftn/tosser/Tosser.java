@@ -112,7 +112,7 @@ public class Tosser extends HasEventBus {
     }
 
     private boolean isBunldeName(String str) {
-        return bunlderegex.matcher(str).find();
+        return bunlderegex.matcher(str).matches();
     }
 
     public synchronized void runFast(String dirname)
