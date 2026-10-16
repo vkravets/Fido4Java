@@ -7,9 +7,13 @@ remain UI-managed settings in the main file.
 
 The distribution supplies these templates as `*.conf.example`. On startup the
 node creates missing editable `*.conf` files from the bundled templates, keeping
-all existing files byte-for-byte. Template entries are commented: installation
-does not enable optional handlers or override settings in older main files.
-Uncomment and edit the options you need, then restart.
+all existing files byte-for-byte. The default script list enables AreaFix, FileFix and directory import using
+external `./scripts/mail-scripts/*.groovy` files, in that order, with
+`EchoSubscriptions=database`. Authorization and feed examples remain commented:
+configure trusted peers, areas and feeds explicitly, then restart. An empty feed
+list is supported and does not create a directory catalog. Other plugin examples
+remain commented. Existing active files are never rewritten, including older
+script lists; update those manually to adopt the new defaults.
 
 | File | Configuration |
 | --- | --- |

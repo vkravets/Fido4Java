@@ -47,8 +47,9 @@ bridge can be disabled through its configuration. Do not remove a required modul
 or its shared dependencies just because its JAR is under `plugins/`.
 
 Mail script resources are excluded from the application JAR and supplied externally.
-Existing `MailScript=classpath:mail-scripts/areafix.groovy` settings therefore continue
-to work and read the editable file under `scripts/mail-scripts/`.
+Default `MailScript` entries load the external files from
+`./scripts/mail-scripts/`, in AreaFix/FileFix/directory-import order. Existing
+`classpath:` settings remain supported, but are not used by the defaults.
 
 On first launch, missing working directories are created and the private setup URL
 is printed. Completing the wizard creates the live configuration and initial admin.
@@ -133,4 +134,5 @@ are not changed automatically by committing workflow files. The workflow does
 not publish a release until a matching tag is pushed.
 
 Plugin configuration is separated by service; see [plugin settings](plugin-configuration.md).
-Startup creates missing commented `*.conf` files, preserving existing edits.
+Startup creates missing `*.conf` files, preserving existing edits. The script
+list is active by default; peer/area/feed examples remain commented.

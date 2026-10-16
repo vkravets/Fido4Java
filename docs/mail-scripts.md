@@ -7,8 +7,12 @@ See [plugin configuration](plugin-configuration.md) for startup and upgrade rule
 Keep every `MailScript` line from the examples below in the one script-list file;
 place the remaining lines in the corresponding service file.
 
-`MailScript` is repeatable. A value is a local Groovy filename or a bundled
-resource such as `classpath:mail-scripts/areafix.groovy`. Scripts are trusted
+`MailScript` is repeatable. All three stock handlers are enabled by default with
+external paths under `./scripts/mail-scripts/`, relative to the node working
+directory. AreaFix uses database subscriptions by default. Peer passwords,
+file areas and directory feeds must be configured separately; an empty feed
+list leaves directory import inactive without opening a catalog.
+A value can also use a `classpath:` resource for compatibility. Scripts are trusted
 operator code and have the JVM's permissions.
 
 MailService loads scripts before its first inbound scan. Each script supplies
@@ -40,7 +44,7 @@ their source inputs until completion.
 
 ```ini
 EchoSubscriptions=database
-MailScript=classpath:mail-scripts/areafix.groovy
+MailScript=./scripts/mail-scripts/areafix.groovy
 AreaFixPeer=1:500/101|separate-robot-password|test.*,local.news|READ
 ```
 
@@ -73,7 +77,7 @@ changes, day-based rescans and forwarded uplink requests are not implemented).
 ## FileFix and file echoes
 
 ```ini
-MailScript=classpath:mail-scripts/filefix.groovy
+MailScript=./scripts/mail-scripts/filefix.groovy
 FileArea=lists|./fileecho/lists|Node and point lists
 FileFixPeer=1:500/102|filefix-password|lists
 TicPeer=1:500/101|incoming-password|lists
@@ -131,7 +135,7 @@ against [Husky htick](https://github.com/huskyproject/htick).
 Add the bundled import script after FileFix:
 
 ```ini
-MailScript=classpath:mail-scripts/directory-import.groovy
+MailScript=./scripts/mail-scripts/directory-import.groovy
 NodeDirectoryPath=./database/nodelist/catalog
 DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/current-nodes.lst|1:500/101|1|500
 DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/current-points.lst|1:500/101

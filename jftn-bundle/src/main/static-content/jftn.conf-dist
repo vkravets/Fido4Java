@@ -42,7 +42,7 @@ deletetossed=1
 Outbound = ./mail/outbound/
 
 # Plugin internals and mail robots are configured in conf.d/*.conf.
-# First startup creates commented examples without replacing existing files.
+# First startup creates default plugin files without replacing existing files.
 # See conf.d/README.txt and docs/plugin-configuration.md.
 # This browser origin is UI-managed; do not move it to a fragment.
 # RpcHttpOrigin=http://localhost:9091
