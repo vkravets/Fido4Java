@@ -28,8 +28,9 @@ jftn-<version>/
   scripts/mail-scripts/   Editable AreaFix, FileFix and directory import scripts
   jre/                    Only present in a platform-specific runtime package
   jftn.conf.example       Manual configuration template, never activated automatically
+  conf.d/                 Manual file-only configuration; never rewritten by the UI
   database/ logs/ lists/ fileecho/
-  mail/inbound/ mail/outbound/ mail/tmp/ mail/echo/
+  mail/inbound/ mail/outbound/ mail/tmp/ mail/echo/ mail/received/
   docs/ LICENSE README.txt
 ```
 
@@ -56,7 +57,7 @@ subsequent launches too. Existing data is never replaced. A regular file occupyi
 a required directory path is an error, not a reason to overwrite it.
 
 For upgrades, unpack into a new directory and deliberately move/copy your existing
-configuration and data after making a backup. ZIP packaging does not migrate or
+configuration, `conf.d/` and data after making a backup. ZIP packaging does not migrate or
 replace a running installation. See [browser setup](web-ui.md) for account setup.
 
 ## GitHub Actions CI and releases

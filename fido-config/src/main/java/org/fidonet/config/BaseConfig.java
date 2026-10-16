@@ -106,6 +106,14 @@ public abstract class BaseConfig implements IConfig {
         }
     }
 
+    protected void applyOverrides(BaseConfig overrides) {
+        overrides.props.forEach((key, values) -> props.put(key, new ArrayList<>(values)));
+    }
+
+    protected List<String> propertyNames() {
+        return new ArrayList<>(props.keySet());
+    }
+
     private Boolean validateData(String name, String value) {
         return (name.length() > 0) && (value.length() > 0);
     }

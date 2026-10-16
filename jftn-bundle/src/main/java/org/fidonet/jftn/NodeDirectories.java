@@ -17,6 +17,8 @@ final class NodeDirectories {
                                         "mail/outbound",
                                         "mail/tmp",
                                         "mail/echo",
+                                        "mail/received",
+                                        "conf.d",
                                         "database",
                                         "logs",
                                         "lists",
@@ -26,8 +28,14 @@ final class NodeDirectories {
     }
 
     static void configured(JFtnConfig config) throws IOException {
+        if (config.getSourcePath() != null) {
+            Files.createDirectories(config.getSourcePath().getParent().resolve("conf.d"));
+        }
         for (String key : List.of("Inbound", "Outbound", "Tmp", "EchoPath")) {
             Files.createDirectories(Path.of(config.getValue(key)));
+        }
+        if (config.isPreserveReceivedFiles()) {
+            Files.createDirectories(config.getReceivedArchivePath());
         }
     }
 }

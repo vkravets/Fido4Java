@@ -13,6 +13,8 @@
 **/tmp/
 /inbound/.binkp-partials/
 /database/
+/mail/received/
+/conf.d/*.conf
 **/*.hprof
 **/*.part
 __pycache__/

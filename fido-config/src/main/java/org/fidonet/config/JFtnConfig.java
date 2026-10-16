@@ -68,6 +68,12 @@ public class JFtnConfig extends BaseConfig {
     public void load(String fileName) throws ParseConfigException {
         super.load(fileName);
         sourcePath = Path.of(fileName).toAbsolutePath().normalize();
+        try {
+            ConfigurationFragments.loadInto(this, sourcePath);
+        } catch (IOException failure) {
+            throw new ParseConfigException(failure);
+        }
+        links = getLinks(getValuesAsList("link"));
     }
 
     public JFtnConfig() {
@@ -181,6 +187,17 @@ public class JFtnConfig extends BaseConfig {
 
     public Integer isDeleteTossedFiles() {
         return Integer.valueOf(getValue("Deletetossed", "1"));
+    }
+
+    public boolean isPreserveReceivedFiles() {
+        return Boolean.parseBoolean(getValue("PreserveReceivedFiles", "true"));
+    }
+
+    public Path getReceivedArchivePath() {
+        Path fallback = getInbound() == null
+                ? Path.of(getTmpDir(), "received")
+                : Path.of(getInbound()).toAbsolutePath().getParent().resolve("received");
+        return Path.of(getValue("ReceivedArchivePath", fallback.toString()));
     }
 
     public String getTmpDir() {
