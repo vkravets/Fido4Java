@@ -40,6 +40,7 @@ import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.NetmailRouteRecord;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.objects.Version;
+import org.fidonet.db.robots.RobotRuleRecord;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
@@ -92,6 +93,7 @@ public class OrmManager {
         daoClasses.add(ArchiveReceipt.class);
         daoClasses.add(Subscription.class);
         daoClasses.add(Version.class);
+        daoClasses.add(RobotRuleRecord.class);
     }
 
     public OrmManager(String jdbcUrl) {
