@@ -2,7 +2,7 @@
 import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
-const props = defineProps<{ model: NodeConfiguration; initial: boolean }>();
+const props = defineProps<{ model: NodeConfiguration; initial: boolean; showLink?: boolean }>();
 const aliases = computed({
     get: () => props.model.aliases.join(' '),
     set: (value) => {
@@ -52,41 +52,43 @@ const aliases = computed({
                 v-model="model.location"
                 maxlength="200"
         /></label>
-        <label
-            >{{ t('Uplink / link')
-            }}<input
-                v-model="model.uplink"
-                placeholder="1:500/101"
-                required
-        /></label>
-        <label
-            >{{ t('binkp server')
-            }}<input
-                v-model="model.host"
-                placeholder="binkp.example.org"
-                required
-        /></label>
-        <label
-            >{{ t('Port')
-            }}<input
-                v-model.number="model.port"
-                type="number"
-                required
-                min="1"
-                max="65535"
-        /></label>
-        <label
-            >{{ t('Link password')
-            }}<input
-                v-model="model.linkPassword"
-                type="password"
-                autocomplete="new-password"
-                :placeholder="
-                    initial
-                        ? t('Or − for an unprotected link')
-                        : t('Leave empty to keep the current password')
-                "
-        /></label>
+        <template v-if="showLink !== false">
+            <label
+                >{{ t('Uplink / link')
+                }}<input
+                    v-model="model.uplink"
+                    placeholder="1:500/101"
+                    required
+            /></label>
+            <label
+                >{{ t('binkp server')
+                }}<input
+                    v-model="model.host"
+                    placeholder="binkp.example.org"
+                    required
+            /></label>
+            <label
+                >{{ t('Port')
+                }}<input
+                    v-model.number="model.port"
+                    type="number"
+                    required
+                    min="1"
+                    max="65535"
+            /></label>
+            <label
+                >{{ t('Link password')
+                }}<input
+                    v-model="model.linkPassword"
+                    type="password"
+                    autocomplete="new-password"
+                    :placeholder="
+                        initial
+                            ? t('Or − for an unprotected link')
+                            : t('Leave empty to keep the current password')
+                    "
+            /></label>
+        </template>
         <label class="wide"
             >{{ t('Mail directory')
             }}<input

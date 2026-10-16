@@ -11,6 +11,34 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('administrator persists separate PKT passwords and tosser options through real RPC', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await expect(page.getByRole('heading', { name: 'Mail links', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tosser settings', exact: true })).toBeVisible();
+    await page.getByLabel('PKT password mode').selectOption('SEPARATE');
+    await page.getByLabel('Separate PKT password').fill('pktpass');
+    await page.getByRole('button', { name: 'Save links', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Configuration saved. Restart');
+    await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
+    await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
+    await page.getByLabel('Processing interval (seconds)').fill('25');
+    await page.getByRole('button', { name: 'Save tosser settings', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Save tosser settings', exact: true })
+    ).toBeEnabled();
+    await page.reload();
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
+    await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
+    await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('real HTTP RPC supports language, theme, registration, approval and point access', async ({
     page,
     browser

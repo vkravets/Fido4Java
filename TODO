@@ -11,8 +11,9 @@ Remaining implementation
   Administrative mail reading, drafts and submission already exist in RPC.
 - Add point-scoped mailbox permissions and APIs. Approved AKA claims already exist;
   the current node-wide UiService still requires ADMIN for every operation.
-- Add RPC/UI editing for arbitrary links and netmail routing rules.
-  The primary-link form and core/SQL routing-rule APIs already exist.
+- Add RPC/UI editing for netmail routing rules and safe link removal/renaming.
+  Link creation/editing, separate PKT passwords and basic tosser settings already
+  exist in the UI. Core/SQL routing-rule APIs are available.
 - Decide whether to implement or remove the empty legacy JAMEchoBase.getMessage()
   and delMessage() methods. JamArea and the JAM bridge already support mail access.
 - Add durable automatic poll retries/backoff and incoming-session tracking.

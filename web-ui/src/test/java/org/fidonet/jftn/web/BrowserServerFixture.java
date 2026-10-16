@@ -13,6 +13,7 @@ import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,12 @@ final class BrowserServerFixture implements AutoCloseable {
         accounts = new RpcAccounts(authPath);
         if (setupToken.isEmpty()) {
             accounts.createUser("admin", "preview-admin-password");
+            Files.writeString(directory.resolve("jftn.conf"),
+                              "System=Browser test\nSysOp=Test\nLink=1:500/101,1:500/100,preview,example.org:24554\n"
+                                      + "Inbound=" + directory.resolve("inbound") + "\n"
+                                      + "Outbound=" + directory.resolve("outbound") + "\n"
+                                      + "EchoPath=" + directory.resolve("echo") + "\n" + "Tmp="
+                                      + directory.resolve("tmp") + "\n");
         }
         UiSessions sessions = new UiSessions(accounts, 3600);
         authentication = new AccountAuthentication(accounts, sessions, "", Set.of());

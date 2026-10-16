@@ -1,4 +1,44 @@
 export const ukrainian = {
+    'Leave empty for incoming-only links.':
+        'Залиште порожнім для лінків лише з вхідними з’єднаннями.',
+    'Enter a separate PKT password': 'Вкажіть окремий пароль PKT',
+    'PKT passwords support at most 8 ASCII characters; configure a separate PKT password for longer binkp passwords':
+        'Пароль PKT підтримує не більше 8 символів ASCII; для довшого пароля binkp задайте окремий пароль PKT',
+    'Passwords cannot contain control characters, commas, # or surrounding spaces':
+        'Паролі не можуть містити керівні символи, коми, # або пробіли на початку чи в кінці',
+    'Station identity, mail links and tosser processing settings.':
+        'Дані станції, поштові лінки та налаштування обробки пошти тосером.',
+    'Mail links': 'Поштові лінки',
+    'Link address': 'Адреса лінка',
+    'Local AKAs for this link': 'Локальні AKA для цього лінка',
+    'binkp session password': 'Пароль сесії binkp',
+    'Use - for an unprotected binkp session.': 'Вкажіть - для незахищеної сесії binkp.',
+    'PKT password mode': 'Режим пароля PKT',
+    'Use binkp password': 'Використовувати пароль binkp',
+    'Separate PKT password': 'Окремий пароль PKT',
+    'Unprotected packets': 'Незахищені пакети',
+    'At most 8 ASCII characters. Must match the packet password configured by your peer.':
+        'Не більше 8 символів ASCII. Має збігатися з паролем пакетів на стороні лінка.',
+    'Incoming packets for this link must have an empty PKT password. Use only by agreement with your peer.':
+        'Вхідні пакети цього лінка повинні мати порожній пароль PKT. Використовуйте лише за домовленістю з лінком.',
+    'Processing interval (seconds)': 'Інтервал обробки (секунди)',
+    'Remove successfully processed files from inbound':
+        'Видаляти успішно оброблені файли з inbound',
+    'Original received files are retained separately when archiving is enabled in station settings. Rejected files are not accepted by this option.':
+        'Оригінали отриманих файлів зберігаються окремо, якщо архівування увімкнено в налаштуваннях станції. Ця опція не дозволяє приймати відхилені файли.',
+    'Check echomail permissions for each link': 'Перевіряти права лінків на ехопошту',
+    'Create unknown echo areas automatically': 'Автоматично створювати невідомі ехоконференції',
+    'Echo access checks still apply. Disable automatic creation unless you trust the configured peers.':
+        'Перевірка доступу до ех залишається чинною. Вимкніть автоматичне створення, якщо не довіряєте налаштованим лінкам.',
+    'binkp authenticates the connection; PKT authenticates mail packets. These passwords may differ.':
+        'binkp перевіряє з’єднання, а PKT — поштові пакети. Ці паролі можуть відрізнятися.',
+    'Existing link addresses cannot be renamed or removed here: routes and subscriptions must be reviewed first.':
+        'Наявні адреси лінків тут не можна змінювати чи видаляти: спочатку потрібно перевірити маршрути та підписки.',
+    'New link': 'Новий лінк',
+    'Add link': 'Додати лінк',
+    'Save links': 'Зберегти лінки',
+    'Tosser settings': 'Налаштування тосера',
+    'Save tosser settings': 'Зберегти налаштування тосера',
     Language: 'Мова',
     'JFtn · Mail and node': 'JFtn · Пошта й нода',
     Passkeys: 'Ключі доступу',
