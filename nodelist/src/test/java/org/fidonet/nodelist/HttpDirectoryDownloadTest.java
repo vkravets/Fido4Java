@@ -16,6 +16,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class HttpDirectoryDownloadTest {
     @TempDir
@@ -54,13 +57,18 @@ class HttpDirectoryDownloadTest {
             assertEquals(1,
                          HttpDirectoryDownload.install(catalog,
                                                        source,
-                                                       URI.create(base + "/redirect"))
+                                                       URI.create(base + "/redirect"),
+                                                       root.resolve("received"))
                                               .getRecords());
+            assertEquals(new String(valid, StandardCharsets.UTF_8),
+                         Files.readString(archived().get(0)));
             String old = Files.readString(source.getPath());
             assertThrows(IOException.class,
                          () -> HttpDirectoryDownload.install(catalog,
                                                              source,
-                                                             URI.create(base + "/bad")));
+                                                             URI.create(base + "/bad"),
+                                                             root.resolve("received")));
+            assertEquals(2, archived().size());
             assertEquals(old, Files.readString(source.getPath()));
             assertEquals("My_Node",
                          catalog.lookup("setup", new FTNAddr("1:500/100"))
@@ -68,6 +76,12 @@ class HttpDirectoryDownloadTest {
                                 .getSystem());
         } finally {
             server.stop(0);
+        }
+    }
+
+    private List<Path> archived() throws IOException {
+        try (Stream<Path> paths = Files.walk(root.resolve("received"))) {
+            return paths.filter(Files::isRegularFile).collect(Collectors.toList());
         }
     }
 

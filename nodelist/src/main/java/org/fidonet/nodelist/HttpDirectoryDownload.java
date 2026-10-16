@@ -1,5 +1,7 @@
 package org.fidonet.nodelist;
 
+import org.fidonet.misc.ReceivedFileArchive;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,6 +23,14 @@ public final class HttpDirectoryDownload {
                                                 DirectorySource source,
                                                 URI url)
             throws IOException {
+        return install(catalog, source, url, null);
+    }
+
+    public static DirectoryImportResult install(DirectoryCatalog catalog,
+                                                DirectorySource source,
+                                                URI url,
+                                                Path archiveDirectory)
+            throws IOException {
         validate(url);
         Files.createDirectories(source.getPath().getParent());
         Path incoming = Files.createTempFile(source.getPath().getParent(),
@@ -28,6 +38,11 @@ public final class HttpDirectoryDownload {
                                              ".tmp");
         try {
             download(url, incoming);
+            if (archiveDirectory != null) {
+                ReceivedFileArchive.preserve(archiveDirectory,
+                                             incoming,
+                                             source.getPath().getFileName() + ".download");
+            }
             return DirectoryUpdate.install(catalog, source, incoming, false);
         } finally {
             Files.deleteIfExists(incoming);

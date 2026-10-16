@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -147,11 +148,31 @@ public class TosserBundleTest {
             Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
             byte[] bytes = packet("wrong");
             Path bundle = bundle(inbound, "mail.fr0", bytes);
+            byte[] original = Files.readAllBytes(bundle);
             tosser(bad, 1, known).runFast(inbound.toString());
+            assertArrayEquals(original, archivedBundle(bad));
             assertArrayEquals(bytes, Files.readAllBytes(bad.resolve("message.bad")));
             assertFalse(Files.exists(bundle));
             assertEquals(0, base.getMessageSize("test"));
         }
+    }
+
+    private byte[] archivedBundle(Path bad) throws IOException {
+        try (Stream<Path> files = Files.walk(bad.resolve("received"))) {
+            Path archived = files.filter(Files::isRegularFile).findFirst().orElseThrow();
+            return Files.readAllBytes(archived);
+        }
+    }
+
+    @Test
+    public void retainsUnprocessedSourceWhenTheArchiveCannotBeWritten() throws Exception {
+        Path inbound = Files.createTempDirectory(temporary.toPath(), "inbound-");
+        Path bad = Files.createTempDirectory(temporary.toPath(), "bad-");
+        Files.writeString(bad.resolve("received"), "not a directory");
+        Path source = bundle(inbound, "mail.mo0", packet("secret", "AREA:TEST\rHello\r"));
+        tosser(bad, 1, true).runFast(inbound.toString());
+        assertTrue(Files.exists(source));
+        assertEquals(0, base.getMessageSize("test"));
     }
 
     @Test

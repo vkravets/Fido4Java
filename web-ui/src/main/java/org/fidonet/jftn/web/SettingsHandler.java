@@ -97,7 +97,10 @@ public final class SettingsHandler implements SettingsService.Iface {
                                                              0,
                                                              Charset.forName(charset),
                                                              true);
-                HttpDirectoryDownload.install(catalog, source, URI.create(url));
+                HttpDirectoryDownload.install(catalog,
+                                              source,
+                                              URI.create(url),
+                                              store.receivedArchivePath());
             }
             List<DirectoryEntry> entries = catalog.lookup(target);
             if (entries.isEmpty() && target.getPnt() != 0) {

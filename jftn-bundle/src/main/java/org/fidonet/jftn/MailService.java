@@ -17,6 +17,7 @@ import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.misc.LazyFileInputStream;
+import org.fidonet.misc.ReceivedFileArchive;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -289,6 +290,7 @@ public final class MailService implements AutoCloseable {
             ReceivedFile.record(destination, original);
         }
         partial.commitTo(destination);
+        ReceivedFileArchive.preserve(config, destination, original);
         trigger.request();
     }
 

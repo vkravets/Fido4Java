@@ -38,6 +38,15 @@ public final class NodeConfigurationStore {
         return path.getParent();
     }
 
+    public Path receivedArchivePath() throws Exception {
+        if (original.length == 0) {
+            return directory().resolve("mail/received");
+        }
+        JFtnConfig config = new JFtnConfig();
+        config.load(path.toString());
+        return config.isPreserveReceivedFiles() ? config.getReceivedArchivePath() : null;
+    }
+
     public Path catalogPath() throws Exception {
         if (original.length == 0) {
             return directory().resolve("database/nodelist/catalog");
@@ -69,6 +78,7 @@ public final class NodeConfigurationStore {
         JFtnConfig config = new JFtnConfig();
         config.load(path.toString());
         result.setSystem(config.getValue("System", "JFtn"));
+        result.setPreserveReceivedFiles(config.isPreserveReceivedFiles());
         result.setSysop(config.getValue("SysOp", ""));
         result.setLocation(config.getValue("Location", ""));
         result.setNodeListUrl(config.getValue("NodeListUrl", result.getNodeListUrl()));
@@ -229,6 +239,9 @@ public final class NodeConfigurationStore {
         result.put("rpchttporigin", value.getBrowserOrigin());
         result.put("rpcauthpath", authPath.toAbsolutePath().toString());
         result.put("uimailstorage", value.getStorage());
+        if (value.isSetPreserveReceivedFiles() || original.length == 0) {
+            result.put("preservereceivedfiles", Boolean.toString(value.isPreserveReceivedFiles()));
+        }
         if (original.length == 0) {
             Path storage = Path.of(value.getStorage()).toAbsolutePath();
             result.put("inbound", storage.resolve("inbound").toString());

@@ -17,7 +17,8 @@ struct NodeConfiguration {
     12: required string login,
     13: required string password,
     14: required string charset,
-    15: required string browserOrigin
+    15: required string browserOrigin,
+    16: optional bool preserveReceivedFiles = true
 }
 
 struct SetupStatus {
