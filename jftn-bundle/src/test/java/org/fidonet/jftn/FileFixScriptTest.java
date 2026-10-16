@@ -13,6 +13,8 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
@@ -126,6 +128,33 @@ class FileFixScriptTest {
                + content.getBytes(StandardCharsets.UTF_8).length
                + "\r\nPw in-pass\r\n"
                + "Path 1:500/101 1700000000\r\nSeenby 1:500/101\r\nX-Future keep this\r\n";
+    }
+
+    @Test
+    void databaseTicAuthorizationAppliedLiveWithoutUsingFileCredentials() throws Exception {
+        scripts.close();
+        config.load(new ByteArrayInputStream("RobotAccessSource=database\n".getBytes(StandardCharsets.UTF_8)));
+        scripts = new MailScripts(config, base, tosser);
+        AtomicInteger delivered = new AtomicInteger();
+        scripts.onFile((area, file, name, peer, receipt) -> delivered.incrementAndGet());
+        received("NODELIST.288", "hello");
+        received("request.tic", tic("hello"));
+        scripts.beforeExport(tosser);
+        assertEquals(0, delivered.get());
+        base.getRobotRules()
+            .save(RobotAccessRule.create(RobotService.Tic,
+                                         sender.toString(),
+                                         "in-pass",
+                                         "lists",
+                                         "",
+                                         true));
+        scripts.beforeExport(tosser);
+        assertEquals(1, delivered.get());
+        base.getRobotRules().delete(RobotService.Tic, sender);
+        received("NODELIST.288", "second");
+        received("second.tic", tic("second"));
+        scripts.beforeExport(tosser);
+        assertEquals(1, delivered.get());
     }
 
     @Test

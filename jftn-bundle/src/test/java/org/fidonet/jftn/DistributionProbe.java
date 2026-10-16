@@ -40,7 +40,27 @@ public final class DistributionProbe {
             throw new IllegalStateException("Mail scripts must be loaded from the external scripts directory");
         }
         verifyDefaultMailScripts();
+        verifyOfflineAdministration();
         System.out.println("Packaged plugins, Groovy, H2 and external scripts verified");
+    }
+
+    private static void verifyOfflineAdministration() throws Exception {
+        Files.writeString(Path.of("conf.d/41-areafix.conf"),
+                          "EchoSubscriptions=database\nAreaFixPeer=1:500/101|probe-robot-password|test.*|READ\n");
+        JFtnRunner.main(new String[]{"--check-robot-access"});
+        if (Files.exists(Path.of("database/jftn10.mv.db"))) {
+            throw new IllegalStateException("File validation must not open the mail database");
+        }
+        JFtnRunner.main(new String[]{"--import-robot-access"});
+        if (!Files.exists(Path.of("database/jftn10.mv.db"))
+                || Files.exists(Path.of("database/rpc-auth.mv.db"))) {
+            throw new IllegalStateException("Offline import must use the mail DB without creating UI accounts");
+        }
+        JFtnConfig config = new JFtnConfig();
+        config.load("jftn.conf");
+        if (!config.getValue("RobotAccessSource").equals("files")) {
+            throw new IllegalStateException("Import must not switch the active source automatically");
+        }
     }
 
     private static void verifyDefaultMailScripts() throws Exception {

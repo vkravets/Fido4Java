@@ -41,6 +41,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
     private final List<FileHandler> fileHandlers = new ArrayList<>();
     private final List<String> loaded = new ArrayList<>();
     private final GroovyScriptManager manager;
+    private final RobotAccess robotAccess;
 
     public MailScripts(JFtnConfig config, DatabaseManager database, Tosser tosser)
             throws IOException {
@@ -48,6 +49,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         this.tosser = tosser;
         this.database = database;
         setConfig(config);
+        robotAccess = new RobotAccess(config, database);
         state = new ScriptState(Path.of(config.getTmpDir(), "scripts"));
         try {
             manager = new GroovyScriptManager();
@@ -93,6 +95,10 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
 
     public Tosser getTosser() {
         return tosser;
+    }
+
+    public RobotAccess getRobotAccess() {
+        return robotAccess;
     }
 
     public DatabaseManager getDatabase() {

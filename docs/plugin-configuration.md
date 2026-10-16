@@ -20,7 +20,7 @@ script lists; update those manually to adopt the new defaults.
 | `10-binkp.conf` | Transport listen port and advertised capabilities (`BinkpPort`, `NDL`) |
 | `20-jam-bridge.conf` | `JamBridgeEnabled`, `JamCharset`, `JamEcho`, `JamNetmail` |
 | `30-nodelist.conf` | `NodeDirectoryEnabled`, `NodeDirectoryPath`, `DirectoryRefreshSeconds`, `DirectorySource` |
-| `40-mail-scripts.conf` | All `MailScript` entries, in handler registration order |
+| `40-mail-scripts.conf` | `RobotAccessSource` and all `MailScript` entries, in handler registration order |
 | `41-areafix.conf` | `EchoSubscriptions`, `AreaFixPeer` |
 | `42-filefix.conf` | `FileArea`, `FileFixPeer`, `TicPeer`, `TicCharset` |
 | `43-directory-feed.conf` | `DirectoryFeed`; shared catalog path is in `30-nodelist.conf` |
@@ -57,3 +57,6 @@ if the public browser address changes.
 For upgrades, preserve `jftn.conf`, `conf.d/`, scripts and all data, then replace
 application binaries. ZIPs contain examples, not active plugin configuration,
 so extracting an upgrade does not overwrite your active `*.conf` files.
+
+AreaFix/FileFix/TIC access rules support file-only and database administration.
+See [source selection and offline commands](robot-access.md); neither mode requires RPC.

@@ -13,19 +13,7 @@ class AreaFixRobot {
         if (!api.config.getValue('EchoSubscriptions', 'config').equalsIgnoreCase('database')) {
             throw new IllegalArgumentException('AreaFix requires EchoSubscriptions=database')
         }
-        def peers = new HashSet<String>()
-        (api.config.getValuesAsList('AreaFixPeer') ?: []).each { value ->
-            def fields = value.split('\\|', -1)
-            if (fields.length != 4 || fields[1].isEmpty()
-                    || !(fields[3].trim() in ['READ', 'BOTH'])) {
-                throw new IllegalArgumentException('AreaFixPeer=address|password|area-masks|READ or BOTH')
-            }
-            def address = new FTNAddr(fields[0].trim())
-            if (!address.valid || api.config.getLink(address) == null
-                    || !peers.add(address.toString()) || fields[2].trim().isEmpty()) {
-                throw new IllegalArgumentException('AreaFixPeer requires a unique configured link and area masks')
-            }
-        }
+
     }
 
     boolean handle(message, peer, key) {
