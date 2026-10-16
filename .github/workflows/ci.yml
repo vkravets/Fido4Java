@@ -37,7 +37,7 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web-ui/frontend/package-lock.json
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/thrift/0.25.0
           key: thrift-0.25.0-${{ runner.os }}-${{ runner.arch }}
@@ -93,7 +93,7 @@ jobs:
           name: compiled-release
           path: build
       - run: tar -xf build/compiled-release.tar -C build
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: jftn-bundle/build/runtime-downloads
           key: temurin-jre-${{ hashFiles('gradle/runtime-lock.json') }}
