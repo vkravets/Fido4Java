@@ -1,17 +1,21 @@
+# Manual configuration example. Not installed as jftn.conf: first launch uses the wizard.
+System=JFtn
+Location=Your Location
+
 #
 # Path to inbound boundles
 #
-Inbound = /home/toch/ftntest/inb/
+Inbound = ./mail/inbound/
 
 #
 # Path to temp directory
 #
-Tmp = /home/toch/tmp/
+Tmp = ./mail/tmp/
 
 #
 # Path to echo base
 #
-EchoPath = /home/toch/tmp/echos/
+EchoPath = ./mail/echo/
 
 #
 # Debug level
@@ -22,16 +26,16 @@ debuglevel=1
 # Links description
 # Link=<Link address>,<Out AKA>,<password>[,host address]
 #
-Link=2:5030/1111.0,2:5030/1111.1111,12345678
+Link=1:500/101,1:500/100,-,localhost:24554
 
 #
 # SysOp name
 #
-SysOp=Dmitriy Tochansky
+SysOp=Your Name
 
 deletetossed=1
 
-Outbound = /home/toch/ftn/var/spool/outbound
+Outbound = ./mail/outbound/
 
 # Optional bundled mail robots. Configure the corresponding Link entries first.
 # See docs/mail-scripts.md for supported commands, authorization and retention.
