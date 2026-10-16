@@ -110,8 +110,8 @@ public class PWDCommand extends MessageCommand {
                 sendFiles.start();
             } else {
                 ERRCommand error = new ERRCommand();
-                sessionContext.setState(SessionState.STATE_ERR);
                 sessionContext.setLastErrorMessage("Incorrect password");
+                sessionContext.setState(SessionState.STATE_ERR);
                 error.send(session, sessionContext);
                 sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
                 session.close(false);

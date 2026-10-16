@@ -280,6 +280,13 @@ offset zero, and its `nextOffset` is scoped to the selected attempt ID. Logs rem
 available after restart until history pruning removes the attempt. No RPC method
 accepts a log path supplied by the browser.
 
+Failed attempts retain the exception type/message and cause chain in their detail.
+The attempt journal and application logger include a bounded stack trace with
+causes and suppressed exceptions, correlated by attempt ID and peer. Asynchronous
+Netty/sender exceptions and remote ERR/BSY explanations are retained too. Known
+link passwords, session keys and authentication tokens are redacted before these
+diagnostics are stored or exposed through RPC; command payloads are still omitted.
+
 The outbound method is a snapshot of prepared disk files, including held mail;
 it does not enumerate all unexported database deliveries or every queued file
 job. Request processMail before reading it when you need freshly exported mail.

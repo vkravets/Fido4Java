@@ -76,7 +76,8 @@ public class SessionContext extends HasEventBus {
     private StationConfig stationConfig;
 
     // last error message
-    private String lastErrorMessage;
+    private volatile String lastErrorMessage;
+    private volatile Throwable lastFailure;
 
     // current link
     private LinksInfo linksInfo;
@@ -323,6 +324,17 @@ public class SessionContext extends HasEventBus {
 
     public void setLastErrorMessage(String lastErrorMessage) {
         this.lastErrorMessage = lastErrorMessage;
+    }
+
+    public Throwable getLastFailure() {
+        return lastFailure;
+    }
+
+    /** Publishes failure details before the terminal state becomes visible to other threads. */
+    public void fail(Throwable cause) {
+        lastFailure = cause;
+        setLastErrorMessage(cause == null ? null : cause.getMessage());
+        setState(SessionState.STATE_ERR);
     }
 
     public StationConfig getStationConfig() {

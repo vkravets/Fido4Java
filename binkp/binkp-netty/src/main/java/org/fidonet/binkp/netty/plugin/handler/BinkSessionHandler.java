@@ -187,8 +187,7 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
             command = new CommandFactory().createCommand(sessionContext, binkData);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
-            sessionContext.setState(SessionState.STATE_ERR);
-            sessionContext.setLastErrorMessage(ex.getMessage());
+            sessionContext.fail(ex);
             Command error = new ERRCommand();
             try {
                 error.send(nettySession, sessionContext);
@@ -225,8 +224,7 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         SessionContext sessionContext = getSessionContext(ctx);
         log.error(cause.getMessage(), cause);
-        sessionContext.setState(SessionState.STATE_ERR);
-        sessionContext.setLastErrorMessage(cause.getMessage());
+        sessionContext.fail(cause);
         ctx.channel().close();
     }
 

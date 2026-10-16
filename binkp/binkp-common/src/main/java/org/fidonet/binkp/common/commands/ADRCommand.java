@@ -82,10 +82,10 @@ public class ADRCommand extends MessageCommand {
                 }
             }
             if (!wait_pwd) {
-                sessionContext.setState(SessionState.STATE_ERR);
                 Command error = new ERRCommand();
                 String msg = "Link with address [%s] is not register on the node";
                 sessionContext.setLastErrorMessage(String.format(msg, commandArgs));
+                sessionContext.setState(SessionState.STATE_ERR);
                 error.send(session, sessionContext);
                 sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
                 session.close(false);

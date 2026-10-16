@@ -70,6 +70,8 @@ public class HandlerFailureTest extends HasEventBus {
             assertEquals(SessionState.STATE_ERR, context.getState());
             assertFalse(channel.isOpen());
             assertTrue(context.getLastErrorMessage().contains("length"));
+            assertTrue(context.getLastFailure() != null);
+            assertEquals(context.getLastErrorMessage(), context.getLastFailure().getMessage());
         } finally {
             channel.finishAndReleaseAll();
         }

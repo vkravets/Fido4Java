@@ -154,7 +154,9 @@ public class PollService implements AutoCloseable {
         try {
             enqueue(link.getAddr().toString(), "SCHEDULED");
         } catch (RuntimeException failure) {
-            LOGGER.warn("Scheduled poll could not be queued for {}", link.getAddr());
+            LOGGER.warn("Scheduled poll could not be queued for {}: {}",
+                        link.getAddr(),
+                        new PollDiagnostics(config, template).summary(failure));
         }
     }
 
@@ -189,6 +191,10 @@ public class PollService implements AutoCloseable {
         }
         try {
             state(job, "CONNECTING", "");
+            job.journal.record("CONNECT",
+                               new PollDiagnostics(config, context).clean(link.getHostAddress()
+                                       + ":" + (link.getPort() == 0 ? 24554 : link.getPort())),
+                               0);
             job.client = clients.apply(link);
             if (job.cancelled) {
                 return;
@@ -199,10 +205,30 @@ public class PollService implements AutoCloseable {
             Thread.currentThread().interrupt();
             state(job, "INTERRUPTED", "Poll worker interrupted");
         } catch (Exception failure) {
-            state(job, "FAILED", "Connection or session failed");
+            failed(job, context, failure);
         } finally {
             cleanup(job, context);
         }
+    }
+
+    private void failed(Job job, SessionContext context, Throwable failure) {
+        if (job.cancelled) {
+            return;
+        }
+        PollDiagnostics diagnostics = new PollDiagnostics(config, context);
+        job.journal.flush();
+        for (String line : diagnostics.trace(failure)) {
+            job.journal.record("ERROR", line, 0);
+            LOGGER.error("Poll {} ({}) {}", job.info.getId(), job.info.getAddress(), line);
+        }
+        state(job, "FAILED", diagnostics.summary(failure));
+    }
+
+    private String remoteReason(SessionContext context, String fallback) {
+        String reason = context.getLastErrorMessage();
+        return reason == null || reason.isBlank()
+                ? fallback
+                : new PollDiagnostics(config, context).clean(reason);
     }
 
     private void awaitSession(Job job, SessionContext context) throws InterruptedException {
@@ -227,9 +253,13 @@ public class PollService implements AutoCloseable {
     private boolean finished(Job job, SessionContext context) {
         SessionState current = context.getState();
         if (current == SessionState.STATE_BSY) {
-            state(job, "BUSY", "Remote node is busy");
+            state(job, "BUSY", remoteReason(context, "Remote node is busy"));
         } else if (current == SessionState.STATE_ERR) {
-            state(job, "FAILED", "Authentication or protocol error");
+            if (context.getLastFailure() != null) {
+                failed(job, context, context.getLastFailure());
+            } else {
+                state(job, "FAILED", remoteReason(context, "Authentication or protocol error"));
+            }
         } else if (context.isTransferComplete()) {
             state(job, "SUCCEEDED", "Exchange completed");
         } else if (current == SessionState.STATE_END) {
