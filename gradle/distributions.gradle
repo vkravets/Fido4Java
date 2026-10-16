@@ -13,7 +13,7 @@ def layoutDirectory = layout.buildDirectory.dir('distribution-layout')
 def prepareLayout = tasks.register('prepareDistributionLayout') {
     outputs.dir(layoutDirectory)
     doLast {
-        ['mail/inbound', 'mail/outbound', 'mail/tmp', 'mail/echo', 'database', 'logs', 'lists', 'fileecho'].each {
+        ['mail/inbound', 'mail/outbound', 'mail/tmp', 'mail/echo', 'mail/received', 'conf.d', 'database', 'logs', 'lists', 'fileecho'].each {
             new File(layoutDirectory.get().asFile, it).mkdirs()
         }
     }
