@@ -136,3 +136,7 @@ not publish a release until a matching tag is pushed.
 Plugin configuration is separated by service; see [plugin settings](plugin-configuration.md).
 Startup creates missing `*.conf` files, preserving existing edits. The script
 list is active by default; peer/area/feed examples remain commented.
+
+Offline rule validation/import is available through `--check-robot-access` and
+`--import-robot-access`; see [robot access](robot-access.md). These commands start
+no listeners or first-run setup wizard.

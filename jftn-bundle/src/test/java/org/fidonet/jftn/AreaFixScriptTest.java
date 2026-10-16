@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.db.robots.RobotService;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
 import org.fidonet.jftn.script.MailScripts;
@@ -107,6 +109,30 @@ class AreaFixScriptTest {
                    .getMessage()
                    .getBody()
                    .getBody();
+    }
+
+    @Test
+    void databaseAuthorizationAppliedLiveAndIgnoredFileCredentials() throws Exception {
+        scripts.close();
+        config.load(new ByteArrayInputStream("RobotAccessSource=database\n".getBytes(StandardCharsets.UTF_8)));
+        scripts = new MailScripts(config, base, tosser);
+        toss(request("1:500/101", "robot-password", "+test.one\r", "file-denied"));
+        assertTrue(base.getQueuedNetmail().isEmpty());
+        base.getRobotRules()
+            .save(RobotAccessRule.create(RobotService.AreaFix,
+                                         peer.getAddr().toString(),
+                                         "db-password",
+                                         "test.*",
+                                         "READ",
+                                         true));
+        toss(request("1:500/101", "db-password", "+test.one\r", "db-allowed"));
+        assertTrue(base.canReadEcho(peer, "test.one"));
+        assertFalse(base.canWriteEcho(peer, "test.one"));
+        base.getRobotRules().delete(RobotService.AreaFix, peer.getAddr());
+        toss(request("1:500/101", "robot-password", "-test.one\r", "revoked-file"));
+        toss(request("1:500/101", "db-password", "-test.one\r", "revoked-db"));
+        assertTrue(base.canReadEcho(peer, "test.one"));
+        assertEquals(1, base.getQueuedNetmail().size());
     }
 
     @Test

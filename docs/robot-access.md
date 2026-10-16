@@ -1,0 +1,108 @@
+# Mail robot access: files or database
+
+AreaFix, FileFix and TIC authorization share one Java API and two interchangeable
+providers. This is independent of whether the UI/RPC listeners run. The node still
+uses its normal mail database, subscription state and durable delivery queues.
+The selected source controls authorization rules, not message storage.
+
+## File-only administration (default)
+
+Keep this in `conf.d/40-mail-scripts.conf`:
+
+```ini
+RobotAccessSource=files
+MailScript=./scripts/mail-scripts/areafix.groovy
+MailScript=./scripts/mail-scripts/filefix.groovy
+MailScript=./scripts/mail-scripts/directory-import.groovy
+```
+
+In `conf.d/41-areafix.conf`:
+
+```ini
+EchoSubscriptions=database
+AreaFixPeer=1:500/101|separate-areafix-password|test.*,local.news|READ
+```
+
+In `conf.d/42-filefix.conf`:
+
+```ini
+FileArea=lists|./fileecho/lists|Node and point lists
+FileFixPeer=1:500/101|separate-filefix-password|lists
+TicPeer=1:500/101|separate-tic-password|lists
+```
+
+Each peer must also have a configured station `Link`. Rules are enabled by their
+presence; remove/comment an entry to disable it. Duplicate peer/service entries,
+unknown links, empty passwords/masks and invalid AreaFix rights fail validation.
+AreaFix supports READ or BOTH. Command passwords are case-sensitive; TIC retains
+its existing case-insensitive wire-password behavior. Area masks are matched
+case-insensitively, with `*`, `?`, and comma-separated alternatives.
+
+File rules form an immutable snapshot at script initialization. Validate your
+edits and restart to apply them. File mode never imports into or reads the robot
+rule table; an absent file rule denies access even if the database has one.
+
+For a node without UI, first create a complete `jftn.conf` using the distributed
+example, with your real station identity and links. Put `RpcEnabled=false` in
+`conf.d/90-rpc.conf`. The normal launchers then run mail services without starting
+the first-run wizard or RPC listeners. No browser/account registration is needed.
+EchoSubscriptions=database is compatible with this mode: subscriptions are
+operational state, independent of the source of access rules.
+
+Validate without starting the node, listeners or plugins:
+
+```sh
+./jftn.sh --check-robot-access
+./jftn.sh --check-robot-access /path/to/jftn.conf
+```
+
+Windows launchers accept the same arguments (`jftn.cmd` or `jftn.ps1`). The command
+reports only the number of rules and does not open a database or change files.
+It always validates the file rules, including when preparing an import.
+
+## Database administration
+
+Set `RobotAccessSource=database` in `conf.d/40-mail-scripts.conf` when the database
+should own access rules.
+Only one source is active for all three services. There is no merge, automatic
+import or fallback: an empty store, disabled rule or deleted rule denies access.
+A file rule cannot restore permissions revoked in the database. An unknown mode
+is an error. Changing the source requires a restart.
+
+The independent `mail_robot_access` table is part of the mail database, not the
+RPC account database. `DatabaseManager.getRobotRules()` exposes the repository
+for trusted administration code. Updates/deletions are read on the next command
+or TIC authorization without restarting scripts. Existing accepted/queued work
+is not cancelled retroactively. UI/RPC editing will use this same repository;
+this change adds the provider/API foundation and offline operation, not UI forms.
+
+AreaFix/FileFix passwords are salted PBKDF2-HMAC-SHA256 verifiers (600000
+iterations). The public rule API does not expose their plaintext. TIC forwarding
+must emit its shared secret, so TIC credentials remain recoverable in the private
+store, as in file configuration. Protect configuration files and database backups.
+Rules and passwords are never included in command output.
+
+## Explicit one-time import
+
+Stop the node first, then run from its installation directory:
+
+```sh
+./jftn.sh --check-robot-access
+./jftn.sh --import-robot-access
+```
+
+The optional configuration path works for both commands. The database path is
+relative to the node working directory and is the same one used by the database
+plugin. The import validates every file rule and writes them in one transaction.
+It requires an empty rule table; existing rules are never replaced. Any failure
+rolls back the import. Other mail data is retained. The command starts no RPC,
+UI, scheduler or binkp listener and does not change configuration files.
+
+After a successful import, select `RobotAccessSource=database` and restart.
+Retain the original files as a backup; they are ignored for runtime authorization
+in database mode. Switching back to files deliberately restores the file snapshot,
+so review old rules before doing so.
+
+Technical script loading, charset, file-area paths and directory-feed settings
+remain in conf.d in both modes. Scripts retain command parsing and actions;
+credential checks and access policy selection are implemented in Java.

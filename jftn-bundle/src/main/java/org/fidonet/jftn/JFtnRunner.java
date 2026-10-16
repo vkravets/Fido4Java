@@ -77,6 +77,9 @@ public class JFtnRunner {
             System.out.println("JFtn " + (version == null ? "development" : version));
             return;
         }
+        if (RobotAccessCommand.handle(args)) {
+            return;
+        }
         NodeDirectories.defaults(Path.of("."));
         logger.info("Starting JFtnNode...");
         InitialSetup.prepare(Path.of("jftn.conf"));

@@ -15,7 +15,6 @@ import java.util.zip.CRC32
 class FileFixRobot {
     final api
     final Map<String, Path> areas = new TreeMap<>()
-    final Map<String, List<String>> ticPeers = new LinkedHashMap<>()
     final charset
 
     FileFixRobot(api) {
@@ -31,22 +30,7 @@ class FileFixRobot {
                 throw new IllegalArgumentException('Duplicate FileArea ' + tag)
             }
         }
-        ['FileFixPeer', 'TicPeer'].each { setting ->
-            def known = new HashSet<String>()
-            (api.config.getValuesAsList(setting) ?: []).each { value ->
-                def fields = value.split('\\|', -1)
-                if (fields.length != 3 || fields[1].isEmpty() || fields[2].trim().isEmpty()) {
-                    throw new IllegalArgumentException(setting + '=address|password|area-masks')
-                }
-                def address = new FTNAddr(fields[0].trim())
-                if (!address.valid || api.config.getLink(address) == null || !known.add(address.toString())) {
-                    throw new IllegalArgumentException(setting + ' requires unique configured links')
-                }
-                if (setting == 'TicPeer') {
-                    ticPeers[address.toString()] = [fields[1], fields[2]]
-                }
-            }
-        }
+
     }
 
     String subscriptionKey(peer) {
@@ -197,11 +181,11 @@ class FileFixRobot {
     void process(ticket, List inbox) {
         def fields = parse(ticket.path)
         String tag = fields.area[0].toLowerCase(Locale.ROOT)
-        def credentials = ticPeers[ticket.peer.toString()]
+        def credentials = api.robotAccess.find('Tic', ticket.peer)
         def sender = address(fields.from[0])
         if (credentials == null || sender != ticket.peer || !areas.containsKey(tag)
-                || !credentials[1].split(',').any { RobotRequest.matches(it.trim(), tag) }
-                || !fields.containsKey('pw') || !credentials[0].equalsIgnoreCase(fields.pw[0])) {
+                || !credentials.allows(tag)
+                || !fields.containsKey('pw') || !credentials.verifyPassword(fields.pw[0])) {
             throw new IOException('TIC sender, area or password is not authorized')
         }
         if (fields.containsKey('to') && !api.config.localAddresses.contains(address(fields.to[0]))) {
@@ -254,8 +238,7 @@ class FileFixRobot {
     void forward(Map fields, String tag, String name, Path stored, FTNAddr sender, Set seen, String receipt) {
         def recipients = api.config.configuredLinks.findAll { link ->
             link.addr != sender && !seen.contains(link.addr) && !api.config.localAddresses.contains(link.addr)
-                    && ticPeers.containsKey(link.addr.toString())
-                    && ticPeers[link.addr.toString()][1].split(',').any { RobotRequest.matches(it.trim(), tag) }
+                    && api.robotAccess.find('Tic', link.addr)?.allows(tag)
                     && subscriptions(link).contains(tag)
         }
         def seenAll = new LinkedHashSet(seen)
@@ -270,7 +253,9 @@ class FileFixRobot {
             }
             output.add('From ' + local)
             output.add('To ' + link.addr)
-            output.add('Pw ' + ticPeers[link.addr.toString()][0])
+            def credentials = api.robotAccess.find('Tic', link.addr)
+            if (credentials == null || !credentials.allows(tag)) return
+            output.add('Pw ' + credentials.deliveryPassword)
             output.add('Created by JFtn Groovy FileFix')
             fields.path.each { output.add('Path ' + it) }
             output.add('Path ' + local + ' ' + (System.currentTimeMillis().intdiv(1000)))

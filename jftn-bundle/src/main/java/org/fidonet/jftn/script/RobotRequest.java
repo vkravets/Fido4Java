@@ -1,17 +1,12 @@
 package org.fidonet.jftn.script;
 
-import org.fidonet.types.FTNAddr;
+import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
 
 /** Common request identity, credential checks and durable replies; commands belong to scripts. */
 public final class RobotRequest {
@@ -47,33 +42,15 @@ public final class RobotRequest {
                 || (message.getAttributes() & 0x8810) != 0) {
             return null;
         }
-        List<String> values = api.getConfig().getValuesAsList(robot + "Peer");
-        if (values == null) {
+        RobotAccessRule rule = api.getRobotAccess()
+                                  .authorize(robot, peer.getAddr(), message.getSubject());
+        if (rule == null) {
             return null;
         }
-        for (String value : values) {
-            String[] fields = value.split("\\|", -1);
-            if (fields.length < 3) {
-                throw new IllegalArgumentException("Expected "
-                                                   + robot
-                                                   + "Peer=address|password|areas");
-            }
-            if (!new FTNAddr(fields[0].trim()).equals(peer.getAddr())) {
-                continue;
-            }
-            if (fields[1].isEmpty()
-                    || !MessageDigest.isEqual(fields[1].getBytes(StandardCharsets.UTF_8),
-                                              message.getSubject()
-                                                     .getBytes(StandardCharsets.UTF_8))) {
-                return null;
-            }
-            List<String> policy = new ArrayList<>();
-            for (int i = 2; i < fields.length; i++) {
-                policy.add(fields[i].trim());
-            }
-            return new RobotRequest(api, message, robot, deliveryKey, policy);
-        }
-        return null;
+        List<String> policy = robot.equals("AreaFix")
+                ? List.of(rule.getMasks(), rule.getAccess())
+                : List.of(rule.getMasks());
+        return new RobotRequest(api, message, robot, deliveryKey, policy);
     }
 
     public String getId() {
@@ -94,13 +71,7 @@ public final class RobotRequest {
     }
 
     public static boolean matches(String mask, String value) {
-        StringBuilder expression = new StringBuilder("^");
-        for (char character : mask.toLowerCase(Locale.ROOT).toCharArray()) {
-            expression.append(character == '*'
-                    ? ".*"
-                    : character == '?' ? "." : Pattern.quote(String.valueOf(character)));
-        }
-        return value.toLowerCase(Locale.ROOT).matches(expression + "$");
+        return RobotAccessRule.matches(mask, value);
     }
 
     public String previousReply() throws IOException {
