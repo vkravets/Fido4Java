@@ -225,8 +225,9 @@ for both installation and test runs.
 ```
 
 The first task builds Storybook and checks its components in a browser: both themes
-and languages, notification positioning during scroll, dismissal rules, point/admin
-navigation, mobile forms, disabled actions, and escaped journal text.
+and languages, notification positioning during scroll, dismissal rules, unchanged
+banner height with/without a close control, point/admin navigation, mobile forms,
+disabled actions, and escaped journal text.
 The second starts an isolated Java HTTP server on a system-assigned port, with a
 temporary account database and the compiled production Vue assets. It exercises
 real HTTP Thrift calls for sign-in, registration, administrator approval, point

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
 test('every catalogue story renders without browser errors', async ({ page, request }) => {
@@ -88,3 +89,33 @@ test('station form remains usable at mobile width in both themes', async ({ page
         ).toBeTruthy();
     }
 });
+
+async function checkNotificationSize(page: Page, name: string, theme: string, locale: string) {
+    await story(page, `feedback-notificationbanner--${name}`, theme, locale);
+    const banner = page.getByRole('status');
+    const button = banner.getByRole('button');
+    await expect(button).toBeVisible();
+    const before = (await banner.boundingBox())!;
+    const action = (await button.boundingBox())!;
+    const text = (await banner.locator('.message-text').boundingBox())!;
+    expect(action.x).toBeGreaterThanOrEqual(text.x + text.width);
+    expect(action.y).toBeGreaterThanOrEqual(before.y);
+    expect(action.y + action.height).toBeLessThanOrEqual(before.y + before.height);
+    // Keep the same content/width and remove only the close control.
+    await button.evaluate((element) => element.remove());
+    const after = (await banner.boundingBox())!;
+    expect(after.height).toBeCloseTo(before.height, 1);
+    expect(after.width).toBeCloseTo(before.width, 1);
+}
+
+for (const theme of ['light', 'dark']) {
+    for (const locale of ['en', 'uk']) {
+        test(`${theme}/${locale}: close buttons do not resize notifications`, async ({ page }) => {
+            for (const width of [1280, 375]) {
+                await page.setViewportSize({ width, height: 900 });
+                await checkNotificationSize(page, 'information', theme, locale);
+                await checkNotificationSize(page, 'warning', theme, locale);
+            }
+        });
+    }
+}
