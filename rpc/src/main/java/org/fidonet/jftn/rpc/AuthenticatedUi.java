@@ -34,6 +34,9 @@ public final class AuthenticatedUi {
             return method.invoke(backend, args);
         }
         args[0] = sessions.require((String) args[0]);
+        // Point mail access will be exposed with the future reader's scoped mailbox API.
+        // Until then, existing node-wide UI operations remain administrator-only.
+        sessions.requireAdminUser((String) args[0]);
         try {
             return method.invoke(backend, args);
         } catch (InvocationTargetException failure) {

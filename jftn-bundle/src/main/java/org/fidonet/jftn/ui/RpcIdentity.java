@@ -3,22 +3,29 @@ package org.fidonet.jftn.ui;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountAuthentication;
+import org.fidonet.jftn.rpc.auth.AccountDirectory;
+import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Account persistence, sessions and passkey authentication, shared by every transport. */
 final class RpcIdentity implements AutoCloseable {
     private final RpcResources resources;
     private final UiSessions sessions;
     private final AccountAuthentication authentication;
+    private final ProfileHandler profiles;
 
     private RpcIdentity(RpcResources resources,
                         UiSessions sessions,
-                        AccountAuthentication authentication) {
+                        AccountAuthentication authentication,
+                        ProfileHandler profiles) {
         this.resources = resources;
         this.sessions = sessions;
         this.authentication = authentication;
+        this.profiles = profiles;
     }
 
     static RpcIdentity open(JFtnConfig config) throws Exception {
@@ -36,7 +43,17 @@ final class RpcIdentity implements AutoCloseable {
             AccountAuthentication authentication = resources.add(authentication(config,
                                                                                 accounts,
                                                                                 sessions));
-            return new RpcIdentity(resources, sessions, authentication);
+            List<String> addresses = new ArrayList<>();
+            config.getLocalAddresses().forEach(address -> addresses.add(address.toString()));
+            String registration = config.getValue("RpcRegistrationEnabled", "true");
+            if (!registration.equalsIgnoreCase("true") && !registration.equalsIgnoreCase("false")) {
+                throw new IllegalArgumentException("RpcRegistrationEnabled must be true or false");
+            }
+            ProfileHandler profiles = new ProfileHandler(new AccountDirectory(accounts),
+                                                         sessions,
+                                                         addresses,
+                                                         Boolean.parseBoolean(registration));
+            return new RpcIdentity(resources, sessions, authentication, profiles);
         } catch (Exception failure) {
             resources.closeAfterFailure(failure);
             throw failure;
@@ -59,6 +76,10 @@ final class RpcIdentity implements AutoCloseable {
 
     UiSessions sessions() {
         return sessions;
+    }
+
+    ProfileHandler profiles() {
+        return profiles;
     }
 
     AccountAuthentication authentication() {

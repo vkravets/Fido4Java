@@ -54,6 +54,7 @@ Outbound = /home/toch/ftn/var/spool/outbound
 # RpcUser=sysop
 # RpcPassword=replace-with-a-private-password
 # RpcSessionSeconds=3600
+# RpcRegistrationEnabled=true
 # RpcAuthPath=./database/rpc-auth
 # RpcPasskeysEnabled=true
 # RpcWebAuthnRpId=node.example

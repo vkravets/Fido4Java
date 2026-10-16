@@ -5,6 +5,7 @@ import org.fidonet.jftn.rpc.AuthenticatedUi;
 import org.fidonet.jftn.rpc.DefaultServerHandler;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.MessageService;
+import org.fidonet.jftn.rpc.ProfileService;
 import org.fidonet.jftn.rpc.UiService;
 
 import org.apache.thrift.TException;
@@ -27,6 +28,11 @@ final class NodeRpcHandlers extends DefaultServerHandler {
     @Override
     public AuthService.Iface getAuthHandler() {
         return identity.authentication();
+    }
+
+    @Override
+    public ProfileService.Iface getProfileHandler() {
+        return identity.profiles();
     }
 
     @Override

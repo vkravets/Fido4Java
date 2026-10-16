@@ -179,6 +179,24 @@ main build job, so failed JS tests prevent the dependent binkd/HPT jobs starting
 
 ## Mail
 
+### Account profiles and point registration
+
+The `profile` service supports public point registration, personal preferences,
+AKA requests and administrator approval. Set `RpcRegistrationEnabled=false` to
+disable signup. New registrations are POINT accounts, disabled until an
+administrator approves an address request. Existing accounts retain ADMIN rights.
+Passwords and binkp secrets are independent; signup does not grant an address
+merely because it appears in a nodelist. Point ownership is reserved with a unique
+database key as part of the same transaction that approves the request and
+activates the account.
+
+`me`, `savePreferences` and `requestAka` operate on the session's owner only.
+`accounts` and `decideAka` require ADMIN. Light/dark theme and the default approved
+posting AKA persist in the account database. The current node-wide `ui` service
+remains ADMIN-only, including over TCP: point mailbox access will use a separately
+scoped API when the reader is implemented. Personal settings and passkeys remain
+available to approved points through `profile` and `auth`.
+
 | Methods | Behavior |
 | --- | --- |
 | `areas` | Existing echo names and message counts |
