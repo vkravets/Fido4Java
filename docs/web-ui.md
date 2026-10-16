@@ -85,6 +85,28 @@ rules. Point accounts have neither this navigation entry nor RPC permission to
 inspect/change rules. Technical script loading, file-area paths and directory-feed
 configuration remain in `conf.d`; see [robot access](robot-access.md).
 
+## Outgoing connections
+
+Administrators have a **Соединения** page with active/waiting attempts, paged
+history and a **Полл сейчас** action for configured links. Scheduled and manual
+attempts use the same queue and duplicate active requests select the existing
+job. Attempts can be cancelled or retried; cancellation closes the connection
+without deleting queued outgoing files. Incoming server sessions are not listed.
+
+Selecting an attempt shows its source, start/end times, result and dedicated
+journal. Prepared outbound files for that link are shown separately (up to 50);
+this snapshot is not a list of messages still awaiting packaging. Protocol secrets
+are not journalled, and log text is rendered as plain text. The page refreshes
+every two seconds after the preceding request completes, pauses in hidden tabs,
+and stops on navigation away. Auto refresh and following the journal can be toggled.
+The browser retains only one history page and the last 1000 loaded log lines.
+
+History and journals survive restarts under `Tmp/polls`. Unfinished attempts are
+marked INTERRUPTED; they are not resumed automatically. `PollHistoryLimit`,
+`PollTimeoutSeconds` and `PollLogLimitBytes` are file-only settings in
+`conf.d/10-binkp.conf`; see [RPC details](rpc-ui.md). Point accounts cannot see
+this section or call the underlying administrative methods.
+
 ## Nodelist lookup
 
 Setup can query the local directory or explicitly download a full nodelist from

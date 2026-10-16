@@ -17,7 +17,7 @@ script lists; update those manually to adopt the new defaults.
 
 | File | Configuration |
 | --- | --- |
-| `10-binkp.conf` | Transport listen port and advertised capabilities (`BinkpPort`, `NDL`) |
+| `10-binkp.conf` | Transport listen port/capabilities (`BinkpPort`, `NDL`); poll retention, deadline and journal limit (`PollHistoryLimit`, `PollTimeoutSeconds`, `PollLogLimitBytes`) |
 | `20-jam-bridge.conf` | `JamBridgeEnabled`, `JamCharset`, `JamEcho`, `JamNetmail` |
 | `30-nodelist.conf` | `NodeDirectoryEnabled`, `NodeDirectoryPath`, `DirectoryRefreshSeconds`, `DirectorySource` |
 | `40-mail-scripts.conf` | `RobotAccessSource` and all `MailScript` entries, in handler registration order |

@@ -10,6 +10,7 @@ import type { UserProfile } from '../../build/frontend-generated/bindings.mjs';
 
 let server: ViteDevServer;
 let sidebar: Component;
+let pollDetails: Component;
 
 before(async () => {
     server = await createServer({
@@ -18,6 +19,8 @@ before(async () => {
         appType: 'custom'
     });
     sidebar = (await server.ssrLoadModule('/src/components/Sidebar.vue')).default as Component;
+    pollDetails = (await server.ssrLoadModule('/src/components/PollDetails.vue'))
+        .default as Component;
 });
 
 after(async () => {
@@ -44,6 +47,7 @@ test('point navigation contains mail placeholders and personal settings without 
     assert.ok(!html.includes('УПРАВЛЕНИЕ НОДОЙ'));
     assert.ok(!html.includes('Аккаунты и заявки'));
     assert.ok(!html.includes('Почтовые роботы'));
+    assert.ok(!html.includes('Соединения'));
     assert.ok(html.includes('disabled'));
 });
 
@@ -53,4 +57,30 @@ test('administrator navigation exposes station configuration and account moderat
     assert.ok(html.includes('Аккаунты и заявки'));
     assert.ok(html.includes('Станция'));
     assert.ok(html.includes('Почтовые роботы'));
+    assert.ok(html.includes('Соединения'));
+});
+
+test('poll details escaped journal text and exposed retry for a finished attempt', async () => {
+    const html = await renderToString(
+        h(pollDetails, {
+            attempt: {
+                id: 'attempt-one',
+                address: '1:500/101',
+                state: 'FAILED',
+                source: 'SCHEDULED',
+                created: 1,
+                detail: 'Closed early'
+            },
+            lines: ['<script>alert("unsafe")</script>'],
+            files: [],
+            clipped: false,
+            more: false,
+            busy: false
+        })
+    );
+    assert.ok(html.includes('Планировщик'));
+    assert.ok(html.includes('Повторить полл'));
+    assert.ok(html.includes('&lt;script&gt;'));
+    assert.ok(!html.includes('<script>'));
+    assert.ok(!html.includes('Отменить полл'));
 });
