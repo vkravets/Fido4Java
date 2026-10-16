@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -57,6 +58,17 @@ public class JFtnConfig extends BaseConfig {
     private static final Logger logger = LoggerFactory.getLogger(JFtnConfig.class.getName());
 
     private Map<String, Link> links;
+    private Path sourcePath;
+
+    public Path getSourcePath() {
+        return sourcePath;
+    }
+
+    @Override
+    public void load(String fileName) throws ParseConfigException {
+        super.load(fileName);
+        sourcePath = Path.of(fileName).toAbsolutePath().normalize();
+    }
 
     public JFtnConfig() {
         links = new HashMap<String, Link>();

@@ -30,5 +30,6 @@ include "statistics.thrift"
 include "ui.thrift"
 include "auth.thrift"
 include "profile.thrift"
+include "settings.thrift"
 
 

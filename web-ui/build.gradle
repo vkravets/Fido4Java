@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+
+description = 'Embedded browser UI and first-run node configuration'
+
+dependencies {
+    api project(':rpc')
+    implementation project(':fido-config')
+    implementation project(':fido-fts')
+    implementation project(':nodelist')
+    runtimeOnly 'com.h2database:h2:2.5.252'
+}

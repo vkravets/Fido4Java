@@ -1,6 +1,7 @@
 package org.fidonet.jftn.rpc;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
@@ -12,8 +13,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -36,6 +39,15 @@ public final class HttpRpcServer implements RpcTransport {
         this.origins = Set.copyOf(origins);
         this.origins.forEach(HttpRpcServer::validateOrigin);
         services = RpcProcessors.services(handlers);
+        Map<String, HttpHandler> routes = new LinkedHashMap<>();
+        for (HttpRouteProvider provider : ServiceLoader.load(HttpRouteProvider.class)) {
+            provider.routes().forEach((route, handler) -> {
+                if (!route.startsWith("/") || route.startsWith("/rpc") || handler == null
+                        || routes.putIfAbsent(route, handler) != null) {
+                    throw new IllegalArgumentException("Invalid or duplicate HTTP route: " + route);
+                }
+            });
+        }
         server = HttpServer.create(new InetSocketAddress(bind, port), 32);
         workers = new ThreadPoolExecutor(2,
                                          8,
@@ -45,6 +57,7 @@ public final class HttpRpcServer implements RpcTransport {
                                          new ThreadPoolExecutor.CallerRunsPolicy());
         server.setExecutor(workers);
         server.createContext("/rpc/", this::handle);
+        routes.forEach(server::createContext);
     }
 
     private static void validateOrigin(String value) {
@@ -113,11 +126,19 @@ public final class HttpRpcServer implements RpcTransport {
             return true;
         }
         exchange.getResponseHeaders().set("Vary", "Origin");
-        if (!origins.contains(origin)) {
+        if (!origins.contains(origin) && !isLocalOrigin(origin)) {
             return false;
         }
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
         return true;
+    }
+
+    private boolean isLocalOrigin(String origin) {
+        int port = getLocalPort();
+        return server.getAddress().getAddress().isLoopbackAddress()
+                && (origin.equals("http://localhost:" + port)
+                        || origin.equals("http://127.0.0.1:" + port)
+                        || origin.equals("http://[::1]:" + port));
     }
 
     private static boolean isThriftContentType(HttpExchange exchange) {

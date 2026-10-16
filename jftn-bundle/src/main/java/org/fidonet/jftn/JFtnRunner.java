@@ -42,6 +42,7 @@ import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.ui.NodeRpc;
+import org.fidonet.jftn.web.InitialSetup;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -51,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -72,6 +74,7 @@ public class JFtnRunner {
     public static void main(String[] args) throws Exception {
 
         logger.info("Starting JFtnNode...");
+        InitialSetup.prepare(Path.of("jftn.conf"));
         final long starttime = System.currentTimeMillis();
         final PluginManager pluginManager = PluginManager.getInstance();
         try {
