@@ -28,6 +28,15 @@ final class RobotPassword {
     }
 
     static boolean verify(String stored, String candidate) {
+        validate(stored);
+        String[] parts = stored.split("\\$", -1);
+        return MessageDigest.isEqual(Base64.getDecoder().decode(parts[3]),
+                                     derive(candidate,
+                                            Base64.getDecoder().decode(parts[2]),
+                                            Integer.parseInt(parts[1])));
+    }
+
+    static void validate(String stored) {
         String[] parts = stored.split("\\$", -1);
         if (parts.length != 4 || !parts[0].equals("pbkdf2-sha256")) {
             throw new IllegalStateException("Invalid robot password verifier");
@@ -36,10 +45,10 @@ final class RobotPassword {
         if (iterations < 100000 || iterations > 2000000) {
             throw new IllegalStateException("Invalid robot password hash parameters");
         }
-        return MessageDigest.isEqual(Base64.getDecoder().decode(parts[3]),
-                                     derive(candidate,
-                                            Base64.getDecoder().decode(parts[2]),
-                                            iterations));
+        if (Base64.getDecoder().decode(parts[2]).length != 16
+                || Base64.getDecoder().decode(parts[3]).length != 32) {
+            throw new IllegalArgumentException("Invalid robot password hash size");
+        }
     }
 
     private static byte[] derive(String value, byte[] salt, int iterations) {

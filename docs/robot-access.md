@@ -120,6 +120,65 @@ Retain the original files as a backup; they are ignored for runtime authorizatio
 in database mode. Switching back to files deliberately restores the file snapshot,
 so review old rules before doing so.
 
+## Export for operation without UI/RPC
+
+Stop the node and run from the installation directory. Export requires the existing
+mail database; it refuses to create one when run from the wrong directory.
+
+```sh
+./jftn.sh --export-robot-access conf.d/49-robot-access.conf
+./jftn.sh --check-robot-access
+```
+
+Windows: `jftn.cmd --export-robot-access conf.d/49-robot-access.conf` (PowerShell
+launcher accepts the same arguments). An optional third argument selects the main
+configuration: `--export-robot-access output.conf /path/to/jftn.conf`. Paths are
+relative to the working directory, including the normal mail database path.
+
+The destination must not exist. The command writes a completed temporary file,
+then publishes it under the requested name without replacing another file. Other
+configuration files and the database rules remain unchanged. To refresh an export,
+write to a new filename outside `conf.d`, review/validate it, then replace the old
+fragment while the node is stopped. Keep one active snapshot fragment.
+
+The exported fragment sets `RobotAccessSource=files` and `RobotAccessFormat=1`.
+Putting it in `conf.d` after `40-mail-scripts.conf` selects file mode on next start.
+If saved elsewhere, it is a backup until you install it in `conf.d`. It preserves
+all services, masks, rights, password verifiers and enabled/disabled states. All
+referenced peers must still have configured station links. With format 1 selected,
+the snapshot is the entire rule store: legacy `AreaFixPeer`, `FileFixPeer` and
+`TicPeer` entries are ignored. An empty export explicitly denies all robot access.
+
+In `conf.d/90-rpc.conf`, disable the listeners separately:
+
+```ini
+RpcEnabled=false
+RpcHttpEnabled=false
+```
+
+Keep the existing complete station configuration; then start normally. Mail robots
+use the exported rules without UI/RPC. The mail database still stores messages,
+subscriptions and queues. File-rule changes require a restart.
+
+`RobotAccessRule` rows have six pipe-separated fields:
+`service|address|base64(credential)|base64(masks)|access|enabled`.
+The command verifiers stay PBKDF2; they are not converted to plaintext or rehashed.
+TIC secrets are Base64-encoded for delimiter-safe storage; **Base64 is not
+encryption**. Treat the snapshot as a private credential file. On POSIX it is
+created with mode `0600`; on Windows it inherits the destination directory ACL.
+No credentials are printed to the console.
+
+For an empty store the row is `RobotAccessRule=none`, so a later empty snapshot
+also replaces entries inherited from an earlier fragment. Do not combine snapshot
+rows across fragments. To hand-author plaintext rules instead, remove the snapshot
+settings and use the legacy `*Peer` format described above.
+
+The existing `--check-robot-access` validates snapshots, and
+`--import-robot-access` can restore one into an empty database rule table without
+changing credentials or enabled states. To return to database mode, import if
+needed, remove the active snapshot fragment (which selects `files`), and re-enable
+RPC in `90-rpc.conf`. The normal packaged default then selects the database.
+
 Technical script loading, charset, file-area paths and directory-feed settings
 remain in conf.d in both modes. Scripts retain command parsing and actions;
 credential checks and access policy selection are implemented in Java.

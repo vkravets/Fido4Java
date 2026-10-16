@@ -83,6 +83,15 @@ class RobotAccessTest {
     }
 
     @Test
+    void exportRequiredAnExplicitDestinationBeforeOpeningConfigurationOrDatabase() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> RobotAccessCommand.handle(new String[]{"--export-robot-access"}));
+        assertThrows(IllegalArgumentException.class,
+                     () -> RobotAccessCommand.handle(new String[]{"--export-robot-access", "out",
+                             "config", "extra"}));
+    }
+
+    @Test
     void offlineFileCheckLoadedFragmentsWithoutStartingTheSetupWizard() throws Exception {
         Path main = Files.writeString(root.resolve("jftn.conf"), text("files", ""));
         Files.createDirectory(root.resolve("conf.d"));
