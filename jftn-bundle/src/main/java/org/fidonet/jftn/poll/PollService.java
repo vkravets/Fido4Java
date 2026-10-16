@@ -34,6 +34,7 @@ public class PollService implements AutoCloseable {
     private final PollHistory history;
     private final int historyLimit;
     private final long timeoutSeconds;
+    private final int logLimit;
     private final ThreadPoolExecutor worker = new ThreadPoolExecutor(1,
                                                                      1,
                                                                      0,
@@ -49,9 +50,11 @@ public class PollService implements AutoCloseable {
         private volatile boolean cancelled;
         private boolean running;
         private Future<?> future;
+        private final PollJournal journal;
 
-        private Job(PollAttempt info) {
+        private Job(PollAttempt info, PollJournal journal) {
             this.info = info;
+            this.journal = journal;
         }
     }
 
@@ -65,6 +68,7 @@ public class PollService implements AutoCloseable {
         this.clients = clients;
         historyLimit = setting(config, "PollHistoryLimit", 256, 1, 10000);
         timeoutSeconds = setting(config, "PollTimeoutSeconds", 120, 1, 86400);
+        logLimit = setting(config, "PollLogLimitBytes", 262144, 4096, 16777216);
         try {
             history = new PollHistory(Path.of(config.getTmpDir(), "polls"));
             restore();
@@ -90,7 +94,7 @@ public class PollService implements AutoCloseable {
                            .finished(System.currentTimeMillis());
                     history.save(attempt);
                 }
-                jobs.put(attempt.getId(), new Job(attempt));
+                jobs.put(attempt.getId(), job(attempt));
             }
             prune();
         } catch (IOException | RuntimeException failure) {
@@ -125,7 +129,9 @@ public class PollService implements AutoCloseable {
                                               System.currentTimeMillis(),
                                               "").source(source);
         history.save(attempt);
-        Job job = new Job(attempt);
+        Job job = job(attempt);
+        job.journal.record("QUEUED", source + " " + attempt.getAddress(), 0);
+        job.journal.flush();
         jobs.put(attempt.getId(), job);
         job.future = worker.submit(() -> run(job, link));
         prune();
@@ -134,6 +140,12 @@ public class PollService implements AutoCloseable {
 
     public void pollAll() {
         config.getConfiguredLinks().forEach(this::enqueueScheduled);
+    }
+
+    private Job job(PollAttempt info) {
+        return new Job(info,
+                       new PollJournal(Path.of(config.getTmpDir(), "polls", info.getId() + ".log"),
+                                       logLimit));
     }
 
     private void enqueueScheduled(Link link) {
@@ -157,10 +169,15 @@ public class PollService implements AutoCloseable {
             job.info.finished(System.currentTimeMillis());
         }
         history.save(job.info);
+        job.journal.record("RESULT", state + " " + detail, 0);
+        job.journal.flush();
     }
 
     private void run(Job job, Link link) {
         SessionContext context = new SessionContext(template);
+        context.setActivityListener((kind, name, bytes) -> job.journal.record(kind.name(),
+                                                                              name,
+                                                                              bytes));
         synchronized (this) {
             if (job.cancelled) {
                 return;
@@ -200,6 +217,7 @@ public class PollService implements AutoCloseable {
             boolean transferring = current == SessionState.STATE_TRANSFER
                     || current == SessionState.STATE_WAITGET;
             state(job, transferring ? "TRANSFERRING" : "AUTHENTICATING", "");
+            job.journal.flush();
             Thread.sleep(100);
         }
     }
@@ -226,7 +244,16 @@ public class PollService implements AutoCloseable {
                 job.client.stop();
             }
         } finally {
+            finishDiagnostics(job, context);
+        }
+    }
+
+    private void finishDiagnostics(Job job, SessionContext context) {
+        try {
+            context.setActivityListener(null);
             context.closeReceiveStreams();
+            job.journal.flush();
+        } finally {
             synchronized (this) {
                 job.client = null;
                 job.running = false;
@@ -259,6 +286,11 @@ public class PollService implements AutoCloseable {
         return job.info.copy();
     }
 
+    public synchronized PollLogSlice logs(String id, long offset, int limit) throws IOException {
+        get(id);
+        return jobs.get(id).journal.read(offset, limit);
+    }
+
     public synchronized void cancel(String id) {
         Job job = jobs.get(id);
         if (job == null) {
@@ -285,6 +317,8 @@ public class PollService implements AutoCloseable {
         }
         worker.purge();
         history.save(job.info);
+        job.journal.record("RESULT", state, 0);
+        job.journal.flush();
     }
 
     @Override
@@ -298,15 +332,32 @@ public class PollService implements AutoCloseable {
             worker.shutdownNow();
         }
         try {
-            if (!worker.awaitTermination(35, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Poll worker did not stop");
-            }
+            awaitStopped();
             history.close();
-        } catch (InterruptedException failure) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Poll shutdown interrupted", failure);
         } catch (IOException failure) {
             throw new UncheckedIOException(failure);
+        }
+    }
+
+    private void awaitStopped() {
+        boolean interrupted = Thread.interrupted();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(35);
+        try {
+            while (!worker.isTerminated()) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    throw new IllegalStateException("Poll worker did not stop");
+                }
+                try {
+                    worker.awaitTermination(remaining, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException failure) {
+                    interrupted = true;
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

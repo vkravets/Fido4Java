@@ -112,6 +112,9 @@ class PollServiceTest {
                     Thread.sleep(20);
                 }
                 assertEquals("SUCCEEDED", job.getState(), job.getDetail());
+                List<String> log = polls.logs(job.getId(), 0, 200).getLines();
+                assertTrue(log.stream().anyMatch(line -> line.contains("STATE_WAITOK")));
+                assertTrue(log.stream().noneMatch(line -> line.contains("secret")));
             }
         } finally {
             remote.stop();
