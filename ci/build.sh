@@ -9,7 +9,7 @@ if [ "${GITHUB_REF_TYPE:-}" = tag ]; then
   fi
   version="${GITHUB_REF_NAME#v}"
 fi
-bash ./gradlew build :binkp-root:binkp-netty:prepareCiIntegration \
+bash ./gradlew build :web-ui:buildStorybook :binkp-root:binkp-netty:prepareCiIntegration \
   :binkp-root:binkp-mina2:prepareCiIntegration :jtoss:prepareCiIntegration \
   "-PreleaseVersion=$version" --warning-mode fail --no-daemon --console=plain
 

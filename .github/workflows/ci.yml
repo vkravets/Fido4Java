@@ -73,6 +73,13 @@ jobs:
             **/build/test-results/**
             **/build/reports/tests/**
           retention-days: 15
+      - name: Save component catalogue
+        uses: actions/upload-artifact@v6
+        with:
+          name: storybook
+          path: web-ui/build/storybook/
+          if-no-files-found: error
+          retention-days: 15
 
   package:
     if: github.event_name == 'push' && github.ref_type == 'tag'

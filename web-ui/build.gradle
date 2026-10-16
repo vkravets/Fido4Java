@@ -123,3 +123,26 @@ tasks.register('typecheckFrontend', Exec) {
     workingDir file('frontend')
     commandLine nodeExecutable.get(), file('frontend/node_modules/vue-tsc/bin/vue-tsc.js'), '--noEmit'
 }
+
+tasks.register('buildStorybook', Exec) {
+    group = 'build'
+    description = 'Builds isolated Vue component examples with both themes and languages.'
+    dependsOn 'typecheckStorybook'
+    workingDir file('frontend')
+    inputs.files(fileTree('frontend/src'), fileTree('frontend/stories'), fileTree('frontend/.storybook'))
+    inputs.file('frontend/vite.config.ts')
+    inputs.files('frontend/package-lock.json', 'frontend/tsconfig.json', 'frontend/tsconfig.storybook.json')
+    inputs.dir(generated)
+    outputs.dir(layout.buildDirectory.dir('storybook'))
+    commandLine nodeExecutable.get(), file('frontend/node_modules/storybook/dist/bin/dispatcher.js'),
+            'build', '--output-dir', layout.buildDirectory.dir('storybook').get().asFile.absolutePath,
+            '--disable-telemetry'
+}
+
+tasks.register('typecheckStorybook', Exec) {
+    group = 'verification'
+    dependsOn prepareFrontendRpc
+    workingDir file('frontend')
+    commandLine nodeExecutable.get(), file('frontend/node_modules/vue-tsc/bin/vue-tsc.js'),
+            '--noEmit', '-p', 'tsconfig.storybook.json'
+}
