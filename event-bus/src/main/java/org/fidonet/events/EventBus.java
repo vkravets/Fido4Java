@@ -29,6 +29,11 @@
 package org.fidonet.events;
 
 import net.engio.mbassy.bus.MBassador;
+import net.engio.mbassy.bus.error.PublicationError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -37,7 +42,29 @@ import net.engio.mbassy.bus.MBassador;
  * Time: 4:32 PM
  */
 public class EventBus extends MBassador<Event> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
+
     public EventBus() {
-        super();
+        super(EventBus::logPublicationError);
+    }
+
+    private static void logPublicationError(PublicationError failure) {
+        Object event = failure.getPublishedMessage();
+        String eventType = event == null ? "unknown" : event.getClass().getName();
+        String handler = failure.getHandler() == null
+                ? "unknown"
+                : failure.getHandler().toGenericString();
+        LOGGER.error("Event publication failed: event={}, handler={}",
+                     eventType,
+                     handler,
+                     subscriberCause(failure));
+    }
+
+    private static Throwable subscriberCause(PublicationError failure) {
+        Throwable cause = failure.getCause();
+        while (cause instanceof InvocationTargetException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }
