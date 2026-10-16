@@ -17,29 +17,40 @@ public final class AuthenticatedUi {
         }
         return (UiService.Iface) Proxy.newProxyInstance(UiService.Iface.class.getClassLoader(),
                                                         new Class<?>[]{UiService.Iface.class},
-                                                        (proxy, method, args) -> {
-                                                            if (method.getDeclaringClass() == Object.class) {
-                                                                return method.invoke(backend, args);
-                                                            }
-                                                            args[0] = sessions.require((String) args[0]);
-                                                            try {
-                                                                return method.invoke(backend, args);
-                                                            } catch (InvocationTargetException failure) {
-                                                                Throwable cause = failure.getCause();
-                                                                if (cause instanceof UiError) {
-                                                                    throw cause;
-                                                                }
-                                                                if (cause instanceof IllegalArgumentException) {
-                                                                    throw new UiError("INVALID_ARGUMENT",
-                                                                                      cause.getMessage());
-                                                                }
-                                                                if (cause instanceof UnsupportedOperationException) {
-                                                                    throw new UiError("UNSUPPORTED",
-                                                                                      cause.getMessage());
-                                                                }
-                                                                throw new UiError("OPERATION_FAILED",
-                                                                                  "Node operation failed; inspect the node log");
-                                                            }
-                                                        });
+                                                        (proxy,
+                                                         method,
+                                                         args) -> invokeAuthenticated(sessions,
+                                                                                      backend,
+                                                                                      method,
+                                                                                      args));
+    }
+
+    private static Object invokeAuthenticated(UiSessions sessions,
+                                              UiService.Iface backend,
+                                              Method method,
+                                              Object[] args)
+            throws Throwable {
+        if (method.getDeclaringClass() == Object.class) {
+            return method.invoke(backend, args);
+        }
+        args[0] = sessions.require((String) args[0]);
+        try {
+            return method.invoke(backend, args);
+        } catch (InvocationTargetException failure) {
+            throw translateFailure(failure.getCause());
+        }
+    }
+
+    private static UiError translateFailure(Throwable cause) {
+        if (cause instanceof UiError) {
+            return (UiError) cause;
+        }
+        if (cause instanceof IllegalArgumentException) {
+            return new UiError("INVALID_ARGUMENT", cause.getMessage());
+        }
+        if (cause instanceof UnsupportedOperationException) {
+            return new UiError("UNSUPPORTED", cause.getMessage());
+        }
+        return new UiError("OPERATION_FAILED", "Node operation failed; inspect the node log");
     }
 }

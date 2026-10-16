@@ -123,23 +123,8 @@ public final class DirectoryCatalog implements AutoCloseable {
                 + COLUMNS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
                 InputStream input = new DigestInputStream(limited(source.getPath()), digest);
                 DirectoryInput decoded = DirectoryInput.open(input)) {
-            int[] pending = {0};
-            parsed = DirectoryParser.parse(decoded.content(), source, entry -> {
-                try {
-                    bind(statement, entry);
-                    statement.addBatch();
-                    pending[0]++;
-                    if (pending[0] == 500) {
-                        statement.executeBatch();
-                        pending[0] = 0;
-                    }
-                } catch (SQLException e) {
-                    throw new IOException(source.getId()
-                                          + ":"
-                                          + entry.getLine()
-                                          + ": Unable to store directory record", e);
-                }
-            });
+            EntryBatch batch = new EntryBatch(statement, source.getId());
+            parsed = DirectoryParser.parse(decoded.content(), source, batch::add);
             statement.executeBatch();
             decoded.finish();
             drain(input);
@@ -161,6 +146,38 @@ public final class DirectoryCatalog implements AutoCloseable {
                                          true,
                                          fingerprint,
                                          parsed.getHeader());
+    }
+
+    private static final class EntryBatch {
+        private final PreparedStatement statement;
+        private final String source;
+        private int pending;
+
+        private EntryBatch(PreparedStatement statement, String source) {
+            this.statement = statement;
+            this.source = source;
+        }
+
+        private void add(DirectoryEntry entry) throws IOException {
+            try {
+                append(entry);
+            } catch (SQLException failure) {
+                throw new IOException(source
+                                      + ":"
+                                      + entry.getLine()
+                                      + ": Unable to store directory record", failure);
+            }
+        }
+
+        private void append(DirectoryEntry entry) throws SQLException {
+            bind(statement, entry);
+            statement.addBatch();
+            pending++;
+            if (pending == 500) {
+                statement.executeBatch();
+                pending = 0;
+            }
+        }
     }
 
     private static void bind(PreparedStatement statement, DirectoryEntry entry)

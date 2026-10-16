@@ -30,7 +30,6 @@ import org.apache.thrift.TSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -431,33 +430,7 @@ public final class NodeUi implements UiService.Iface, AutoCloseable {
         if (filename.isEmpty()) {
             throw new UnsupportedOperationException("Configure RpcLogFile to read node logs");
         }
-        return call(() -> {
-            try (RandomAccessFile file = new RandomAccessFile(filename, "r")) {
-                boolean rotated = offset > file.length();
-                file.seek(rotated ? 0 : offset);
-                long start = file.getFilePointer();
-                byte[] bytes = new byte[(int) Math.min(65536, file.length() - start)];
-                file.readFully(bytes);
-                List<String> lines = new ArrayList<>();
-                int begin = 0;
-                int consumed = 0;
-                for (int i = 0; i < bytes.length && lines.size() < limit; i++) {
-                    if (bytes[i] == '\n') {
-                        lines.add(new String(bytes,
-                                             begin,
-                                             i - begin,
-                                             StandardCharsets.UTF_8).replace("\r", ""));
-                        begin = i + 1;
-                        consumed = begin;
-                    }
-                }
-                if (consumed == 0 && bytes.length == 65536) {
-                    lines.add("[Oversized log line skipped]");
-                    consumed = bytes.length;
-                }
-                return new LogPage(lines, start + consumed, rotated);
-            }
-        });
+        return call(() -> NodeLogReader.read(Path.of(filename), offset, limit));
     }
 
     @Override

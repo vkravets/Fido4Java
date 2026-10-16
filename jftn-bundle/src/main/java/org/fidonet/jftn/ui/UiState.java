@@ -107,18 +107,27 @@ final class UiState {
     }
 
     synchronized void save(String owner, MailDraft draft) throws Exception {
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("MERGE INTO drafts(owner,id,payload) KEY(owner,id) VALUES(?,?,?)")) {
-            try (PreparedStatement count = connection.prepareStatement("SELECT COUNT(*) FROM drafts WHERE owner=? AND id<>?")) {
-                count.setString(1, owner);
-                count.setString(2, draft.getId());
-                try (ResultSet result = count.executeQuery()) {
-                    result.next();
-                    if (result.getLong(1) >= 200) {
-                        throw new IllegalArgumentException("At most 200 drafts are supported");
-                    }
-                }
+        try (Connection connection = open()) {
+            if (countOtherDrafts(connection, owner, draft.getId()) >= 200) {
+                throw new IllegalArgumentException("At most 200 drafts are supported");
             }
+            saveDraft(connection, owner, draft);
+        }
+    }
+
+    private long countOtherDrafts(Connection connection, String owner, String id) throws Exception {
+        try (PreparedStatement count = connection.prepareStatement("SELECT COUNT(*) FROM drafts WHERE owner=? AND id<>?")) {
+            count.setString(1, owner);
+            count.setString(2, id);
+            try (ResultSet result = count.executeQuery()) {
+                result.next();
+                return result.getLong(1);
+            }
+        }
+    }
+
+    private void saveDraft(Connection connection, String owner, MailDraft draft) throws Exception {
+        try (PreparedStatement sql = connection.prepareStatement("MERGE INTO drafts(owner,id,payload) KEY(owner,id) VALUES(?,?,?)")) {
             sql.setString(1, owner);
             sql.setString(2, draft.getId());
             sql.setBytes(3, new TSerializer().serialize(draft));
@@ -136,23 +145,41 @@ final class UiState {
     }
 
     void reserve(String id, String fingerprint, String messageId) throws Exception {
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("SELECT fingerprint FROM submissions WHERE id=?")) {
+        try (Connection connection = open()) {
+            String existing = submissionFingerprint(connection, id);
+            if (existing != null) {
+                requireSameFingerprint(existing, fingerprint);
+                return;
+            }
+            insertSubmission(connection, id, fingerprint, messageId);
+        }
+    }
+
+    private String submissionFingerprint(Connection connection, String id) throws Exception {
+        try (PreparedStatement sql = connection.prepareStatement("SELECT fingerprint FROM submissions WHERE id=?")) {
             sql.setString(1, id);
             try (ResultSet result = sql.executeQuery()) {
-                if (result.next()) {
-                    if (!fingerprint.equals(result.getString(1))) {
-                        throw new IllegalArgumentException("Request ID was used with different content");
-                    }
-                    return;
-                }
+                return result.next() ? result.getString(1) : null;
             }
-            try (PreparedStatement insert = connection.prepareStatement("INSERT INTO submissions(id,fingerprint,message_id) VALUES(?,?,?)")) {
-                insert.setString(1, id);
-                insert.setString(2, fingerprint);
-                insert.setString(3, messageId);
-                insert.executeUpdate();
-            }
+        }
+    }
+
+    private static void requireSameFingerprint(String existing, String fingerprint) {
+        if (!fingerprint.equals(existing)) {
+            throw new IllegalArgumentException("Request ID was used with different content");
+        }
+    }
+
+    private void insertSubmission(Connection connection,
+                                  String id,
+                                  String fingerprint,
+                                  String messageId)
+            throws Exception {
+        try (PreparedStatement insert = connection.prepareStatement("INSERT INTO submissions(id,fingerprint,message_id) VALUES(?,?,?)")) {
+            insert.setString(1, id);
+            insert.setString(2, fingerprint);
+            insert.setString(3, messageId);
+            insert.executeUpdate();
         }
     }
 }

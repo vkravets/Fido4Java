@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/openjdk:17.0
+      - image: cimg/openjdk:17.0-node
     retention:
       caches: 15d
     environment:
@@ -12,40 +12,37 @@ jobs:
       - restore_cache:
           keys:
             - v1-thrift-0.25.0-{{ arch }}
+      - restore_cache:
+          keys:
+            - v1-thrift-browser-0.25.0
       - run:
-          name: Install Apache Thrift compiler
+          name: Check Java and Node.js runtimes
           command: |
-            thrift_cached_bin="$HOME/.cache/thrift/0.25.0/bin/thrift"
-            if [ -x "$thrift_cached_bin" ] && [ "$("$thrift_cached_bin" -version)" = "Thrift version 0.25.0" ]; then
-              echo "Using cached Thrift compiler"
-            else
-              sudo apt-get update
-              sudo apt-get install -y build-essential bison flex libtool pkg-config libboost-dev
-              thrift_build_dir=$(mktemp -d)
-              (
-                cd "$thrift_build_dir"
-                curl -fsSLo thrift.tar.gz https://archive.apache.org/dist/thrift/0.25.0/thrift-0.25.0.tar.gz
-                tar -xzf thrift.tar.gz
-                cd thrift-0.25.0
-                ./configure --disable-libs --disable-tests --disable-tutorial
-                make -C compiler/cpp -j2
-                test "$(compiler/cpp/thrift -version)" = "Thrift version 0.25.0"
-                mkdir -p "$(dirname "$thrift_cached_bin")"
-                install compiler/cpp/thrift "$thrift_cached_bin"
-              )
-            fi
-            sudo install "$thrift_cached_bin" /usr/local/bin/thrift
-            thrift -version
+            java -version
+            node --version
+            node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { throw new Error("RPC browser tests require Node.js 22 or newer"); }'
+      - run:
+          name: Prepare Apache Thrift compiler and browser runtime
+          command: bash .circleci/setup-thrift.sh
       - save_cache:
           key: v1-thrift-0.25.0-{{ arch }}
           paths:
             - ~/.cache/thrift/0.25.0/bin/thrift
+      - save_cache:
+          key: v1-thrift-browser-0.25.0
+          paths:
+            - ~/.cache/thrift/0.25.0/browser/thrift.js
       - run:
           name: Build, test and package integration runtimes
           command: |
             bash ./gradlew build :binkp-root:binkp-netty:prepareCiIntegration \
               :binkp-root:binkp-mina2:prepareCiIntegration :jtoss:prepareCiIntegration \
               --no-daemon --console=plain
+      - store_test_results:
+          path: rpc/build/test-results/browserTest
+      - store_artifacts:
+          path: rpc/build/test-results/browserTest
+          destination: rpc-browser-tests
       - run:
           name: Seal compiled integration runtimes
           command: |

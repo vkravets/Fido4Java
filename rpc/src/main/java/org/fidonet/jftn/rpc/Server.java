@@ -47,7 +47,7 @@ import java.net.InetSocketAddress;
  * Date: 1/24/14
  * Time: 11:29 AM
  */
-public class Server implements AutoCloseable {
+public class Server implements RpcTransport {
 
     public static final Logger logger = LoggerFactory.getLogger(Server.class);
 
@@ -80,27 +80,7 @@ public class Server implements AutoCloseable {
     }
 
     private void createServer(String bind_ip) {
-        Api.Processor<Api.Iface> apiProcessor = new Api.Processor<Api.Iface>(serverHandler.getApiHandler());
-        LoginService.Processor<LoginService.Iface> loginProcessor = new LoginService.Processor<LoginService.Iface>(serverHandler.getLoginHandler());
-        MessageService.Processor<MessageService.Iface> messageProcessor = new MessageService.Processor<MessageService.Iface>(serverHandler.getMessageHandler());
-
-        TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
-        multiplexedProcessor.registerProcessor("api", apiProcessor);
-        multiplexedProcessor.registerProcessor("login", loginProcessor);
-        if (serverHandler.getAuthHandler() != null) {
-            multiplexedProcessor.registerProcessor("auth",
-                                                   new AuthService.Processor<>(serverHandler.getAuthHandler()));
-        }
-        multiplexedProcessor.registerProcessor("messages", messageProcessor);
-        if (serverHandler.getUiHandler() != null) {
-            multiplexedProcessor.registerProcessor("ui",
-                                                   new UiService.Processor<>(serverHandler.getUiHandler()));
-        }
-        StatisticService.Iface statistics = serverHandler.getStatisticsHandler();
-        if (statistics != null) {
-            multiplexedProcessor.registerProcessor("statistics",
-                                                   new StatisticService.Processor<>(statistics));
-        }
+        TMultiplexedProcessor multiplexedProcessor = RpcProcessors.multiplexed(serverHandler);
 
         try {
             transport = new TNonblockingServerSocket(new InetSocketAddress(bind_ip, this.port));
