@@ -3,6 +3,7 @@ package org.fidonet.jftn.ui;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
+import org.fidonet.jftn.LiveConfiguration;
 import org.fidonet.jftn.MailService;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.ui.transport.RpcTransports;
@@ -40,6 +41,12 @@ public final class NodeRpc implements AutoCloseable {
             PollService polls = sharedPolls == null
                     ? resources.add(new PollService(config, context))
                     : sharedPolls;
+            identity.reloadWith(new LiveConfiguration(config,
+                                                      base,
+                                                      mail,
+                                                      polls,
+                                                      context,
+                                                      identity.profiles()));
             NodeUi backend = new NodeUi(config, base, mail, polls);
             NodeRpcHandlers handlers = new NodeRpcHandlers(identity, backend);
             RpcTransports transports = resources.add(RpcTransports.open(config, handlers));

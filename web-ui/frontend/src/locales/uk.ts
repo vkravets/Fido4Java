@@ -1,4 +1,7 @@
 export const ukrainian = {
+    'Reload configuration files': 'Перезавантажити файли конфігурації',
+    'Configuration applied. New operations use the new settings; existing connections keep their session settings.':
+        'Конфігурацію застосовано. Нові операції використовують нові налаштування; поточні з’єднання зберігають налаштування сесії.',
     Modified: 'Змінено',
     'Last retry': 'Остання повторна спроба',
     'Unknown echo area: ': 'Невідома ехоконференція: ',

@@ -83,8 +83,8 @@ public class Tosser extends HasEventBus {
     private JFtnConfig config;
     private final NetmailStore netmailStore;
     private final IBase base;
-    private final NetmailRouter netmailRouter;
-    private final EchoRouter echoRouter;
+    private volatile NetmailRouter netmailRouter;
+    private volatile EchoRouter echoRouter;
     private final PacketQuarantine quarantine;
     private String packetRejection = "Packet import was rejected; inspect the node log.";
     private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
@@ -244,6 +244,18 @@ public class Tosser extends HasEventBus {
     public synchronized PacketQuarantine.Page quarantine(String after, int limit)
             throws IOException {
         return quarantine.list(after, limit);
+    }
+
+    public synchronized Runnable prepareConfiguration(JFtnConfig candidate) {
+        NetmailRouter nextNetmail = new NetmailRouter(candidate,
+                                                      netmailStore instanceof NetmailRoutingStore
+                                                              ? (NetmailRoutingStore) netmailStore
+                                                              : null);
+        EchoRouter nextEcho = new EchoRouter(candidate, base);
+        return () -> {
+            netmailRouter = nextNetmail;
+            echoRouter = nextEcho;
+        };
     }
 
     public synchronized PacketQuarantine.Retry retryQuarantine(String id,

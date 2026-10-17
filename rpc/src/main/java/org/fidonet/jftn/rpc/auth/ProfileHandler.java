@@ -13,7 +13,11 @@ import java.util.List;
 public final class ProfileHandler implements ProfileService.Iface {
     private final AccountDirectory directory;
     private final UiSessions sessions;
-    private final List<String> stationAddresses;
+    private volatile List<String> stationAddresses;
+
+    public void stationAddresses(List<String> addresses) {
+        stationAddresses = List.copyOf(addresses);
+    }
     private final boolean registration;
 
     public ProfileHandler(AccountDirectory directory,

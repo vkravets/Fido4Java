@@ -3,6 +3,7 @@ import { t } from '../i18n.ts';
 import { onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
+import StationSettingsHeader from './StationSettingsHeader.vue';
 import MailSettings from './MailSettings.vue';
 import EchoSettings from './EchoSettings.vue';
 import QuarantineSettings from './QuarantineSettings.vue';
@@ -33,20 +34,28 @@ async function save() {
     });
     if (saved.value) mailVersion.value++;
 }
+async function reload() {
+    await props.state.run(async () => {
+        saved.value = false;
+        await api.settings.reload(props.state.session.value);
+        Object.assign(model, await api.settings.current(props.state.session.value));
+        saved.value = true;
+        mailVersion.value++;
+    });
+}
 </script>
 
 <template>
-    <div class="page-heading">
-        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t('Station settings') }}</h1>
-        <p>{{ t('Station identity, mail links and tosser processing settings.') }}</p>
-    </div>
+    <StationSettingsHeader
+        :busy="state.busy.value"
+        @reload="reload"
+    />
     <NotificationBanner
         v-if="saved"
-        kind="warning"
+        kind="info"
         :message="
             t(
-                'Configuration saved. Restart the node to apply it. Current connections still use the previous configuration.'
+                'Configuration applied. New operations use the new settings; existing connections keep their session settings.'
             )
         "
     />
@@ -75,7 +84,15 @@ async function save() {
         :state="state"
         :local-addresses="[model.address, ...model.aliases]"
         @saved="mailSaved"
+        @saving="saved = false"
     />
-    <EchoSettings v-if="ready" :key="'echo-' + mailVersion" :state="state" />
-    <QuarantineSettings v-if="ready" :state="state" />
+    <EchoSettings
+        v-if="ready"
+        :key="'echo-' + mailVersion"
+        :state="state"
+    />
+    <QuarantineSettings
+        v-if="ready"
+        :state="state"
+    />
 </template>

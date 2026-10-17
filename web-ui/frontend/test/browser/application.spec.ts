@@ -79,7 +79,7 @@ test('administrator persists separate PKT passwords and tosser options through r
     await page.getByLabel('PKT password mode').selectOption('SEPARATE');
     await page.getByLabel('Separate PKT password').fill('pktpass');
     await page.getByRole('button', { name: 'Save links', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('Configuration saved. Restart');
+    await expect(page.getByRole('status')).toContainText('Configuration applied.');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await page.getByLabel('Processing interval (seconds)').fill('25');
@@ -93,6 +93,8 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
+    await page.getByRole('button', { name: 'Reload configuration files' }).click();
+    await expect(page.getByRole('status')).toContainText('Configuration applied.');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 

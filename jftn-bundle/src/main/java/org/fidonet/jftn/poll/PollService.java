@@ -135,7 +135,8 @@ public class PollService implements AutoCloseable {
         job.journal.record("QUEUED", source + " " + attempt.getAddress(), 0);
         job.journal.flush();
         jobs.put(attempt.getId(), job);
-        job.future = worker.submit(() -> run(job, link));
+        SessionContext context = new SessionContext(template);
+        job.future = worker.submit(() -> run(job, link, context));
         prune();
         return attempt.copy();
     }
@@ -177,8 +178,7 @@ public class PollService implements AutoCloseable {
         job.journal.flush();
     }
 
-    private void run(Job job, Link link) {
-        SessionContext context = new SessionContext(template);
+    private void run(Job job, Link link, SessionContext context) {
         context.setActivityListener((kind, name, bytes) -> job.journal.record(kind.name(),
                                                                               name,
                                                                               bytes));

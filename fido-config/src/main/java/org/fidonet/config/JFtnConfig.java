@@ -35,6 +35,7 @@ import org.fidonet.validators.ConfigValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +60,40 @@ public class JFtnConfig extends BaseConfig {
 
     private Map<String, Link> links;
     private Path sourcePath;
+    private volatile JFtnConfig active;
+
+    /** Parses a candidate and its fragments without changing the live configuration. */
+    public static JFtnConfig candidate(Path source, byte[] bytes) throws Exception {
+        JFtnConfig result = new JFtnConfig();
+        result.load(new ByteArrayInputStream(bytes));
+        result.sourcePath = source.toAbsolutePath().normalize();
+        ConfigurationFragments.loadInto(result, result.sourcePath);
+        result.links = result.getLinks(result.getValuesAsList("Link"));
+        return result;
+    }
+
+    public Map<String, List<String>> options() {
+        JFtnConfig current = active;
+        if (current != null)
+            return current.options();
+        Map<String, List<String>> result = new HashMap<>();
+        for (String name : propertyNames())
+            result.put(name, getValuesAsList(name));
+        return result;
+    }
+
+    /** Publishes a fully prepared snapshot. Callers serialize domain operations around this. */
+    public void activate(JFtnConfig candidate) {
+        if (candidate == this)
+            throw new IllegalArgumentException("Cannot activate the live configuration itself");
+        active = candidate;
+    }
+
+    @Override
+    public List<String> getValuesAsList(String key) {
+        JFtnConfig current = active;
+        return current == null ? super.getValuesAsList(key) : current.getValuesAsList(key);
+    }
 
     public Path getSourcePath() {
         return sourcePath;
@@ -115,10 +150,16 @@ public class JFtnConfig extends BaseConfig {
     }
 
     public Link getLink(FTNAddr addr) {
+        JFtnConfig current = active;
+        if (current != null)
+            return current.getLink(addr);
         return links.get(addr.toString());
     }
 
     public List<Link> getConfiguredLinks() {
+        JFtnConfig current = active;
+        if (current != null)
+            return current.getConfiguredLinks();
         return new ArrayList<>(links.values());
     }
 

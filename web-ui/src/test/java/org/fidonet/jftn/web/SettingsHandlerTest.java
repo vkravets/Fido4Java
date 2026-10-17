@@ -9,6 +9,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.DefaultServerHandler;
 import org.fidonet.jftn.rpc.HttpRpcServer;
+import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.UiError;
@@ -21,6 +22,7 @@ import org.apache.thrift.transport.THttpClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,8 +32,52 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 class SettingsHandlerTest {
+    @Test
+    void refusedPublicationWhenFragmentsChangedDuringValidation() throws Exception {
+        Path path = directory.resolve("jftn.conf");
+        new NodeConfigurationStore(path).save(valid(), directory.resolve("accounts"));
+        String original = Files.readString(path);
+        Path fragment = Files.createDirectories(directory.resolve("conf.d"))
+                             .resolve("99-manual.conf");
+        Files.writeString(fragment, "Custom=old\n");
+        NodeConfigurationStore store = new NodeConfigurationStore(path,
+                                                                  (candidate, publication) -> {
+                                                                      Files.writeString(fragment,
+                                                                                        "Custom=changed-externally\n");
+                                                                      publication.run();
+                                                                  });
+        assertThrows(IllegalArgumentException.class,
+                     () -> store.save(valid().setSystem("Must not apply"),
+                                      directory.resolve("accounts")));
+        assertEquals(original, Files.readString(path));
+        assertEquals("Custom=changed-externally\n", Files.readString(fragment));
+    }
+    @Test
+    void restoredFileWhenRuntimePublicationFailedAndKeptRejectedCandidatesOffDisk()
+            throws Exception {
+        Path path = directory.resolve("jftn.conf");
+        new NodeConfigurationStore(path).save(valid(), directory.resolve("accounts"));
+        String original = Files.readString(path);
+        NodeConfigurationStore store = new NodeConfigurationStore(path,
+                                                                  (candidate, publication) -> {
+                                                                      publication.run();
+                                                                      throw new IOException("Simulated commit failure");
+                                                                  });
+        assertThrows(Exception.class,
+                     () -> store.save(valid().setSystem("Changed"), directory.resolve("accounts")));
+        assertEquals(original, Files.readString(path));
+        NodeConfigurationStore rejected = new NodeConfigurationStore(path,
+                                                                     (candidate, publication) -> {
+                                                                         throw new IllegalArgumentException("Rejected before publication");
+                                                                     });
+        assertThrows(IllegalArgumentException.class,
+                     () -> rejected.save(valid().setSystem("Rejected"),
+                                         directory.resolve("accounts")));
+        assertEquals(original, Files.readString(path));
+    }
     @TempDir
     Path directory;
 

@@ -1,5 +1,6 @@
 package org.fidonet.jftn.web;
 
+import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.NodeLookup;
@@ -169,6 +170,15 @@ public final class SettingsHandler implements SettingsService.Iface {
     }
 
     @Override
+    public synchronized boolean reload(String authorization) throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> {
+            store.reload();
+            return true;
+        });
+    }
+
+    @Override
     public synchronized TosserConfiguration tosser(String authorization) throws UiError {
         authorizeMailSettings(authorization);
         return call(() -> new MailConfigurationStore(store).tosser());
@@ -208,6 +218,10 @@ public final class SettingsHandler implements SettingsService.Iface {
     private static <T> T call(Operation<T> operation) throws UiError {
         try {
             return operation.run();
+        } catch (ParseConfigException failure) {
+            LOGGER.warn("Configuration candidate was rejected", failure);
+            throw new UiError("INVALID_CONFIGURATION",
+                              "Invalid configuration: " + failure.getMessage());
         } catch (IllegalArgumentException failure) {
             throw new UiError("INVALID_ARGUMENT", failure.getMessage());
         } catch (Exception failure) {

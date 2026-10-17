@@ -2,10 +2,7 @@
 import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
-const props = withDefaults(
-    defineProps<{ model: NodeConfiguration; initial: boolean; showLink?: boolean }>(),
-    { showLink: true }
-);
+const props = defineProps<{ model: NodeConfiguration; initial: boolean; showLink?: boolean }>();
 const aliases = computed({
     get: () => props.model.aliases.join(' '),
     set: (value) => {

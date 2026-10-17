@@ -57,6 +57,7 @@ struct NodeLookup {
 }
 
 service SettingsService {
+    bool reload(1:string authorization) throws (1:ui.UiError error),
     SetupStatus status(),
     NodeConfiguration current(1:string authorization) throws (1:ui.UiError error),
     NodeLookup lookup(1:string authorization, 2:string address, 3:string url, 4:string charset) throws (1:ui.UiError error),

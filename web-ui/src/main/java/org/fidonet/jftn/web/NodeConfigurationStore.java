@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -30,10 +31,28 @@ import java.util.stream.Stream;
 public final class NodeConfigurationStore {
     private final Path path;
     private byte[] original;
+    private boolean originalExists;
+    @FunctionalInterface
+    public interface Publication {
+        void run() throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Application {
+        void apply(JFtnConfig candidate, Publication publication) throws Exception;
+    }
+
+    private final Application application;
 
     public NodeConfigurationStore(Path path) throws IOException {
+        this(path, (candidate, publication) -> publication.run());
+    }
+
+    public NodeConfigurationStore(Path path, Application application) throws IOException {
         this.path = path.toAbsolutePath().normalize();
+        this.application = application;
         original = Files.exists(path) ? Files.readAllBytes(path) : new byte[0];
+        originalExists = Files.exists(path);
     }
 
     public Path directory() {
@@ -182,7 +201,9 @@ public final class NodeConfigurationStore {
         write(next);
     }
 
-    private void write(byte[] next) throws IOException {
+    private void write(byte[] next) throws Exception {
+        byte[] fragments = fragmentsFingerprint();
+        JFtnConfig candidate = JFtnConfig.candidate(path, next);
         Files.createDirectories(directory());
         Path stage = Files.createTempFile(directory(), ".jftn-config-", ".tmp");
         try {
@@ -196,16 +217,91 @@ public final class NodeConfigurationStore {
             }
             byte[] actual = Files.exists(path) ? Files.readAllBytes(path) : new byte[0];
             if (!Arrays.equals(actual, original)) {
-                throw new IOException("Configuration changed externally; restart before saving");
+                throw new IllegalArgumentException("Configuration changed externally; reload before saving");
             }
-            Files.move(stage,
-                       path,
-                       StandardCopyOption.ATOMIC_MOVE,
-                       StandardCopyOption.REPLACE_EXISTING);
+            boolean[] published = {false};
+            try {
+                application.apply(candidate, () -> {
+                    verifySources(original, originalExists, fragments);
+                    Files.move(stage,
+                               path,
+                               StandardCopyOption.ATOMIC_MOVE,
+                               StandardCopyOption.REPLACE_EXISTING);
+                    published[0] = true;
+                });
+            } catch (Exception failure) {
+                if (published[0])
+                    restoreIfPublished(next, failure);
+                throw failure;
+            }
             original = next;
+            originalExists = true;
         } finally {
             Files.deleteIfExists(stage);
         }
+    }
+
+    private void restoreIfPublished(byte[] next, Exception failure) {
+        try {
+            if (Files.exists(path) && Arrays.equals(Files.readAllBytes(path), next)) {
+                if (!originalExists) {
+                    Files.delete(path);
+                    return;
+                }
+                Path restore = Files.createTempFile(directory(), ".jftn-rollback-", ".tmp");
+                try {
+                    restrict(restore);
+                    Files.write(restore, original);
+                    Files.move(restore,
+                               path,
+                               StandardCopyOption.ATOMIC_MOVE,
+                               StandardCopyOption.REPLACE_EXISTING);
+                } finally {
+                    Files.deleteIfExists(restore);
+                }
+            }
+        } catch (Exception rollbackFailure) {
+            failure.addSuppressed(rollbackFailure);
+        }
+    }
+
+    public synchronized void reload() throws Exception {
+        byte[] next = Files.readAllBytes(path);
+        byte[] fragments = fragmentsFingerprint();
+        application.apply(JFtnConfig.candidate(path, next), () -> {
+            verifySources(next, true, fragments);
+        });
+        original = next;
+        originalExists = true;
+    }
+
+    private void verifySources(byte[] expected, boolean exists, byte[] fragments) throws Exception {
+        byte[] actual = Files.exists(path) ? Files.readAllBytes(path) : new byte[0];
+        if (Files.exists(path) != exists || !Arrays.equals(expected, actual)
+                || !Arrays.equals(fragments, fragmentsFingerprint())) {
+            throw new IllegalArgumentException("Configuration changed while applying; reload and try again");
+        }
+    }
+
+    private byte[] fragmentsFingerprint() throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        Path fragments = directory().resolve("conf.d");
+        if (!Files.isDirectory(fragments))
+            return digest.digest();
+        try (Stream<Path> stream = Files.list(fragments)) {
+            List<Path> files = stream.filter(file -> file.getFileName()
+                                                         .toString()
+                                                         .endsWith(".conf"))
+                                     .sorted()
+                                     .collect(Collectors.toList());
+            for (Path fragment : files) {
+                digest.update(fragment.getFileName().toString().getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) 0);
+                digest.update(MessageDigest.getInstance("SHA-256")
+                                           .digest(Files.readAllBytes(fragment)));
+            }
+        }
+        return digest.digest();
     }
 
     synchronized JFtnConfig configuration() throws Exception {

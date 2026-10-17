@@ -300,6 +300,18 @@ public class DatabaseManager
     }
 
     /** Keeps configuration-related SQL changes rollbackable until file publication succeeds. */
+    public synchronized void configureLinksAtomically(List<Link> links,
+                                                      List<String> packetPasswords,
+                                                      Callable<Void> publication)
+            throws SQLException {
+        dbManager.inTransaction(() -> {
+            for (int index = 0; index < links.size(); index++) {
+                configureLink(links.get(index), packetPasswords.get(index));
+            }
+            return publication.call();
+        });
+    }
+
     @Override
     public synchronized boolean importArchive(Message message, String source) {
         if (!message.hasValidAddressing()) {

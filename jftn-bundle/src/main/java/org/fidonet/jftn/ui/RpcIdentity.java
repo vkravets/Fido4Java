@@ -21,6 +21,13 @@ final class RpcIdentity implements AutoCloseable {
     private final AccountAuthentication authentication;
     private final ProfileHandler profiles;
     private SettingsService.Iface settings;
+    private NodeConfigurationStore.Application reload = (candidate, publication) -> {
+        throw new IllegalArgumentException("Live configuration is not available");
+    };
+
+    void reloadWith(NodeConfigurationStore.Application application) {
+        reload = application;
+    }
 
     private RpcIdentity(RpcResources resources,
                         UiSessions sessions,
@@ -59,7 +66,10 @@ final class RpcIdentity implements AutoCloseable {
                                                          Boolean.parseBoolean(registration));
             RpcIdentity identity = new RpcIdentity(resources, sessions, authentication, profiles);
             if (config.getSourcePath() != null) {
-                identity.settings = new SettingsHandler(new NodeConfigurationStore(config.getSourcePath()),
+                identity.settings = new SettingsHandler(new NodeConfigurationStore(config.getSourcePath(),
+                                                                                   (candidate,
+                                                                                    publication) -> identity.reload.apply(candidate,
+                                                                                                                          publication)),
                                                         accounts,
                                                         sessions,
                                                         path,

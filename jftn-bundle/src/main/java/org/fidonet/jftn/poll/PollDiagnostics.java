@@ -16,6 +16,9 @@ final class PollDiagnostics {
 
     PollDiagnostics(JFtnConfig config, SessionContext context) {
         config.getConfiguredLinks().forEach(link -> secret(link.getPass()));
+        if (context.getLinksInfo() != null) {
+            context.getLinksInfo().getLinks().forEach(link -> secret(link.getPass()));
+        }
         secret(context.getPasswordKey());
         secrets.sort(Comparator.comparingInt(String::length).reversed());
     }

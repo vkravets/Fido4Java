@@ -41,6 +41,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -64,6 +65,29 @@ public final class MailService implements AutoCloseable {
     private boolean resourcesClosed;
     private final ReentrantLock processing = new ReentrantLock();
     private final ProcessingTrigger trigger;
+    private ScheduledFuture<?> periodic;
+    private volatile long scheduleGeneration;
+
+    /** Stages a timer before publication. Inactive generations cannot process mail. */
+    public Runnable prepareInterval(long seconds, List<Runnable> abort) {
+        if (seconds < 1 || seconds > 86400) {
+            throw new IllegalArgumentException("TossIntervalSeconds must be in 1..86400");
+        }
+        if (periodic == null)
+            return () -> {
+            };
+        long generation = scheduleGeneration + 1;
+        ScheduledFuture<?> next = worker.scheduleWithFixedDelay(() -> {
+            if (scheduleGeneration == generation)
+                processSafely();
+        }, seconds, seconds, TimeUnit.SECONDS);
+        abort.add(() -> next.cancel(false));
+        return () -> {
+            scheduleGeneration = generation;
+            periodic.cancel(false);
+            periodic = next;
+        };
+    }
 
     public MailService(JFtnConfig config, DatabaseManager base) throws IOException {
         this(config, base, MailService::createWorker);
@@ -209,7 +233,10 @@ public final class MailService implements AutoCloseable {
         if (seconds < 1) {
             throw new IllegalArgumentException("TossIntervalSeconds must be positive");
         }
-        worker.scheduleWithFixedDelay(this::processSafely, seconds, seconds, TimeUnit.SECONDS);
+        periodic = worker.scheduleWithFixedDelay(this::processSafely,
+                                                 seconds,
+                                                 seconds,
+                                                 TimeUnit.SECONDS);
         logger.info("Mail processing started: interval={}s", seconds);
     }
 

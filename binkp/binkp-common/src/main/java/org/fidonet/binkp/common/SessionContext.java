@@ -82,6 +82,28 @@ public class SessionContext extends HasEventBus {
 
     // config client/server
     private StationConfig stationConfig;
+    private volatile Configuration configurationTemplate;
+
+    private static final class Configuration {
+        private final StationConfig station;
+        private final LinksInfo links;
+
+        private Configuration(StationConfig station, LinksInfo links) {
+            this.station = station;
+            this.links = links;
+        }
+    }
+
+    private synchronized Configuration configurationSnapshot() {
+        return configurationTemplate == null
+                ? new Configuration(stationConfig, linksInfo)
+                : configurationTemplate;
+    }
+
+    /** Updates the template for future sessions without modifying existing connections. */
+    public synchronized void reconfigure(SessionContext configuration) {
+        configurationTemplate = configuration.configurationSnapshot();
+    }
 
     // last error message
     private volatile String lastErrorMessage;
@@ -308,14 +330,17 @@ public class SessionContext extends HasEventBus {
     }
 
     public SessionContext(SessionContext context) {
-        this(context.getStationConfig(),
-                new LinksInfo(new ArrayList<>(context.getLinksInfo().getLinks())));
+        this(context, context.configurationSnapshot());
+    }
+
+    private SessionContext(SessionContext context, Configuration configuration) {
+        this(configuration.station, new LinksInfo(new ArrayList<>(configuration.links.getLinks())));
         outboundLoader = context.outboundLoader;
         receivedFileHandler = context.receivedFileHandler;
         sentFileHandler = context.sentFileHandler;
         sessionClosedHandler = context.sessionClosedHandler;
-        if (context.getLinksInfo().getCurLink() != null) {
-            linksInfo.setCurLink(context.getLinksInfo().getCurLink().getAddr());
+        if (configuration.links.getCurLink() != null) {
+            linksInfo.setCurLink(configuration.links.getCurLink().getAddr());
         }
     }
 
@@ -347,10 +372,16 @@ public class SessionContext extends HasEventBus {
     }
 
     public StationConfig getStationConfig() {
+        Configuration current = configurationTemplate;
+        if (current != null)
+            return current.station;
         return stationConfig;
     }
 
     public LinksInfo getLinksInfo() {
+        Configuration current = configurationTemplate;
+        if (current != null)
+            return current.links;
         return linksInfo;
     }
 

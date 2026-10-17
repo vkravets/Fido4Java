@@ -222,6 +222,64 @@ class UiRpcIntegrationTest {
     }
 
     @Test
+    void hotReloadsSettingsAndPacketPasswordsWithoutLosingSessionsAndRejectsInvalidCandidates()
+            throws Exception {
+        SettingsService.Client settings = new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                              "settings"));
+        settings.saveTosser(token, new TosserConfiguration(7, false, true, true));
+        assertEquals("7", config.getValue("TossIntervalSeconds"));
+        assertEquals("true", config.getValue("AutoCreateEcho"));
+        SessionContext existing = new SessionContext(template);
+        String originalName = existing.getStationConfig().getName();
+        var station = settings.current(token);
+        station.setSystem("Reloaded station");
+        settings.save(token, station);
+        assertEquals("Reloaded station", new SessionContext(template).getStationConfig().getName());
+        assertEquals(originalName, existing.getStationConfig().getName());
+        byte[] accepted = Files.readAllBytes(root.resolve("jftn.conf"));
+        station.setSystem("Must not apply").setBrowserOrigin("http://localhost:9998");
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class, () -> settings.save(token, station)).getCode());
+        assertArrayEquals(accepted, Files.readAllBytes(root.resolve("jftn.conf")));
+        assertEquals("Reloaded station", config.getValue("System"));
+        var links = settings.links(token);
+        links.get(0).setPacketPasswordMode("SEPARATE").setPacketPassword("wrong");
+        settings.saveLinks(token, links);
+        Path state = Files.createDirectories(root.resolve("state"));
+        Files.write(state.resolve("retry.bad"), quarantinePacket());
+        var item = ui.quarantine(token, "", 25).getItems().get(0);
+        assertFalse(ui.retryQuarantine(token, item.getId(), item.getChecksum(), "1:500/101")
+                      .isAccepted());
+        links.get(0).setPacketPassword("secret");
+        settings.saveLinks(token, links);
+        assertTrue(ui.retryQuarantine(token, item.getId(), item.getChecksum(), "1:500/101")
+                     .isAccepted());
+        byte[] valid = Files.readAllBytes(root.resolve("jftn.conf"));
+        Files.writeString(root.resolve("jftn.conf"),
+                          new String(valid,
+                                     StandardCharsets.UTF_8).replace("autocreateecho=true",
+                                                                     "autocreateecho=invalid"));
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class, () -> settings.reload(token)).getCode());
+        assertEquals("true", config.getValue("AutoCreateEcho"));
+        Files.writeString(root.resolve("jftn.conf"), "broken syntax");
+        assertEquals("INVALID_CONFIGURATION",
+                     assertThrows(UiError.class, () -> settings.reload(token)).getCode());
+        Files.writeString(root.resolve("jftn.conf"),
+                          new String(valid,
+                                     StandardCharsets.UTF_8).replace("tossintervalseconds=7",
+                                                                     "tossintervalseconds=9"));
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/settings")) {
+            assertTrue(new SettingsService.Client(new TJSONProtocol(connection)).reload(token));
+        }
+        assertEquals("9", config.getValue("TossIntervalSeconds"));
+        assertEquals("UNAUTHORIZED",
+                     assertThrows(UiError.class, () -> settings.reload("bad")).getCode());
+        assertFalse(ui.status(token).getLocalAddresses().isEmpty());
+    }
+
+    @Test
     void exposedPagedPollHistoryAndPerAttemptLogsAcrossBothTransports() throws Exception {
         transport.close();
         rpc.close();
