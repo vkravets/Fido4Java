@@ -2,8 +2,10 @@
 
 The `nodelist` module imports node/point lists into a separate H2 catalog.
 The full application includes it for setup/settings lookup and scripted feeds.
-Only its automatic `DirectorySource` refresh is disabled by default; this switch
-does not disable explicit imports or the UI's lookup/download operation.
+Scheduled `DirectorySource` refresh is disabled by default. Its
+`NodeDirectoryEnabled` switch does not disable explicit imports or the UI's
+lookup/download operation. Direct inbound import has a separate opt-in switch,
+`DirectoryInboundEnabled`.
 Its two tables belong to the plugin; the mail database schema is unchanged.
 Imported records never create trusted `Link` entries, passwords, subscriptions,
 outbound packets or routing rules.
@@ -40,9 +42,16 @@ file and each expanded member is limited to 128 MiB; lines to 64 KiB.
 Unpack ARC/ARJ/LZH/RAR files separately. Filenames are explicit; the plugin does
 not guess the newest day number or download files. The optional bundled
 [Groovy directory feed](mail-scripts.md#automatic-nodepoint-directory-import)
-imports TIC deliveries and applies NODEDIFF/pointlist A/C/D diffs while retaining
+imports TIC deliveries or explicitly configured completed inbound files and applies NODEDIFF/pointlist A/C/D diffs while retaining
 base editions. For manually managed DirectorySource files, publish replacements
 using an atomic rename.
+
+For automatic import on binkp receipt, configure `DirectoryInboundEnabled` and
+repeatable `DirectoryInboundFeed` rules in `conf.d/43-directory-feed.conf`; see
+[direct inbound import](mail-scripts.md#direct-import-from-binkp-inbound).
+It uses the existing Groovy script for sender/name policy and this plugin for
+parsing, CRC validation, ZIP streaming and atomic source replacement. No new
+trusted mail links are created from the resulting directory records.
 
 Automatic import occurs when the mail service starts. Invalid initial sources
 fail startup. Later checks run before mail export, at most once per configured

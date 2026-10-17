@@ -24,7 +24,7 @@ script lists; update those manually to adopt the new defaults.
 | `40-mail-scripts.conf` | `RobotAccessSource` and all `MailScript` entries, in handler registration order |
 | `41-areafix.conf` | `EchoSubscriptions`, `AreaFixPeer` |
 | `42-filefix.conf` | `FileArea`, `FileFixPeer`, `TicPeer`, `TicCharset` |
-| `43-directory-feed.conf` | `DirectoryFeed`; shared catalog path is in `30-nodelist.conf` |
+| `43-directory-feed.conf` | TIC `DirectoryFeed` rules; direct `DirectoryInboundEnabled`, `DirectoryInboundFeed`, `DirectoryInboundRequireDate`, `DirectoryInboundRetrySeconds`; shared catalog path is in `30-nodelist.conf` |
 | `49-robot-access.conf` (optional export) | Complete versioned `RobotAccessFormat`/`RobotAccessRule` snapshot; selects file mode, replaces legacy peer rules |
 | `90-rpc.conf` | File-only listener, session, registration and passkey internals |
 

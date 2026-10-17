@@ -197,3 +197,68 @@ filenames/day numbers. Feed authorized publications in edition order; a full
 list is an explicit replacement. When enabling this script after files were
 already accepted by FileFix, explicitly import those archived files rather
 than expecting completed TIC receipts to run again.
+
+### Direct import from binkp inbound
+
+`directory-import.groovy` can also import completed transport deliveries without
+a TIC or FileFix area/password. Enable it explicitly in
+`conf.d/43-directory-feed.conf`; the bundled script must remain enabled in
+`40-mail-scripts.conf`. The following example matches NODELIST, REGION46 and
+PNT46REG publications received from a configured `2:467/70` link:
+
+```ini
+DirectoryInboundEnabled=true
+DirectoryInboundRequireDate=true
+DirectoryInboundRetrySeconds=300
+DirectoryInboundFeed=nodes|NODELIST|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|2:467/70|0|0|US-ASCII|true
+DirectoryInboundFeed=region46|NODELIST|REGION46.*||./lists/region46.lst|2:467/70|2|0|US-ASCII|true
+DirectoryInboundFeed=points46|BOSS|PNT46REG.*||./lists/points46.lst|2:467/70|0|0|US-ASCII|true
+```
+
+The repeatable format is
+`id|format|full-mask|diff-mask|base-file|peer[|zone|net|charset|requireChecksum]`.
+An empty diff mask disables diffs for that feed. Parser defaults match
+`DirectoryFeed` (`0|0|US-ASCII|true`). Use NODELIST for complete lists and regional
+or net segments, with an explicit enclosing zone/net where necessary; use BOSS
+for Boss-style pointlists. Other supported formats can also be configured.
+The peer must already be a configured transport link. Automatic direct import
+is disabled by default; with no matching rules, received lists remain untouched.
+
+Only files in that peer's completed inbox with `.received` original-name metadata
+are considered. Bare files copied into the inbound root, partial transfers,
+unmatched names and publications from other peers are ignored. This is a separate
+trust decision from TIC delivery: authorization is the explicit peer/feed rule,
+not a TIC password. Do not configure both a TIC and a direct feed for the same
+source; source IDs and retained base paths must be unique across both kinds.
+Disable scheduled `DirectorySource` refresh for bases owned by these feeds.
+
+The existing mail-processing trigger schedules import when a receive is committed;
+the startup/periodic scan also processes a backlog. Inbound originals and metadata
+are retained. Durable completion receipts under `Tmp/scripts` prevent unchanged
+deliveries from being reapplied after scans or restarts. These receipts identify
+the feed definition, path, original name, peer, size and last-modified timestamp;
+they assume completed inbox files are immutable. Manually replacing a file while
+preserving its size and timestamp is not a supported redelivery mechanism.
+
+For dated publications, the newest full list in a scan is tried first. Ordering
+uses the English publication date and matching day-of-year in the first header,
+including its year, rather than the ambiguous `.Zxx` filename suffix. Full lists
+older than the retained base are marked superseded without replacing it. Equal
+editions may be retried to finish an interrupted SQL import; publication dates
+are ordering hints, not a substitute for CRC or full parser validation.
+`requireChecksum=false` permits an absent checksum; it never bypasses a checksum
+that is present but does not match the received content. Such a file needs a
+correct publication from its provider, rather than a looser feed setting.
+Diffs are attempted in base-edition order and must match the retained base header
+exactly. Missing bases, bad CRCs, unsupported archives and invalid input are
+deferred with a warning, retaining the last valid catalog and allowing other
+feeds to proceed. Failed files retry after `DirectoryInboundRetrySeconds`
+(1..86400 seconds; restart also clears this in-memory backoff).
+
+`DirectoryInboundRequireDate=true` is the default. Headerless/custom-date fragments
+require explicit `false`; without a readable date, full files use local receive
+modification order and automatic rollback protection is unavailable. Feed those
+publications in order. Plain text and single-member ZIP work; ARC/ARJ/LZH/RAR still
+require external unpacking. Parsing remains bounded and streamed by the plugin.
+The switch requires restart and does not disable TIC `DirectoryFeed` imports,
+manually configured `DirectorySource` imports or explicit UI downloads.
