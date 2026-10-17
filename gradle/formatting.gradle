@@ -4,7 +4,7 @@ spotless {
             include '**/src/**/*.java', 'gradle/wrapper/DownloadWrapper.java',
                     'gradle/formatting/fixtures/*.java'
             exclude '**/build/**', '**/target/**', '**/gen-src/**', '**/generated/**',
-                    '.gradle/**', '.gradle-user-home/**'
+                    '.gradle/**', '.gradle-user-home/**', '.dev-tools/**'
         }
         // Eclipse 4.34 runs on JDK 17, including the GitHub Actions build runner.
         eclipse('4.34').configFile(rootProject.file('gradle/java-formatter.xml'))

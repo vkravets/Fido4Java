@@ -46,8 +46,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Test release publisher
-        run: python3 -m unittest discover -s ci -p 'test_*.py'
+      - name: Test CI and development tooling
+        run: |
+          python3 -m unittest discover -s ci -p 'test_*.py'
+          python3 -m unittest discover -s tools/tests -p 'test_*.py'
       - name: Build, test and seal compiled artifacts
         run: bash ci/build.sh
       - name: Add component catalogue viewing instructions

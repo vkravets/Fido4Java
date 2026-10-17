@@ -42,6 +42,9 @@ example and disable RPC explicitly; see the same guide.
 
 ### DOCUMENTATION
 
+- [Developer environment, bootstrap and offline recovery](docs/development-environment.md)
+- [Architecture decisions and working agreements](docs/decisions.md)
+- [Current development checkpoint and chat handoff](docs/handoff.md)
 - [Browser setup, settings and UI testing](docs/web-ui.md)
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [RPC contracts, transports and authentication](docs/rpc-ui.md)
@@ -53,6 +56,22 @@ example and disable RPC explicitly; see the same guide.
 - [Test coverage and its limitations](docs/test-coverage.md)
 
 ### DEVELOPERS
+
+When starting a new development session, read [AGENTS.md](AGENTS.md), the
+[current handoff](docs/handoff.md) and [architecture decisions](docs/decisions.md),
+then check `git status --short` and `git log -8 --oneline`.
+For a new coding-agent chat with this repository open, use:
+
+> Read AGENTS.md, docs/handoff.md and docs/decisions.md. Check Git status and the
+> latest commits, restore the project context, and summarize the current checkpoint
+> before continuing with the next task I specify.
+
+For a clean Windows checkout, run `tools/bootstrap.ps1 -Frontend`, then load
+`. ./.dev-tools/dev-env.ps1`. On Linux/macOS, use `bash tools/bootstrap.sh --frontend`
+and `source .dev-tools/dev-env.sh` after installing the documented host prerequisites.
+The [environment runbook](docs/development-environment.md) covers pinned downloads,
+checksums, offline cache transfer and browser/container tests.
+
 All tests use JUnit Jupiter 5.14.4 directly through Gradle's JUnit Platform
 support. The shared BOM, Jupiter dependencies and platform launcher are declared
 in the root `build.gradle` and inherited by integration tests. JUnit 4, Vintage

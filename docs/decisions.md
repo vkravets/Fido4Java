@@ -1,0 +1,288 @@
+# Project decisions and working agreements
+
+Last reconciled: 2026-10-17. This is a decision record, not a complete chat transcript.
+The implementation and tests are authoritative when this document becomes stale.
+Update the relevant entry when a decision changes; record the replacement and reason.
+For current unfinished work, read [handoff](handoff.md) and [TODO](../TODO).
+
+## Product and module boundaries
+
+JFtn is a full FTN node, mail transport, tosser and administration application.
+The maintained build is a Gradle multi-project repository; module membership is
+defined in [settings.gradle](../settings.gradle). Do not recover deleted modules
+from old cache files merely because their artifacts are still present locally.
+
+| Concern | Current owner |
+| --- | --- |
+| Packet/message formats, addresses, links | `fido-fts` |
+| Main configuration and ordered fragments | `fido-config` |
+| SQL mail, link/subscription/routing state | `fido-database` |
+| Mail import/export, routing and durable outbound preparation | `jtoss` |
+| Optional JAM editor synchronization | `jam-bridge`, using `jambase` |
+| Directory formats, validation, catalog and list/diff updates | `nodelist` |
+| Shared binkp state machine and file transfer | `binkp/binkp-common` |
+| Default network implementation | `binkp/binkp-netty` |
+| Retained alternative network implementation | `binkp/binkp-mina2` |
+| Thrift contracts, processors and account/authentication API | `rpc` |
+| Embedded HTTP UI routes, setup and settings persistence | `web-ui` |
+| Vue/TypeScript application, stories and browser tests | `web-ui/frontend` |
+| Node lifecycle, mail workers, polling, script runtime, packaging | `jftn-bundle` |
+
+## 1. SQL is authoritative; JAM is an optional external-editor bridge
+
+Mail lives in the SQL-backed database. JAM is a separately configurable plugin
+for external editors, not a mandatory intermediate step before making PKT mail.
+RPC/UI operation must remain possible without the JAM bridge. Retained JAM views
+can also import submissions written by an external editor under the bridge's
+submission/identity policy. Historical JAM archive import is a separate operation.
+
+Interoperability was exercised against HPT. A real interactive GoldED automation
+test was considered and intentionally deferred; HPT bidirectional compatibility
+is useful evidence, not a blanket guarantee about every GoldED feature.
+See [tosser/JAM guide](tosser.md) for lifecycle, locking and supported behavior.
+
+## 2. Current database structure is the baseline
+
+Legacy schema migration code was removed by agreement. Do not add an implicit
+conversion from an obsolete database structure without a new migration design.
+Treat existing data and journals as operational state; tests use temporary data.
+Database/account stores are not Gradle caches and cannot be reset as a build fix.
+
+## 3. Netty is the default; MINA2 remains optional
+
+The runner uses Netty by default. MINA2 remains supported and has independent
+tests, including the shared binkd interoperability scenarios. MINA3 was removed;
+its history remains in Git. Old MINA3 JARs/logs in `.gradle-user-home` do not mean
+the module should be put back into the build.
+
+## 4. Binkp protocol behavior belongs in the common state machine
+
+Client/server transports share protocol semantics. Version 1.1 supports multiple
+batches and preserves session authentication/security state between batches.
+Version fallback and extension negotiation must be verified against the protocol
+references and real-peer tests, not inferred from transport class names.
+
+NR policy is directional: allowing NR locally, requesting NR for incoming files,
+and honoring a remote NR request for outgoing files are distinct operations.
+Do not replace this with an unconditional requirement that both peers advertise
+the same flag. Explicitly disabling NR also affects the advertised protocol
+version because 1.1 requires NR support. Both roles need regression coverage.
+See [binkp references](binkp/README.md), the main README and the interoperability tests.
+There is no claim that every optional FTSC extension has been implemented.
+
+## 5. Routing, queue preparation and acknowledgement are separate stages
+
+Netmail routing distinguishes the final recipient from the next hop. Echomail
+uses its subscription/access and path/seen-by policy. Prepared outbound files
+remain queued until the transport acknowledges them; reconnects must not silently
+drop them or fabricate successful delivery. UI operations share mail-service
+synchronization. Never delete delivery receipts, `.bad` packets or journals as
+part of unrelated refactoring or development-environment cleanup.
+
+## 6. Keep original inbound files while development is active
+
+`PreserveReceivedFiles` defaults to true and is available through station settings.
+Original received PKTs, bundles, TICs and other payloads are retained in the
+received archive without automatic cleanup. `Deletetossed` separately controls
+processed files in inbound. Disabling processed-file retention must not erase
+the archived originals or override quarantine handling.
+
+`*.received` files store original transport filenames. They are metadata, not
+ZIP bundles. Bundle recognition must match the complete filename; a suffix such
+as `.MO0.received` must not be treated as a `.MO0` archive.
+
+## 7. Connection, packet, robot and UI credentials have different purposes
+
+Binkp session passwords authenticate a connection. PKT passwords authenticate
+packets and have an eight-ASCII-byte format limit. `PacketPassword` can override
+the session password for a peer; `-` explicitly means an empty PKT password.
+A wrong protected packet must not be accepted just because binkp connected.
+
+AreaFix/FileFix/TIC credentials are separate robot-access rules. UI passwords
+belong to the account store. Do not silently substitute one kind for another.
+Settings passwords are write-only: an empty submitted edit preserves the current
+secret, and read responses contain empty secret fields.
+
+## 8. Groovy owns automation policy; reusable parsers stay in Java modules
+
+The bundled external scripts implement AreaFix, FileFix/TIC handling and
+directory-feed orchestration. Shared robot authorization/state and delivery APIs
+remain in the application/database layer. Directory parsers, checksum validation,
+streaming ZIP handling and atomic list/diff publication remain in `nodelist`.
+This lets operators customize policy without duplicating core file-format code.
+
+Scripts are supplied as editable external files under `scripts/mail-scripts/`.
+The default configuration loads these paths, not `classpath:` resources.
+Classpath loading remains useful for isolated tests and explicit compatibility.
+Existing operator scripts/configurations are preserved during startup; upgrading
+JARs alone does not overwrite an old customized external script.
+
+## 9. Two directory delivery paths are deliberately supported
+
+`DirectoryFeed` imports after FileFix validates and stores a TIC delivery.
+The direct mode (`DirectoryInboundEnabled`, `DirectoryInboundFeed`) imports
+completed binkp inbox files from an explicitly authorized configured peer,
+without requiring a TIC. A bare file in the inbound root is not implicitly trusted.
+Direct mode is opt-in and processes both existing completed deliveries and new ones.
+
+Publication dates include the year; filename day suffixes alone are insufficient
+for ordering a backlog. Older full publications must not replace a newer retained
+base. Persistent processing receipts survive restarts; diffs require the proper
+base and retain failure/recovery state. Headerless/custom-date feeds need explicit
+configuration and have weaker automatic ordering guarantees.
+
+CRC/parser errors are not silently ignored. `requireChecksum=false` permits an
+absent checksum, not a checksum mismatch. Imported directory records never become
+trusted connection links, passwords, subscriptions or routing rules.
+See [directory import](nodelist.md) and [script configuration](mail-scripts.md).
+
+## 10. Main configuration is UI-managed; plugin internals use `conf.d`
+
+UI edits atomically replace `jftn.conf` and detect conflicting external changes.
+Technical plugin settings live in ordered `conf.d/*.conf` beside that main file.
+Later fragments replace earlier values for a key, including the entire list of
+a repeated option. Keep all `MailScript` entries together in registration order.
+
+UI-managed station keys cannot be silently overridden in fragments. Mail settings
+that already have a manual fragment override are read effectively, but their UI
+save is refused until the conflict is resolved. The UI never rewrites operator
+fragments. File-only operation remains supported without UI/RPC.
+See [configuration ownership](plugin-configuration.md).
+
+## 11. Database-backed robot configuration is the full-package default
+
+The full package includes UI/RPC and uses live database robot rules by default.
+File mode is explicit, with offline validation/import/export commands. Export is
+available when moving to file-only administration. Do not introduce a silent file
+fallback when a database rule is absent: that would create two conflicting sources
+of authority. A lightweight package is a future option, not the existing no-JRE ZIP.
+See [robot access](robot-access.md).
+
+## 12. UI is Vue + TypeScript, served by the Java application
+
+Node/npm are development tools for compiling assets and running tests; production
+does not need a separate Node UI server. GraalVM JavaScript embedding is not needed
+for this architecture. Handwritten frontend application/test code uses TypeScript;
+generated Thrift browser JavaScript and vendor runtime are build outputs.
+
+The UI supports English by default and Ukrainian, with light/dark themes. Russian
+UI translations were intentionally removed. Both themes must receive consistent
+controls, validation, layouts and tests. Preserve planned mail navigation, but do
+not present unfinished netmail/echomail readers as implemented features.
+
+Notifications are fixed to the viewport, not a scrollable page/card. Information
+and warning notifications can be dismissed; error notifications cannot. A close
+button must not change a notification's height. Keep the connected-three-node SVG
+identity instead of replacing it with a generic letter icon.
+
+## 13. UI accounts and point identity require server-side authorization
+
+Users can self-register. Point AKA claims need administrator approval; claims
+are not immediately usable send identities. Administrators can manage the node;
+ordinary points do not see node-management navigation. The backend must enforce
+this restriction even if a client calls RPC directly.
+
+Initial setup uses a private one-time URL/token printed by the server and creates
+the administrator and station configuration. General administrative mail-settings
+methods require an authenticated administrator, not the setup token.
+
+Passkeys are an additional login method alongside passwords. Private keys remain
+with authenticators; server-side WebAuthn verification stores credential metadata
+and public keys, checks RP/origin/challenges and maintains session authorization.
+Authenticator selection/storage UI can be controlled by Chrome/Windows rather
+than the application. See [RPC authentication](rpc-ui.md).
+
+## 14. Keep both Thrift transports and generated contracts
+
+The existing framed TCP RPC remains available. HTTP/JSON Thrift serves the browser
+client; contracts are generated from `rpc/src/main/thrift`, including browser types.
+Do not hand-edit generated Java/JS/declarations. Transport factories and lifecycle
+management are separate from service handlers so new transports do not grow a
+single monolithic runner class. Authorization is transport-independent.
+
+## 15. Distribution is an ordinary classpath layout, not a fat JAR
+
+Packages separate `lib/`, `lib/groovy/`, `plugins/` and editable `scripts/`.
+Root launchers support command prompt, PowerShell and Unix shells. Runtime paths
+are relative to the installation working directory, and missing working folders
+are created. A no-JRE ZIP and platform JRE packages are distinct distributions.
+The JRE lock is for the packaged runtime, not the development JDK.
+See [distribution guide](distributions.md) and `gradle/distributions.gradle`.
+
+## 16. Keep generated software and caches out of Git
+
+Gradle wrapper JARs are bootstrapped externally from fixed URLs with hashes.
+Gradle itself is pinned by wrapper properties. Development downloads now have
+`tools/development-tools.lock.json`; they live under ignored `.dev-tools/`.
+Library binaries, downloaded compilers/runtimes, temporary probes, reports and
+cache trees do not belong in commits. Intentional binary test fixtures and
+committed VRT PNG baselines are exceptions, not unwanted application binaries.
+
+## 17. CI uses GitHub Actions; releases are tag-driven
+
+The current pipeline is `.github/workflows/ci.yml`, not old CircleCI cache probes.
+Build precedes binkd/HPT integrations; browser UI tests follow integrations;
+VRT follows UI tests. Tagged-release packaging/publishing depends on the checks.
+The build seals compiled artifacts with a revision and checksums so downstream
+jobs test the same outputs instead of recompiling an unrelated checkout.
+
+Normal branch pushes/PRs validate the project. Release publishing is driven by
+matching version tags and uses GitHub Actions token permissions; no CircleCI
+release PAT/context is needed. Do not publish or push without an explicit request.
+Container interoperability suites are explicit tasks, not part of ordinary unit tests.
+
+## 18. Test behavior, recovery and interoperability
+
+Use JUnit Jupiter directly, with no JUnit 4/Vintage compatibility layer. Use
+temporary directories/databases, shared fixtures and readable helper methods.
+Priorities include meaningful branches, failure/restart boundaries, actual TCP
+role-to-role exchange and real binkd/HPT interoperability. Coverage percentages
+are measurements, not a substitute for behavior assertions.
+
+Storybook is the component catalogue. Playwright covers components and real HTTP
+UI workflows. VRT compares committed screenshots in a pinned Linux Playwright
+container; native Windows screenshots must not replace Linux baselines. Reports
+attach baseline images even for successful VRT comparisons. Open downloaded
+Storybook over HTTP, not `file://`. See [UI testing](web-ui.md).
+
+## 19. Preserve the agreed source layout
+
+Java formatting uses Spotless/Eclipse with project-specific expression alignment:
+four spaces, a 100-column target, explicit imports and no wildcard imports even
+in temporary helper source. Import groups: `org.fidonet`, other libraries, Java
+platform, static imports. Keep `@Test` and other annotations on separate lines.
+Keep original multiline `Created by` metadata comments.
+
+Break long declarations at parameters: first stays beside the method name;
+remaining parameters align underneath it. Break long call chains by selectors,
+aligning dots. For nested string concatenation, keep the first operand near its
+opening parenthesis and align continuation `+` and nested selector dots. Use the
+shared formatter rather than trying to reproduce this with a generic Google sorter.
+Where the alignment cannot meet the limit, the configured formatter has a fallback.
+
+One statement per line. Reduce nested `try`/loop/conditional blocks through
+focused methods, guard clauses and reusable fixtures. Do not mechanically split
+every expression into a method if that makes the execution order harder to follow.
+Prefer imports to fully qualified names when there is no naming collision.
+
+## 20. Collaboration and commits
+
+Give progress updates during sustained work, including what is being verified.
+When a task requests multiple independent steps/commits, finish them in order and
+report each result. Commit messages are concise English descriptions in past tense
+(for example, "Added ..." or "Fixed ..."). Stage coherent files/hunks rather than
+folding unrelated accumulated changes together. Browser and backend work can be
+separate commits when their boundaries are useful or explicitly requested.
+
+Formatting-only work should not launch application/container suites. Behavioral
+changes need relevant tests; expand testing when failures or unresolved concerns
+justify it. Preserve user changes and inspect Git status before staging. Never
+commit production credentials or publish a change merely to make a local task end.
+
+## Changing these decisions
+
+Before replacing a behavior, check the implementation, relevant tests and the
+linked guide. Write the new decision and its consequences, adjust tests, and
+update [handoff](handoff.md). Ask about genuine product/protocol ambiguity; routine
+implementation choices do not need another approval round. Keep future proposals
+visibly separate from accepted and shipped behavior.
