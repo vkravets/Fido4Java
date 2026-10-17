@@ -1,6 +1,7 @@
 .idea/
 .gradle/
 .gradle-user-home/
+.dev-tools/
 /gradle/wrapper/gradle-wrapper.jar
 **/build/
 **/*.class

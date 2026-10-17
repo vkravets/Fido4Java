@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "recordedAt": "2026-10-17",
+  "description": "Pinned development profile; archives live outside Git. Update hashes and URLs together.",
+  "pythonBootstrap": {
+    "version": "3.13.9",
+    "windows-x64": {
+      "url": "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-amd64.zip",
+      "sha256": "91d828c2da3a029b41699e918674a0cb379c02cf20dab9c501306885f837402a",
+      "digestSource": "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-amd64.zip.sigstore"
+    }
+  },
+  "node": {
+    "version": "24.22.0",
+    "digestSource": "https://nodejs.org/dist/v24.22.0/SHASUMS256.txt",
+    "assets": {
+      "windows-x64": {
+        "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-win-x64.zip",
+        "sha256": "f9683a19877e12a9b167305c8db71040d812876359de21f0d2e97c3f321f80c3"
+      },
+      "linux-x64": {
+        "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-linux-x64.tar.xz",
+        "sha256": "cc2f601cee82d9a5a233302fe307abc600727035fd7d2c3a3571755989e95008"
+      },
+      "linux-arm64": {
+        "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-linux-arm64.tar.xz",
+        "sha256": "fef00bb4d36e1c50104a9775a10359beee98f162b4104dd12472c75065c6a143"
+      },
+      "macos-x64": {
+        "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-darwin-x64.tar.gz",
+        "sha256": "495e3f273c645f3c4677d438304cdfc701729ea5dec5728f5c8e76a2dece4b91"
+      },
+      "macos-arm64": {
+        "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-darwin-arm64.tar.gz",
+        "sha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5"
+      }
+    }
+  },
+  "jdk": {
+    "version": "17.0.20.1+1",
+    "digestSource": "https://api.adoptium.net/v3/assets/latest/17/hotspot?image_type=jdk&vendor=eclipse",
+    "assets": {
+      "windows-x64": {
+        "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_windows_hotspot_17.0.20.1_1.zip",
+        "sha256": "e53a79c3c3d86865bd7e787903884331068e71321714ffd44f145785affc7cb0",
+        "home": "."
+      },
+      "linux-x64": {
+        "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_linux_hotspot_17.0.20.1_1.tar.gz",
+        "sha256": "3808d1d15e3ec6bd5b84057fb5d84c33d8a1536a258146bcea2e603fc726e08e",
+        "home": "."
+      },
+      "linux-arm64": {
+        "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.20.1_1.tar.gz",
+        "sha256": "457b57af8f9c93ec39080bb8c764f559dc8c89a6da1a39d718a400b7890d3e41",
+        "home": "."
+      },
+      "macos-x64": {
+        "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_mac_hotspot_17.0.20.1_1.tar.gz",
+        "sha256": "c01975da12ed4235250ff891fe8bba73a9e73037d444b269c9d0922b5dbc8e0a",
+        "home": "Contents/Home"
+      },
+      "macos-arm64": {
+        "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.20.1_1.tar.gz",
+        "sha256": "196d13ba5f10414bef7f6a05a9b3f00edacb18ebacef2b99485db9e2ee18f0e8",
+        "home": "Contents/Home"
+      }
+    }
+  },
+  "thrift": {
+    "version": "0.25.0",
+    "source": {
+      "url": "https://archive.apache.org/dist/thrift/0.25.0/thrift-0.25.0.tar.gz",
+      "sha256": "66da4707214c54c94bac082103dc67adaf9e08925662700f269170a7b534b214"
+    },
+    "windows-x64": {
+      "url": "https://archive.apache.org/dist/thrift/0.25.0/thrift-0.25.0.exe",
+      "sha256": "9e1cb466141428a60a78aa944e85f901da60d25eb5ed00c8a40c4da5742af08e"
+    }
+  },
+  "projectLocks": {
+    "gradle": "gradle/wrapper/gradle-wrapper.properties",
+    "npm": "web-ui/frontend/package-lock.json",
+    "runtimeJre": "gradle/runtime-lock.json",
+    "visualImage": "web-ui/frontend/test/browser/visual.Dockerfile"
+  },
+  "playwright": "1.64.1"
+}
