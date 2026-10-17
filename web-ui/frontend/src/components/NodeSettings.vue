@@ -4,6 +4,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
 import StationSettingsHeader from './StationSettingsHeader.vue';
+import StationSettingsTabs from './StationSettingsTabs.vue';
 import MailSettings from './MailSettings.vue';
 import EchoSettings from './EchoSettings.vue';
 import QuarantineSettings from './QuarantineSettings.vue';
@@ -58,39 +59,50 @@ async function reload() {
             )
         "
     />
-    <form
-        v-if="model.aliases"
-        class="card"
-        @submit.prevent="save"
+    <StationSettingsTabs
+        v-slot="{ group }"
+        :busy="state.busy.value"
     >
-        <NodeForm
-            :model="model"
-            :initial="false"
+        <form
+            v-if="model.aliases"
+            v-show="group === 'general'"
+            class="card"
+            @submit.prevent="save"
+        >
+            <NodeForm
+                :model="model"
+                :initial="false"
+            />
+            <footer class="actions">
+                <button
+                    class="primary"
+                    :disabled="state.busy.value"
+                >
+                    {{ t('Save configuration') }}
+                </button>
+            </footer>
+        </form>
+        <MailSettings
+            v-if="ready"
+            :group="group === 'links' || group === 'tosser' ? group : 'hidden'"
+            :key="mailVersion"
+            :state="state"
+            :local-addresses="[model.address, ...model.aliases]"
+            @saved="mailSaved"
+            @saving="saved = false"
         />
-        <footer class="actions">
-            <button
-                class="primary"
-                :disabled="state.busy.value"
-            >
-                {{ t('Save configuration') }}
-            </button>
-        </footer>
-    </form>
-    <MailSettings
-        v-if="ready"
-        :key="mailVersion"
-        :state="state"
-        :local-addresses="[model.address, ...model.aliases]"
-        @saved="mailSaved"
-        @saving="saved = false"
-    />
-    <EchoSettings
-        v-if="ready"
-        :key="'echo-' + mailVersion"
-        :state="state"
-    />
-    <QuarantineSettings
-        v-if="ready"
-        :state="state"
-    />
+        <div v-show="group === 'echoes'">
+            <EchoSettings
+                v-if="ready"
+                :key="'echo-' + mailVersion"
+                :state="state"
+            />
+        </div>
+        <div v-show="group === 'quarantine'">
+            <QuarantineSettings
+                v-if="ready"
+                :state="state"
+            />
+        </div>
+    </StationSettingsTabs>
 </template>

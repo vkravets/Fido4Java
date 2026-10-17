@@ -11,7 +11,11 @@ import type { AppState } from '../state.ts';
 import MailLinksEditor from './MailLinksEditor.vue';
 import TosserForm from './TosserForm.vue';
 
-const props = defineProps<{ state: AppState; localAddresses: string[] }>();
+const props = defineProps<{
+    state: AppState;
+    localAddresses: string[];
+    group: 'links' | 'tosser' | 'hidden';
+}>();
 const emit = defineEmits<{ saved: [configuration?: NodeConfiguration]; saving: [] }>();
 const links = ref<MailLinkConfiguration[]>([]);
 const tosser = ref<TosserConfiguration>();
@@ -67,7 +71,10 @@ function saveTosser() {
 
 <template>
     <template v-if="ready">
-        <section class="card">
+        <section
+            v-show="group === 'links'"
+            class="card"
+        >
             <h2>{{ t('Mail links') }}</h2>
             <p>
                 {{
@@ -103,6 +110,7 @@ function saveTosser() {
         </section>
         <section
             v-if="tosser"
+            v-show="group === 'tosser'"
             class="card"
         >
             <h2>{{ t('Tosser settings') }}</h2>

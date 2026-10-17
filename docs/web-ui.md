@@ -58,6 +58,20 @@ The header selector is available during setup and before sign-in. Its choice is
 stored locally in the browser (`jftn-language`), independently of the account's
 theme preference. Russian is not an interface language.
 
+## Station settings groups
+
+The administrator's **Station** screen has five tabs: **General**, **Mail links**,
+**Tosser settings**, **Echo areas and link access** and **Packet quarantine**.
+Only the active group is visible. Switching tabs keeps forms mounted, so unsaved
+station/link/tosser edits and quarantine selections survive navigation between
+groups. Switching is not a save; use the active group's own save/confirm action.
+Page reload/navigation away and explicit configuration reload have their existing
+state-reset behavior. **Reload configuration files** remains above all tabs.
+
+Tabs wrap on narrow screens and support Left/Right, Home and End keyboard
+navigation. Switching is disabled while an operation is busy. These tabs do not
+change backend authorization: node management remains administrator-only.
+
 ## Multiple uplinks
 
 The first-start wizard accepts one or more uplinks in **Station and connection**.
@@ -301,9 +315,10 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 264 committed PNG test fixtures:
+`./gradlew :web-ui:playwrightVisualTest` compares 312 committed PNG test fixtures:
 administrator/point navigation, first-run setup with multiple uplinks, station
-identity and reload controls, adding/saving uplinks, duplicate-address feedback,
+identity and reload controls, five station settings tabs and their busy state,
+adding/saving uplinks, duplicate-address feedback,
 link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
 quarantine (table/batch confirmation/source selection/results/legacy retry/archive/empty/long filename/unavailable), poll
 queue/details, and information/warning/error/configuration-applied notifications.

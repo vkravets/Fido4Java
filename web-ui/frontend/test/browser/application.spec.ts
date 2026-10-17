@@ -11,6 +11,33 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('station tabs preserve unsaved station, link and tosser values across groups', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByLabel('Station name', { exact: true }).fill('Unsaved identity');
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
+    await page.getByLabel('binkp server', { exact: true }).first().fill('unsaved.example.org');
+    await page.getByRole('tab', { name: 'Tosser settings', exact: true }).click();
+    await page.getByLabel('Processing interval (seconds)').fill('23');
+    await page.getByRole('tab', { name: 'Echo areas and link access', exact: true }).click();
+    await expect(page.locator('#echo-access')).toBeVisible();
+    await page.getByRole('tab', { name: 'Packet quarantine', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: 'Packet quarantine', exact: true })
+    ).toBeVisible();
+    await page.getByRole('tab', { name: 'Tosser settings', exact: true }).click();
+    await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('23');
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
+    await expect(page.getByLabel('binkp server', { exact: true }).first()).toHaveValue(
+        'unsaved.example.org'
+    );
+    await page.getByRole('tab', { name: 'General', exact: true }).click();
+    await expect(page.getByLabel('Station name', { exact: true })).toHaveValue('Unsaved identity');
+});
+
 test('administrator grants, edits and revokes echo access through the station screen', async ({
     page
 }) => {
@@ -18,6 +45,7 @@ test('administrator grants, edits and revokes echo access through the station sc
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
     const panel = page.locator('#echo-access');
+    await page.getByRole('tab', { name: 'Echo areas and link access', exact: true }).click();
     await expect(panel.getByRole('heading', { name: 'Echo areas and link access' })).toBeVisible();
     await panel.getByLabel('Echo area', { exact: true }).fill('NEW.ECHO');
     await panel.getByRole('button', { name: 'Save echo access', exact: true }).click();
@@ -34,6 +62,7 @@ test('administrator grants, edits and revokes echo access through the station sc
     await page.reload();
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByRole('tab', { name: 'Echo areas and link access', exact: true }).click();
     await expect(row).toContainText('BOTH');
     await row.getByRole('button', { name: 'Revoke access', exact: true }).click();
     await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -53,6 +82,7 @@ test('administrator releases a legacy quarantine packet through HTTP RPC after c
     const panel = page
         .locator('section')
         .filter({ has: page.getByRole('heading', { name: 'Packet quarantine', exact: true }) });
+    await page.getByRole('tab', { name: 'Packet quarantine', exact: true }).click();
     await expect(panel.getByText('legacy.bad', { exact: true })).toBeVisible();
     await panel.getByRole('button', { name: 'Release and retry' }).click();
     await expect(panel.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
@@ -72,8 +102,8 @@ test('administrator persists separate PKT passwords and tosser options through r
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Mail links', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Tosser settings', exact: true })).toBeVisible();
     await page.getByLabel('PKT password mode').selectOption('SEPARATE');
     await page
         .getByLabel('Create new echoes from this link', { exact: true })
@@ -83,6 +113,8 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByRole('status')).toContainText('Configuration applied.');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
+    await page.getByRole('tab', { name: 'Tosser settings', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Tosser settings', exact: true })).toBeVisible();
     await page.getByLabel('Processing interval (seconds)').fill('25');
     await page.getByLabel('Create unknown echo areas automatically').check();
     await page.getByRole('button', { name: 'Save tosser settings', exact: true }).click();
@@ -92,12 +124,14 @@ test('administrator persists separate PKT passwords and tosser options through r
     await page.reload();
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
-    await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
     await expect(page.getByLabel('Create new echoes from this link', { exact: true })).toHaveValue(
         'WRITE'
     );
+    await page.getByRole('tab', { name: 'Tosser settings', exact: true }).click();
+    await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
     await expect(page.getByLabel('Create unknown echo areas automatically')).toBeChecked();
     await page.getByRole('button', { name: 'Reload configuration files' }).click();
     await expect(page.getByRole('status')).toContainText('Configuration applied.');
@@ -110,6 +144,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     for (const node of [102, 103]) {
         await page.getByRole('button', { name: 'Add link', exact: true }).click();
         const link = page.locator('fieldset.mail-link-settings').last();
@@ -125,6 +160,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await expect(page.getByLabel('Link address', { exact: true }).last()).toHaveAttribute(
         'readonly'
     );
+    await page.getByRole('tab', { name: 'General', exact: true }).click();
     await page.getByLabel('Station name', { exact: true }).fill('Station with three uplinks');
     await page.getByRole('button', { name: 'Save configuration', exact: true }).click();
     await expect(
@@ -133,6 +169,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await page.reload();
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     await expect(page.locator('fieldset.mail-link-settings')).toHaveCount(3);
     await expect(page.getByLabel('binkp server', { exact: true }).last()).toHaveValue(
         'peer103.example.org'

@@ -144,6 +144,27 @@ test('quarantine batch uses a source selector only for unknown peers and validat
     await expect(page.getByText('Selected packets: 1')).toBeVisible();
 });
 
+test('station groups support keyboard navigation and keep unsaved form values', async ({
+    page
+}) => {
+    await story(page, 'settings-stationsettingstabs--general');
+    const general = page.getByRole('tab', { name: 'General', exact: true });
+    await page.getByLabel('Station name', { exact: true }).fill('Unsaved station');
+    await general.focus();
+    await general.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Mail links', exact: true })).toBeFocused();
+    await expect(page.getByLabel('Station name', { exact: true })).toBeHidden();
+    await page.getByRole('tab', { selected: true }).press('End');
+    await expect(page.getByRole('tab', { name: 'Packet quarantine', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
+    await page.getByRole('tab', { selected: true }).press('Home');
+    await expect(page.getByLabel('Station name', { exact: true })).toHaveValue('Unsaved station');
+    await story(page, 'settings-stationsettingstabs--busy');
+    for (const tab of await page.getByRole('tab').all()) await expect(tab).toBeDisabled();
+});
+
 for (const theme of ['light', 'dark']) {
     for (const locale of ['en', 'uk']) {
         test(`${theme}/${locale}: viewport notifications and role navigation`, async ({

@@ -1,4 +1,5 @@
 export const ukrainian = {
+    General: 'Загальні',
     'Restore selected': 'Відновити вибрані',
     Packet: 'Пакет',
     Reason: 'Причина',
