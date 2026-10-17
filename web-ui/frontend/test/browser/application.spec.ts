@@ -59,7 +59,7 @@ test('administrator releases a legacy quarantine packet through HTTP RPC after c
     await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(panel.getByRole('heading', { name: 'Confirm packet retry' })).toHaveCount(0);
     await panel.getByRole('button', { name: 'Release and retry' }).click();
-    await panel.getByLabel('Expected source link').selectOption('1:500/101.0');
+    await panel.locator('form').getByLabel('Expected source link').selectOption('1:500/101.0');
     await panel.getByRole('button', { name: 'Confirm', exact: true }).click();
     await expect(panel.getByText('No quarantined packets.')).toBeVisible();
     await expect(page.getByRole('status')).toContainText('Original retained');

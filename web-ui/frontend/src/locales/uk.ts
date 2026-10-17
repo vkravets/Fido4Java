@@ -1,4 +1,17 @@
 export const ukrainian = {
+    'Restore selected': 'Відновити вибрані',
+    Packet: 'Пакет',
+    Reason: 'Причина',
+    Accepted: 'Прийнято',
+    'Selection applies to this page only.': 'Вибір застосовується лише до цієї сторінки.',
+    'Select all on this page': 'Вибрати все на цій сторінці',
+    'Select packet {name}': 'Вибрати пакет {name}',
+    'Selected packets: {count}': 'Вибрано пакетів: {count}',
+    'Select an expected source link for every packet before confirming.':
+        'Перед підтвердженням виберіть очікуваний лінк-відправник для кожного пакета.',
+    'Batch complete: {accepted} accepted, {failed} failed.':
+        'Пакетну обробку завершено: прийнято — {accepted}, з помилками — {failed}.',
+    'Batch results': 'Результати пакетної обробки',
     'Create new echoes from this link': 'Створювати нові ехи від цього лінка',
     'Not permitted': 'Не дозволено',
     'WRITE — receive from this link': 'WRITE — приймати від цього лінка',

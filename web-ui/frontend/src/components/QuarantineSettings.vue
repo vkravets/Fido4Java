@@ -8,7 +8,7 @@ import QuarantinePanel from './QuarantinePanel.vue';
 import NotificationBanner from './NotificationBanner.vue';
 const props = defineProps<{ state: AppState }>();
 const editor = createQuarantine(api.ui, () => props.state.session.value);
-const { page, selected, action, peer, result } = editor;
+const { page, selected, action, peer, result, checked, peers, batch, outcomes } = editor;
 onMounted(() =>
     editor.refresh().catch((failure: unknown) => {
         props.state.error.value =
@@ -28,9 +28,14 @@ onMounted(() =>
         :selected="selected"
         :action="action"
         v-model:peer="peer"
+        v-model:checked="checked"
+        v-model:peers="peers"
+        :batch="batch"
+        :outcomes="outcomes"
         :busy="state.busy.value"
         @select="editor.select"
-        @cancel="selected = null"
+        @select-batch="editor.selectBatch"
+        @cancel="editor.cancel"
         @confirm="state.run(editor.confirm)"
         @refresh="state.run(() => editor.refresh())"
         @next="state.run(() => editor.refresh(page!.nextCursor))"

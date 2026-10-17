@@ -301,11 +301,11 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 240 committed PNG test fixtures:
+`./gradlew :web-ui:playwrightVisualTest` compares 264 committed PNG test fixtures:
 administrator/point navigation, first-run setup with multiple uplinks, station
 identity and reload controls, adding/saving uplinks, duplicate-address feedback,
 link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
-quarantine (list/legacy retry/archive/empty/long filename/unavailable), poll
+quarantine (table/batch confirmation/source selection/results/legacy retry/archive/empty/long filename/unavailable), poll
 queue/details, and information/warning/error/configuration-applied notifications.
 Each has light/dark and English/Ukrainian
 variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
@@ -496,7 +496,21 @@ the snapshot cursor. Only packet quarantine is listed, not corrupt ZIP bundles
 still retained in inbound. Oversized files and damaged metadata need manual
 inspection; their mutation controls are disabled.
 
-After correcting the cause, choose **Release and retry** and confirm. Existing
+Packets are shown in a table. Select individual rows or **Select all on this page**,
+then choose **Restore selected** and confirm the batch. Selection is limited to
+the current page and resets on refresh or page changes. Unknown source links can
+be assigned independently in each row, including while reviewing confirmation;
+recorded session peers cannot be overridden. Every selected packet must have a
+valid configured source and checksum before any request is sent.
+
+Batch restoration runs sequentially through the same administrator-only retry
+API as individual restoration. It is not an all-or-nothing transaction: a failed
+packet does not prevent later packets from being tried. The summary and per-file
+results distinguish accepted packets, protocol rejections and request failures.
+After completion the list refreshes; the results remain visible. If the browser
+is interrupted, refresh and inspect the remaining quarantine before retrying.
+
+For an individual packet, choose **Release and retry** and confirm. Existing
 PKT password, destination and echo rights checks still apply. Newly quarantined
 files retain their original receiving-session peer; legacy `.bad` files require
 explicit selection of an expected configured link. Pending configuration changes
@@ -511,7 +525,8 @@ files cause a stale-selection error and must be refreshed. Existing retained
 inbound files may be queued again independently; archival does not suppress them.
 All three RPC operations require an administrator on both TCP and HTTP.
 
-Storybook provides packet, legacy retry, archive confirmation and empty states.
+Storybook provides packet tables, mixed-source batch confirmation (missing/ready
+links), batch results, legacy retry, archive confirmation and empty states.
 Core tests exercise restart recovery and archive corruption; browser tests cover
 confirmation, explicit peer selection and HTTP interaction with an isolated fixture.
 

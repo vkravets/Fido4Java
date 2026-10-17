@@ -123,6 +123,27 @@ test('every catalogue story renders without browser errors', async ({ page, requ
     }
 });
 
+test('quarantine batch uses a source selector only for unknown peers and validates confirmation', async ({
+    page
+}) => {
+    await story(page, 'settings-quarantinepanel--batch-retry');
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByRole('table').getByRole('combobox')).toHaveCount(1);
+    await expect(page.locator('form').getByRole('combobox')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
+    await page.locator('form').getByLabel('Expected source link').selectOption('1:500/102.0');
+    await expect(page.getByRole('table').getByRole('combobox')).toHaveValue('1:500/102.0');
+    await expect(page.getByRole('button', { name: 'Confirm', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('checkbox', { name: 'Select all on this page' }).uncheck();
+    await expect(
+        page.getByRole('button', { name: 'Restore selected (0)', exact: true })
+    ).toBeDisabled();
+    await page.getByRole('checkbox', { name: 'Select packet unknown.bad', exact: true }).check();
+    await page.getByRole('button', { name: 'Restore selected (1)', exact: true }).click();
+    await expect(page.getByText('Selected packets: 1')).toBeVisible();
+});
+
 for (const theme of ['light', 'dark']) {
     for (const locale of ['en', 'uk']) {
         test(`${theme}/${locale}: viewport notifications and role navigation`, async ({
@@ -220,8 +241,10 @@ test('quarantine separates retry from archival and requires explicit peer select
     await expect(page.getByRole('button', { name: 'Archive packet' })).toBeEnabled();
     await story(page, 'settings-quarantinepanel--legacy-retry');
     await expect(page.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
-    await expect(page.getByLabel('Expected source link')).toHaveValue('');
-    await expect(page.getByLabel('Expected source link').locator('option')).toHaveCount(2);
+    await expect(page.locator('form').getByLabel('Expected source link')).toHaveValue('');
+    await expect(
+        page.locator('form').getByLabel('Expected source link').locator('option')
+    ).toHaveCount(2);
     await story(page, 'settings-quarantinepanel--archive', 'dark', 'uk');
     await expect(page.getByRole('button', { name: 'Підтвердити', exact: true })).toBeEnabled();
     await expect(page.getByRole('combobox')).toHaveCount(0);
