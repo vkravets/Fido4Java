@@ -18,6 +18,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Information: Story = {};
+export const ConfigurationApplied: Story = {
+    args: {
+        message:
+            'Configuration applied. New operations use the new settings; existing connections keep their session settings.'
+    }
+};
 export const Warning: Story = {
     args: {
         kind: 'warning',
@@ -26,6 +32,9 @@ export const Warning: Story = {
     }
 };
 export const Error: Story = { args: { kind: 'error', message: 'Could not refresh connections.' } };
+export const DuplicateUplink: Story = {
+    args: { kind: 'error', message: 'Duplicate link address' }
+};
 export const LongError: Story = {
     args: {
         kind: 'error',

@@ -38,9 +38,37 @@ is `BOTH`. READ permits export to that link, WRITE permits import from it.
 Existing SQL subscriptions not mentioned in these declarations are retained.
 Removing a declaration does not revoke a previously stored subscription.
 
-Unknown areas and unauthorized posts go to quarantine by default. Legacy
-automatic area creation can be selected explicitly with `AutoCreateEcho=true`
-and `EnforceEchoAccess=false`.
+Unknown areas and unauthorized posts go to quarantine by default. Automatic
+creation requires an explicit sender allowlist, even when normal echo access
+checks are disabled:
+
+```text
+EchoSubscriptions=database
+AutoCreateEcho=true
+EnforceEchoAccess=true
+AutoCreateEchoFrom=1:500/101,WRITE
+AutoCreateEchoFrom=1:500/103,BOTH
+```
+
+Each rule names an exact configured link, including its point number. `WRITE`
+allows receiving mail from that sender; `BOTH` additionally allows sending mail
+back. `READ`, wildcards, duplicate peers and unknown links are rejected. With no
+rules, no sender may create an area. The master switch defaults to false.
+
+After packet authentication and message hooks succeed, the SQL area and its sole
+initial subscription are created in one transaction. Other peers receive no
+permissions. Existing areas, permissions and export positions are never changed
+by these rules; changing or removing a rule only affects future new areas.
+If an area already exists without the needed permission, grant it explicitly in
+the echo access screen. Packet retry uses the current rules without a restart.
+
+Administrators configure the rule under **Station → Mail links → Create new echoes
+from this link** and enable the master switch under **Tosser settings**. Saving
+applies live. File-only operation uses repeated `AutoCreateEchoFrom` declarations
+in `jftn.conf`. This automation requires database-managed subscriptions; file-mode
+subscriptions must be switched deliberately before enabling per-link rules.
+Older configurations that used only `AutoCreateEcho=true` with access checks
+disabled must now name their permitted senders explicitly.
 
 Routes can also be declared in order:
 
@@ -111,6 +139,12 @@ Set `EchoSubscriptions=database` to administer subscriptions with the synchroniz
 `removeEchoSubscription(peer, area)` methods. The Runner then stops reapplying
 `EchoArea` declarations at startup; existing SQL subscriptions remain authoritative.
 With `EchoSubscriptions=config`, the additive `EchoArea` behavior is retained.
+Administrators can use **Station -> Echo areas and link access** in the browser to
+inspect permissions, create an area by granting link access, change READ/WRITE/BOTH
+or revoke a subscription. Database-mode changes apply immediately without a
+restart. In configuration mode the browser is read-only. WRITE permits incoming
+mail from the selected peer; READ permits outgoing mail to that peer. Granting
+access does not automatically retry packets already placed in quarantine.
 The packaged mail-script configuration selects `database` mode for AreaFix.
 READ, WRITE and BOTH are relative to the remote link. New areas can be created
 by subscription administration, but peers must already be configured links.
@@ -172,10 +206,33 @@ formats are unsupported. Non-mail files received through binkp remain on disk
 and are not interpreted as packets.
 
 Rejected packets are saved as `.bad` in `Tmp`. If an existing name has different
-contents, the original source is retained. Correct the cause and move a rejected
-packet back to inbound with a `.pkt` extension to retry it. An unhandled message
+contents, the original source is retained. Correct the cause, then use the
+administrator's **Station → Packet quarantine → Release and retry** action.
+A legacy packet without receiving-session metadata requires an explicit expected
+configured source link. The original session peer of a newly quarantined packet
+cannot be substituted. Source/destination, PKT password and echo access checks
+remain active. An unhandled message
 can quarantine the remaining packet; successfully imported messages are not
 lost. SQL errors are propagated rather than reported as successful writes.
+
+Quarantine lists regular `.bad` files under `Tmp`, with bounded pages, reasons,
+retry counts and timestamps. Corrupt bundles retained in inbound are not packet
+quarantine entries. Files larger than 64 MiB or with damaged metadata require
+manual inspection. Listing/action checksums reject stale selections if the packet
+changes. **Archive packet** removes an item from active quarantine without
+importing it; both archival and retry first preserve the exact original in
+`Tmp/.quarantine/archive/<SHA256>.bad`. A failed retry retains the active file.
+Recovery archive conflicts fail without removing the active packet. There is no
+automatic retry of `.bad` files; retained inbound sources may be scanned again.
+
+Keep `Tmp/.quarantine` metadata/recovery copies together with `Tmp/toss-journal`
+in backups. Retry passes the unchanged packet bytes to the existing journal:
+messages accepted before the original failure are skipped, including after a
+restart. Do not edit a packet to fix its password; correct link configuration
+and apply the configuration. UI link/password and basic tosser changes apply live
+after successful validation; manually edited supported options require the UI's
+**Reload configuration files** action. Database echo permission changes also take
+effect immediately. Changes to plugin internals/paths still require a restart.
 
 Per-packet progress is persisted in `Tmp/toss-journal`. SQL duplicate receipts
 are committed with message insertion, scoped by echo area or netmail endpoints.

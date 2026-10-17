@@ -2,6 +2,57 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('multiple uplink editor protects saved addresses and disables edits while saving', async ({
+    page
+}) => {
+    await story(page, 'settings-maillinkseditor--adding-uplink');
+    await expect(page.getByLabel('Link address', { exact: true })).toHaveCount(2);
+    await expect(page.getByLabel('Link address', { exact: true }).first()).toHaveAttribute(
+        'readonly'
+    );
+    await expect(page.getByLabel('Link address', { exact: true }).last()).not.toHaveAttribute(
+        'readonly'
+    );
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(1);
+    await story(page, 'settings-maillinkseditor--saving');
+    await expect(page.getByLabel('Link address', { exact: true }).last()).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Add link', exact: true })).toBeDisabled();
+    await story(page, 'settings-setupstationform--multiple-uplinks');
+    await expect(page.getByLabel('Local AKAs for this link').first()).toHaveAttribute('readonly');
+    await expect(page.getByLabel('Link address', { exact: true }).first()).not.toHaveAttribute(
+        'readonly'
+    );
+});
+
+test('echo permissions explain direction, validate creation and require revocation confirmation', async ({
+    page
+}) => {
+    await story(page, 'settings-echoaccesspanel--database');
+    await expect(page.getByLabel('Echo access rights')).toHaveValue('WRITE');
+    await expect(
+        page.getByText('WRITE receives mail from the link.', { exact: false })
+    ).toBeVisible();
+    const area = page.getByLabel('Echo area', { exact: true });
+    expect(await area.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
+    await area.fill('NEW.ECHO');
+    expect(await area.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(true);
+    await page.getByLabel('Echo access rights').selectOption('BOTH');
+    await expect(page.getByLabel('Echo access rights')).toHaveValue('BOTH');
+    await page.getByLabel('Filter echo areas or links').fill('missing');
+    await expect(page.getByText('No matching echo permissions.')).toBeVisible();
+    await story(page, 'settings-echoaccesspanel--revocation');
+    await expect(page.getByRole('alert')).toContainText(
+        'Stored messages and prepared outbound packets are retained.'
+    );
+    await expect(page.getByRole('button', { name: 'Confirm revocation' })).toBeVisible();
+    await story(page, 'settings-echoaccesspanel--file-managed');
+    await expect(page.getByText('Echo permissions are read-only.', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save echo access' })).toHaveCount(0);
+    await story(page, 'settings-echoaccesspanel--empty');
+    await expect(page.getByText('Configure a station link first.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save echo access' })).toBeDisabled();
+});
+
 test('link password modes expose a separate PKT field without revealing stored secrets', async ({
     page
 }) => {
@@ -33,6 +84,26 @@ test('tosser defaults keep echo access checks enabled', async ({ page }) => {
             .getByLabel('Processing interval (seconds)')
             .evaluate((input: HTMLInputElement) => input.validity.valid)
     ).toBe(false);
+});
+
+test('echo creation requires an explicit per-link grant and keeps receiving rights in both allowed modes', async ({
+    page
+}) => {
+    await story(page, 'settings-maillinkform--existing');
+    const policy = page.getByLabel('Create new echoes from this link', { exact: true });
+    await expect(policy).toHaveValue('NONE');
+    await expect(policy.locator('option')).toHaveCount(3);
+    await expect(policy.locator('option[value="READ"]')).toHaveCount(0);
+    await policy.selectOption('WRITE');
+    await expect(policy).toHaveValue('WRITE');
+    await expect(
+        page.getByText('Requires automatic echo creation', { exact: false })
+    ).toBeVisible();
+    await story(page, 'settings-maillinkform--echo-creation');
+    await expect(policy).toHaveValue('BOTH');
+    await story(page, 'settings-tosserform--automatic-creation');
+    await expect(page.getByLabel('Create unknown echo areas automatically')).toBeChecked();
+    await expect(page.getByText('Only links explicitly allowed', { exact: false })).toBeVisible();
 });
 
 test('every catalogue story renders without browser errors', async ({ page, request }) => {
@@ -140,6 +211,33 @@ async function checkNotificationSize(page: Page, name: string, theme: string, lo
     expect(after.height).toBeCloseTo(before.height, 1);
     expect(after.width).toBeCloseTo(before.width, 1);
 }
+
+test('quarantine separates retry from archival and requires explicit peer selection for legacy packets', async ({
+    page
+}, info) => {
+    await story(page, 'settings-quarantinepanel--packets');
+    await expect(page.getByRole('button', { name: 'Release and retry' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Archive packet' })).toBeEnabled();
+    await story(page, 'settings-quarantinepanel--legacy-retry');
+    await expect(page.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
+    await expect(page.getByLabel('Expected source link')).toHaveValue('');
+    await expect(page.getByLabel('Expected source link').locator('option')).toHaveCount(2);
+    await story(page, 'settings-quarantinepanel--archive', 'dark', 'uk');
+    await expect(page.getByRole('button', { name: 'Підтвердити', exact: true })).toBeEnabled();
+    await expect(page.getByRole('combobox')).toHaveCount(0);
+    const image = await page.screenshot({
+        path: info.outputPath('quarantine-dark-uk.png'),
+        fullPage: true
+    });
+    await info.attach('quarantine-dark-uk', { body: image, contentType: 'image/png' });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await story(page, 'settings-quarantinepanel--long-filename');
+    expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+    ).toBeTruthy();
+    await story(page, 'settings-quarantinepanel--empty');
+    await expect(page.getByText('No quarantined packets.')).toBeVisible();
+});
 
 for (const theme of ['light', 'dark']) {
     for (const locale of ['en', 'uk']) {

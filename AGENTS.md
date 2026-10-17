@@ -62,6 +62,11 @@
   is supported. Do not assume global Node/npm/Thrift are installed.
 - Relevant checks: root `spotlessCheck verifyJavaFormatting`; focused `:<module>:test`;
   `:web-ui:frontendTest`, `typecheckFrontend`, `typecheckStorybook` for browser work.
+- Visible UI changes must include relevant Storybook states and VRT scenarios.
+  Generate/review affected baselines in the pinned Linux container, then run a
+  comparison without snapshot updates. Cover both themes/languages and desktop/
+  mobile. Functional browser tests do not replace VRT; report any blocked visual
+  verification explicitly. Do not refresh unrelated baselines to hide regressions.
 - JUnit Jupiter only. Use temporary files/databases and meaningful behavior,
   failure/restart and authorization tests. Formatting-only changes do not require
   application or container suites. Broaden tests when unresolved risk/failures

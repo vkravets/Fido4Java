@@ -1,11 +1,47 @@
 # Project decisions and working agreements
 
-Last reconciled: 2026-10-17. This is a decision record, not a complete chat transcript.
+Last reconciled: 2026-10-18. This is a decision record, not a complete chat transcript.
 The implementation and tests are authoritative when this document becomes stale.
 Update the relevant entry when a decision changes; record the replacement and reason.
 For current unfinished work, read [handoff](handoff.md) and [TODO](../TODO).
 
 ## Product and module boundaries
+
+Echo autocreation requires both the master switch and an exact configured sender
+in `AutoCreateEchoFrom=address,WRITE|BOTH`. Database-managed subscriptions are
+required. After packet authentication and hooks, SQL creates the absent area and
+its sole initial grant transactionally. Existing areas/grants/cursors stay intact;
+other peers gain no rights. Disabling normal echo access checks does not bypass
+the creation allowlist. Rules are live configuration, editable per link through
+admin-only settings. Every submitted link must specify its creation mode; older
+RPC clients are not supported while the protocol is under active development.
+
+Initial station setup supports multiple uplinks in one validated configuration
+publication. `NodeConfiguration.initialLinks` is a write-only field required on
+first setup. Station settings no longer carry single-link connection/password
+fields or a legacy setup fallback. Subsequent edits use the
+existing `links`/`saveLinks` API and preserve the primary link and existing peers.
+Per-link binkp and PKT passwords remain distinct; adding a peer grants no echo
+permissions or routes. Setup uses station-wide AKAs; later link settings can
+customize the AKAs for each peer.
+
+Visible UI work includes Storybook states and VRT coverage in the same change.
+Baseline updates use the pinned Linux Playwright container, require visual review
+and a subsequent comparison without updates, and cover both themes/languages and
+desktop/mobile. Functional tests do not replace VRT. If the environment prevents
+verification, report that gap explicitly instead of treating it as completed.
+
+Supported UI configuration changes are applied live after validation/staging.
+An explicit administrator RPC/UI reload rereads main-file and fragment edits;
+there is no file watcher. The coordinator serializes with mail processing,
+poll enqueue and session-template copies. New sessions use a coherent station/
+link snapshot; existing/queued sessions retain theirs. SQL link updates remain
+rollbackable through file publication; runtime publication follows SQL commit.
+File rollback is attempted if commit fails after publication. This is not a
+cross-resource crash-atomic transaction. Unknown/runtime-owned settings (listeners,
+storage, routing declarations and plugins) fail closed instead of pretending to
+apply. Existing login sessions remain valid. Basic flags do not grant echo rights.
+See [live configuration reload](web-ui.md#live-configuration-reload).
 
 JFtn is a full FTN node, mail transport, tosser and administration application.
 The maintained build is a Gradle multi-project repository; module membership is
@@ -86,6 +122,17 @@ Original received PKTs, bundles, TICs and other payloads are retained in the
 received archive without automatic cleanup. `Deletetossed` separately controls
 processed files in inbound. Disabling processed-file retention must not erase
 the archived originals or override quarantine handling.
+
+Packet quarantine is recovered explicitly through the administrator UI/RPC.
+Retry preserves exact packet bytes and existing toss journals; it does not bypass
+source/destination, PKT password or echo access validation. New quarantine captures
+bind metadata to the receiving session peer and content checksum. Legacy `.bad`
+files without this metadata require an explicit expected configured peer. Retry
+and archive first retain a verified content-addressed copy under `Tmp/.quarantine`;
+archive removes only the active entry without importing it. Recovery metadata and
+archives are operational state, like toss journals, not build caches. Oversized or
+damaged entries require manual inspection. This does not automatically retry
+quarantine files or suppress independent rescans of retained inbound sources.
 
 `*.received` files store original transport filenames. They are metadata, not
 ZIP bundles. Bundle recognition must match the complete filename; a suffix such

@@ -58,6 +58,42 @@ The header selector is available during setup and before sign-in. Its choice is
 stored locally in the browser (`jftn-language`), independently of the account's
 theme preference. Russian is not an interface language.
 
+## Multiple uplinks
+
+The first-start wizard accepts one or more uplinks in **Station and connection**.
+Use **Add link** to add another peer. Each entry has its own FTN address, host,
+port, binkp session password and PKT password mode. An empty host creates an
+incoming-only link. During setup, local AKAs follow the station address and
+aliases, including edits made on the nodelist step. The confirmation screen lists
+every peer without displaying passwords.
+
+All entries are validated before creating the initial administrator, then written
+to a single configuration candidate. Duplicate peer addresses (including equivalent
+`.0` addresses) are rejected. For binkp passwords longer than eight ASCII characters,
+select a separate PKT password or explicitly agree on unprotected packets.
+
+After setup, administrators can add more peers under **Station → Mail links →
+Add link**, edit per-link local AKAs and save all links together. Saving station
+details preserves the additional links. Existing peer addresses cannot be renamed
+or removed here because queues, subscriptions and routes require review first.
+Adding a link does not automatically grant echo access or create routing rules.
+
+To accept newly encountered echoes from selected peers, enable automatic echo
+creation in **Tosser settings** and choose `WRITE` or `BOTH` under **Create new
+echoes from this link** for each allowed sender. `NONE` is the default. This
+requires database-managed subscriptions. Only a newly created area receives this
+initial grant; existing echo rights and all other peers remain unchanged. The
+configuration applies live, including when retrying quarantined packets. See
+[mail processing](tosser.md#configuration) for file settings and migration.
+
+RPC clients must submit `NodeConfiguration.initialLinks` during first setup.
+The list is write-only and rejected after setup; use `links`/`saveLinks` for
+subsequent management. Station configuration contains only station fields;
+connection/password fields belong to `MailLinkConfiguration`. Each submitted link
+must specify `autoCreateEchoAccess` as `NONE`, `WRITE` or `BOTH`. Missing modes
+are rejected. There is no adapter for older RPC clients: regenerate the bindings
+from the current contracts. Settings responses never include stored passwords.
+
 Notifications appear at the top of the browser viewport, including while the
 page is scrolled. Information and warning notices have a close button. Error
 notices stay visible until the underlying error is cleared or the action succeeds.
@@ -90,8 +126,9 @@ Settings are written through a temporary file and atomic replacement. An externa
 edit detected before replacement prevents saving. Existing unrelated options and
 additional links are retained; the settings form edits the first configured link.
 Link and administrator passwords are never returned by the settings RPC. Leaving
-the link password empty when editing preserves it. Config changes require a node
-restart. The mail-directory field is editable only during initial setup and is
+the link password empty when editing preserves it. Supported runtime settings are
+validated and applied immediately after saving (see live reload below).
+The mail-directory field is editable only during initial setup and is
 read-only afterwards. Initial setup derives Inbound/Outbound/Tmp/EchoPath from it;
 later saves do not rewrite those paths, even if an API client changes `storage`.
 The SQL mail database location is independent. Moving existing storage requires a
@@ -264,10 +301,21 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 64 committed PNG test fixtures:
-administrator/point navigation, station settings, poll queue/details, and
-information/warning/error notifications. Each has light/dark and English/Ukrainian
+`./gradlew :web-ui:playwrightVisualTest` compares 240 committed PNG test fixtures:
+administrator/point navigation, first-run setup with multiple uplinks, station
+identity and reload controls, adding/saving uplinks, duplicate-address feedback,
+link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
+quarantine (list/legacy retry/archive/empty/long filename/unavailable), poll
+queue/details, and information/warning/error/configuration-applied notifications.
+Each has light/dark and English/Ukrainian
 variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
+
+Visible UI changes must add/update their Storybook states and VRT scenarios in
+the same change. Generate and visually review affected references in the pinned
+Linux container, then run comparison without snapshot updates. Functional browser
+tests alone do not complete visual verification. Prefer `--update-snapshots=missing`
+for added scenarios; update changed references only after reviewing intentional
+differences, without replacing unrelated baselines.
 
 Both Windows and CI run these comparisons in the same pinned Linux/amd64
 Playwright image. Docker is used on Linux; Podman is the default on Windows.
@@ -321,8 +369,7 @@ automatically enable passkeys. Existing passkey configuration is preserved.
 
 Station settings include **Keep original received files**, enabled by default.
 The main configuration stores this as `PreserveReceivedFiles=true` (or `false`).
-Settings changes require restarting the node, like the other station settings.
-The running service keeps its current configuration until restart.
+This setting is applied to subsequent operations immediately after saving.
 
 Completed binkp transfers are copied before processing can remove them. The
 standalone tosser also preserves loose PKT/bundle inputs before importing them.
@@ -367,13 +414,44 @@ not active manual overrides. Startup creates missing plugin files; see
 [plugin settings](plugin-configuration.md). Private `conf.d/*.conf` files and the default received archive
 are ignored by Git.
 
+### Echo areas and link permissions
+
+Open **Station**, then **Echo areas and link access** below the mail settings.
+This administrator-only section lists current permissions, supports search by area
+or peer, and shows known areas even after their final subscription is revoked.
+
+With `EchoSubscriptions=database` (the full package default), select a configured
+link, enter an existing or new area name and choose:
+
+- **WRITE**: receive echomail from that peer (the form's default).
+- **READ**: send echomail to that peer.
+- **BOTH**: allow both directions.
+
+Save creates a missing area and applies permissions immediately; no restart is
+needed. Edit changes rights without renaming the subscription's peer/area.
+Revocation requires confirmation and retains stored mail, delivery checkpoints
+and already prepared outbound packets. New subscriptions use NEW_ONLY history;
+changing/restoring rights preserves existing delivery positions.
+
+Configuration mode is read-only in this section, and RPC also rejects mutations
+with `READ_ONLY`. Switch `EchoSubscriptions` in `conf.d/41-areafix.conf` and restart
+deliberately if file-managed subscriptions should become database-managed.
+Granting rights does not replay `.bad`/quarantined packets. Use **Station → Packet quarantine**
+after correcting all packet errors; do not delete receipts or bypass passwords.
+This section does not change AreaFix robot credentials or disable the tosser's
+`EnforceEchoAccess` setting. Those are separate controls.
+
+Storybook includes database, file-managed, empty and revocation states. Controller
+tests cover mutations/failures, runner tests exercise SQL access over real HTTP/TCP,
+and browser tests exercise the station workflow and component states.
+
 ### Mail links and tosser
 
 Administrators can edit links and basic tosser settings under **Station settings**.
 Point accounts and the initial setup token cannot access these RPC operations.
-Changes are written atomically to `jftn.conf` and apply after a node restart;
-current connections retain their existing configuration. Restart the process
-after an external file edit before saving from the UI.
+Changes are validated, written atomically to `jftn.conf` and applied live;
+current connections retain their existing session configuration. After an
+external file edit, use **Reload configuration files** before saving from the UI.
 
 Each link has a remote address, local AKAs, optional DNS/IPv4 host (empty for incoming-only links), port and a write-only
 binkp session password. Empty password fields retain stored values; `-` removes
@@ -397,8 +475,9 @@ additional link can advertise its own local AKAs.
 The tosser form manages `TossIntervalSeconds`, `Deletetossed`, `EnforceEchoAccess`
 and `AutoCreateEcho`. Received-file archiving remains a separate station option:
 removing processed inbound files does not remove their archived originals.
-Routes, transit policies, subscriptions and plugin configuration retain their
-existing management mechanisms. If a mail setting is already overridden in
+Routes, transit policies and plugin configuration retain their existing management
+mechanisms; echo permissions have the separate live database editor above.
+If a mail setting is already overridden in
 `conf.d/*.conf`, the UI reads that effective value but refuses to save that group
 until its options are moved into `jftn.conf`; it never rewrites manual fragments.
 
@@ -406,3 +485,61 @@ Changing a PKT password does not automatically recover quarantined `.bad` files
 or delete conflicting rejected packets. Retained bundles are retried by the
 tosser; resolve any reported quarantine conflicts separately without overwriting
 previously rejected mail.
+
+## Packet quarantine
+
+Administrators can open **Station → Packet quarantine** to inspect rejected
+`.bad` packets under the tosser's temporary directory. Each page shows up to 25
+files, their recorded receiving peer, failure reason, size, modification time
+and retry history. Refresh returns to the first page; Next page advances through
+the snapshot cursor. Only packet quarantine is listed, not corrupt ZIP bundles
+still retained in inbound. Oversized files and damaged metadata need manual
+inspection; their mutation controls are disabled.
+
+After correcting the cause, choose **Release and retry** and confirm. Existing
+PKT password, destination and echo rights checks still apply. Newly quarantined
+files retain their original receiving-session peer; legacy `.bad` files require
+explicit selection of an expected configured link. Pending configuration changes
+are applied live after a successful save; database echo rights also apply
+immediately. A rejected retry stays in the list with an updated reason.
+
+**Archive packet** has separate confirmation and removes an item from the active
+list without importing it. Both actions preserve the exact original in
+`Tmp/.quarantine/archive`. Successfully imported message journal entries remain
+intact, so retrying an unchanged partial packet skips accepted messages. Changed
+files cause a stale-selection error and must be refreshed. Existing retained
+inbound files may be queued again independently; archival does not suppress them.
+All three RPC operations require an administrator on both TCP and HTTP.
+
+Storybook provides packet, legacy retry, archive confirmation and empty states.
+Core tests exercise restart recovery and archive corruption; browser tests cover
+confirmation, explicit peer selection and HTTP interaction with an isolated fixture.
+
+## Live configuration reload
+
+Station/link/tosser saves now validate and stage their runtime changes before
+publication. **Reload configuration files** explicitly rereads `jftn.conf` and
+ordered `conf.d/*.conf`; there is no automatic file watcher. Only administrators
+can reload, through `SettingsService.reload` on HTTP or TCP.
+
+Supported changes include station name/sysop/location, local AKAs, adding links,
+link endpoints and binkp/PKT passwords, received-original retention, processed-file
+removal, echo access/autocreation flags and the tosser interval. Outgoing poll jobs
+already queued keep their selected link and session configuration; future jobs
+and new incoming connections use the new snapshot. Existing connections and RPC
+login sessions are preserved. Changing autocreation does not grant echo rights.
+
+Changes to storage paths, listeners/binds/ports, HTTP/WebAuthn origins, routing
+declarations, subscription-source modes and plugin internals require a controlled
+restart. Removing links requires reviewing their queues/subscriptions first.
+Such candidates are rejected with the option name; UI saves leave the previous
+file and running configuration intact instead of saving unapplied settings.
+
+Parsing/validation failures appear as UI errors. File publication errors roll back
+the SQL link update; a transaction failure after file publication attempts to
+restore the previous file. Failed preparation cancels its staged timer and retains
+the old schedule/snapshot. Concurrent external main-file or fragment edits reject
+publication. Manually edited invalid files remain on disk for the administrator
+to correct; rejection keeps the last valid runtime snapshot active. Startup still
+requires valid on-disk configuration. This is runtime failure recovery, not a
+cross-filesystem/database crash-atomic transaction.

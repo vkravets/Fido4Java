@@ -29,6 +29,19 @@ unconfigured authentication.
 
 ## Transport and authentication
 
+`SettingsService.save`, `saveLinks` and `saveTosser` apply supported settings live
+after candidate validation. `SettingsService.reload(authorization)` explicitly
+reads the main file and ordered fragments; it requires an administrator session
+and rejects setup tokens and point accounts. It preserves the RPC identity,
+listeners and existing login sessions. See [live reload](web-ui.md#live-configuration-reload)
+for supported options and transaction/failure boundaries. A true save response
+means the supported runtime update was published, not merely written for restart.
+Unsupported listener/storage/plugin changes return `INVALID_ARGUMENT` with the
+option name before publication. Invalid syntax returns `INVALID_CONFIGURATION`;
+other I/O/SQL failures are logged with their exception and return `SETTINGS_FAILED`.
+Manually edited invalid files stay on disk, but the last valid runtime remains
+active. There is no filesystem watcher; headless clients can invoke the same RPC.
+
 The authoritative schema is `rpc/src/main/thrift/main.thrift`, including
 `ui.thrift`. Generate clients using Apache Thrift 0.25.0. The transport is
 **framed TCP**, binary protocol, multiplexed services. Connect a `login` client
@@ -248,6 +261,7 @@ export; call processMail to request an immediate processing pass.
 | --- | --- |
 | `status` | API version 2.0, RPC-service uptime, local AKAs, heap usage, active outgoing polls (manual and scheduled; excludes waiting jobs) |
 | `links` | Configured peer addresses, hosts, ports, local AKAs and echo subscriptions |
+| `echoAccess` | Effective subscription source (`database` or `config`), configured peers, known areas and exact READ/WRITE/BOTH rights; administrator-only, no credentials |
 | `subscribe`, `unsubscribe` | Managed SQL echo subscriptions; new subscriptions use NEW_ONLY |
 | `rescan` | Explicit repeat-safe rescan of 1..10000 recent messages with a stable requestId |
 | `processMail` | Run the existing inbound/scripts/export processing cycle |
@@ -423,3 +437,29 @@ following the [WebAuthn relying-party operations](https://www.w3.org/TR/webauthn
 Local algorithms are ES256 and RS256, available on Java 11. Device attestation
 trust lists are not required: this is account-bound passkey enrollment, not a
 policy that restricts particular authenticator manufacturers.
+
+## Packet quarantine operations
+
+`UiService.quarantine(session, after, limit)` lists active `.bad` files under
+`Tmp`. Use an empty cursor for the first page, `nextCursor` only while `hasMore`
+is true, and a limit of 1–200 (the browser uses 25). The response includes
+configured source peers and packet IDs, display names, SHA-256 checksums, sizes,
+modification times, recorded session peers, controlled rejection reasons and
+retry counts/times. No packet bodies, filesystem paths or passwords are returned.
+
+`retryQuarantine(session, id, checksum, peer)` processes the exact retained bytes
+using the existing toss journal. The original receiving peer cannot be changed;
+legacy files need an explicitly selected configured expected peer. `accepted=false`
+means policy/validation still rejected the packet; its controlled `detail` and
+metadata are updated. Parsing/storage exceptions return `OPERATION_FAILED` and
+leave the active packet intact; consult the server exception log.
+
+`archiveQuarantine(session, id, checksum)` preserves a verified recovery copy and
+removes only the selected active file, without processing messages. Retry also
+preserves the original before any import. IDs are opaque and cannot be paths;
+the expected content checksum prevents acting on changed files. Invalid cursors,
+stale snapshots and invalid source selection return `INVALID_ARGUMENT`.
+Uninspectable/oversized rows have an empty checksum and require manual handling.
+These operations are serialized with normal mail processing and administrator-only
+on both transports. Recovery copies/metadata and toss journals are operational
+state; do not clean them as caches.

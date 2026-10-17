@@ -17,3 +17,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Defaults: Story = {};
+export const AutomaticCreation: Story = {
+    args: { model: { ...meta.args.model, autoCreateEcho: true } }
+};

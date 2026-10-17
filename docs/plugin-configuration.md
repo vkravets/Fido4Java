@@ -11,7 +11,10 @@ all existing files byte-for-byte. The default script list enables AreaFix, FileF
 external `./scripts/mail-scripts/*.groovy` files, in that order, with
 `EchoSubscriptions=database`. Authorization and feed examples remain commented:
 configure trusted peers through the Mail robots UI (or explicit file mode), and
-configure file areas/feeds in fragments. Restart after fragment edits. An empty feed
+configure file areas/feeds in fragments. Plugin-internal changes require a restart;
+supported live station/tosser options can be reread using **Reload configuration files**
+in the administrator UI. Unsupported changes are rejected without replacing the
+running snapshot. An empty feed
 list is supported and does not create a directory catalog. Other plugin examples
 remain commented. Existing active files are never rewritten, including older
 script lists; update those manually to adopt the new defaults.
