@@ -429,6 +429,7 @@ public final class NodeConfigurationStore {
         }
         if (original.length == 0) {
             result.put("rpcenabled", "true");
+            result.put("echosubscriptions", "database");
             result.put("rpchttpenabled", "true");
             result.put("rpcauthpath", authPath.toAbsolutePath().toString());
             Path storage = Path.of(value.getStorage()).toAbsolutePath();

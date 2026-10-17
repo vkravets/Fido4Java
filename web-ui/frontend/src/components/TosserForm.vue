@@ -46,7 +46,7 @@ defineProps<{ model: TosserConfiguration }>();
                 {{ t('Create unknown echo areas automatically') }}</span
             ><small>{{
                 t(
-                    'Echo access checks still apply. Disable automatic creation unless you trust the configured peers.'
+                    'Only links explicitly allowed in Mail links can create new echoes. Choose WRITE or BOTH for each trusted sender; existing echo permissions stay unchanged.'
                 )
             }}</small></label
         >

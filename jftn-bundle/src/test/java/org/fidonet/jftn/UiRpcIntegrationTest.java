@@ -222,6 +222,26 @@ class UiRpcIntegrationTest {
     }
 
     @Test
+    void appliedEchoCreationRulesLiveAndRejectedInvalidModesWithoutChangingTheFile()
+            throws Exception {
+        SettingsService.Client settings = new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                              "settings"));
+        var links = settings.links(token);
+        links.get(0).setAutoCreateEchoAccess("WRITE");
+        assertTrue(settings.saveLinks(token, links));
+        assertEquals(List.of("1:500/101.0,WRITE"), config.getValuesAsList("AutoCreateEchoFrom"));
+        assertEquals("WRITE", settings.links(token).get(0).getAutoCreateEchoAccess());
+        byte[] accepted = Files.readAllBytes(root.resolve("jftn.conf"));
+        links.get(0).setAutoCreateEchoAccess("READ");
+        assertThrows(UiError.class, () -> settings.saveLinks(token, links));
+        assertArrayEquals(accepted, Files.readAllBytes(root.resolve("jftn.conf")));
+        links.get(0).setAutoCreateEchoAccess("NONE");
+        assertTrue(settings.saveLinks(token, links));
+        assertTrue(config.getValuesAsList("AutoCreateEchoFrom") == null
+                || config.getValuesAsList("AutoCreateEchoFrom").isEmpty());
+    }
+
+    @Test
     void addedTwoUplinksThroughRpcWithoutRestartOrChangingExistingSessionSnapshots()
             throws Exception {
         SettingsService.Client settings = new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),

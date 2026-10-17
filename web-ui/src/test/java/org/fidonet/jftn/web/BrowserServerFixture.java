@@ -40,7 +40,8 @@ final class BrowserServerFixture implements AutoCloseable {
                                       + "Inbound=" + directory.resolve("inbound") + "\n"
                                       + "Outbound=" + directory.resolve("outbound") + "\n"
                                       + "EchoPath=" + directory.resolve("echo") + "\n" + "Tmp="
-                                      + directory.resolve("tmp") + "\n");
+                                      + directory.resolve("tmp")
+                                      + "\nEchoSubscriptions=database\n");
         }
         UiSessions sessions = new UiSessions(accounts, 3600);
         authentication = new AccountAuthentication(accounts, sessions, "", Set.of());

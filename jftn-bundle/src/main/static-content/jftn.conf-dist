@@ -39,6 +39,13 @@ SysOp=Your Name
 
 deletetossed=1
 
+# Unknown echoes are rejected unless both the master switch and a sender rule allow creation.
+# Requires EchoSubscriptions=database (the default AreaFix plugin configuration).
+AutoCreateEcho=false
+EnforceEchoAccess=true
+# AutoCreateEchoFrom=1:500/101,WRITE
+# WRITE receives from this link; BOTH also permits sending back. Existing rights stay unchanged.
+
 Outbound = ./mail/outbound/
 
 # Plugin internals and mail robots are configured in conf.d/*.conf.

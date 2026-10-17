@@ -35,6 +35,7 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
                                                    "deletetossed",
                                                    "enforceechoaccess",
                                                    "autocreateecho",
+                                                   "autocreateechofrom",
                                                    "tossintervalseconds");
     private final JFtnConfig active;
     private final DatabaseManager database;

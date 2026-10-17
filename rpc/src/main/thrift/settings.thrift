@@ -11,7 +11,9 @@ struct MailLinkConfiguration {
     5: required string sessionPassword,
     6: required string packetPassword,
     // INHERIT, SEPARATE or UNPROTECTED
-    7: required string packetPasswordMode
+    7: required string packetPasswordMode,
+    // NONE (default), WRITE or BOTH for newly received areas only.
+    8: optional string autoCreateEchoAccess
 }
 
 struct NodeConfiguration {

@@ -28,6 +28,7 @@
 
 package org.fidonet.jftn.tosser;
 
+import org.fidonet.config.EchoAutoCreatePolicy;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
@@ -70,6 +71,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -85,6 +87,7 @@ public class Tosser extends HasEventBus {
     private final IBase base;
     private volatile NetmailRouter netmailRouter;
     private volatile EchoRouter echoRouter;
+    private volatile Map<String, String> echoCreationRules;
     private final PacketQuarantine quarantine;
     private String packetRejection = "Packet import was rejected; inspect the node log.";
     private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
@@ -107,6 +110,7 @@ public class Tosser extends HasEventBus {
                                                        : null);
         this.areamgr = new EchoMgr(base);
         this.echoRouter = new EchoRouter(config, base);
+        this.echoCreationRules = EchoAutoCreatePolicy.read(config);
         this.quarantine = new PacketQuarantine(Path.of(config.getTmpDir()));
         if (EchoRouter.databaseSubscriptions(config) && !(base instanceof EchoRoutingStore)) {
             throw new IllegalArgumentException("Database echo subscriptions require an EchoRoutingStore");
@@ -252,9 +256,11 @@ public class Tosser extends HasEventBus {
                                                               ? (NetmailRoutingStore) netmailStore
                                                               : null);
         EchoRouter nextEcho = new EchoRouter(candidate, base);
+        Map<String, String> nextCreation = EchoAutoCreatePolicy.read(candidate);
         return () -> {
             netmailRouter = nextNetmail;
             echoRouter = nextEcho;
+            echoCreationRules = nextCreation;
         };
     }
 
@@ -532,20 +538,50 @@ public class Tosser extends HasEventBus {
         if (!message.isValid()) {
             return rejectPacket("Echomail rejected by a processing hook.");
         }
+        rejection = echoImportFailure(message, link);
+        if (rejection != null) {
+            return rejectPacket(rejection);
+        }
+        createReceivedEcho(message, link);
+        if (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
+                && !base.canWriteEcho(link, message.getArea())) {
+            return rejectPacket("WRITE access denied for echo area: " + message.getArea());
+        }
         processEchoMail(message);
         return true;
     }
 
     private String echoImportFailure(Message message, Link link) {
-        if (!areamgr.isEchoExists(message.getArea().toLowerCase(Locale.ROOT))
-                && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false"))) {
-            return "Unknown echo area: " + message.getArea();
+        String area = message.getArea().toLowerCase(Locale.ROOT);
+        if (!areamgr.isEchoExists(area)) {
+            String access = echoCreationRules.get(link.getAddr().toString());
+            if (!Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false"))) {
+                return "Unknown echo area: " + message.getArea();
+            }
+            if (access == null || !(base instanceof EchoRoutingStore)) {
+                return "Echo creation is not permitted for link: " + link.getAddr();
+            }
+            return null;
         }
         if (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
                 && !base.canWriteEcho(link, message.getArea())) {
             return "WRITE access denied for echo area: " + message.getArea();
         }
         return null;
+    }
+
+    private void createReceivedEcho(Message message, Link link) {
+        String area = message.getArea().toLowerCase(Locale.ROOT);
+        if (base.isAreaExists(area)) {
+            return;
+        }
+        String access = echoCreationRules.get(link.getAddr().toString());
+        if (((EchoRoutingStore) base).createEchoFromLink(link, area, AccessLevel.valueOf(access))) {
+            logger.info("Created echo area {} from {} with {} access",
+                        area,
+                        link.getAddr(),
+                        access);
+        }
     }
 
     private boolean importNetmailMessage(Message message, Link link, String deliveryKey)

@@ -1,5 +1,6 @@
 package org.fidonet.jftn.web;
 
+import org.fidonet.config.EchoAutoCreatePolicy;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.TosserConfiguration;
@@ -27,6 +28,7 @@ final class MailConfigurationStore {
     List<MailLinkConfiguration> links() throws Exception {
         JFtnConfig config = store.configuration();
         Map<String, String> packets = packetPasswords(config);
+        Map<String, String> creation = EchoAutoCreatePolicy.read(config);
         List<MailLinkConfiguration> result = new ArrayList<>();
         for (String entry : config.getValuesAsList("Link")) {
             Link link = new Link(entry);
@@ -45,6 +47,7 @@ final class MailConfigurationStore {
                                                                    "",
                                                                    "",
                                                                    packetMode(packet));
+            item.setAutoCreateEchoAccess(creation.getOrDefault(link.getAddr().toString(), "NONE"));
             result.add(item);
         }
         return result;
@@ -77,6 +80,8 @@ final class MailConfigurationStore {
         }
         Map<String, List<String>> changes = new LinkedHashMap<>();
         changes.put("link", links);
+        changes.put("autocreateechofrom",
+                    creationOptions(values, EchoAutoCreatePolicy.read(config)));
         changes.put("packetpassword",
                     packets.entrySet()
                            .stream()
@@ -95,12 +100,37 @@ final class MailConfigurationStore {
         }
         Map<String, List<String>> result = new LinkedHashMap<>();
         result.put("link", links);
+        result.put("autocreateechofrom", creationOptions(values, Map.of()));
         result.put("packetpassword",
                    packets.entrySet()
                           .stream()
                           .map(entry -> entry.getKey() + "," + entry.getValue())
                           .collect(Collectors.toList()));
         return result;
+    }
+
+    private static List<String> creationOptions(List<MailLinkConfiguration> values,
+                                                Map<String, String> previous) {
+        Map<String, String> rules = new LinkedHashMap<>(previous);
+        for (MailLinkConfiguration value : values) {
+            String address = AccountDirectory.address(value.getAddress(), false);
+            if (!value.isSetAutoCreateEchoAccess()) {
+                continue;
+            }
+            String access = value.getAutoCreateEchoAccess();
+            if (!List.of("NONE", "WRITE", "BOTH").contains(access)) {
+                throw new IllegalArgumentException("Echo creation access must be NONE, WRITE or BOTH");
+            }
+            if (access.equals("NONE")) {
+                rules.remove(address);
+            } else {
+                rules.put(address, access);
+            }
+        }
+        return rules.entrySet()
+                    .stream()
+                    .map(entry -> entry.getKey() + "," + entry.getValue())
+                    .collect(Collectors.toList());
     }
 
     private static void validateCount(List<MailLinkConfiguration> values) {

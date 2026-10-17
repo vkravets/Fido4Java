@@ -104,6 +104,22 @@ const addresses = computed({
                 )
             }}
         </p>
-
+        <label class="wide">
+            {{ t('Create new echoes from this link') }}
+            <select
+                :value="model.autoCreateEchoAccess || 'NONE'"
+                :aria-label="t('Create new echoes from this link')"
+                @change="model.autoCreateEchoAccess = ($event.target as HTMLSelectElement).value"
+            >
+                <option value="NONE">{{ t('Not permitted') }}</option>
+                <option value="WRITE">{{ t('WRITE — receive from this link') }}</option>
+                <option value="BOTH">{{ t('BOTH — receive and send') }}</option>
+            </select>
+            <small>{{
+                t(
+                    'Requires automatic echo creation and database subscriptions. Only new echoes receive these rights; existing permissions and other links stay unchanged.'
+                )
+            }}</small>
+        </label>
     </div>
 </template>

@@ -77,12 +77,16 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByRole('heading', { name: 'Mail links', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Tosser settings', exact: true })).toBeVisible();
     await page.getByLabel('PKT password mode').selectOption('SEPARATE');
+    await page
+        .getByLabel('Create new echoes from this link', { exact: true })
+        .selectOption('WRITE');
     await page.getByLabel('Separate PKT password').fill('pktpass');
     await page.getByRole('button', { name: 'Save links', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Configuration applied.');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await page.getByLabel('Processing interval (seconds)').fill('25');
+    await page.getByLabel('Create unknown echo areas automatically').check();
     await page.getByRole('button', { name: 'Save tosser settings', exact: true }).click();
     await expect(
         page.getByRole('button', { name: 'Save tosser settings', exact: true })
@@ -93,6 +97,10 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
+    await expect(page.getByLabel('Create new echoes from this link', { exact: true })).toHaveValue(
+        'WRITE'
+    );
+    await expect(page.getByLabel('Create unknown echo areas automatically')).toBeChecked();
     await page.getByRole('button', { name: 'Reload configuration files' }).click();
     await expect(page.getByRole('status')).toContainText('Configuration applied.');
     await expect(page.getByRole('alert')).toHaveCount(0);

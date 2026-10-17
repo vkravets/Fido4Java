@@ -11,8 +11,10 @@ import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
+import org.fidonet.events.HasEventBus;
 import org.fidonet.types.FTNAddr;
 
+import net.engio.mbassy.listener.Handler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,12 +29,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-class QuarantineRecoveryTest {
+class QuarantineRecoveryTest extends HasEventBus {
     @TempDir
     Path root;
     private JFtnConfig config;
     private DatabaseManager base;
     private Tosser tosser;
+    private String initialConfiguration;
     private final FTNAddr peer = new FTNAddr("1:500/101");
     private final FTNAddr local = new FTNAddr("1:500/100");
 
@@ -53,6 +56,7 @@ class QuarantineRecoveryTest {
                       + "Link=1:500/101,1:500/100,secret,localhost\n"
                       + "Link=1:500/103,1:500/100,secret,localhost\n";
         config = new JFtnConfig();
+        initialConfiguration = text;
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         base = new DatabaseManager(new OrmManager("jdbc:h2:mem:quarantine" + System.nanoTime()));
         assertTrue(base.open());
@@ -101,6 +105,92 @@ class QuarantineRecoveryTest {
         Files.write(root.resolve("in/message.pkt"), bytes);
         tosser.runFast(root.resolve("in").toString(), peer);
         return tosser.quarantine("", 50).items.get(0);
+    }
+
+    @Test
+    void rejectedHooksLeaveNoAreaAndRetryCanCreateItAfterTheHookIsRemoved() throws Exception {
+        creationPolicy("AutoCreateEcho=true\nAutoCreateEchoFrom=1:500/101,WRITE\n");
+        RejectEcho hook = new RejectEcho();
+        PacketQuarantine.Item rejected;
+        getEventBus().subscribe(hook);
+        try {
+            rejected = reject(newEcho("hook-rejection"));
+            assertTrue(rejected.reason.contains("processing hook"));
+            assertFalse(base.isAreaExists("new.echo"));
+        } finally {
+            getEventBus().unsubscribe(hook);
+        }
+        assertTrue(tosser.retryQuarantine(rejected.id, rejected.checksum, peer).accepted);
+        assertEquals(1, base.getMessageSize("new.echo"));
+    }
+
+    public static final class RejectEcho {
+        @Handler
+        public void reject(TossEchoMailEvent event) {
+            event.getMessage().setValid(false);
+        }
+    }
+
+    private void creationPolicy(String options) throws Exception {
+        config = new JFtnConfig();
+        config.load(new ByteArrayInputStream((initialConfiguration
+                                              + options).getBytes(StandardCharsets.UTF_8)));
+        tosser = new Tosser(config, base);
+    }
+
+    private byte[] newEcho(String id) throws IOException {
+        return packet("secret", "AREA:NEW.ECHO\r\1MSGID: 1:500/101 " + id + "\rEcho\r");
+    }
+
+    private void rejectSeparatePacket(byte[] bytes) throws Exception {
+        int previous = tosser.quarantine("", 50).items.size();
+        Path input = Files.createTempFile(root.resolve("in"), "policy-", ".pkt");
+        Files.write(input, bytes);
+        tosser.runFast(root.resolve("in").toString(), peer);
+        assertFalse(Files.exists(input));
+        assertEquals(previous + 1, tosser.quarantine("", 50).items.size());
+    }
+
+    @Test
+    void createdNewAreaForAllowedSenderOnlyAndPreservedPermissionsAfterPolicyChanges()
+            throws Exception {
+        creationPolicy("AutoCreateEcho=true\nAutoCreateEchoFrom=1:500/101,WRITE\n");
+        Files.write(root.resolve("in/first.pkt"), newEcho("first"));
+        tosser.runFast(root.resolve("in").toString(), peer);
+        assertEquals(1, base.getMessageSize("new.echo"));
+        assertTrue(base.canWriteEcho(config.getLink(peer), "new.echo"));
+        assertFalse(base.canReadEcho(config.getLink(peer), "new.echo"));
+        assertFalse(base.canReadEcho(config.getLink(new FTNAddr("1:500/103")), "new.echo"));
+        assertFalse(base.canWriteEcho(config.getLink(new FTNAddr("1:500/103")), "new.echo"));
+        base.configureEchoSubscription(config.getLink(peer),
+                                       "new.echo",
+                                       AccessLevel.READ,
+                                       EchoHistory.ALL);
+        creationPolicy("AutoCreateEcho=true\nAutoCreateEchoFrom=1:500/101,BOTH\n");
+        PacketQuarantine.Item rejected = reject(newEcho("second"));
+        assertTrue(rejected.reason.contains("WRITE access denied"));
+        assertFalse(base.canWriteEcho(config.getLink(peer), "new.echo"));
+        assertEquals(1, base.getMessageSize("new.echo"));
+    }
+
+    @Test
+    void requiredMasterSwitchExplicitSenderAndValidPacketPasswordBeforeCreatingAreas()
+            throws Exception {
+        for (String options : new String[]{"AutoCreateEcho=true\n",
+                "AutoCreateEcho=true\nEnforceEchoAccess=false\nAutoCreateEchoFrom=1:500/103,BOTH\n",
+                "AutoCreateEcho=false\nAutoCreateEchoFrom=1:500/101,BOTH\n"}) {
+            creationPolicy(options);
+            rejectSeparatePacket(newEcho("denied-" + options.hashCode()));
+            assertFalse(base.isAreaExists("new.echo"));
+        }
+        creationPolicy("AutoCreateEcho=true\nAutoCreateEchoFrom=1:500/101,BOTH\n");
+        rejectSeparatePacket(packet("wrong",
+                                    "AREA:NEW.ECHO\r\1MSGID: 1:500/101 wrong-password\rEcho\r"));
+        assertFalse(base.isAreaExists("new.echo"));
+        Files.write(root.resolve("in/allowed.pkt"), newEcho("both"));
+        tosser.runFast(root.resolve("in").toString(), peer);
+        assertTrue(base.canWriteEcho(config.getLink(peer), "new.echo"));
+        assertTrue(base.canReadEcho(config.getLink(peer), "new.echo"));
     }
 
     @Test

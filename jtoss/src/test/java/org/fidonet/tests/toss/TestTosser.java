@@ -36,6 +36,7 @@ import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.echobase.EchoMgr;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.tools.CharsetTools;
+import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import com.j256.ormlite.dao.Dao;
@@ -110,6 +111,9 @@ public class TestTosser {
         }
 
         try {
+            for (Link link : config.getConfiguredLinks()) {
+                databaseManager.configureLink(link, config.getPacketPassword(link));
+            }
             Tosser tosser = new Tosser(config, databaseManager);
             tosser.runFast(config.getValue("Inbound"));
             EchoMgr echoMgr = tosser.getAreamgr();

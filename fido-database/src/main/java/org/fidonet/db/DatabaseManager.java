@@ -93,6 +93,44 @@ public class DatabaseManager
             EchoRoutingStore {
 
     @Override
+    public synchronized boolean createEchoFromLink(Link link, String area, AccessLevel access) {
+        if (area == null || area.isBlank()
+                || (access != AccessLevel.WRITE && access != AccessLevel.BOTH)) {
+            throw new IllegalArgumentException("Echo creation requires an area and WRITE or BOTH access");
+        }
+        String name = area.toLowerCase(Locale.ROOT);
+        try {
+            return dbManager.inTransaction(() -> {
+                if (areas.findByName(name) != null) {
+                    return false;
+                }
+                ConfigurationLink configured = subscriptions.findLink(link);
+                if (configured == null) {
+                    throw new IllegalArgumentException("Configure the echo link before creating areas");
+                }
+                if (!areas.createArea(name, null)) {
+                    throw new IllegalStateException("Unable to create echo area");
+                }
+                Subscription subscription = new Subscription();
+                subscription.setConfigurationLink(configured);
+                subscription.setEchoarea(areas.findByName(name));
+                subscription.setLastMessage(0L);
+                subscription.setAccessLevel(access);
+                dbManager.getDao(Subscription.class).create(subscription);
+                if (access == AccessLevel.BOTH) {
+                    new EchoRepository(dbManager).initializeConsumer(name,
+                                                                     "outbound:" + link.getAddr(),
+                                                                     true);
+                }
+                return true;
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to create echo area and grant access atomically",
+                                            e);
+        }
+    }
+
+    @Override
     public synchronized void configureEchoSubscription(Link link,
                                                        String area,
                                                        AccessLevel access,

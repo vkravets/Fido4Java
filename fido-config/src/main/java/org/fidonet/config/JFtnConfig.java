@@ -69,6 +69,7 @@ public class JFtnConfig extends BaseConfig {
         result.sourcePath = source.toAbsolutePath().normalize();
         ConfigurationFragments.loadInto(result, result.sourcePath);
         result.links = result.getLinks(result.getValuesAsList("Link"));
+        EchoAutoCreatePolicy.read(result);
         return result;
     }
 

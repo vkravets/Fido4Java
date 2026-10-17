@@ -1,4 +1,11 @@
 export const ukrainian = {
+    'Create new echoes from this link': 'Створювати нові ехи від цього лінка',
+    'Not permitted': 'Не дозволено',
+    'WRITE — receive from this link': 'WRITE — приймати від цього лінка',
+    'Requires automatic echo creation and database subscriptions. Only new echoes receive these rights; existing permissions and other links stay unchanged.':
+        'Потрібні автоматичне створення ех та підписки в базі даних. Ці права отримують лише нові ехи; наявні права та інші лінки не змінюються.',
+    'Only links explicitly allowed in Mail links can create new echoes. Choose WRITE or BOTH for each trusted sender; existing echo permissions stay unchanged.':
+        'Нові ехи можуть створювати лише лінки з явним дозволом у розділі поштових лінків. Виберіть WRITE або BOTH для довірених відправників; права наявних ех не змінюються.',
     Uplinks: 'Аплінки',
     'Incoming only': 'Лише вхідні з’єднання',
     'Add one or more uplinks. Each link has its own connection and packet passwords. Local AKAs follow the station addresses during setup.':

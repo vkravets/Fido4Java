@@ -1,5 +1,6 @@
 package org.fidonet.jftn.web;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,6 +19,28 @@ import java.nio.file.Path;
 import java.util.List;
 
 class MailConfigurationStoreTest {
+    @Test
+    void savedExplicitCreationRulesAndPreservedThemForLegacyClients() throws Exception {
+        station();
+        Files.writeString(path(), Files.readString(path()) + "EchoSubscriptions=database\n");
+        MailConfigurationStore store = new MailConfigurationStore(new NodeConfigurationStore(path()));
+        List<MailLinkConfiguration> links = store.links();
+        assertEquals("NONE", links.get(0).getAutoCreateEchoAccess());
+        links.get(0).setAutoCreateEchoAccess("WRITE");
+        links.get(1).setAutoCreateEchoAccess("BOTH");
+        store.saveLinks(links);
+        assertEquals("WRITE", store.links().get(0).getAutoCreateEchoAccess());
+        links.get(0).unsetAutoCreateEchoAccess();
+        links.get(1).setAutoCreateEchoAccess("NONE");
+        store.saveLinks(links);
+        assertEquals("WRITE", store.links().get(0).getAutoCreateEchoAccess());
+        assertEquals("NONE", store.links().get(1).getAutoCreateEchoAccess());
+        byte[] accepted = Files.readAllBytes(path());
+        links.get(0).setAutoCreateEchoAccess("READ");
+        assertThrows(IllegalArgumentException.class, () -> store.saveLinks(links));
+        assertArrayEquals(accepted, Files.readAllBytes(path()));
+    }
+
     @TempDir
     Path directory;
 
