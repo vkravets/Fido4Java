@@ -122,11 +122,10 @@ public final class NodeConfigurationStore {
     }
 
     public void validate(NodeConfiguration value) {
-        if (value == null || !value.isSetPort() || value.getPort() < 1 || value.getPort() > 65535) {
-            throw new IllegalArgumentException("Port must be in 1..65535");
+        if (value == null) {
+            throw new IllegalArgumentException("Station configuration is required");
         }
         AccountDirectory.address(value.getAddress(), false);
-        AccountDirectory.address(value.getUplink(), false);
         if (value.getAliases() == null || value.getAliases().size() > 16) {
             throw new IllegalArgumentException("At most 16 station aliases are allowed");
         }
@@ -138,19 +137,12 @@ public final class NodeConfigurationStore {
         text(value.getNodeListUrl());
         text(value.getCharset());
         text(value.getBrowserOrigin());
-        text(value.getLinkPassword());
-        text(value.getHost());
         if (value.getSysop().isBlank() || value.getSystem().isBlank()
-                || value.getStorage().isBlank() || !value.getHost().matches("[A-Za-z0-9.-]{1,253}")
-                || value.getLinkPassword().contains(",")) {
-            throw new IllegalArgumentException("System, sysop, storage and DNS/IPv4 uplink are required");
+                || value.getStorage().isBlank()) {
+            throw new IllegalArgumentException("System, sysop and storage are required");
         }
         Charset.forName(value.getCharset());
-        if (original.length == 0
-                && (!StandardCharsets.US_ASCII.newEncoder().canEncode(value.getLinkPassword())
-                        || value.getLinkPassword().length() > 8)) {
-            throw new IllegalArgumentException("Initial link password also protects PKT: use at most 8 ASCII characters");
-        }
+        validateLinks(value);
         URI origin = URI.create(value.getBrowserOrigin());
         if (origin.getHost() == null || origin.getUserInfo() != null || origin.getQuery() != null
                 || origin.getFragment() != null || !origin.getPath().isEmpty()
@@ -163,6 +155,42 @@ public final class NodeConfigurationStore {
                     || url.getUserInfo() != null || url.getFragment() != null) {
                 throw new IllegalArgumentException("Invalid HTTP nodelist URL");
             }
+        }
+    }
+
+    private void validateLinks(NodeConfiguration value) {
+        if (value.isSetInitialLinks()) {
+            if (original.length > 0) {
+                throw new IllegalArgumentException("Initial links are only accepted during first setup; use mail link settings afterwards");
+            }
+            MailConfigurationStore.initialOptions(value.getInitialLinks());
+            List<String> local = new ArrayList<>();
+            local.add(AccountDirectory.address(value.getAddress(), false));
+            value.getAliases()
+                 .forEach(address -> local.add(AccountDirectory.address(address, false)));
+            List<String> primary = value.getInitialLinks()
+                                        .get(0)
+                                        .getLocalAddresses()
+                                        .stream()
+                                        .map(address -> AccountDirectory.address(address, false))
+                                        .collect(Collectors.toList());
+            if (!primary.equals(local)) {
+                throw new IllegalArgumentException("The primary link must use the station's default AKA followed by its aliases");
+            }
+            return;
+        }
+        AccountDirectory.address(value.getUplink(), false);
+        text(value.getLinkPassword());
+        text(value.getHost());
+        if (!value.isSetPort() || value.getPort() < 1 || value.getPort() > 65535
+                || !value.getHost().matches("[A-Za-z0-9.-]{1,253}")
+                || value.getLinkPassword().contains(",")) {
+            throw new IllegalArgumentException("Use a DNS/IPv4 uplink and a port in 1..65535");
+        }
+        if (original.length == 0
+                && (!StandardCharsets.US_ASCII.newEncoder().canEncode(value.getLinkPassword())
+                        || value.getLinkPassword().length() > 8)) {
+            throw new IllegalArgumentException("Initial link password also protects PKT: use at most 8 ASCII characters");
         }
     }
 
@@ -197,6 +225,12 @@ public final class NodeConfigurationStore {
             }
         }
         values.forEach((key, entry) -> lines.add(key + "=" + entry));
+        if (value.isSetInitialLinks()) {
+            Map<String, List<String>> options = MailConfigurationStore.initialOptions(value.getInitialLinks());
+            lines.removeIf(line -> line.startsWith("link="));
+            options.forEach((key,
+                             entries) -> entries.forEach(entry -> lines.add(key + "=" + entry)));
+        }
         byte[] next = (String.join("\n", lines) + "\n").getBytes(StandardCharsets.UTF_8);
         write(next);
     }

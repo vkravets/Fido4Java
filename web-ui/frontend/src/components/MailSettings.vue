@@ -8,11 +8,11 @@ import type {
     NodeConfiguration
 } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
-import MailLinkForm from './MailLinkForm.vue';
+import MailLinksEditor from './MailLinksEditor.vue';
 import TosserForm from './TosserForm.vue';
 
 const props = defineProps<{ state: AppState; localAddresses: string[] }>();
-const emit = defineEmits<{ saved: [configuration?: NodeConfiguration] }>();
+const emit = defineEmits<{ saved: [configuration?: NodeConfiguration]; saving: [] }>();
 const links = ref<MailLinkConfiguration[]>([]);
 const tosser = ref<TosserConfiguration>();
 const existingCount = ref(0);
@@ -41,6 +41,7 @@ function addLink() {
 }
 function saveLinks() {
     props.state.run(async () => {
+        emit('saving');
         await api.settings.saveLinks(
             props.state.session.value,
             links.value.map((value) => new bindings.MailLinkConfiguration(value))
@@ -52,6 +53,7 @@ function saveLinks() {
 }
 function saveTosser() {
     props.state.run(async () => {
+        emit('saving');
         if (!tosser.value) return;
         await api.settings.saveTosser(
             props.state.session.value,
@@ -81,34 +83,14 @@ function saveTosser() {
                 }}
             </p>
             <form @submit.prevent="saveLinks">
-                <fieldset
-                    v-for="(link, index) in links"
-                    :key="index"
-                    class="mail-link-settings"
-                >
-                    <legend>{{ link.address || t('New link') }}</legend>
-                    <MailLinkForm
-                        :model="link"
-                        :existing="index < existingCount"
-                    />
-                    <button
-                        v-if="index >= existingCount"
-                        type="button"
-                        class="secondary"
-                        @click="links.splice(index, 1)"
-                    >
-                        {{ t('Cancel') }}
-                    </button>
-                </fieldset>
+                <MailLinksEditor
+                    :links="links"
+                    :existing-count="existingCount"
+                    :busy="state.busy.value"
+                    @add="addLink"
+                    @remove="links.splice($event, 1)"
+                />
                 <footer class="actions">
-                    <button
-                        type="button"
-                        class="secondary"
-                        :disabled="state.busy.value"
-                        @click="addLink"
-                    >
-                        {{ t('Add link') }}
-                    </button>
                     <button
                         class="primary"
                         :disabled="state.busy.value"
@@ -137,17 +119,3 @@ function saveTosser() {
         </section>
     </template>
 </template>
-
-<style scoped>
-.mail-link-settings {
-    min-width: 0;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 24px 0;
-}
-.mail-link-settings legend {
-    padding: 0 8px;
-    color: var(--text);
-}
-</style>

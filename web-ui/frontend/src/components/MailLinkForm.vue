@@ -3,7 +3,11 @@ import { computed } from 'vue';
 import { t } from '../i18n.ts';
 import type { MailLinkConfiguration } from '@rpc/bindings.mjs';
 
-const props = defineProps<{ model: MailLinkConfiguration; existing: boolean }>();
+const props = defineProps<{
+    model: MailLinkConfiguration;
+    existing: boolean;
+    stationAkas?: boolean;
+}>();
 const addresses = computed({
     get: () => props.model.localAddresses.join(' '),
     set: (value: string) => {
@@ -26,6 +30,7 @@ const addresses = computed({
             >{{ t('Local AKAs for this link')
             }}<input
                 v-model="addresses"
+                :readonly="stationAkas"
                 required
                 placeholder="1:500/100 1:500/100.1"
         /></label>
@@ -33,6 +38,7 @@ const addresses = computed({
             >{{ t('binkp server')
             }}<input
                 v-model="model.host"
+                :aria-label="t('binkp server')"
                 placeholder="binkp.example.org"
             /><small>{{ t('Leave empty for incoming-only links.') }}</small></label
         >
@@ -49,9 +55,14 @@ const addresses = computed({
             >{{ t('binkp session password')
             }}<input
                 v-model="model.sessionPassword"
+                :aria-label="t('binkp session password')"
                 type="password"
                 autocomplete="new-password"
-                :placeholder="t('Leave empty to keep the current password')"
+                :placeholder="
+                    existing
+                        ? t('Leave empty to keep the current password')
+                        : t('Or − for an unprotected link')
+                "
             /><small>{{ t('Use - for an unprotected binkp session.') }}</small></label
         >
         <label
@@ -75,7 +86,8 @@ const addresses = computed({
                 type="password"
                 autocomplete="new-password"
                 maxlength="8"
-                :placeholder="t('Leave empty to keep the current password')"
+                :required="!existing"
+                :placeholder="existing ? t('Leave empty to keep the current password') : ''"
             /><small>{{
                 t(
                     'At most 8 ASCII characters. Must match the packet password configured by your peer.'
@@ -92,5 +104,6 @@ const addresses = computed({
                 )
             }}
         </p>
+
     </div>
 </template>

@@ -36,6 +36,84 @@ import java.util.stream.Collectors;
 
 class SettingsHandlerTest {
     @Test
+    void validatedEveryInitialUplinkBeforeCreatingAdminAndPublishedThemTogether() throws Exception {
+        Path config = directory.resolve("jftn.conf");
+        Path auth = directory.resolve("accounts");
+        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        AtomicBoolean completed = new AtomicBoolean();
+        try (RpcAccounts accounts = new RpcAccounts(auth)) {
+            SettingsHandler handler = new SettingsHandler(store,
+                                                          accounts,
+                                                          new UiSessions(accounts, 3600),
+                                                          auth,
+                                                          "setup",
+                                                          () -> completed.set(true));
+            MailLinkConfiguration first = initialLink("1:500/101", "first.example.org");
+            MailLinkConfiguration second = initialLink("1:500/102",
+                                                       "second.example.org").setSessionPassword("long-session-password")
+                                                                            .setPacketPasswordMode("SEPARATE")
+                                                                            .setPacketPassword("pktpass");
+            NodeConfiguration value = valid().setInitialLinks(List.of(first, second));
+            second.setPacketPassword("too-long-packet-password");
+            assertThrows(UiError.class, () -> handler.save("setup", value));
+            assertFalse(accounts.hasUsers());
+            assertFalse(Files.exists(config));
+            assertFalse(completed.get());
+            second.setPacketPassword("pktpass");
+            second.setAddress("1:500/101.0");
+            assertThrows(UiError.class, () -> handler.save("setup", value));
+            assertFalse(accounts.hasUsers());
+            second.setAddress("1:500/102");
+            assertTrue(handler.save("setup", value));
+            assertTrue(completed.get());
+            JFtnConfig parsed = store.configuration();
+            assertEquals(2, parsed.getConfiguredLinks().size());
+            assertEquals("pktpass",
+                         parsed.getPacketPassword(parsed.getConfiguredLinks()
+                                                        .stream()
+                                                        .filter(link -> link.getAddr()
+                                                                            .toString()
+                                                                            .equals("1:500/102.0"))
+                                                        .findFirst()
+                                                        .orElseThrow()));
+            List<MailLinkConfiguration> links = new MailConfigurationStore(store).links();
+            assertEquals(List.of("1:500/101.0", "1:500/102.0"),
+                         links.stream()
+                              .map(MailLinkConfiguration::getAddress)
+                              .collect(Collectors.toList()));
+            assertTrue(links.stream()
+                            .allMatch(link -> link.getSessionPassword().isEmpty()
+                                    && link.getPacketPassword().isEmpty()));
+            assertFalse(store.current().isSetInitialLinks());
+            assertThrows(IllegalArgumentException.class, () -> store.save(value, auth));
+            store.save(store.current().setSystem("Updated station"), auth);
+            assertEquals(2, new MailConfigurationStore(store).links().size());
+        }
+    }
+
+    @Test
+    void rejectedMissingInitialLinksAndMismatchedStationAkas() throws Exception {
+        NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
+        assertThrows(IllegalArgumentException.class,
+                     () -> store.validate(valid().setInitialLinks(List.of())));
+        MailLinkConfiguration first = initialLink("1:500/101", "first.example.org");
+        first.setLocalAddresses(List.of("1:500/999"));
+        assertThrows(IllegalArgumentException.class,
+                     () -> store.validate(valid().setInitialLinks(List.of(first))));
+        assertFalse(Files.exists(directory.resolve("jftn.conf")));
+    }
+
+    private MailLinkConfiguration initialLink(String address, String host) {
+        return new MailLinkConfiguration(address,
+                                         List.of("1:500/100", "1:500/100.1"),
+                                         host,
+                                         24554,
+                                         "linkpass",
+                                         "",
+                                         "INHERIT");
+    }
+
+    @Test
     void refusedPublicationWhenFragmentsChangedDuringValidation() throws Exception {
         Path path = directory.resolve("jftn.conf");
         new NodeConfigurationStore(path).save(valid(), directory.resolve("accounts"));

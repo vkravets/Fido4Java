@@ -31,18 +31,21 @@ final class MailConfigurationStore {
         for (String entry : config.getValuesAsList("Link")) {
             Link link = new Link(entry);
             String packet = packets.get(link.getAddr().toString());
-            result.add(new MailLinkConfiguration(link.getAddr().toString(),
-                                                 link.getMyaddr()
-                                                     .stream()
-                                                     .map(Object::toString)
-                                                     .collect(Collectors.toList()),
-                                                 link.getHostAddress() == null
-                                                         ? ""
-                                                         : link.getHostAddress(),
-                                                 link.getPort() == 0 ? 24554 : link.getPort(),
-                                                 "",
-                                                 "",
-                                                 packetMode(packet)));
+            MailLinkConfiguration item = new MailLinkConfiguration(link.getAddr().toString(),
+                                                                   link.getMyaddr()
+                                                                       .stream()
+                                                                       .map(Object::toString)
+                                                                       .collect(Collectors.toList()),
+                                                                   link.getHostAddress() == null
+                                                                           ? ""
+                                                                           : link.getHostAddress(),
+                                                                   link.getPort() == 0
+                                                                           ? 24554
+                                                                           : link.getPort(),
+                                                                   "",
+                                                                   "",
+                                                                   packetMode(packet));
+            result.add(item);
         }
         return result;
     }
@@ -55,9 +58,7 @@ final class MailConfigurationStore {
     }
 
     void saveLinks(List<MailLinkConfiguration> values) throws Exception {
-        if (values == null || values.isEmpty() || values.size() > 1024) {
-            throw new IllegalArgumentException("Configure between 1 and 1024 links");
-        }
+        validateCount(values);
         JFtnConfig config = store.configuration();
         Map<String, String> packets = packetPasswords(config);
         Set<String> addresses = new LinkedHashSet<>();
@@ -84,10 +85,34 @@ final class MailConfigurationStore {
         store.replaceOptions(changes);
     }
 
-    private String link(MailLinkConfiguration value,
-                        JFtnConfig config,
-                        Map<String, String> packets,
-                        Set<String> addresses) {
+    static Map<String, List<String>> initialOptions(List<MailLinkConfiguration> values) {
+        validateCount(values);
+        Map<String, String> packets = new LinkedHashMap<>();
+        Set<String> addresses = new LinkedHashSet<>();
+        List<String> links = new ArrayList<>();
+        for (MailLinkConfiguration value : values) {
+            links.add(link(value, null, packets, addresses));
+        }
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        result.put("link", links);
+        result.put("packetpassword",
+                   packets.entrySet()
+                          .stream()
+                          .map(entry -> entry.getKey() + "," + entry.getValue())
+                          .collect(Collectors.toList()));
+        return result;
+    }
+
+    private static void validateCount(List<MailLinkConfiguration> values) {
+        if (values == null || values.isEmpty() || values.size() > 1024) {
+            throw new IllegalArgumentException("Configure between 1 and 1024 links");
+        }
+    }
+
+    private static String link(MailLinkConfiguration value,
+                               JFtnConfig config,
+                               Map<String, String> packets,
+                               Set<String> addresses) {
         if (value == null) {
             throw new IllegalArgumentException("Link is required");
         }
@@ -100,7 +125,7 @@ final class MailConfigurationStore {
                 || !value.isSetPort() || value.getPort() < 1 || value.getPort() > 65535) {
             throw new IllegalArgumentException("Use a DNS/IPv4 host or leave it empty for incoming-only links; port must be in 1..65535");
         }
-        Link existing = config.getLink(new FTNAddr(address));
+        Link existing = config == null ? null : config.getLink(new FTNAddr(address));
         String password = secret(value.getSessionPassword());
         if (password.isEmpty() && existing != null && existing.getPass() != null) {
             password = existing.getPass();
@@ -117,7 +142,7 @@ final class MailConfigurationStore {
                + endpoint;
     }
 
-    private List<String> localAddresses(List<String> values) {
+    private static List<String> localAddresses(List<String> values) {
         if (values == null || values.isEmpty() || values.size() > 17) {
             throw new IllegalArgumentException("Configure between 1 and 17 local AKAs per link");
         }
@@ -130,10 +155,10 @@ final class MailConfigurationStore {
         return addresses;
     }
 
-    private void packetPassword(MailLinkConfiguration value,
-                                String address,
-                                String session,
-                                Map<String, String> packets) {
+    private static void packetPassword(MailLinkConfiguration value,
+                                       String address,
+                                       String session,
+                                       Map<String, String> packets) {
         String entered = secret(value.getPacketPassword());
         String mode = value.getPacketPasswordMode();
         if ("UNPROTECTED".equals(mode)) {

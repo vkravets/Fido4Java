@@ -99,6 +99,44 @@ test('administrator persists separate PKT passwords and tosser options through r
 });
 
 
+test('administrator adds multiple uplinks and preserves them when saving station details', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    for (const node of [102, 103]) {
+        await page.getByRole('button', { name: 'Add link', exact: true }).click();
+        const link = page.locator('fieldset.mail-link-settings').last();
+        await link.getByLabel('Link address', { exact: true }).fill(`1:500/${node}`);
+        await link.getByLabel('binkp server', { exact: true }).fill(`peer${node}.example.org`);
+        await link.getByLabel('binkp session password').fill('linkpass');
+    }
+    await page.getByRole('button', { name: 'Save links', exact: true }).click();
+    await expect(
+        page.getByRole('region', { name: 'Notifications' }).getByRole('status')
+    ).toContainText('Configuration applied.');
+    await expect(page.locator('fieldset.mail-link-settings')).toHaveCount(3);
+    await expect(page.getByLabel('Link address', { exact: true }).last()).toHaveAttribute(
+        'readonly'
+    );
+    await page.getByLabel('Station name', { exact: true }).fill('Station with three uplinks');
+    await page.getByRole('button', { name: 'Save configuration', exact: true }).click();
+    await expect(
+        page.getByRole('region', { name: 'Notifications' }).getByRole('status')
+    ).toContainText('Configuration applied.');
+    await page.reload();
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await expect(page.locator('fieldset.mail-link-settings')).toHaveCount(3);
+    await expect(page.getByLabel('binkp server', { exact: true }).last()).toHaveValue(
+        'peer103.example.org'
+    );
+    await expect(page.getByLabel('binkp session password').last()).toHaveValue('');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+
 test('real HTTP RPC supports language, theme, registration, approval and point access', async ({
     page,
     browser

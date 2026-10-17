@@ -222,6 +222,36 @@ class UiRpcIntegrationTest {
     }
 
     @Test
+    void addedTwoUplinksThroughRpcWithoutRestartOrChangingExistingSessionSnapshots()
+            throws Exception {
+        SettingsService.Client settings = new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                              "settings"));
+        SessionContext existing = new SessionContext(template);
+        var links = settings.links(token);
+        for (int node : List.of(102, 103)) {
+            links.add(new MailLinkConfiguration("1:500/" + node,
+                                                List.of("1:500/100"),
+                                                "peer" + node + ".example.org",
+                                                24554,
+                                                "long-session-password",
+                                                "pktpass",
+                                                "SEPARATE"));
+        }
+        assertTrue(settings.saveLinks(token, links));
+        assertEquals(3, settings.links(token).size());
+        assertEquals(3, new SessionContext(template).getLinksInfo().getLinks().size());
+        assertEquals(1, existing.getLinksInfo().getLinks().size());
+        var added = config.getLink(new FTNAddr("1:500/103"));
+        assertEquals("long-session-password", added.getPass());
+        assertEquals("pktpass", config.getPacketPassword(added));
+        assertFalse(base.canReadEcho(added, "test"));
+        assertTrue(settings.links(token)
+                           .stream()
+                           .allMatch(link -> link.getSessionPassword().isEmpty()
+                                   && link.getPacketPassword().isEmpty()));
+    }
+
+    @Test
     void hotReloadsSettingsAndPacketPasswordsWithoutLosingSessionsAndRejectsInvalidCandidates()
             throws Exception {
         SettingsService.Client settings = new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),

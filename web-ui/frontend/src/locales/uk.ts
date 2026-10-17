@@ -1,4 +1,8 @@
 export const ukrainian = {
+    Uplinks: 'Аплінки',
+    'Incoming only': 'Лише вхідні з’єднання',
+    'Add one or more uplinks. Each link has its own connection and packet passwords. Local AKAs follow the station addresses during setup.':
+        'Додайте один або кілька аплінків. Кожен лінк має власні паролі з’єднання та пакетів. Під час налаштування локальні AKA відповідають адресам станції.',
     'Reload configuration files': 'Перезавантажити файли конфігурації',
     'Configuration applied. New operations use the new settings; existing connections keep their session settings.':
         'Конфігурацію застосовано. Нові операції використовують нові налаштування; поточні з’єднання зберігають налаштування сесії.',

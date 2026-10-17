@@ -1,18 +1,40 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { api, bindings } from '../api.ts';
-import NodeForm from './NodeForm.vue';
+import SetupStationForm from './SetupStationForm.vue';
+import type { MailLinkConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
 const props = defineProps<{ state: AppState }>();
 const step = ref(0);
 const done = ref(false);
 const confirmation = ref('');
 const model = reactive(new bindings.NodeConfiguration());
+const links = ref<MailLinkConfiguration[]>([]);
+const localAddresses = computed(() => [model.address, ...(model.aliases || [])].filter(Boolean));
+watch(localAddresses, (addresses) => {
+    for (const link of links.value) link.localAddresses = [...addresses];
+});
+function addLink() {
+    links.value.push(
+        new bindings.MailLinkConfiguration({
+            address: '',
+            localAddresses: [...localAddresses.value],
+            host: '',
+            port: 24554,
+            sessionPassword: '',
+            packetPassword: '',
+            packetPasswordMode: 'INHERIT'
+        })
+    );
+}
 const token = new URLSearchParams(location.hash.slice(1)).get('setup') || '';
 const steps = computed(() => [t('Administrator'), t('Station'), t('Nodelist'), t('Confirmation')]);
 onMounted(() =>
-    props.state.run(async () => Object.assign(model, await api.settings.current(token)))
+    props.state.run(async () => {
+        Object.assign(model, await api.settings.current(token));
+        addLink();
+    })
 );
 
 function next() {
@@ -53,8 +75,21 @@ function lookup(download: boolean) {
 
 function save() {
     props.state.run(async () => {
-        await api.settings.save(token, new bindings.NodeConfiguration(model));
+        await api.settings.save(
+            token,
+            new bindings.NodeConfiguration({
+                ...model,
+                initialLinks: links.value.map(
+                    (link) =>
+                        new bindings.MailLinkConfiguration({
+                            ...link,
+                            localAddresses: [...localAddresses.value]
+                        })
+                )
+            })
+        );
         model.password = confirmation.value = model.linkPassword = '';
+        for (const link of links.value) link.sessionPassword = link.packetPassword = '';
         history.replaceState(null, '', location.pathname);
         done.value = true;
     });
@@ -137,9 +172,12 @@ function save() {
                 </template>
                 <template v-if="step === 1"
                     ><h2>{{ t('Station and connection') }}</h2>
-                    <NodeForm
+                    <SetupStationForm
                         :model="model"
-                        initial
+                        :links="links"
+                        :busy="state.busy.value"
+                        @add="addLink"
+                        @remove="links.splice($event, 1)"
                     >
                         <template #lookup>
                             <p>
@@ -170,7 +208,7 @@ function save() {
                                 </button>
                             </div>
                         </template>
-                    </NodeForm>
+                    </SetupStationForm>
                 </template>
                 <template v-if="step === 2">
                     <h2>{{ t('Check details against the nodelist') }}</h2>
@@ -224,8 +262,14 @@ function save() {
                         <dd>{{ model.system }} · {{ model.address }}</dd>
                         <dt>{{ t('Sysop') }}</dt>
                         <dd>{{ model.sysop }}</dd>
-                        <dt>{{ t('Link') }}</dt>
-                        <dd>{{ model.uplink }} · {{ model.host }}:{{ model.port }}</dd>
+                        <dt>{{ t('Uplinks') }}</dt>
+                        <dd
+                            v-for="(link, index) in links"
+                            :key="index"
+                        >
+                            {{ link.address }} ·
+                            {{ link.host ? `${link.host}:${link.port}` : t('Incoming only') }}
+                        </dd>
                         <dt>{{ t('Mail') }}</dt>
                         <dd>{{ model.storage }}</dd>
                         <dt>{{ t('Administrator') }}</dt>

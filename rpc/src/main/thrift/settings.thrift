@@ -2,6 +2,18 @@ namespace java org.fidonet.jftn.rpc
 
 include "ui.thrift"
 
+// Password fields are write-only: empty retains the stored value; '-' clears it.
+struct MailLinkConfiguration {
+    1: required string address,
+    2: required list<string> localAddresses,
+    3: required string host,
+    4: required i32 port,
+    5: required string sessionPassword,
+    6: required string packetPassword,
+    // INHERIT, SEPARATE or UNPROTECTED
+    7: required string packetPasswordMode
+}
+
 struct NodeConfiguration {
     1: required string address,
     2: required list<string> aliases,
@@ -18,24 +30,14 @@ struct NodeConfiguration {
     13: required string password,
     14: required string charset,
     15: required string browserOrigin,
-    16: optional bool preserveReceivedFiles = true
+    16: optional bool preserveReceivedFiles = true,
+    // First-run only. When absent, legacy single-link fields remain supported.
+    17: optional list<MailLinkConfiguration> initialLinks
 }
 
 struct SetupStatus {
     1: required bool required,
     2: required bool restartRequired
-}
-
-// Password fields are write-only: empty retains the stored value; '-' clears it.
-struct MailLinkConfiguration {
-    1: required string address,
-    2: required list<string> localAddresses,
-    3: required string host,
-    4: required i32 port,
-    5: required string sessionPassword,
-    6: required string packetPassword,
-    // INHERIT, SEPARATE or UNPROTECTED
-    7: required string packetPasswordMode
 }
 
 struct TosserConfiguration {
