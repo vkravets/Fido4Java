@@ -1,4 +1,37 @@
 export const ukrainian = {
+    'Echo areas and link access': 'Ехоконференції та доступ лінків',
+    'Echo area': 'Ехоконференція',
+    'Echo access rights': 'Права доступу до ехи',
+    'WRITE receives mail from the link. READ sends mail to the link. BOTH allows both directions.':
+        'WRITE дозволяє приймання пошти від лінка. READ — надсилання лінку. BOTH — обидва напрямки.',
+    'Permission changes apply immediately. Quarantined packets are not retried automatically.':
+        'Зміни прав діють одразу. Пакети з карантину не обробляються повторно автоматично.',
+    'Echo permissions are read-only. Set EchoSubscriptions=database in conf.d/41-areafix.conf and restart to manage them here.':
+        'Права доступні лише для перегляду. Для керування тут установіть EchoSubscriptions=database у conf.d/41-areafix.conf та перезапустіть ноду.',
+    'Known echo areas': 'Наявні ехоконференції',
+    'Filter echo areas or links': 'Пошук ехоконференцій або лінків',
+    'No echo permissions yet. Incoming echomail is denied by default.':
+        'Прав доступу ще немає. За замовчуванням вхідна ехопошта заборонена.',
+    'No matching echo permissions.': 'Відповідних прав доступу не знайдено.',
+    'Revoke access': 'Відкликати доступ',
+    'Revoke access to {area} for {peer}? Stored messages and prepared outbound packets are retained.':
+        'Відкликати доступ до {area} для {peer}? Збережені листи й підготовлені вихідні пакети залишаться.',
+    'Confirm revocation': 'Підтвердити відкликання',
+    'Edit echo access': 'Редагувати доступ до ехи',
+    'Grant echo access': 'Надати доступ до ехи',
+    'WRITE — receive from link': 'WRITE — приймати від лінка',
+    'READ — send to link': 'READ — надсилати лінку',
+    'BOTH — receive and send': 'BOTH — приймати та надсилати',
+    'A new area is created when access is granted. New subscriptions send only new messages; existing delivery positions are preserved.':
+        'Нова еха створюється при наданні доступу. Нові підписки надсилають лише нові листи; поточні позиції доставки зберігаються.',
+    'Save echo access': 'Зберегти доступ до ехи',
+    'Echo access saved. No restart required.': 'Доступ до ехи збережено. Перезапуск не потрібен.',
+    'Echo access revoked. Stored messages were retained.':
+        'Доступ до ехи відкликано. Збережені листи залишилися.',
+    'Echo permissions are managed through configuration files.':
+        'Права доступу до ех налаштовуються у файлах конфігурації.',
+    'Select a link, an echo area and valid access rights.':
+        'Виберіть лінк, ехоконференцію та коректні права доступу.',
     'Leave empty for incoming-only links.':
         'Залиште порожнім для лінків лише з вхідними з’єднаннями.',
     'Enter a separate PKT password': 'Вкажіть окремий пароль PKT',
@@ -183,8 +216,8 @@ export const ukrainian = {
     'Use HTTPS through a reverse proxy for remote access.':
         'Для віддаленого доступу використовуйте HTTPS через зворотний проксі.',
     'Keep original received files': 'Зберігати оригінали отриманих файлів',
-    'Enabled by default. Original PKT files, bundles, TIC files and other received files are archived without automatic cleanup. Changes apply after restarting.':
-        'Увімкнено за замовчуванням. Оригінали PKT, бандлів, TIC та інших отриманих файлів зберігаються в архіві без автоматичного очищення. Зміни застосовуються після перезапуску.',
+    'Enabled by default. Original PKT files, bundles, TIC files and other received files are archived without automatic cleanup. Changes apply immediately after saving.':
+        'Увімкнено за замовчуванням. Оригінали PKT, бандлів, TIC та інших отриманих файлів зберігаються в архіві без автоматичного очищення. Зміни застосовуються одразу після збереження.',
     'Nodelist HTTP source': 'HTTP-джерело нодліста',
     'You can use your own mirror. Downloads start on request, not at every startup.':
         'Можна вказати власне дзеркало. Завантаження запускається кнопкою, а не під час кожного запуску.',

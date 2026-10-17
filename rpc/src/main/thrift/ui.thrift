@@ -116,7 +116,24 @@ struct RobotAccessConfiguration {
     3: required list<string> peers
 }
 
+struct EchoSubscriptionInfo {
+    1: required string peer,
+    2: required string area,
+    3: required string access
+}
+
+struct EchoAccessConfiguration {
+    1: required string source,
+    2: required list<string> peers,
+    3: required list<string> areas,
+    4: required list<EchoSubscriptionInfo> subscriptions
+}
+
+
+
+
 service UiService {
+    EchoAccessConfiguration echoAccess(1:string session) throws (1:UiError error),
     RobotAccessConfiguration robotAccess(1:string session) throws (1:UiError error),
     void saveRobotRule(1:string session, 2:RobotRuleChange change) throws (1:UiError error),
     void deleteRobotRule(1:string session, 2:string service, 3:string address) throws (1:UiError error),

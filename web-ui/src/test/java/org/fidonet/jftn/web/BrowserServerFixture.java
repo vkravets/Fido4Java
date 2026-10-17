@@ -1,11 +1,13 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.jftn.rpc.AuthService;
+import org.fidonet.jftn.rpc.AuthenticatedUi;
 import org.fidonet.jftn.rpc.DefaultServerHandler;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.ProfileService;
 import org.fidonet.jftn.rpc.SettingsService;
+import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountAuthentication;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
@@ -64,7 +66,14 @@ final class BrowserServerFixture implements AutoCloseable {
                                                  AccountAuthentication authentication,
                                                  ProfileHandler profile,
                                                  SettingsHandler settings) {
+        UiService.Iface echoAccess = AuthenticatedUi.wrap(sessions,
+                                                          new BrowserEchoAccess().handler());
         return new DefaultServerHandler() {
+            @Override
+            public UiService.Iface getUiHandler() {
+                return echoAccess;
+            }
+
             @Override
             public LoginService.Iface getLoginHandler() {
                 return sessions;

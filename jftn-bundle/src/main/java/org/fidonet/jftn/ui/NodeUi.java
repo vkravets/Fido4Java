@@ -11,6 +11,7 @@ import org.fidonet.jftn.poll.PollAttempt;
 import org.fidonet.jftn.poll.PollLogSlice;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
+import org.fidonet.jftn.rpc.EchoAccessConfiguration;
 import org.fidonet.jftn.rpc.LinkInfo;
 import org.fidonet.jftn.rpc.LogPage;
 import org.fidonet.jftn.rpc.MailDraft;
@@ -87,6 +88,11 @@ public final class NodeUi implements UiService.Iface {
     @Override
     public RobotAccessConfiguration robotAccess(String owner) throws UiError {
         return call(robotRules::current);
+    }
+
+    @Override
+    public EchoAccessConfiguration echoAccess(String owner) throws UiError {
+        return call(() -> mail.operate(tosser -> NodeEchoAccess.current(config, base)));
     }
 
     @Override
@@ -372,6 +378,7 @@ public final class NodeUi implements UiService.Iface {
     @Override
     public void subscribe(String owner, String peer, String area, String access) throws UiError {
         call(() -> mail.operate(tosser -> {
+            NodeEchoAccess.requireManaged(config);
             tosser.configureEchoSubscription(new FTNAddr(peer),
                                              area,
                                              AccessLevel.valueOf(access.toUpperCase(Locale.ROOT)),
@@ -383,6 +390,7 @@ public final class NodeUi implements UiService.Iface {
     @Override
     public void unsubscribe(String owner, String peer, String area) throws UiError {
         call(() -> mail.operate(tosser -> {
+            NodeEchoAccess.requireManaged(config);
             tosser.removeEchoSubscription(new FTNAddr(peer), area);
             return null;
         }));

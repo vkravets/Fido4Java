@@ -4,6 +4,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
 import MailSettings from './MailSettings.vue';
+import EchoSettings from './EchoSettings.vue';
 import NotificationBanner from './NotificationBanner.vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
@@ -74,4 +75,5 @@ async function save() {
         :local-addresses="[model.address, ...model.aliases]"
         @saved="mailSaved"
     />
+    <EchoSettings v-if="ready" :key="'echo-' + mailVersion" :state="state" />
 </template>

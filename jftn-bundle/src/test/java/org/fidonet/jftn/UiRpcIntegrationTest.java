@@ -1,5 +1,6 @@
 package org.fidonet.jftn;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,10 +18,13 @@ import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.MailDraft;
+import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.RobotRuleInfo;
+import org.fidonet.jftn.rpc.SettingsService;
+import org.fidonet.jftn.rpc.TosserConfiguration;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.ui.NodeRpc;
@@ -39,10 +43,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.List;
 
 class UiRpcIntegrationTest {
     @TempDir
@@ -54,18 +61,26 @@ class UiRpcIntegrationTest {
     private TFramedTransport transport;
     private UiService.Client ui;
     private String token;
+    private SessionContext template;
 
     @BeforeEach
     void open() throws Exception {
+        open("database");
+    }
+
+    private void open(String echoMode) throws Exception {
         String path = root.toString().replace('\\', '/');
         String text = "SysOp=Test\nInbound=" + path + "/in\nOutbound=" + path + "/out\nTmp=" + path
                 + "/state\nEchoPath=" + path + "/echo\n"
                 + "Link=1:500/101,1:500/100,secret,127.0.0.1\nJamBridgeEnabled=false\n"
-                + "EchoSubscriptions=database\nRpcEnabled=true\nRpcPort=0\nRpcUser=sysop\nRpcPassword=ui-secret\n"
+                + "EchoSubscriptions=" + echoMode
+                + "\nRpcEnabled=true\nRpcPort=0\nRpcUser=sysop\nRpcPassword=ui-secret\n"
                 + "RpcHttpEnabled=true\nRpcHttpPort=0\nRpcHttpOrigin=http://localhost:5173\n"
                 + "RpcLogFile=" + path + "/node.log\n";
         config = new JFtnConfig();
-        config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        Path source = root.resolve("jftn.conf");
+        Files.writeString(source, text);
+        config.load(source.toString());
         base = new DatabaseManager(new OrmManager("jdbc:h2:mem:uiRpc" + System.nanoTime()));
         assertTrue(base.open());
         base.createArea("test");
@@ -77,8 +92,68 @@ class UiRpcIntegrationTest {
         connect("ui-secret");
     }
 
+    @Test
+    void managesEchoImportAndExportRightsAcrossTcpAndHttpWithoutDeletingMail() throws Exception {
+        assertEquals("database", ui.echoAccess(token).getSource());
+        assertTrue(ui.echoAccess(token).getSubscriptions().isEmpty());
+        ui.subscribe(token, "1:500/101", "NEW.ECHO", "WRITE");
+        var link = config.getLink(new FTNAddr("1:500/101"));
+        assertTrue(base.isAreaExists("new.echo"));
+        assertTrue(base.canWriteEcho(link, "new.echo"));
+        assertFalse(base.canReadEcho(link, "new.echo"));
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            var snapshot = browser.echoAccess(token);
+            assertEquals("WRITE", snapshot.getSubscriptions().get(0).getAccess());
+            assertEquals("new.echo", snapshot.getSubscriptions().get(0).getArea());
+            assertTrue(snapshot.getAreas().contains("new.echo"));
+            assertTrue(snapshot.getPeers().contains(link.getAddr().toString()));
+            browser.subscribe(token, "1:500/101", "new.echo", "READ");
+            assertFalse(base.canWriteEcho(link, "new.echo"));
+            assertTrue(base.canReadEcho(link, "new.echo"));
+            assertEquals("READ", ui.echoAccess(token).getSubscriptions().get(0).getAccess());
+            browser.subscribe(token, "1:500/101", "new.echo", "BOTH");
+            assertTrue(base.canWriteEcho(link, "new.echo"));
+            ui.send(token, draft(Mailbox.ECHO).setArea("new.echo"), "retained-echo");
+            assertEquals(1, base.getMessageSize("new.echo"));
+            browser.unsubscribe(token, "1:500/101", "new.echo");
+        }
+        assertTrue(ui.echoAccess(token).getSubscriptions().isEmpty());
+        assertFalse(base.canWriteEcho(link, "new.echo"));
+        assertFalse(base.canReadEcho(link, "new.echo"));
+        assertEquals(1, base.getMessageSize("new.echo"));
+        assertTrue(ui.echoAccess(token).getAreas().contains("new.echo"));
+        assertEquals("UNAUTHORIZED",
+                     assertThrows(UiError.class, () -> ui.echoAccess("invalid")).getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.subscribe(token, "1:500/999", "new.echo", "BOTH"))
+                                                                                             .getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.subscribe(token, "1:500/101", "new.echo", "INVALID"))
+                                                                                                .getCode());
+    }
+
+    @Test
+    void fileManagedEchoPermissionsRemainReadOnlyOverRpc() throws Exception {
+        close();
+        open("config");
+        assertEquals("config", ui.echoAccess(token).getSource());
+        assertEquals("READ_ONLY",
+                     assertThrows(UiError.class,
+                                  () -> ui.subscribe(token, "1:500/101", "test", "BOTH"))
+                                                                                         .getCode());
+        assertEquals("READ_ONLY",
+                     assertThrows(UiError.class,
+                                  () -> ui.unsubscribe(token, "1:500/101", "test")).getCode());
+        assertTrue(ui.echoAccess(token).getSubscriptions().isEmpty());
+    }
+
     private void connect(String password) throws Exception {
-        rpc = NodeRpc.open(config, base, mail, JFtnRunner.createSessionContext(config));
+        template = JFtnRunner.createSessionContext(config);
+        rpc = NodeRpc.open(config, base, mail, template);
         transport = new TFramedTransport(new TSocket("127.0.0.1", rpc.getPort(), 5000));
         transport.open();
         LoginService.Client login = new LoginService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),

@@ -2,7 +2,10 @@
 import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
-const props = defineProps<{ model: NodeConfiguration; initial: boolean; showLink?: boolean }>();
+const props = withDefaults(
+    defineProps<{ model: NodeConfiguration; initial: boolean; showLink?: boolean }>(),
+    { showLink: true }
+);
 const aliases = computed({
     get: () => props.model.aliases.join(' '),
     set: (value) => {
@@ -117,7 +120,7 @@ const aliases = computed({
             >
             <small>{{
                 t(
-                    'Enabled by default. Original PKT files, bundles, TIC files and other received files are archived without automatic cleanup. Changes apply after restarting.'
+                    'Enabled by default. Original PKT files, bundles, TIC files and other received files are archived without automatic cleanup. Changes apply immediately after saving.'
                 )
             }}</small>
         </label>

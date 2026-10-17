@@ -11,6 +11,40 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('administrator grants, edits and revokes echo access through the station screen', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    const panel = page.locator('#echo-access');
+    await expect(panel.getByRole('heading', { name: 'Echo areas and link access' })).toBeVisible();
+    await panel.getByLabel('Echo area', { exact: true }).fill('NEW.ECHO');
+    await panel.getByRole('button', { name: 'Save echo access', exact: true }).click();
+    const row = panel
+        .locator('.rows > li')
+        .filter({ has: page.getByText('new.echo', { exact: true }) });
+    await expect(row).toContainText('WRITE');
+    await expect(page.getByRole('status')).toContainText('No restart required.');
+    await row.getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(panel.getByLabel('Echo area', { exact: true })).toHaveAttribute('readonly');
+    await panel.getByLabel('Echo access rights').selectOption('BOTH');
+    await panel.getByRole('button', { name: 'Save echo access', exact: true }).click();
+    await expect(row).toContainText('BOTH');
+    await page.reload();
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    await expect(row).toContainText('BOTH');
+    await row.getByRole('button', { name: 'Revoke access', exact: true }).click();
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(row).toContainText('BOTH');
+    await row.getByRole('button', { name: 'Revoke access', exact: true }).click();
+    await panel.getByRole('button', { name: 'Confirm revocation', exact: true }).click();
+    await expect(panel.getByText('No echo permissions yet.', { exact: false })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+
 test('administrator persists separate PKT passwords and tosser options through real RPC', async ({
     page
 }) => {
@@ -38,6 +72,7 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
+
 
 test('real HTTP RPC supports language, theme, registration, approval and point access', async ({
     page,

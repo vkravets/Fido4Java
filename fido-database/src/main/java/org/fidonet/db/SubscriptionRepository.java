@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 /** Subscription permissions and reader positions, separate from export checkpoints. */
 final class SubscriptionRepository {
@@ -135,6 +137,22 @@ final class SubscriptionRepository {
 
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
+        }
+    }
+
+    Map<String, AccessLevel> accessForLink(Link link) {
+        try {
+            ConfigurationLink configured = findLink(link);
+            Map<String, AccessLevel> result = new TreeMap<>();
+            if (configured == null) {
+                return result;
+            }
+            for (Subscription subscription : forLink(configured)) {
+                result.put(subscription.getEchoarea().getName(), subscription.getAccessLevel());
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to list echo access", e);
         }
     }
 

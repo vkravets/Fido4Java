@@ -73,6 +73,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Created by IntelliJ IDEA.
@@ -297,6 +299,7 @@ public class DatabaseManager
         }
     }
 
+    /** Keeps configuration-related SQL changes rollbackable until file publication succeeds. */
     @Override
     public synchronized boolean importArchive(Message message, String source) {
         if (!message.hasValidAddressing()) {
@@ -694,6 +697,10 @@ public class DatabaseManager
     @Override
     public boolean canReadEcho(Link link, String area) {
         return subscriptions.hasAccess(link, area, AccessLevel.READ);
+    }
+
+    public synchronized Map<String, AccessLevel> getEchoAccess(Link link) {
+        return subscriptions.accessForLink(link);
     }
 
     @Override
