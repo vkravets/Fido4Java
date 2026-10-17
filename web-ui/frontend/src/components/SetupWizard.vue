@@ -24,7 +24,8 @@ function addLink() {
             port: 24554,
             sessionPassword: '',
             packetPassword: '',
-            packetPasswordMode: 'INHERIT'
+            packetPasswordMode: 'INHERIT',
+            autoCreateEchoAccess: 'NONE'
         })
     );
 }
@@ -88,7 +89,7 @@ function save() {
                 )
             })
         );
-        model.password = confirmation.value = model.linkPassword = '';
+        model.password = confirmation.value = '';
         for (const link of links.value) link.sessionPassword = link.packetPassword = '';
         history.replaceState(null, '', location.pathname);
         done.value = true;

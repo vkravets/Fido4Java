@@ -20,7 +20,7 @@ import java.util.List;
 
 class MailConfigurationStoreTest {
     @Test
-    void savedExplicitCreationRulesAndPreservedThemForLegacyClients() throws Exception {
+    void requiredExplicitCreationModesAndSavedOnlyTheSubmittedRules() throws Exception {
         station();
         Files.writeString(path(), Files.readString(path()) + "EchoSubscriptions=database\n");
         MailConfigurationStore store = new MailConfigurationStore(new NodeConfigurationStore(path()));
@@ -31,6 +31,8 @@ class MailConfigurationStoreTest {
         store.saveLinks(links);
         assertEquals("WRITE", store.links().get(0).getAutoCreateEchoAccess());
         links.get(0).unsetAutoCreateEchoAccess();
+        assertThrows(IllegalArgumentException.class, () -> store.saveLinks(links));
+        links.get(0).setAutoCreateEchoAccess("WRITE");
         links.get(1).setAutoCreateEchoAccess("NONE");
         store.saveLinks(links);
         assertEquals("WRITE", store.links().get(0).getAutoCreateEchoAccess());
@@ -121,7 +123,8 @@ class MailConfigurationStoreTest {
                                             24554,
                                             "",
                                             "",
-                                            "INHERIT"));
+                                            "INHERIT",
+                                            "NONE"));
         store.saveLinks(links);
         assertEquals(3, loaded().getConfiguredLinks().size());
         String before = Files.readString(path());

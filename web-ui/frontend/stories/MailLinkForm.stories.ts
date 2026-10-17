@@ -13,7 +13,8 @@ const meta = {
             port: 24554,
             sessionPassword: '',
             packetPassword: '',
-            packetPasswordMode: 'INHERIT'
+            packetPasswordMode: 'INHERIT',
+            autoCreateEchoAccess: 'NONE'
         }
     },
     decorators: [() => ({ template: '<section class="card"><story /></section>' })]
@@ -21,3 +22,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Existing: Story = {};
+export const EchoCreation: Story = {
+    args: { model: { ...meta.args.model, autoCreateEchoAccess: 'BOTH' } }
+};
+export const SeparatePacketPassword: Story = {
+    args: { model: { ...meta.args.model, packetPasswordMode: 'SEPARATE' } }
+};

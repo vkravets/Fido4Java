@@ -46,7 +46,8 @@ final class MailConfigurationStore {
                                                                            : link.getPort(),
                                                                    "",
                                                                    "",
-                                                                   packetMode(packet));
+                                                                   packetMode(packet),
+                                                                   "NONE");
             item.setAutoCreateEchoAccess(creation.getOrDefault(link.getAddr().toString(), "NONE"));
             result.add(item);
         }
@@ -80,8 +81,7 @@ final class MailConfigurationStore {
         }
         Map<String, List<String>> changes = new LinkedHashMap<>();
         changes.put("link", links);
-        changes.put("autocreateechofrom",
-                    creationOptions(values, EchoAutoCreatePolicy.read(config)));
+        changes.put("autocreateechofrom", creationOptions(values));
         changes.put("packetpassword",
                     packets.entrySet()
                            .stream()
@@ -100,7 +100,7 @@ final class MailConfigurationStore {
         }
         Map<String, List<String>> result = new LinkedHashMap<>();
         result.put("link", links);
-        result.put("autocreateechofrom", creationOptions(values, Map.of()));
+        result.put("autocreateechofrom", creationOptions(values));
         result.put("packetpassword",
                    packets.entrySet()
                           .stream()
@@ -109,16 +109,12 @@ final class MailConfigurationStore {
         return result;
     }
 
-    private static List<String> creationOptions(List<MailLinkConfiguration> values,
-                                                Map<String, String> previous) {
-        Map<String, String> rules = new LinkedHashMap<>(previous);
+    private static List<String> creationOptions(List<MailLinkConfiguration> values) {
+        Map<String, String> rules = new LinkedHashMap<>();
         for (MailLinkConfiguration value : values) {
             String address = AccountDirectory.address(value.getAddress(), false);
-            if (!value.isSetAutoCreateEchoAccess()) {
-                continue;
-            }
             String access = value.getAutoCreateEchoAccess();
-            if (!List.of("NONE", "WRITE", "BOTH").contains(access)) {
+            if (access == null || !List.of("NONE", "WRITE", "BOTH").contains(access)) {
                 throw new IllegalArgumentException("Echo creation access must be NONE, WRITE or BOTH");
             }
             if (access.equals("NONE")) {

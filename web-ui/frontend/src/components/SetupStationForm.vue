@@ -11,7 +11,6 @@ defineEmits<{ add: []; remove: [index: number] }>();
     <NodeForm
         :model="model"
         initial
-        :show-link="false"
     >
         <template
             v-if="$slots.lookup"

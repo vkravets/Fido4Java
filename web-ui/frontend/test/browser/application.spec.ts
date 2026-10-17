@@ -44,7 +44,6 @@ test('administrator grants, edits and revokes echo access through the station sc
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-
 test('administrator releases a legacy quarantine packet through HTTP RPC after choosing a peer', async ({
     page
 }) => {
@@ -66,7 +65,6 @@ test('administrator releases a legacy quarantine packet through HTTP RPC after c
     await expect(page.getByRole('status')).toContainText('Original retained');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
-
 
 test('administrator persists separate PKT passwords and tosser options through real RPC', async ({
     page
@@ -106,7 +104,6 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-
 test('administrator adds multiple uplinks and preserves them when saving station details', async ({
     page
 }) => {
@@ -143,7 +140,6 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await expect(page.getByLabel('binkp session password').last()).toHaveValue('');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
-
 
 test('real HTTP RPC supports language, theme, registration, approval and point access', async ({
     page,

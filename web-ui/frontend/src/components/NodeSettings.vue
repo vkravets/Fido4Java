@@ -29,7 +29,6 @@ async function save() {
     await props.state.run(async () => {
         saved.value = false;
         await api.settings.save(props.state.session.value, new bindings.NodeConfiguration(model));
-        model.linkPassword = '';
         saved.value = true;
     });
     if (saved.value) mailVersion.value++;
@@ -67,7 +66,6 @@ async function reload() {
         <NodeForm
             :model="model"
             :initial="false"
-            :show-link="false"
         />
         <footer class="actions">
             <button

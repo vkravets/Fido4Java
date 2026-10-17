@@ -20,10 +20,6 @@ export function station(): NodeConfiguration {
         system: 'Example station',
         sysop: 'Example Sysop',
         location: 'Kyiv',
-        uplink: '1:500/101',
-        host: 'binkp.example.org',
-        port: 24554,
-        linkPassword: '',
         storage: './mail',
         nodeListUrl: '',
         login: '',
@@ -45,4 +41,29 @@ export function attempt(state = 'FAILED'): PollInfo {
         finished: state === 'FAILED' ? Date.UTC(2026, 9, 16, 12, 0, 2) : undefined,
         detail: state === 'FAILED' ? 'Connection refused: localhost:24554' : ''
     };
+}
+
+export function uplinks() {
+    return [
+        {
+            address: '1:500/101',
+            localAddresses: ['1:500/100', '1:500/100.1'],
+            host: 'first.example.org',
+            port: 24554,
+            sessionPassword: '',
+            packetPassword: '',
+            packetPasswordMode: 'INHERIT',
+            autoCreateEchoAccess: 'NONE'
+        },
+        {
+            address: '1:500/102',
+            localAddresses: ['1:500/100', '1:500/100.1'],
+            host: 'second.example.org',
+            port: 24555,
+            sessionPassword: '',
+            packetPassword: '',
+            packetPasswordMode: 'SEPARATE',
+            autoCreateEchoAccess: 'NONE'
+        }
+    ];
 }

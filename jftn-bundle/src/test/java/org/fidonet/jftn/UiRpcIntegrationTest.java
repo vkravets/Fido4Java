@@ -255,7 +255,8 @@ class UiRpcIntegrationTest {
                                                 24554,
                                                 "long-session-password",
                                                 "pktpass",
-                                                "SEPARATE"));
+                                                "SEPARATE",
+                                                "NONE"));
         }
         assertTrue(settings.saveLinks(token, links));
         assertEquals(3, settings.links(token).size());

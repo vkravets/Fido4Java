@@ -107,7 +107,7 @@ const addresses = computed({
         <label class="wide">
             {{ t('Create new echoes from this link') }}
             <select
-                :value="model.autoCreateEchoAccess || 'NONE'"
+                :value="model.autoCreateEchoAccess"
                 :aria-label="t('Create new echoes from this link')"
                 @change="model.autoCreateEchoAccess = ($event.target as HTMLSelectElement).value"
             >

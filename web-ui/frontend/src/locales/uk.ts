@@ -7,6 +7,7 @@ export const ukrainian = {
     'Only links explicitly allowed in Mail links can create new echoes. Choose WRITE or BOTH for each trusted sender; existing echo permissions stay unchanged.':
         'Нові ехи можуть створювати лише лінки з явним дозволом у розділі поштових лінків. Виберіть WRITE або BOTH для довірених відправників; права наявних ех не змінюються.',
     Uplinks: 'Аплінки',
+    'Duplicate link address': 'Адреса лінка повторюється',
     'Incoming only': 'Лише вхідні з’єднання',
     'Add one or more uplinks. Each link has its own connection and packet passwords. Local AKAs follow the station addresses during setup.':
         'Додайте один або кілька аплінків. Кожен лінк має власні паролі з’єднання та пакетів. Під час налаштування локальні AKA відповідають адресам станції.',
@@ -17,6 +18,32 @@ export const ukrainian = {
     'Last retry': 'Остання повторна спроба',
     'Unknown echo area: ': 'Невідома ехоконференція: ',
     'WRITE access denied for echo area: ': 'Немає права WRITE для ехоконференції: ',
+    'No recorded reason (legacy packet).': 'Причину не записано (старий пакет).',
+    'PKT password mismatch. Check the link packet password.':
+        'Пароль PKT не збігається. Перевірте пароль пакетів лінка.',
+    'Packet processed; original retained in recovery archive.':
+        'Пакет оброблено; оригінал збережено в архіві відновлення.',
+    'Packet accepted. Original retained in recovery archive.':
+        'Пакет прийнято. Оригінал збережено в архіві відновлення.',
+    'Packet processing failed; inspect the node log.':
+        'Помилка обробки пакета; перегляньте журнал ноди.',
+    'Packet metadata is unavailable; inspect the node log.':
+        'Метадані пакета недоступні; перегляньте журнал ноди.',
+    'Packet exceeds the processing size limit.': 'Пакет перевищує обмеження розміру для обробки.',
+    'Retry started; if interrupted, retry again safely.':
+        'Повторну обробку розпочато; після переривання її можна повторити.',
+    'Packet origin does not match the receiving session.':
+        'Відправник пакета не відповідає вхідній сесії.',
+    'Packet destination is not a local AKA.': 'Одержувач пакета не є локальною АКА.',
+    'Unknown packet origin link.': 'Невідомий лінк відправника пакета.',
+    'Unknown zone-less packet origin link.': 'Невідомий лінк відправника пакета без зони.',
+    'Ambiguous zone-less packet origin.': 'Неоднозначний відправник пакета без зони.',
+    'Message has invalid FTN addressing.': 'Повідомлення має некоректні адреси FTN.',
+    'Echomail rejected by a processing hook.': 'Обробник відхилив ехопошту.',
+    'Netmail storage is unavailable or a processing hook rejected the message.':
+        'Сховище нетмейлу недоступне або обробник відхилив повідомлення.',
+    'Packet import was rejected; inspect the node log.':
+        'Імпорт пакета відхилено; перегляньте журнал ноди.',
     'Packet quarantine': 'Карантин пакетів',
     'Fix the rejection reason before retrying. Accepted messages are not imported again. Originals are retained.':
         'Усуньте причину відмови перед повторною обробкою. Прийняті повідомлення не імпортуються знову. Оригінали зберігаються.',

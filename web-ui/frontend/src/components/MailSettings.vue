@@ -35,7 +35,8 @@ function addLink() {
             port: 24554,
             sessionPassword: '',
             packetPassword: '',
-            packetPasswordMode: 'INHERIT'
+            packetPasswordMode: 'INHERIT',
+            autoCreateEchoAccess: 'NONE'
         })
     );
 }

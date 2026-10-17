@@ -94,6 +94,7 @@ class SettingsHandlerTest {
     @Test
     void rejectedMissingInitialLinksAndMismatchedStationAkas() throws Exception {
         NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
+        assertThrows(IllegalArgumentException.class, () -> store.validate(valid()));
         assertThrows(IllegalArgumentException.class,
                      () -> store.validate(valid().setInitialLinks(List.of())));
         MailLinkConfiguration first = initialLink("1:500/101", "first.example.org");
@@ -110,13 +111,14 @@ class SettingsHandlerTest {
                                          24554,
                                          "linkpass",
                                          "",
-                                         "INHERIT");
+                                         "INHERIT",
+                                         "NONE");
     }
 
     @Test
     void refusedPublicationWhenFragmentsChangedDuringValidation() throws Exception {
         Path path = directory.resolve("jftn.conf");
-        new NodeConfigurationStore(path).save(valid(), directory.resolve("accounts"));
+        new NodeConfigurationStore(path).save(initial(), directory.resolve("accounts"));
         String original = Files.readString(path);
         Path fragment = Files.createDirectories(directory.resolve("conf.d"))
                              .resolve("99-manual.conf");
@@ -137,7 +139,7 @@ class SettingsHandlerTest {
     void restoredFileWhenRuntimePublicationFailedAndKeptRejectedCandidatesOffDisk()
             throws Exception {
         Path path = directory.resolve("jftn.conf");
-        new NodeConfigurationStore(path).save(valid(), directory.resolve("accounts"));
+        new NodeConfigurationStore(path).save(initial(), directory.resolve("accounts"));
         String original = Files.readString(path);
         NodeConfigurationStore store = new NodeConfigurationStore(path,
                                                                   (candidate, publication) -> {
@@ -172,7 +174,7 @@ class SettingsHandlerTest {
                                                           "secret",
                                                           () -> completed.set(true));
             assertThrows(UiError.class, () -> handler.current("wrong"));
-            assertTrue(handler.save("secret", valid()));
+            assertTrue(handler.save("secret", initial()));
             assertTrue(completed.get());
             assertTrue(accounts.verifyPassword("admin", "a-long-password"));
             assertFalse(handler.status().isRequired());
@@ -181,7 +183,7 @@ class SettingsHandlerTest {
             JFtnConfig parsed = new JFtnConfig();
             parsed.load(config.toString());
             assertEquals("My node", parsed.getValue("System"));
-            assertEquals("", new NodeConfigurationStore(config).current().getLinkPassword());
+            assertFalse(Files.readString(config).contains("a-long-password"));
         }
     }
 
@@ -194,7 +196,7 @@ class SettingsHandlerTest {
         assertThrows(IllegalArgumentException.class,
                      () -> store.save(value, directory.resolve("accounts")));
         assertFalse(Files.exists(config));
-        store.save(valid(), directory.resolve("accounts"));
+        store.save(initial(), directory.resolve("accounts"));
         Files.writeString(config,
                           Files.readString(config) + "# external edit\nCustomOption=retained\n");
         assertThrows(Exception.class, () -> store.save(valid(), directory.resolve("accounts")));
@@ -237,10 +239,10 @@ class SettingsHandlerTest {
                                                         });
             assertThrows(UiError.class, () -> setup.links("resume"));
             assertThrows(UiError.class, () -> setup.tosser("resume"));
-            NodeConfiguration wrong = valid().setPassword("another-password");
+            NodeConfiguration wrong = initial().setPassword("another-password");
             assertThrows(UiError.class, () -> setup.save("resume", wrong));
             assertFalse(Files.exists(config));
-            assertTrue(setup.save("resume", valid()));
+            assertTrue(setup.save("resume", initial()));
         }
     }
 
@@ -248,7 +250,7 @@ class SettingsHandlerTest {
     void administratorSavedMailSettingsThroughTheSameStoreAsStationSettings() throws Exception {
         Path auth = directory.resolve("accounts");
         NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
-        store.save(valid(), auth);
+        store.save(initial(), auth);
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
             accounts.createUser("admin", "a-long-password");
             UiSessions sessions = new UiSessions(accounts, 3600);
@@ -287,16 +289,16 @@ class SettingsHandlerTest {
         }
     }
 
+    private NodeConfiguration initial() {
+        return valid().setInitialLinks(List.of(initialLink("1:500/101", "example.org")));
+    }
+
     private NodeConfiguration valid() {
         return new NodeConfiguration("1:500/100",
                                      List.of("1:500/100.1"),
                                      "My node",
                                      "Sysop",
                                      "Kyiv",
-                                     "1:500/101",
-                                     "example.org",
-                                     24554,
-                                     "linkpass",
                                      directory.resolve("mail").toString(),
                                      "",
                                      "admin",
@@ -310,7 +312,7 @@ class SettingsHandlerTest {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
         NodeConfigurationStore store = new NodeConfigurationStore(config);
-        store.save(valid().setPreserveReceivedFiles(false), auth);
+        store.save(initial().setPreserveReceivedFiles(false), auth);
         assertFalse(store.current().isPreserveReceivedFiles());
         Files.createDirectory(directory.resolve("conf.d"));
         Path manual = directory.resolve("conf.d/manual.conf");
@@ -330,7 +332,7 @@ class SettingsHandlerTest {
     void savedStationSettingsWithoutManagingPluginFilesOrReenablingRpc() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(valid(), auth);
+        new NodeConfigurationStore(config).save(initial(), auth);
         Files.writeString(config,
                           Files.readString(config).replace("rpcenabled=true", "rpcenabled=false"));
         Files.createDirectories(directory.resolve("conf.d"));
@@ -356,12 +358,12 @@ class SettingsHandlerTest {
     void editedTheFirstLinkPreservedOtherLinksAndEnabledLocalhostPasskeys() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(valid(), auth);
+        new NodeConfigurationStore(config).save(initial(), auth);
         String other = "Link=1:500/102,1:500/200,otherpwd,other.example:24554";
         Files.writeString(config, Files.readString(config) + other + "\n");
         NodeConfigurationStore store = new NodeConfigurationStore(config);
         NodeConfiguration edit = store.current();
-        assertEquals("1:500/101.0", edit.getUplink());
+        assertEquals("1:500/100.0", edit.getAddress());
         edit.setSystem("Updated");
         store.save(edit, auth);
         JFtnConfig parsed = new JFtnConfig();
@@ -382,7 +384,7 @@ class SettingsHandlerTest {
     void didNotReopenSetupWhenTheStoredAdminHadNoConfigPassword() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(valid(), auth);
+        new NodeConfigurationStore(config).save(initial(), auth);
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
             accounts.createUser("admin", "a-long-password");
         }

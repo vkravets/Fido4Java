@@ -83,10 +83,6 @@ public final class NodeConfigurationStore {
                                                          "JFtn",
                                                          "",
                                                          "",
-                                                         "",
-                                                         "",
-                                                         24554,
-                                                         "",
                                                          directory().resolve("mail").toString(),
                                                          HttpDirectoryDownload.DEFAULT_URL,
                                                          "",
@@ -108,9 +104,6 @@ public final class NodeConfigurationStore {
         result.setStorage(config.getValue("UiMailStorage", result.getStorage()));
         if (config.getValue("Link") != null) {
             Link link = new Link(config.getValue("Link"));
-            result.setUplink(link.getAddr().toString());
-            result.setHost(link.getHostAddress() == null ? "" : link.getHostAddress());
-            result.setPort(link.getPort() == 0 ? 24554 : link.getPort());
             List<String> local = new ArrayList<>();
             link.getMyaddr().forEach(address -> local.add(address.toString()));
             if (!local.isEmpty()) {
@@ -179,18 +172,8 @@ public final class NodeConfigurationStore {
             }
             return;
         }
-        AccountDirectory.address(value.getUplink(), false);
-        text(value.getLinkPassword());
-        text(value.getHost());
-        if (!value.isSetPort() || value.getPort() < 1 || value.getPort() > 65535
-                || !value.getHost().matches("[A-Za-z0-9.-]{1,253}")
-                || value.getLinkPassword().contains(",")) {
-            throw new IllegalArgumentException("Use a DNS/IPv4 uplink and a port in 1..65535");
-        }
-        if (original.length == 0
-                && (!StandardCharsets.US_ASCII.newEncoder().canEncode(value.getLinkPassword())
-                        || value.getLinkPassword().length() > 8)) {
-            throw new IllegalArgumentException("Initial link password also protects PKT: use at most 8 ASCII characters");
+        if (original.length == 0) {
+            throw new IllegalArgumentException("Initial links are required during first setup");
         }
     }
 
@@ -395,28 +378,14 @@ public final class NodeConfigurationStore {
 
     private Map<String, String> values(NodeConfiguration value, Path authPath) throws Exception {
         Map<String, String> result = new LinkedHashMap<>();
-        String password = value.getLinkPassword();
-        if (password.isEmpty() && original.length > 0) {
-            JFtnConfig config = new JFtnConfig();
-            config.load(path.toString());
-            password = new Link(config.getValue("Link")).getPass();
+        if (original.length > 0) {
+            String[] primary = configuration().getValue("Link").split(",", -1);
+            List<String> addresses = new ArrayList<>();
+            addresses.add(value.getAddress());
+            addresses.addAll(value.getAliases());
+            primary[1] = String.join(" ", addresses);
+            result.put("link", String.join(",", primary));
         }
-        if (password == null || password.isEmpty()) {
-            password = "-";
-        }
-        List<String> addresses = new ArrayList<>();
-        addresses.add(value.getAddress());
-        addresses.addAll(value.getAliases());
-        result.put("link",
-                   value.getUplink()
-                   + ","
-                   + String.join(" ", addresses)
-                   + ","
-                   + password
-                   + ","
-                   + value.getHost()
-                   + ":"
-                   + value.getPort());
         result.put("system", value.getSystem());
         result.put("sysop", value.getSysop());
         result.put("location", value.getLocation());

@@ -13,7 +13,7 @@ struct MailLinkConfiguration {
     // INHERIT, SEPARATE or UNPROTECTED
     7: required string packetPasswordMode,
     // NONE (default), WRITE or BOTH for newly received areas only.
-    8: optional string autoCreateEchoAccess
+    8: required string autoCreateEchoAccess
 }
 
 struct NodeConfiguration {
@@ -22,10 +22,6 @@ struct NodeConfiguration {
     3: required string system,
     4: required string sysop,
     5: required string location,
-    6: required string uplink,
-    7: required string host,
-    8: required i32 port,
-    9: required string linkPassword,
     10: required string storage,
     11: required string nodeListUrl,
     12: required string login,
@@ -33,7 +29,7 @@ struct NodeConfiguration {
     14: required string charset,
     15: required string browserOrigin,
     16: optional bool preserveReceivedFiles = true,
-    // First-run only. When absent, legacy single-link fields remain supported.
+    // Required during first setup; omitted for subsequent station-only edits.
     17: optional list<MailLinkConfiguration> initialLinks
 }
 
