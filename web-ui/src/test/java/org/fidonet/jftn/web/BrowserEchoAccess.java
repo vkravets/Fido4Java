@@ -14,6 +14,7 @@ import java.util.TreeSet;
 
 /** Isolated browser interaction state; SQL and tosser semantics have runner RPC tests. */
 final class BrowserEchoAccess {
+    private final BrowserQuarantine quarantine = new BrowserQuarantine();
     private final Map<String, EchoSubscriptionInfo> subscriptions = new TreeMap<>();
     private final TreeSet<String> areas = new TreeSet<>();
 
@@ -44,7 +45,7 @@ final class BrowserEchoAccess {
                 subscriptions.remove(args[1] + ":" + args[2]);
                 return null;
             default :
-                throw new UnsupportedOperationException(method);
+                return quarantine.dispatch(method, args);
         }
     }
 }

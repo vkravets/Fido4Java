@@ -22,6 +22,8 @@ import org.fidonet.jftn.rpc.NodeStatus;
 import org.fidonet.jftn.rpc.PollInfo;
 import org.fidonet.jftn.rpc.PollLogPage;
 import org.fidonet.jftn.rpc.PollPage;
+import org.fidonet.jftn.rpc.QuarantinePage;
+import org.fidonet.jftn.rpc.QuarantineRetryResult;
 import org.fidonet.jftn.rpc.QueueItem;
 import org.fidonet.jftn.rpc.RobotAccessConfiguration;
 import org.fidonet.jftn.rpc.RobotRuleChange;
@@ -30,6 +32,7 @@ import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.jftn.tosser.OutboundSpool;
+import org.fidonet.jftn.tosser.PacketQuarantine;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -93,6 +96,37 @@ public final class NodeUi implements UiService.Iface {
     @Override
     public EchoAccessConfiguration echoAccess(String owner) throws UiError {
         return call(() -> mail.operate(tosser -> NodeEchoAccess.current(config, base)));
+    }
+
+    @Override
+    public QuarantinePage quarantine(String owner, String after, int limit) throws UiError {
+        return call(() -> mail.operate(tosser -> NodeQuarantine.current(tosser,
+                                                                        config,
+                                                                        after,
+                                                                        limit)));
+    }
+
+    @Override
+    public QuarantineRetryResult retryQuarantine(String owner,
+                                                 String id,
+                                                 String checksum,
+                                                 String peer)
+            throws UiError {
+        return call(() -> mail.operate(tosser -> {
+            FTNAddr expected = peer == null || peer.trim().isEmpty()
+                    ? null
+                    : new FTNAddr(peer.trim());
+            PacketQuarantine.Retry result = tosser.retryQuarantine(id, checksum, expected);
+            return new QuarantineRetryResult(result.accepted, result.reason);
+        }));
+    }
+
+    @Override
+    public void archiveQuarantine(String owner, String id, String checksum) throws UiError {
+        call(() -> mail.operate(tosser -> {
+            tosser.archiveQuarantine(id, checksum);
+            return null;
+        }));
     }
 
     @Override

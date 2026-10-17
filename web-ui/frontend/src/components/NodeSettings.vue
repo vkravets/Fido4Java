@@ -5,6 +5,7 @@ import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
 import MailSettings from './MailSettings.vue';
 import EchoSettings from './EchoSettings.vue';
+import QuarantineSettings from './QuarantineSettings.vue';
 import NotificationBanner from './NotificationBanner.vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
@@ -76,4 +77,5 @@ async function save() {
         @saved="mailSaved"
     />
     <EchoSettings v-if="ready" :key="'echo-' + mailVersion" :state="state" />
+    <QuarantineSettings v-if="ready" :state="state" />
 </template>

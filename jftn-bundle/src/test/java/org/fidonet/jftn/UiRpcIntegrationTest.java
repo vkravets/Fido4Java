@@ -93,6 +93,65 @@ class UiRpcIntegrationTest {
     }
 
     @Test
+    void releasesAndArchivesQuarantineOverTcpAndHttpWithSnapshotAndPeerChecks() throws Exception {
+        Path state = Files.createDirectories(root.resolve("state"));
+        byte[] bytes = quarantinePacket();
+        Files.write(state.resolve("legacy.bad"), bytes);
+        var item = ui.quarantine(token, "", 25).getItems().get(0);
+        assertEquals("", item.getPeer());
+        assertEquals("UNAUTHORIZED",
+                     assertThrows(UiError.class, () -> ui.quarantine("invalid", "", 25)).getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.retryQuarantine(token,
+                                                           item.getId(),
+                                                           item.getChecksum(),
+                                                           "")).getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.archiveQuarantine(token,
+                                                             "../legacy.bad",
+                                                             item.getChecksum())).getCode());
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertTrue(browser.retryQuarantine(token, item.getId(), item.getChecksum(), "1:500/101")
+                              .isAccepted());
+            assertTrue(ui.quarantine(token, "", 25).getItems().isEmpty());
+            assertTrue(Files.exists(state.resolve(".quarantine/archive/"
+                                                  + item.getChecksum()
+                                                  + ".bad")));
+            Files.write(state.resolve("archive.bad"), bytes);
+            var archived = browser.quarantine(token, "", 25).getItems().get(0);
+            bytes[8] ^= 1;
+            Files.write(state.resolve("archive.bad"), bytes);
+            assertEquals("INVALID_ARGUMENT",
+                         assertThrows(UiError.class,
+                                      () -> browser.archiveQuarantine(token,
+                                                                      archived.getId(),
+                                                                      archived.getChecksum())).getCode());
+            var changed = browser.quarantine(token, "", 25).getItems().get(0);
+            browser.archiveQuarantine(token, changed.getId(), changed.getChecksum());
+            assertTrue(ui.quarantine(token, "", 25).getItems().isEmpty());
+        }
+        assertTrue(base.getLocalNetmail(new FTNAddr("1:500/100")).isEmpty());
+    }
+
+    private byte[] quarantinePacket() {
+        ByteBuffer packet = ByteBuffer.allocate(60).order(ByteOrder.LITTLE_ENDIAN);
+        packet.putShort(0, (short) 101);
+        packet.putShort(2, (short) 100);
+        packet.putShort(18, (short) 2);
+        packet.putShort(20, (short) 500);
+        packet.putShort(22, (short) 500);
+        packet.putShort(34, (short) 1);
+        packet.putShort(36, (short) 1);
+        packet.position(26);
+        packet.put("secret".getBytes(StandardCharsets.US_ASCII));
+        return packet.array();
+    }
+
+    @Test
     void managesEchoImportAndExportRightsAcrossTcpAndHttpWithoutDeletingMail() throws Exception {
         assertEquals("database", ui.echoAccess(token).getSource());
         assertTrue(ui.echoAccess(token).getSubscriptions().isEmpty());

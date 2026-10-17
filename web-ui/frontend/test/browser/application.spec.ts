@@ -45,6 +45,29 @@ test('administrator grants, edits and revokes echo access through the station sc
 });
 
 
+test('administrator releases a legacy quarantine packet through HTTP RPC after choosing a peer', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/, exact: false }).click();
+    const panel = page
+        .locator('section')
+        .filter({ has: page.getByRole('heading', { name: 'Packet quarantine', exact: true }) });
+    await expect(panel.getByText('legacy.bad', { exact: true })).toBeVisible();
+    await panel.getByRole('button', { name: 'Release and retry' }).click();
+    await expect(panel.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(panel.getByRole('heading', { name: 'Confirm packet retry' })).toHaveCount(0);
+    await panel.getByRole('button', { name: 'Release and retry' }).click();
+    await panel.getByLabel('Expected source link').selectOption('1:500/101.0');
+    await panel.getByRole('button', { name: 'Confirm', exact: true }).click();
+    await expect(panel.getByText('No quarantined packets.')).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('Original retained');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+
 test('administrator persists separate PKT passwords and tosser options through real RPC', async ({
     page
 }) => {

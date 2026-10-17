@@ -129,10 +129,34 @@ struct EchoAccessConfiguration {
     4: required list<EchoSubscriptionInfo> subscriptions
 }
 
+struct QuarantineItem {
+    1: required string id,
+    2: required string name,
+    3: required i64 bytes,
+    4: required i64 modified,
+    5: required string checksum,
+    6: required string peer,
+    7: required string reason,
+    8: required i32 attempts,
+    9: required i64 lastAttempt
+}
 
+struct QuarantinePage {
+    1: required list<QuarantineItem> items,
+    2: required string nextCursor,
+    3: required bool hasMore,
+    4: required list<string> peers
+}
 
+struct QuarantineRetryResult {
+    1: required bool accepted,
+    2: required string detail
+}
 
 service UiService {
+    QuarantinePage quarantine(1:string session, 2:string after, 3:i32 limit) throws (1:UiError error),
+    QuarantineRetryResult retryQuarantine(1:string session, 2:string id, 3:string checksum, 4:string peer) throws (1:UiError error),
+    void archiveQuarantine(1:string session, 2:string id, 3:string checksum) throws (1:UiError error),
     EchoAccessConfiguration echoAccess(1:string session) throws (1:UiError error),
     RobotAccessConfiguration robotAccess(1:string session) throws (1:UiError error),
     void saveRobotRule(1:string session, 2:RobotRuleChange change) throws (1:UiError error),

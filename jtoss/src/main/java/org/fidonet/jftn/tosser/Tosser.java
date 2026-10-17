@@ -85,6 +85,8 @@ public class Tosser extends HasEventBus {
     private final IBase base;
     private final NetmailRouter netmailRouter;
     private final EchoRouter echoRouter;
+    private final PacketQuarantine quarantine;
+    private String packetRejection = "Packet import was rejected; inspect the node log.";
     private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
 
     public synchronized void addNetmailHandler(NetmailHandler handler) {
@@ -105,6 +107,7 @@ public class Tosser extends HasEventBus {
                                                        : null);
         this.areamgr = new EchoMgr(base);
         this.echoRouter = new EchoRouter(config, base);
+        this.quarantine = new PacketQuarantine(Path.of(config.getTmpDir()));
         if (EchoRouter.databaseSubscriptions(config) && !(base instanceof EchoRoutingStore)) {
             throw new IllegalArgumentException("Database echo subscriptions require an EchoRoutingStore");
         }
@@ -214,12 +217,93 @@ public class Tosser extends HasEventBus {
 
     private void processPacket(PktTemp packet, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
-        if (!tosspkt(packet.getPkt(), authenticatedPeer)) {
-            saveBad(packet);
+        boolean accepted;
+        try {
+            accepted = tosspkt(packet.getPkt(), authenticatedPeer);
+        } catch (IOException | EchoBaseException | RuntimeException failure) {
+            retainFailedPacket(packet, authenticatedPeer, failure);
+            throw failure;
+        }
+        if (!accepted) {
+            saveBad(packet, authenticatedPeer);
             logger.warn("Rejected packet retained in temporary directory: packet={}, directory={}",
                         packet.getName(),
                         config.getTmpDir());
         }
+    }
+
+    private void retainFailedPacket(PktTemp packet, FTNAddr peer, Exception failure) {
+        packetRejection = "Packet processing failed; inspect the node log.";
+        try {
+            saveBad(packet, peer);
+        } catch (IOException | TosserException retentionFailure) {
+            failure.addSuppressed(retentionFailure);
+        }
+    }
+
+    public synchronized PacketQuarantine.Page quarantine(String after, int limit)
+            throws IOException {
+        return quarantine.list(after, limit);
+    }
+
+    public synchronized PacketQuarantine.Retry retryQuarantine(String id,
+                                                               String checksum,
+                                                               FTNAddr peer)
+            throws IOException, EchoBaseException {
+        PacketQuarantine.Snapshot snapshot = quarantine.snapshot(id, checksum);
+        FTNAddr expected = snapshot.item.peer.isEmpty() ? peer : new FTNAddr(snapshot.item.peer);
+        if (expected == null || config.getLink(expected) == null) {
+            throw new IllegalArgumentException("Select the expected configured source link.");
+        }
+        if (peer != null && !peer.equals(expected)) {
+            throw new IllegalArgumentException("The original session peer cannot be changed.");
+        }
+        quarantine.preserve(snapshot);
+        quarantine.attempted(snapshot);
+        boolean accepted;
+        try {
+            accepted = tosspkt(ByteBuffer.wrap(snapshot.bytes), expected);
+        } catch (IOException | EchoBaseException | RuntimeException failure) {
+            retainRetryFailure(snapshot, failure);
+            throw failure;
+        }
+        if (accepted) {
+            quarantine.complete(snapshot);
+        } else {
+            quarantine.rejected(snapshot, packetRejection);
+        }
+        logger.info("Quarantine retry completed: id={}, peer={}, accepted={}",
+                    id,
+                    expected,
+                    accepted);
+        return new PacketQuarantine.Retry(accepted,
+                                          accepted
+                                                  ? "Packet processed; original retained in recovery archive."
+                                                  : packetRejection);
+    }
+
+    public synchronized void archiveQuarantine(String id, String checksum) throws IOException {
+        PacketQuarantine.Snapshot snapshot = quarantine.snapshot(id, checksum);
+        quarantine.preserve(snapshot);
+        quarantine.complete(snapshot);
+        logger.info("Packet removed from active quarantine and retained in recovery archive: id={}",
+                    id);
+    }
+
+    private void retainRetryFailure(PacketQuarantine.Snapshot snapshot, Exception failure) {
+        try {
+            quarantine.rejected(snapshot, "Packet processing failed; inspect the node log.");
+        } catch (IOException retentionFailure) {
+            failure.addSuppressed(retentionFailure);
+        }
+    }
+
+    private boolean rejectPacket(String reason) {
+        packetRejection = reason.replaceAll("\\p{Cntrl}", " ");
+        if (packetRejection.length() > 512) {
+            packetRejection = packetRejection.substring(0, 512);
+        }
+        return false;
     }
 
     private void deleteTossedFile(File file) {
@@ -228,6 +312,10 @@ public class Tosser extends HasEventBus {
         }
     }
     private void saveBad(PktTemp pkt) throws IOException, TosserException {
+        saveBad(pkt, null);
+    }
+
+    private void saveBad(PktTemp pkt, FTNAddr peer) throws IOException, TosserException {
         Path root = new File(config.getTmpDir()).toPath().toRealPath();
         String name = pkt.getName().replace('\\', '/');
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
@@ -242,24 +330,26 @@ public class Tosser extends HasEventBus {
             throw new TosserException("Packet path escapes the temporary directory");
         }
         File bad = badPath.toFile();
-
+        if (Files.isSymbolicLink(badPath)) {
+            throw new TosserException("Quarantine packet cannot be a symbolic link");
+        }
+        ByteBuffer copy = pkt.getPkt().duplicate();
+        copy.position(0);
+        byte[] bytes = new byte[copy.remaining()];
+        copy.get(bytes);
         if (bad.exists()) {
-            ByteBuffer copy = pkt.getPkt().duplicate();
-            copy.position(0);
-            byte[] bytes = new byte[copy.remaining()];
-            copy.get(bytes);
-            if (Arrays.equals(bytes, Files.readAllBytes(badPath))) {
-                return;
+            if (Files.size(badPath) != bytes.length
+                    || !Arrays.equals(bytes, Files.readAllBytes(badPath))) {
+                throw new IOException("A different rejected packet already exists: " + badPath);
             }
-            throw new IOException("A different rejected packet already exists: " + badPath);
+        }
+        quarantine.record(badPath, bytes, peer, packetRejection);
+        if (bad.exists()) {
+            return;
         }
         try (OutputStream out = Files.newOutputStream(badPath,
                                                       StandardOpenOption.CREATE_NEW,
                                                       StandardOpenOption.WRITE)) {
-            pkt.getPkt().position(0);
-            ByteBuffer buffer = pkt.getPkt().duplicate();
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
             out.write(bytes);
         }
     }
@@ -270,6 +360,7 @@ public class Tosser extends HasEventBus {
 
     private boolean tosspkt(ByteBuffer buf, FTNAddr authenticatedPeer)
             throws IOException, EchoBaseException {
+        packetRejection = "Packet import was rejected; inspect the node log.";
         FtsPkt packet = readPacket(buf);
         Link link = packetOriginLink(packet, authenticatedPeer);
         if (link == null) {
@@ -278,17 +369,17 @@ public class Tosser extends HasEventBus {
         FTNAddr origin = packet.getOrigZone() == 0 ? link.getAddr() : packet.getOrigaddr();
         if (authenticatedPeer != null && !authenticatedPeer.equals(origin)) {
             logger.warn("Packet origin does not match the receiving session");
-            return false;
+            return rejectPacket("Packet origin does not match the receiving session.");
         }
         FTNAddr destination = packetDestination(packet, link);
         if (destination == null) {
-            return false;
+            return rejectPacket("Packet destination is not a local AKA.");
         }
         if (!packet.getPass().equals(config.getPacketPassword(link))) {
             logger.error("PKT password mismatch: peer={}, destination={}; packet will be quarantined",
                          origin,
                          destination);
-            return false;
+            return rejectPacket("PKT password mismatch. Check the link packet password.");
         }
         return importPacketMessages(packet.getMsgs(), buf, link, origin, destination);
     }
@@ -308,6 +399,7 @@ public class Tosser extends HasEventBus {
         }
         if (link == null) {
             logger.error("Unknown packet origin link: {}", packet.getOrigaddr());
+            rejectPacket("Unknown packet origin link.");
         }
         return link;
     }
@@ -321,12 +413,14 @@ public class Tosser extends HasEventBus {
             }
             if (resolved != null) {
                 logger.warn("Ambiguous zone-less packet origin");
+                rejectPacket("Ambiguous zone-less packet origin.");
                 return null;
             }
             resolved = candidate;
         }
         if (resolved == null) {
             logger.error("Unknown zone-less packet origin link: {}", origin);
+            rejectPacket("Unknown zone-less packet origin link.");
         }
         return resolved;
     }
@@ -403,7 +497,7 @@ public class Tosser extends HasEventBus {
     private boolean importPacketMessage(Message message, Link link, String deliveryKey)
             throws IOException, EchoBaseException {
         if (!message.hasValidAddressing()) {
-            return false;
+            return rejectPacket("Message has invalid FTN addressing.");
         }
         return message.isEchomail()
                 ? importEchoMessage(message, link)
@@ -412,31 +506,41 @@ public class Tosser extends HasEventBus {
 
     private boolean importEchoMessage(Message message, Link link)
             throws IOException, EchoBaseException {
-        if ((!areamgr.isEchoExists(message.getArea().toLowerCase(Locale.ROOT))
-                && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false")))
-                || (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
-                        && !base.canWriteEcho(link, message.getArea()))) {
+        String rejection = echoImportFailure(message, link);
+        if (rejection != null) {
             logger.warn("Echo import is not permitted: {} from {}",
                         message.getArea(),
                         link.getAddr());
-            return false;
+            return rejectPacket(rejection);
         }
         if (areamgr.isDupe(message)) {
             return true;
         }
         getEventBus().publish(new TossEchoMailEvent(message, areamgr));
         if (!message.isValid()) {
-            return false;
+            return rejectPacket("Echomail rejected by a processing hook.");
         }
         processEchoMail(message);
         return true;
+    }
+
+    private String echoImportFailure(Message message, Link link) {
+        if (!areamgr.isEchoExists(message.getArea().toLowerCase(Locale.ROOT))
+                && !Boolean.parseBoolean(config.getValue("AutoCreateEcho", "false"))) {
+            return "Unknown echo area: " + message.getArea();
+        }
+        if (Boolean.parseBoolean(config.getValue("EnforceEchoAccess", "true"))
+                && !base.canWriteEcho(link, message.getArea())) {
+            return "WRITE access denied for echo area: " + message.getArea();
+        }
+        return null;
     }
 
     private boolean importNetmailMessage(Message message, Link link, String deliveryKey)
             throws IOException {
         getEventBus().publish(new TossNetmailEvent(message));
         if (netmailStore == null || !message.isValid()) {
-            return false;
+            return rejectPacket("Netmail storage is unavailable or a processing hook rejected the message.");
         }
         boolean local = config.getLocalAddresses().contains(message.getTAddr())
                 || link.getMyaddr() != null && link.getMyaddr().contains(message.getTAddr());
@@ -444,7 +548,7 @@ public class Tosser extends HasEventBus {
         Link route = decision.getNextHop();
         if (!local && (!decision.isPermitted() || (message.getAttributes() & 0x8810) != 0)) {
             logger.warn("Netmail transit refused ({}); quarantining packet", decision.getReason());
-            return false;
+            return rejectPacket("Netmail transit refused: " + decision.getReason());
         }
         netmailStore.saveNetmail(message, deliveryKey, local ? null : route.getAddr().toString());
         if (local) {
