@@ -29,7 +29,7 @@
 package org.fidonet.binkp.common.commands;
 
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.SessionHelper;
+import org.fidonet.binkp.common.SessionCryptoConfigurer;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
@@ -79,7 +79,7 @@ public class OKCommand extends MessageCommand {
             log.debug("MD5: {}", isMD5);
             if (sessionContext.isCryptMode()) {
                 log.info("Setting incoming/oncoming message crypt...");
-                SessionHelper.setSessionSecurity(session, sessionContext);
+                SessionCryptoConfigurer.setSessionSecurity(session, sessionContext);
             }
         }
 

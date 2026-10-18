@@ -26,14 +26,50 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.binkp.common.protocol;
+package org.fidonet.jftn.engine.script;
+
+import org.fidonet.config.IConfig;
+import org.fidonet.events.AbstractEventHandler;
+import org.fidonet.jftn.share.Command;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 
 /**
  * Created by IntelliJ IDEA.
- * Author: Vladimir Kravets
- * E-Mail: vova.kravets@gmail.com
- * Date: 10/10/15
- * Time: 11:37 AM
+ * User: Vladimir Kravets
+ * Date: 8/31/11
+ * Time: 10:29 AM
  */
-public class SessionWrapper<T extends Session> {
+public class ScriptApi {
+
+    private CommandRegistry commands;
+    private ScriptHookRegistry hooks;
+    private IConfig config;
+
+    public ScriptApi(ScriptEngine scriptEngine,
+                     ScriptHookRegistry hooks,
+                     CommandRegistry commands) {
+        this.hooks = hooks;
+        this.commands = commands;
+    }
+
+    public void registerCommand(String name, Command command) throws Exception {
+        commands.registerCommand(name, command);
+    }
+
+    public void registerHook(AbstractEventHandler hook) throws Exception {
+        hooks.registerHook(hook);
+    }
+
+    public void unregisterHook(AbstractEventHandler hook) throws Exception {
+        hooks.unregisterHook(hook);
+    }
+
+    public IConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(IConfig config) {
+        this.config = config;
+    }
 }

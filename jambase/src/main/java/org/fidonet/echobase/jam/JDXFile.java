@@ -28,7 +28,7 @@
 
 package org.fidonet.echobase.jam;
 
-import org.fidonet.misc.MyCRC;
+import org.fidonet.misc.InvertedCrc32;
 
 import java.io.Closeable;
 import java.io.File;
@@ -50,7 +50,7 @@ class JDXFile implements Closeable {
     }
 
     public void writeIndex(String uname, int offset) throws IOException {
-        int CRC = MyCRC.CRC(uname.toLowerCase().getBytes());
+        int CRC = InvertedCrc32.CRC(uname.toLowerCase().getBytes());
         jdx.seek(jdx.length());
         jdx.writeInt(Integer.reverseBytes(CRC));
         jdx.writeInt(Integer.reverseBytes(offset));

@@ -29,12 +29,12 @@
 package org.fidonet.tests.share;
 
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
-import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 import org.fidonet.jftn.tools.FileUtils;
 
 import org.junit.jupiter.api.Assertions;
@@ -55,9 +55,9 @@ public class TestCommandGroovy {
         // Init JythonScriptManager
         ScriptEngine scriptManager = new GroovyScriptManager();
         // Init hook and command classes
-        HookInterpreter hookInterpreter = new HookInterpreter();
+        ScriptHookRegistry hookInterpreter = new ScriptHookRegistry();
         CommandCollection commands = new CommandCollection();
-        CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
+        CommandRegistry commandInterpreter = new CommandRegistry(commands);
         // Add to script scope "jftn" variable which have all above data
         String fileName = "testCommand.groovy";
         try (InputStream inputStream = ScriptEngine.class.getClassLoader()
@@ -65,9 +65,9 @@ public class TestCommandGroovy {
             String fileContent = FileUtils.getFileContent(inputStream);
             scriptManager.registerScript(fileName,
                                          fileContent,
-                                         new JFtnScriptService(scriptManager,
-                                                               hookInterpreter,
-                                                               commandInterpreter));
+                                         new ScriptApi(scriptManager,
+                                                       hookInterpreter,
+                                                       commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }

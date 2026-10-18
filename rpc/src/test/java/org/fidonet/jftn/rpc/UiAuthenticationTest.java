@@ -93,7 +93,7 @@ class UiAuthenticationTest {
     void dispatchesAuthenticatedUiOverRealFramedTcpAndReturnsTypedErrors() throws Exception {
         UiSessions sessions = new UiSessions(accounts, 60);
         UiService.Iface api = AuthenticatedUi.wrap(sessions, backend());
-        try (Server server = new Server(0, "127.0.0.1", new DefaultServerHandler() {
+        try (Server server = new Server(0, "127.0.0.1", new DefaultRpcServiceProvider() {
             @Override
             public LoginService.Iface getLoginHandler() {
                 return sessions;

@@ -29,12 +29,12 @@
 package org.fidonet.tests.share;
 
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
-import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.jsr223.GroovyScriptEngineImpl;
@@ -73,16 +73,16 @@ public class TestReloadScript {
         // Init JythonScriptManager
         ScriptEngine scriptManager = new GroovyScriptManager();
         // Init hook and command classes
-        HookInterpreter hookInterpreter = new HookInterpreter();
+        ScriptHookRegistry hookInterpreter = new ScriptHookRegistry();
         CommandCollection commands = new CommandCollection();
-        CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
+        CommandRegistry commandInterpreter = new CommandRegistry(commands);
         // Add to script scope "jftn" variable which have all above data
         try {
             scriptManager.registerScript("script1",
                                          script1,
-                                         new JFtnScriptService(scriptManager,
-                                                               hookInterpreter,
-                                                               commandInterpreter));
+                                         new ScriptApi(scriptManager,
+                                                       hookInterpreter,
+                                                       commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -112,16 +112,16 @@ public class TestReloadScript {
         Assertions.assertEquals("test", test_static.get(null));
 
         scriptManager.unregisterScript("script1",
-                                       new JFtnScriptService(scriptManager,
-                                                             hookInterpreter,
-                                                             commandInterpreter));
+                                       new ScriptApi(scriptManager,
+                                                     hookInterpreter,
+                                                     commandInterpreter));
 
         try {
             scriptManager.registerScript("script1",
                                          script2,
-                                         new JFtnScriptService(scriptManager,
-                                                               hookInterpreter,
-                                                               commandInterpreter));
+                                         new ScriptApi(scriptManager,
+                                                       hookInterpreter,
+                                                       commandInterpreter));
         } catch (Exception e) {
             e.printStackTrace();
         }

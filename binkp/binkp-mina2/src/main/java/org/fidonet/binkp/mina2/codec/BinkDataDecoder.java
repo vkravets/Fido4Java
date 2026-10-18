@@ -29,9 +29,9 @@
 package org.fidonet.binkp.mina2.codec;
 
 import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.codec.BinkpFrameHeaderDecoder;
 import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 
@@ -58,7 +58,7 @@ public class BinkDataDecoder extends CumulativeProtocolDecoder {
         }
 
         short dataInfoRaw = in.getShort();
-        DataInfo dataInfo = DataReader.parseDataInfo(dataInfoRaw);
+        DataInfo dataInfo = BinkpFrameHeaderDecoder.parseDataInfo(dataInfoRaw);
 
         if (dataInfo == null || in.remaining() < dataInfo.getSize()) {
             in.position(start);

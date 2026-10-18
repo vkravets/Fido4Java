@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.share.Command;
 import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,9 +16,9 @@ public class CommandRegistrationTest {
     @Test
     public void registersCallableCommandsAndPreservesFirstRegistration() throws Exception {
         CommandCollection commands = new CommandCollection();
-        JFtnScriptService service = new JFtnScriptService(null,
-                                                          new HookInterpreter(),
-                                                          new CommandInterpreter(commands));
+        ScriptApi service = new ScriptApi(null,
+                                          new ScriptHookRegistry(),
+                                          new CommandRegistry(commands));
         Command<String, String> command = text -> "reply " + text;
         service.registerCommand("test", command);
         service.registerCommand("test", (Command<String, String>) text -> "replacement");

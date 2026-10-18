@@ -27,8 +27,10 @@ public class ScriptGeneratorTest {
         try (Connection connection = DriverManager.getConnection(url)) {
             List<BaseDaoImpl<?, ?>> daos = Arrays.asList((BaseDaoImpl<?, ?>) manager.getDao(Echoarea.class),
                                                          (BaseDaoImpl<?, ?>) manager.getDao(ConfigurationLink.class));
-            String create = ScriptGenerator.generateCreateScript(manager.connectionSource, daos);
-            String drop = ScriptGenerator.generateDropScript(manager.connectionSource, daos);
+            String create = DatabaseSchemaScriptGenerator.generateCreateScript(manager.connectionSource,
+                                                                               daos);
+            String drop = DatabaseSchemaScriptGenerator.generateDropScript(manager.connectionSource,
+                                                                           daos);
             assertTrue(manager.getDao(Echoarea.class).isTableExists());
             RunScript.execute(connection, new StringReader(drop));
             assertFalse(manager.getDao(Echoarea.class).isTableExists());
@@ -51,11 +53,11 @@ public class ScriptGeneratorTest {
         manager.connect();
         try {
             assertEquals("",
-                         ScriptGenerator.generateCreateScript(manager.connectionSource,
-                                                              Collections.emptyList()));
+                         DatabaseSchemaScriptGenerator.generateCreateScript(manager.connectionSource,
+                                                                            Collections.emptyList()));
             assertEquals("",
-                         ScriptGenerator.generateDropScript(manager.connectionSource,
-                                                            Collections.emptyList()));
+                         DatabaseSchemaScriptGenerator.generateDropScript(manager.connectionSource,
+                                                                          Collections.emptyList()));
         } finally {
             manager.disconnect();
         }

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.rpc.Credential;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
@@ -263,7 +263,7 @@ class SettingsHandlerTest {
                                                           "",
                                                           () -> {
                                                           });
-            DefaultServerHandler handlers = new DefaultServerHandler() {
+            DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {
                     return handler;
@@ -404,7 +404,7 @@ class SettingsHandlerTest {
                                                            "token",
                                                            () -> {
                                                            });
-            DefaultServerHandler handlers = new DefaultServerHandler() {
+            DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {
                     return settings;

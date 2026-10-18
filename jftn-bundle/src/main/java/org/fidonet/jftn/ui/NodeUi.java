@@ -60,7 +60,7 @@ public final class NodeUi implements UiService.Iface {
     private final JFtnConfig config;
     private final DatabaseManager base;
     private final MailService mail;
-    private final UiState state;
+    private final UserMailStateStore state;
     private final PollService polls;
     private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
@@ -71,7 +71,7 @@ public final class NodeUi implements UiService.Iface {
         this.base = base;
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
-        state = new UiState(Path.of(config.getTmpDir(), "ui-state"));
+        state = new UserMailStateStore(Path.of(config.getTmpDir(), "ui-state"));
         this.polls = polls;
     }
 

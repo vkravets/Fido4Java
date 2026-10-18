@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.fidonet.jftn.rpc.AuthenticatedUi;
 import org.fidonet.jftn.rpc.Credential;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.ProfileService;
 import org.fidonet.jftn.rpc.UiError;
@@ -112,12 +112,15 @@ class ProfileHandlerTest {
 
     @Test
     void profilesAndApprovalAreAvailableOverRealHttpJson() throws Exception {
-        try (HttpRpcServer server = new HttpRpcServer(0, "127.0.0.1", new DefaultServerHandler() {
-            @Override
-            public ProfileService.Iface getProfileHandler() {
-                return handler;
-            }
-        }, Set.of())) {
+        try (HttpRpcServer server = new HttpRpcServer(0,
+                                                      "127.0.0.1",
+                                                      new DefaultRpcServiceProvider() {
+                                                          @Override
+                                                          public ProfileService.Iface getProfileHandler() {
+                                                              return handler;
+                                                          }
+                                                      },
+                                                      Set.of())) {
             server.run();
             try (THttpClient connection = new THttpClient("http://127.0.0.1:"
                     + server.getLocalPort() + "/rpc/profile")) {

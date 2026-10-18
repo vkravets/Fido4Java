@@ -35,7 +35,7 @@ package org.fidonet.jftn.rpc;
  * Date: 1/24/14
  * Time: 3:27 PM
  */
-public interface ServerHandler {
+public interface RpcServiceProvider {
     default SettingsService.Iface getSettingsHandler() {
         return null;
     }

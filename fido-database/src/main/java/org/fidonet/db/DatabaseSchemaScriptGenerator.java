@@ -49,7 +49,7 @@ import java.util.List;
  * Date: 10/25/12
  * Time: 1:49 PM
  */
-public class ScriptGenerator {
+public class DatabaseSchemaScriptGenerator {
 
     private static List<String> getDropTableStatement(DatabaseType dbType, BaseDaoImpl<?, ?> dao)
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {

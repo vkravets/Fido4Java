@@ -10,7 +10,7 @@ import org.fidonet.echobase.EchoList;
 import org.fidonet.echobase.jam.struct.FixedHeaderInfoStruct;
 import org.fidonet.echobase.jam.struct.MessageHeader;
 import org.fidonet.echobase.jam.struct.SubField;
-import org.fidonet.misc.MyCRC;
+import org.fidonet.misc.InvertedCrc32;
 import org.fidonet.tools.CharsetTools;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -110,7 +110,7 @@ public class JAMStorageTest {
         ByteBuffer index = ByteBuffer.wrap(Files.readAllBytes(new File(path + ".jdx").toPath()))
                                      .order(ByteOrder.LITTLE_ENDIAN);
         assertEquals(16, index.remaining());
-        assertEquals(MyCRC.CRC("reader".getBytes()), index.getInt());
+        assertEquals(InvertedCrc32.CRC("reader".getBytes()), index.getInt());
         int firstOffset = index.getInt();
         index.getInt();
         int secondOffset = index.getInt();

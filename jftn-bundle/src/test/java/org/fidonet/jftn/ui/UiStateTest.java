@@ -22,7 +22,7 @@ class UiStateTest {
     @Test
     void draftQuotaAllowsReplacingAnExistingDraftAndDoesNotAffectOtherOwners() throws Exception {
         Path path = root.resolve("ui");
-        UiState state = new UiState(path);
+        UserMailStateStore state = new UserMailStateStore(path);
         seedDrafts(path, "sysop", 200);
         state.save("sysop", draft("0").setSubject("updated"));
         assertEquals(200, state.drafts("sysop").size());

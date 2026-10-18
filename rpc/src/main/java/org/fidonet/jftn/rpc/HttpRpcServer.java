@@ -34,7 +34,7 @@ public final class HttpRpcServer implements RpcTransport {
     private boolean started;
     private boolean closed;
 
-    public HttpRpcServer(int port, String bind, ServerHandler handlers, Set<String> origins)
+    public HttpRpcServer(int port, String bind, RpcServiceProvider handlers, Set<String> origins)
             throws IOException {
         this.origins = Set.copyOf(origins);
         this.origins.forEach(HttpRpcServer::validateOrigin);

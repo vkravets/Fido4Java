@@ -50,7 +50,7 @@ public final class PacketArchive implements AutoCloseable {
         int count = 0;
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            if (++count > Zipper.MAX_ENTRIES) {
+            if (++count > MailBundleUnpacker.MAX_ENTRIES) {
                 throw new IOException("Too many archive entries");
             }
             if (!entry.isDirectory()) {
@@ -63,7 +63,7 @@ public final class PacketArchive implements AutoCloseable {
         if (!entry.getName().toLowerCase(Locale.ROOT).endsWith(".pkt")) {
             throw new IOException("Non-packet entry in mail bundle: " + entry.getName());
         }
-        if (entry.getSize() > Zipper.MAX_PACKET_BYTES) {
+        if (entry.getSize() > MailBundleUnpacker.MAX_PACKET_BYTES) {
             throw new IOException("Packet exceeds size limit");
         }
         Path target = directory.resolve(packets.size() + ".pkt");
@@ -81,19 +81,20 @@ public final class PacketArchive implements AutoCloseable {
         while ((count = input.read(buffer)) != -1) {
             size += count;
             total += count;
-            if (size > Zipper.MAX_PACKET_BYTES || total > Zipper.MAX_BUNDLE_BYTES) {
+            if (size > MailBundleUnpacker.MAX_PACKET_BYTES
+                    || total > MailBundleUnpacker.MAX_BUNDLE_BYTES) {
                 throw new IOException("Unpacked data exceeds size limit");
             }
             output.write(buffer, 0, count);
         }
     }
 
-    public PktTemp readNext() throws IOException {
+    public PacketBuffer readNext() throws IOException {
         if (remaining == 0) {
             return null;
         }
         PacketFile packet = packets.get(--remaining);
-        return new PktTemp(packet.name, ByteBuffer.wrap(Files.readAllBytes(packet.path)));
+        return new PacketBuffer(packet.name, ByteBuffer.wrap(Files.readAllBytes(packet.path)));
     }
 
     @Override

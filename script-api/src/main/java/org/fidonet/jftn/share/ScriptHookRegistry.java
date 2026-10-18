@@ -26,33 +26,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.rpc;
+package org.fidonet.jftn.share;
+
+import org.fidonet.events.AbstractEventHandler;
+import org.fidonet.events.HasEventBus;
 
 /**
  * Created by IntelliJ IDEA.
- * Author: Vladimir Kravets
- * E-Mail: vova.kravets@gmail.com
- * Date: 1/24/14
- * Time: 3:27 PM
+ * User: Vladimir Kravets
+ * Date: 8/29/11
+ * Time: 11:31 AM
  */
-public class DefaultServerHandler implements ServerHandler {
-    @Override
-    public Api.Iface getApiHandler() {
-        return new ApiHandler();
+public class ScriptHookRegistry extends HasEventBus {
+
+    public void registerHook(AbstractEventHandler hook) throws Exception {
+        getEventBus().subscribe(hook);
     }
 
-    @Override
-    public LoginService.Iface getLoginHandler() {
-        return new LoginHandler();
-    }
-
-    @Override
-    public MessageService.Iface getMessageHandler() {
-        return new MessageHandler();
-    }
-
-    @Override
-    public StatisticService.Iface getStatisticsHandler() {
-        return null;
+    public void unregisterHook(AbstractEventHandler hook) throws Exception {
+        getEventBus().unsubscribe(hook);
     }
 }

@@ -28,9 +28,9 @@
 
 package org.fidonet.binkp.netty.plugin.codec;
 
+import org.fidonet.binkp.common.codec.BinkpFrameHeaderDecoder;
 import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.codec.DataInfo;
-import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 
@@ -64,7 +64,7 @@ public class BinkDataDecoder extends ReplayingDecoder<BinkDataDecoder.State> {
                 checkpoint(State.READ_CONTENT);
                 break;
             case READ_CONTENT :
-                final DataInfo dataInfo = DataReader.parseDataInfo((dataInfoRaw));
+                final DataInfo dataInfo = BinkpFrameHeaderDecoder.parseDataInfo((dataInfoRaw));
                 byte[] buf = new byte[dataInfo.getSize()];
                 in.readBytes(buf);
                 checkpoint(State.READ_LENGTH);

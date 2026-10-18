@@ -2,8 +2,8 @@ package org.fidonet.jftn.ui.transport;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.rpc.HttpRpcServer;
+import org.fidonet.jftn.rpc.RpcServiceProvider;
 import org.fidonet.jftn.rpc.RpcTransport;
-import org.fidonet.jftn.rpc.ServerHandler;
 import org.fidonet.jftn.ui.RpcConfiguration;
 
 import java.io.IOException;
@@ -16,7 +16,7 @@ public final class HttpRpcTransportFactory implements RpcTransportFactory {
     }
 
     @Override
-    public RpcTransport create(JFtnConfig config, ServerHandler handlers) throws IOException {
+    public RpcTransport create(JFtnConfig config, RpcServiceProvider handlers) throws IOException {
         if (!RpcConfiguration.enabled(config, "RpcHttpEnabled")) {
             return null;
         }

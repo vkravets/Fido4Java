@@ -1,7 +1,7 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.UiSessions;
@@ -50,7 +50,7 @@ public final class InitialSetup {
                                                            authPath,
                                                            token,
                                                            completion::countDown);
-            DefaultServerHandler handlers = new DefaultServerHandler() {
+            DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {
                     return settings;

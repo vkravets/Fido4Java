@@ -26,24 +26,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.jftn.share;
+package org.fidonet.misc;
 
-import org.fidonet.events.AbstractEventHandler;
-import org.fidonet.events.HasEventBus;
+import java.nio.ByteBuffer;
 
-/**
- * Created by IntelliJ IDEA.
- * User: Vladimir Kravets
- * Date: 8/29/11
- * Time: 11:31 AM
- */
-public class HookInterpreter extends HasEventBus {
+public class PacketBuffer {
+    private String name;
+    private ByteBuffer pkt;
 
-    public void registerHook(AbstractEventHandler hook) throws Exception {
-        getEventBus().subscribe(hook);
+    public PacketBuffer(String name, ByteBuffer pkt) {
+        this.name = name;
+        this.pkt = pkt;
     }
 
-    public void unregisterHook(AbstractEventHandler hook) throws Exception {
-        getEventBus().unsubscribe(hook);
+    public String getName() {
+        return name;
+    }
+
+    public ByteBuffer getPkt() {
+        return pkt;
     }
 }

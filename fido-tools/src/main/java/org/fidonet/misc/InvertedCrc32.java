@@ -30,7 +30,7 @@ package org.fidonet.misc;
 
 import java.util.zip.CRC32;
 
-public class MyCRC {
+public class InvertedCrc32 {
 
     public static int CRC(byte[] bb) {
         CRC32 crc32 = new CRC32();

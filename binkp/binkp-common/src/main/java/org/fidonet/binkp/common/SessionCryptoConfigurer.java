@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, Vladimir Kravets
+ * Copyright (c) 2012-2018, Vladimir Kravets
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,24 +26,30 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.fidonet.binkp.common.codec;
+package org.fidonet.binkp.common;
+
+import org.fidonet.binkp.common.codec.TrafficCrypter;
+import org.fidonet.binkp.common.config.Password;
+import org.fidonet.binkp.common.config.ServerRole;
+import org.fidonet.binkp.common.crypt.StandardDecrypt;
+import org.fidonet.binkp.common.crypt.StandardEncrypt;
+import org.fidonet.binkp.common.protocol.Session;
 
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
  * E-Mail: vova.kravets@gmail.com
- * Date: 9/19/12
- * Time: 6:58 PM
+ * Date: 5/6/18
+ * Time: 21:37
  */
-public class DataReader {
+public class SessionCryptoConfigurer {
 
-    public static DataInfo parseDataInfo(int dataInfo) {
-        int len = dataInfo & 0xffff;
-        boolean command = ((len & 0x8000) > 0);
-        len &= 0x7fff;
-        if (len > 0) {
-            return new DataInfo(command, len);
-        }
-        return null;
+    public static void setSessionSecurity(Session session, SessionContext sessionContext) {
+        final TrafficCrypter trafficCrypter = session.getTrafficCrypter();
+        final Password password = sessionContext.getPassword();
+        final char[] pass = password.getPassword().toCharArray();
+        final boolean isClient = sessionContext.getServerRole().equals(ServerRole.CLIENT);
+        trafficCrypter.setDecrypt(new StandardDecrypt(pass, isClient));
+        trafficCrypter.setEncrypt(new StandardEncrypt(pass, isClient));
     }
 }

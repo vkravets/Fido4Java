@@ -3,11 +3,11 @@ package org.fidonet.jftn.script;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
-import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.NetmailHandler;
 import org.fidonet.jftn.tosser.Tosser;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /** A node-owned script runtime, created and closed under the mail processing lock. */
-public final class MailScripts extends JFtnScriptService implements MailProcessingExtension {
+public final class MailScripts extends ScriptApi implements MailProcessingExtension {
     @FunctionalInterface
     public interface FileEchoHandler {
         void accept(FileEchoEvent event) throws IOException;
@@ -94,7 +94,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
                        Tosser tosser,
                        Iterable<MailScriptExtension> extensions)
             throws IOException {
-        super(null, new HookInterpreter(), new CommandInterpreter(new CommandCollection()));
+        super(null, new ScriptHookRegistry(), new CommandRegistry(new CommandCollection()));
         this.tosser = tosser;
         this.database = database;
         setConfig(config);

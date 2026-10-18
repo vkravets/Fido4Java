@@ -34,11 +34,11 @@ package org.fidonet.jftn.share;
  * Date: 8/29/11
  * Time: 11:31 AM
  */
-public class CommandInterpreter {
+public class CommandRegistry {
 
     private CommandCollection commands;
 
-    public CommandInterpreter(CommandCollection commands) {
+    public CommandRegistry(CommandCollection commands) {
         this.commands = commands;
     }
 

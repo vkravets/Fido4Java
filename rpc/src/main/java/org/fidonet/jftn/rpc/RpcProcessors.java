@@ -11,7 +11,7 @@ final class RpcProcessors {
     private RpcProcessors() {
     }
 
-    static Map<String, TProcessor> services(ServerHandler handlers) {
+    static Map<String, TProcessor> services(RpcServiceProvider handlers) {
         Map<String, TProcessor> services = new LinkedHashMap<>();
         services.put("api", new Api.Processor<>(handlers.getApiHandler()));
         services.put("login", new LoginService.Processor<>(handlers.getLoginHandler()));
@@ -36,7 +36,7 @@ final class RpcProcessors {
         return services;
     }
 
-    static TMultiplexedProcessor multiplexed(ServerHandler handlers) {
+    static TMultiplexedProcessor multiplexed(RpcServiceProvider handlers) {
         TMultiplexedProcessor processor = new TMultiplexedProcessor();
         services(handlers).forEach(processor::registerProcessor);
         return processor;

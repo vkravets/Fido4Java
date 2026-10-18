@@ -1,6 +1,6 @@
 package org.fidonet.jftn.tosser;
 
-import org.fidonet.misc.Zipper;
+import org.fidonet.misc.MailBundleUnpacker;
 import org.fidonet.types.FTNAddr;
 
 import org.slf4j.Logger;
@@ -196,7 +196,7 @@ public final class PacketQuarantine {
         long size = Files.size(path);
         Properties metadata = new Properties();
         String checksum = "";
-        if (size <= Zipper.MAX_PACKET_BYTES) {
+        if (size <= MailBundleUnpacker.MAX_PACKET_BYTES) {
             try {
                 checksum = checksum(path);
                 metadata = metadata(id, checksum);
@@ -279,9 +279,10 @@ public final class PacketQuarantine {
         }
         byte[] bytes;
         try (InputStream input = Files.newInputStream(path, LinkOption.NOFOLLOW_LINKS)) {
-            bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
+            bytes = input.readNBytes(MailBundleUnpacker.MAX_PACKET_BYTES + 1);
         }
-        if (bytes.length > Zipper.MAX_PACKET_BYTES || !hash(bytes).equals(expectedChecksum)) {
+        if (bytes.length > MailBundleUnpacker.MAX_PACKET_BYTES
+                || !hash(bytes).equals(expectedChecksum)) {
             throw new IllegalArgumentException("Packet changed. Refresh the quarantine list.");
         }
         return new Snapshot(path, item, bytes);
@@ -397,7 +398,7 @@ public final class PacketQuarantine {
             long total = 0;
             while ((count = input.read(block)) != -1) {
                 total += count;
-                if (total > Zipper.MAX_PACKET_BYTES) {
+                if (total > MailBundleUnpacker.MAX_PACKET_BYTES) {
                     throw new IOException("Quarantine packet exceeds size limit");
                 }
                 digest.update(block, 0, count);

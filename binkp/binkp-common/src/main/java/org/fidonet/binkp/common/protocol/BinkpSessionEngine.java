@@ -11,9 +11,9 @@ import org.fidonet.binkp.common.commands.SYSCommand;
 import org.fidonet.binkp.common.commands.TIMECommand;
 import org.fidonet.binkp.common.commands.VERCommand;
 import org.fidonet.binkp.common.commands.ZYZCommand;
+import org.fidonet.binkp.common.commands.share.BinkpCommandBatch;
 import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.commands.share.CommandFactory;
-import org.fidonet.binkp.common.commands.share.CompositeMessage;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.BinkData;
@@ -48,7 +48,7 @@ public final class BinkpSessionEngine {
         commands.add(new VERCommand());
         commands.add(new TIMECommand());
         commands.add(new ADRCommand());
-        new CompositeMessage(commands).send(session, context);
+        new BinkpCommandBatch(commands).send(session, context);
     }
 
     public static void receive(Session session, SessionContext context, BinkFrame frame)

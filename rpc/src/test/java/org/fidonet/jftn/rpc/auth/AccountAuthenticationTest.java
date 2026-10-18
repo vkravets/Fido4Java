@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.PasskeyOptions;
@@ -123,8 +123,8 @@ class AccountAuthenticationTest {
         }
     }
 
-    private DefaultServerHandler handlers() {
-        return new DefaultServerHandler() {
+    private DefaultRpcServiceProvider handlers() {
+        return new DefaultRpcServiceProvider() {
             @Override
             public AuthService.Iface getAuthHandler() {
                 return auth;

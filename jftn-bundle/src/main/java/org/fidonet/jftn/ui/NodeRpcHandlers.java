@@ -2,7 +2,7 @@ package org.fidonet.jftn.ui;
 
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.AuthenticatedUi;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.MessageService;
 import org.fidonet.jftn.rpc.ProfileService;
@@ -12,7 +12,7 @@ import org.fidonet.jftn.rpc.UiService;
 import org.apache.thrift.TException;
 
 /** Binds application services to Thrift independently of listener configuration. */
-final class NodeRpcHandlers extends DefaultServerHandler {
+final class NodeRpcHandlers extends DefaultRpcServiceProvider {
     private final RpcIdentity identity;
     private final UiService.Iface ui;
 

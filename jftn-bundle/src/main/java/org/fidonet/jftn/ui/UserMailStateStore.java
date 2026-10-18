@@ -19,10 +19,10 @@ import java.util.List;
 import java.util.Set;
 
 /** UI-owned draft/read/submission state, separate from the mail database. */
-final class UiState {
+final class UserMailStateStore {
     private final String url;
 
-    UiState(Path path) throws Exception {
+    UserMailStateStore(Path path) throws Exception {
         if (path.toString().contains(";")) {
             throw new IllegalArgumentException("Invalid UI state path");
         }

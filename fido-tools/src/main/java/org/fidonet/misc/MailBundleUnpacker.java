@@ -43,7 +43,7 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class Zipper {
+public class MailBundleUnpacker {
 
     public static final int MAX_PACKET_BYTES = 64 * 1024 * 1024;
     static final long MAX_BUNDLE_BYTES = 256L * 1024 * 1024;
@@ -53,12 +53,12 @@ public class Zipper {
         return new PacketArchive(Path.of(path));
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(Zipper.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(MailBundleUnpacker.class.getName());
 
-    public static LinkedList<PktTemp> unpackboundlfast(String bound) throws IOException {
+    public static LinkedList<PacketBuffer> unpackboundlfast(String bound) throws IOException {
         logger.info("Unpack and toss: {}", bound);
         long startTime = System.currentTimeMillis();
-        LinkedList<PktTemp> res = new LinkedList<PktTemp>();
+        LinkedList<PacketBuffer> res = new LinkedList<PacketBuffer>();
 
         try (ZipFile zip = new ZipFile(bound)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -76,7 +76,7 @@ public class Zipper {
                 byte[] bytes = readPacket(zip, entry, buf, total);
                 total += bytes.length;
                 ByteBuffer resbuf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
-                PktTemp pkt = new PktTemp(entry.getName(), resbuf);
+                PacketBuffer pkt = new PacketBuffer(entry.getName(), resbuf);
                 res.push(pkt);
             }
         }

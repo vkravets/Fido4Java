@@ -43,10 +43,10 @@ import org.fidonet.events.HasEventBus;
 import org.fidonet.fts.FtsPackMsg;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.exception.TosserException;
+import org.fidonet.misc.MailBundleUnpacker;
 import org.fidonet.misc.PacketArchive;
-import org.fidonet.misc.PktTemp;
+import org.fidonet.misc.PacketBuffer;
 import org.fidonet.misc.ReceivedFileArchive;
-import org.fidonet.misc.Zipper;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -185,7 +185,7 @@ public class Tosser extends HasEventBus {
             deleteTossedFile(file);
             return;
         }
-        LinkedList<PktTemp> packets = readPackets(file);
+        LinkedList<PacketBuffer> packets = readPackets(file);
         while (!packets.isEmpty()) {
             processPacket(packets.pop(), authenticatedPeer);
         }
@@ -194,32 +194,32 @@ public class Tosser extends HasEventBus {
 
     private void processBundle(File file, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
-        try (PacketArchive archive = Zipper.unpackToDisk(file.getAbsolutePath())) {
+        try (PacketArchive archive = MailBundleUnpacker.unpackToDisk(file.getAbsolutePath())) {
             processArchivePackets(archive, authenticatedPeer);
         }
     }
 
     private void processArchivePackets(PacketArchive archive, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
-        PktTemp packet;
+        PacketBuffer packet;
         while ((packet = archive.readNext()) != null) {
             processPacket(packet, authenticatedPeer);
         }
     }
 
-    private LinkedList<PktTemp> readPackets(File file) throws IOException {
-        LinkedList<PktTemp> packets = new LinkedList<>();
+    private LinkedList<PacketBuffer> readPackets(File file) throws IOException {
+        LinkedList<PacketBuffer> packets = new LinkedList<>();
         try (InputStream input = Files.newInputStream(file.toPath())) {
-            byte[] bytes = input.readNBytes(Zipper.MAX_PACKET_BYTES + 1);
-            if (bytes.length > Zipper.MAX_PACKET_BYTES) {
+            byte[] bytes = input.readNBytes(MailBundleUnpacker.MAX_PACKET_BYTES + 1);
+            if (bytes.length > MailBundleUnpacker.MAX_PACKET_BYTES) {
                 throw new IOException("Packet exceeds size limit");
             }
-            packets.add(new PktTemp(file.getName(), ByteBuffer.wrap(bytes)));
+            packets.add(new PacketBuffer(file.getName(), ByteBuffer.wrap(bytes)));
         }
         return packets;
     }
 
-    private void processPacket(PktTemp packet, FTNAddr authenticatedPeer)
+    private void processPacket(PacketBuffer packet, FTNAddr authenticatedPeer)
             throws IOException, TosserException, EchoBaseException {
         boolean accepted;
         try {
@@ -236,7 +236,7 @@ public class Tosser extends HasEventBus {
         }
     }
 
-    private void retainFailedPacket(PktTemp packet, FTNAddr peer, Exception failure) {
+    private void retainFailedPacket(PacketBuffer packet, FTNAddr peer, Exception failure) {
         packetRejection = "Packet processing failed; inspect the node log.";
         try {
             saveBad(packet, peer);
@@ -329,11 +329,11 @@ public class Tosser extends HasEventBus {
             logger.error("Cannot delete processed inbound mail: {}", file.getAbsolutePath());
         }
     }
-    private void saveBad(PktTemp pkt) throws IOException, TosserException {
+    private void saveBad(PacketBuffer pkt) throws IOException, TosserException {
         saveBad(pkt, null);
     }
 
-    private void saveBad(PktTemp pkt, FTNAddr peer) throws IOException, TosserException {
+    private void saveBad(PacketBuffer pkt, FTNAddr peer) throws IOException, TosserException {
         Path root = new File(config.getTmpDir()).toPath().toRealPath();
         String name = pkt.getName().replace('\\', '/');
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.tosser.exception.TosserException;
-import org.fidonet.misc.PktTemp;
+import org.fidonet.misc.PacketBuffer;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -71,10 +71,10 @@ public class TosserSecurityTest {
     }
 
     private void save(Tosser tosser, String name) throws Exception {
-        Method method = Tosser.class.getDeclaredMethod("saveBad", PktTemp.class);
+        Method method = Tosser.class.getDeclaredMethod("saveBad", PacketBuffer.class);
         method.setAccessible(true);
         try {
-            method.invoke(tosser, new PktTemp(name, ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            method.invoke(tosser, new PacketBuffer(name, ByteBuffer.wrap(new byte[]{1, 2, 3})));
         } catch (InvocationTargetException e) {
             throw (Exception) e.getCause();
         }

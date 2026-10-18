@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.fidonet.binkp.common.codec.DataReader;
+import org.fidonet.binkp.common.codec.BinkpFrameHeaderDecoder;
 import org.fidonet.binkp.common.commands.ERRCommand;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 
@@ -22,8 +22,8 @@ public class FrameRoundTripTest {
             throws Exception {
         BinkFrame frame = new ERRCommand().getData(null);
         assertEquals(0, BinkFrame.toBinkData(frame).getData().length);
-        assertNull(DataReader.parseDataInfo(0));
-        assertNull(DataReader.parseDataInfo(0x8000));
+        assertNull(BinkpFrameHeaderDecoder.parseDataInfo(0));
+        assertNull(BinkpFrameHeaderDecoder.parseDataInfo(0x8000));
     }
 
     @Test

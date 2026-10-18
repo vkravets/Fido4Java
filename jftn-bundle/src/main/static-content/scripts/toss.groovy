@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 import org.fidonet.config.JFtnConfig
-import org.fidonet.jftn.engine.script.JFtnScriptService
+import org.fidonet.jftn.engine.script.ScriptApi
 import org.fidonet.jftn.share.Command
 import org.fidonet.jftn.MailService
 import org.fidonet.db.DatabaseManager
@@ -35,9 +35,9 @@ import org.fidonet.jftn.plugins.PluginManager
 
 class TossCommand implements Command<String, Boolean> {
 
-    private JFtnScriptService share;
+    private ScriptApi share;
 
-    public TossCommand(JFtnScriptService share) {
+    public TossCommand(ScriptApi share) {
         this.share = share;
     }
 

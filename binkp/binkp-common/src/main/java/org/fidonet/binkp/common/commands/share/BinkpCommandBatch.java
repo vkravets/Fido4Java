@@ -42,11 +42,11 @@ import java.util.List;
  * Date: 9/20/12
  * Time: 11:06 AM
  */
-public class CompositeMessage implements Command {
+public class BinkpCommandBatch implements Command {
 
     private List<MessageCommand> commands;
 
-    public CompositeMessage(List<MessageCommand> commands) {
+    public BinkpCommandBatch(List<MessageCommand> commands) {
         this.commands = commands;
     }
 

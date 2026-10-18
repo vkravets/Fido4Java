@@ -45,7 +45,7 @@ class HttpRpcServerTest {
         accounts = new RpcAccounts(root.resolve("accounts"));
         accounts.bootstrap("sysop", "secret");
         UiSessions sessions = new UiSessions(accounts, 60);
-        DefaultServerHandler handlers = new DefaultServerHandler() {
+        DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
             @Override
             public LoginService.Iface getLoginHandler() {
                 return sessions;
@@ -161,7 +161,7 @@ class HttpRpcServerTest {
     void closesBeforeStartAndReleasesTheListener() throws Exception {
         HttpRpcServer idle = new HttpRpcServer(0,
                                                "127.0.0.1",
-                                               new DefaultServerHandler(),
+                                               new DefaultRpcServiceProvider(),
                                                Set.of());
         int port = idle.getLocalPort();
         idle.close();
@@ -186,7 +186,7 @@ class HttpRpcServerTest {
         assertThrows(IllegalArgumentException.class,
                      () -> new HttpRpcServer(0,
                                              "127.0.0.1",
-                                             new DefaultServerHandler(),
+                                             new DefaultRpcServiceProvider(),
                                              Set.of("*")));
     }
 

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.jftn.rpc.DefaultServerHandler;
+import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
+import org.fidonet.jftn.rpc.RpcServiceProvider;
 import org.fidonet.jftn.rpc.RpcTransport;
-import org.fidonet.jftn.rpc.ServerHandler;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -66,7 +66,7 @@ class RpcTransportsTest {
             }
 
             @Override
-            public RpcTransport create(JFtnConfig config, ServerHandler handlers)
+            public RpcTransport create(JFtnConfig config, RpcServiceProvider handlers)
                     throws IOException {
                 throw expected;
             }
@@ -111,7 +111,7 @@ class RpcTransportsTest {
             }
 
             @Override
-            public RpcTransport create(JFtnConfig config, ServerHandler handlers) {
+            public RpcTransport create(JFtnConfig config, RpcServiceProvider handlers) {
                 RpcTransport listener = new TcpRpcTransportFactory().create(config, handlers);
                 tcpPort.set(listener.getLocalPort());
                 return listener;
@@ -122,7 +122,7 @@ class RpcTransportsTest {
                                        + occupied.getLocalPort());
             assertThrows(IOException.class,
                          () -> RpcTransports.open(config,
-                                                  new DefaultServerHandler(),
+                                                  new DefaultRpcServiceProvider(),
                                                   List.of(tcp, new HttpRpcTransportFactory())));
             try (ServerSocket released = new ServerSocket(tcpPort.get())) {
                 assertEquals(tcpPort.get(), released.getLocalPort());
@@ -131,7 +131,7 @@ class RpcTransportsTest {
     }
 
     private RpcTransports open(List<RpcTransportFactory> factories) throws Exception {
-        return RpcTransports.open(new JFtnConfig(), new DefaultServerHandler(), factories);
+        return RpcTransports.open(new JFtnConfig(), new DefaultRpcServiceProvider(), factories);
     }
 
     private static JFtnConfig config(String text) throws Exception {
@@ -154,7 +154,7 @@ class RpcTransportsTest {
             }
 
             @Override
-            public RpcTransport create(JFtnConfig config, ServerHandler handlers) {
+            public RpcTransport create(JFtnConfig config, RpcServiceProvider handlers) {
                 return listener;
             }
         };

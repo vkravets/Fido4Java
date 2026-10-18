@@ -53,7 +53,7 @@ public class Server implements RpcTransport {
 
     private int port;
     private TServer server;
-    private ServerHandler serverHandler;
+    private RpcServiceProvider serverHandler;
     private TNonblockingServerSocket transport;
     private Thread worker;
     private boolean stopped;
@@ -66,14 +66,14 @@ public class Server implements RpcTransport {
     }
 
     public Server(int port) {
-        this(port, DEFAULT_BIND_IP, new DefaultServerHandler());
+        this(port, DEFAULT_BIND_IP, new DefaultRpcServiceProvider());
     }
 
-    public Server(ServerHandler handler) {
+    public Server(RpcServiceProvider handler) {
         this(DEFAULT_PORT, DEFAULT_BIND_IP, handler);
     }
 
-    public Server(int port, String bind_ip, ServerHandler handler) {
+    public Server(int port, String bind_ip, RpcServiceProvider handler) {
         this.port = port;
         this.serverHandler = handler;
         createServer(bind_ip);

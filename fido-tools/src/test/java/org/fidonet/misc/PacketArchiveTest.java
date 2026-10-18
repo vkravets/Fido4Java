@@ -22,10 +22,10 @@ public class PacketArchiveTest {
     public void stagesBeforeProcessingAndPreservesPacketOrderWithoutRetainingPayloads()
             throws Exception {
         Path source = bundle("second.pkt");
-        try (PacketArchive archive = Zipper.unpackToDisk(source.toString())) {
+        try (PacketArchive archive = MailBundleUnpacker.unpackToDisk(source.toString())) {
             Files.delete(source);
             assertEquals("second.pkt", archive.readNext().getName());
-            PktTemp first = archive.readNext();
+            PacketBuffer first = archive.readNext();
             assertEquals("nested/first.pkt", first.getName());
             assertEquals(123, first.getPkt().get());
             assertNull(archive.readNext());
@@ -36,7 +36,7 @@ public class PacketArchiveTest {
     public void rejectsEntireBundleBeforeExposingPacketsWhenALaterEntryIsInvalid()
             throws Exception {
         Path source = bundle("unexpected.txt");
-        try (PacketArchive ignored = Zipper.unpackToDisk(source.toString())) {
+        try (PacketArchive ignored = MailBundleUnpacker.unpackToDisk(source.toString())) {
             fail("Invalid bundle must not expose its first packet");
         } catch (IOException expected) {
             assertEquals("Non-packet entry in mail bundle: unexpected.txt", expected.getMessage());

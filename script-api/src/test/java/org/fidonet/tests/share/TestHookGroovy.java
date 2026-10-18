@@ -30,11 +30,11 @@ package org.fidonet.tests.share;
 
 import org.fidonet.events.HasEventBus;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
-import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.engine.script.ScriptEngine;
 import org.fidonet.jftn.share.CommandCollection;
-import org.fidonet.jftn.share.CommandInterpreter;
-import org.fidonet.jftn.share.HookInterpreter;
+import org.fidonet.jftn.share.CommandRegistry;
+import org.fidonet.jftn.share.ScriptHookRegistry;
 import org.fidonet.jftn.tools.FileUtils;
 import org.fidonet.tests.tools.ConsoleOutputStream;
 
@@ -57,7 +57,7 @@ public class TestHookGroovy extends HasEventBus {
     private static final String FILE_HOOK_NAME = "testHook.groovy";
 
     private ScriptEngine scriptManager;
-    private JFtnScriptService serviceAPI;
+    private ScriptApi serviceAPI;
 
     @BeforeEach
     public void setupEnv() throws Exception {
@@ -70,11 +70,11 @@ public class TestHookGroovy extends HasEventBus {
 
         // Init hook and command classes
         scriptManager = new GroovyScriptManager();
-        HookInterpreter hookInterpreter = new HookInterpreter();
+        ScriptHookRegistry hookInterpreter = new ScriptHookRegistry();
         CommandCollection commands = new CommandCollection();
-        CommandInterpreter commandInterpreter = new CommandInterpreter(commands);
+        CommandRegistry commandInterpreter = new CommandRegistry(commands);
         // Add to script scope "jftn" variable which have all above data
-        serviceAPI = new JFtnScriptService(scriptManager, hookInterpreter, commandInterpreter);
+        serviceAPI = new ScriptApi(scriptManager, hookInterpreter, commandInterpreter);
         scriptManager.registerScript(FILE_HOOK_NAME, hookScriptContent.intern(), serviceAPI);
     }
 

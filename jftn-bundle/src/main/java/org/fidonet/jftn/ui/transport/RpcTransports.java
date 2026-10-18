@@ -1,8 +1,8 @@
 package org.fidonet.jftn.ui.transport;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.rpc.RpcServiceProvider;
 import org.fidonet.jftn.rpc.RpcTransport;
-import org.fidonet.jftn.rpc.ServerHandler;
 import org.fidonet.jftn.ui.RpcResources;
 
 import java.util.HashSet;
@@ -19,14 +19,15 @@ public final class RpcTransports implements AutoCloseable {
     private RpcTransports() {
     }
 
-    public static RpcTransports open(JFtnConfig config, ServerHandler handlers) throws Exception {
+    public static RpcTransports open(JFtnConfig config, RpcServiceProvider handlers)
+            throws Exception {
         return open(config,
                     handlers,
                     List.of(new TcpRpcTransportFactory(), new HttpRpcTransportFactory()));
     }
 
     public static RpcTransports open(JFtnConfig config,
-                                     ServerHandler handlers,
+                                     RpcServiceProvider handlers,
                                      List<? extends RpcTransportFactory> factories)
             throws Exception {
         validateNames(factories);
@@ -41,7 +42,7 @@ public final class RpcTransports implements AutoCloseable {
     }
 
     private void startAll(JFtnConfig config,
-                          ServerHandler handlers,
+                          RpcServiceProvider handlers,
                           List<? extends RpcTransportFactory> factories)
             throws Exception {
         for (RpcTransportFactory factory : factories) {
@@ -59,7 +60,7 @@ public final class RpcTransports implements AutoCloseable {
         }
     }
 
-    private void start(JFtnConfig config, ServerHandler handlers, RpcTransportFactory factory)
+    private void start(JFtnConfig config, RpcServiceProvider handlers, RpcTransportFactory factory)
             throws Exception {
         RpcTransport listener = factory.create(config, handlers);
         if (listener == null) {

@@ -26,24 +26,33 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *
  ******************************************************************************/
 
-package org.fidonet.misc;
+package org.fidonet.jftn.rpc;
 
-import java.nio.ByteBuffer;
-
-public class PktTemp {
-    private String name;
-    private ByteBuffer pkt;
-
-    public PktTemp(String name, ByteBuffer pkt) {
-        this.name = name;
-        this.pkt = pkt;
+/**
+ * Created by IntelliJ IDEA.
+ * Author: Vladimir Kravets
+ * E-Mail: vova.kravets@gmail.com
+ * Date: 1/24/14
+ * Time: 3:27 PM
+ */
+public class DefaultRpcServiceProvider implements RpcServiceProvider {
+    @Override
+    public Api.Iface getApiHandler() {
+        return new ApiHandler();
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public LoginService.Iface getLoginHandler() {
+        return new LoginHandler();
     }
 
-    public ByteBuffer getPkt() {
-        return pkt;
+    @Override
+    public MessageService.Iface getMessageHandler() {
+        return new MessageHandler();
+    }
+
+    @Override
+    public StatisticService.Iface getStatisticsHandler() {
+        return null;
     }
 }
