@@ -734,6 +734,16 @@ public class Tosser extends HasEventBus {
         return netmailRouter;
     }
 
+    public synchronized NetmailDecision previewNetmail(Message message, FTNAddr source)
+            throws IOException {
+        if (localNetmailAddress(message.getTAddr())) {
+            return new NetmailDecision(NetmailDecision.Reason.LOCAL, null, null);
+        }
+        return source == null
+                ? netmailRouter.explain(message)
+                : netmailRouter.explainTransit(message, source);
+    }
+
     public EchoRouter getEchoRouter() {
         return echoRouter;
     }

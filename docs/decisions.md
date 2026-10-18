@@ -465,6 +465,16 @@ mail. The mailbox provider is detached before the authentication database closes
 Headless operation continues to use configured station AKAs; directory imports
 never create local mailboxes or grant account permissions.
 
+## 28. Netmail route administration shares runtime routing and publication
+
+Administrators manage SQL routing rules and preview decisions through UiService.
+Previews reuse the active tosser/router, including approved local mailboxes, and
+never submit messages or start transports. Policy saves use SettingsService and
+the station's existing atomic configuration/live-application transaction. Invalid
+next hops or masks preserve the active policy and file. Source switches require
+explicit UI confirmation and never silently migrate rules. File rules stay
+read-only. Queued deliveries retain their previously selected next hop.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

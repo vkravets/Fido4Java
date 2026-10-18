@@ -3,6 +3,7 @@ package org.fidonet.jftn.ui;
 import org.fidonet.jftn.MailRuntime;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.Mailbox;
+import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -41,6 +42,11 @@ final class MailSubmissionService {
             message.setMsgId(msgid);
             if (draft.isSetReplyTo()) {
                 message.getBody().getKludges().put("REPLY", draft.getReplyTo());
+            }
+            if (draft.getMailbox() != Mailbox.ECHO
+                    && !tosser.previewNetmail(message, null).isPermitted()) {
+                throw new UiError("NO_ROUTE",
+                                  "No route to recipient; contact the station administrator.");
             }
             tosser.submissionTargets(message);
             state.reserve(key, hash, msgid);

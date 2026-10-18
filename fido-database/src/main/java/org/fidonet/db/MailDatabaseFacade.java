@@ -300,7 +300,7 @@ public class MailDatabaseFacade
             List<StoredMail> result = new ArrayList<>();
             for (Netmail row : query.query()) {
                 Message message = row.toMessage();
-                if (Boolean.TRUE.equals(row.getSend())) {
+                if (Boolean.TRUE.equals(row.getSend()) || sent && row.getRoute() == null) {
                     message.setAttributes(message.getAttributes() | 8);
                 }
                 result.add(new StoredMail(row.getId(), message));

@@ -36,6 +36,12 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
                                                    "enforceechoaccess",
                                                    "autocreateecho",
                                                    "autocreateechofrom",
+                                                   "netmailroutes",
+                                                   "route",
+                                                   "defaultroute",
+                                                   "allowtransit",
+                                                   "transitfrom",
+                                                   "transitto",
                                                    "tossintervalseconds");
     private final JFtnConfig active;
     private final MailDatabaseFacade database;
@@ -155,9 +161,13 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
         }
         for (String flag : List.of("PreserveReceivedFiles",
                                    "EnforceEchoAccess",
-                                   "AutoCreateEcho")) {
+                                   "AutoCreateEcho",
+                                   "AllowTransit")) {
             String value = candidate.getValue(flag,
-                                              flag.equals("AutoCreateEcho") ? "false" : "true");
+                                              flag.equals("AutoCreateEcho")
+                                                      || flag.equals("AllowTransit")
+                                                              ? "false"
+                                                              : "true");
             if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
                 throw new IllegalArgumentException(flag + " must be true or false");
             }

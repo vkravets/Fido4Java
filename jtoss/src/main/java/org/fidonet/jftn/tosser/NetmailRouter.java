@@ -80,6 +80,10 @@ public final class NetmailRouter {
         store.saveNetmailRoute(rule);
     }
 
+    public static void validateMask(String value) {
+        new AddressPattern(value);
+    }
+
     public void removeRule(String id) {
         requireDatabaseRules();
         store.removeNetmailRoute(id);

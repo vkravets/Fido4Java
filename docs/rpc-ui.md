@@ -242,6 +242,10 @@ originated netmail, queued and sent). Netmail uses an empty area string. The
 OUTBOX message's sent attribute reflects transport acknowledgement. Transit
 netmail is not exposed as incoming local mail.
 
+Netmail `MailItem.body` is human-readable message text without FTN routing/control
+lines. `messageId` remains available separately for REPLY linkage. Clients quote
+this text instead of replaying incoming CHRS/MSGID/INTL or other kludges.
+
 Start pagination with afterId=0, limit=1..200. Pass nextId to continue while
 hasMore is true. IDs are SQL row identities within a mailbox, not FTN MSGIDs;
 the full FTN identifier is returned separately. Echo names are case-insensitive.
@@ -351,8 +355,16 @@ poll management. Its netmail reader supports approved account AKAs, inbox/outbox
 replies and persistent drafts. Echo reader navigation remains reserved. See
 [browser interface](web-ui.md).
 
+`UiService.netmailRoutes`, `saveNetmailRoute`, `deleteNetmailRoute` and
+`previewNetmailRoute` are administrator-only on both transports. Database rule
+mutations share the mail processing lock. File rules are read-only. The preview
+uses the same router as submission/transit and includes approved local mailboxes.
+`SettingsService.saveNetmailRouting` publishes rule-source/default-hop/transit
+policy with the existing atomic validation and hot-reload machinery. Configured
+next hops are validated; source changes do not migrate rules or rewrite queues.
+
 Remaining API/UI work includes tracking or terminating incoming sessions,
-full-text mail search, trash, message editing, safe link removal/renaming and routing-rule CRUD,
+full-text mail search, trash, message editing and safe link removal/renaming,
 file subscription administration and durable automatic poll
 retry scheduling. Station settings support adding and editing all configured links,
 including separate PKT passwords. AreaFix/FileFix can be addressed through ordinary netmail sends;

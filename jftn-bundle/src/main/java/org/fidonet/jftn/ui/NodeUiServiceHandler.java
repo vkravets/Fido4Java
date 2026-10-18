@@ -20,6 +20,9 @@ import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailItem;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
+import org.fidonet.jftn.rpc.NetmailRouteInfo;
+import org.fidonet.jftn.rpc.NetmailRoutePreview;
+import org.fidonet.jftn.rpc.NetmailRoutesConfiguration;
 import org.fidonet.jftn.rpc.NodeStatus;
 import org.fidonet.jftn.rpc.PollInfo;
 import org.fidonet.jftn.rpc.PollLogPage;
@@ -100,6 +103,42 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     @Override
     public RobotAccessConfiguration robotAccess(String owner) throws UiError {
         return call(robotRules::current);
+    }
+
+    @Override
+    public NetmailRoutesConfiguration netmailRoutes(String owner) throws UiError {
+        return call(() -> mail.operate(tosser -> NodeNetmailRouting.current(config, tosser)));
+    }
+
+    @Override
+    public void saveNetmailRoute(String owner, NetmailRouteInfo rule) throws UiError {
+        call(() -> mail.operate(tosser -> {
+            NodeNetmailRouting.save(config, tosser, rule);
+            return null;
+        }));
+    }
+
+    @Override
+    public void deleteNetmailRoute(String owner, String id) throws UiError {
+        MailDraftValidator.id(id);
+        call(() -> mail.operate(tosser -> {
+            NodeNetmailRouting.requireManaged(config);
+            tosser.getNetmailRouter().removeRule(id);
+            return null;
+        }));
+    }
+
+    @Override
+    public NetmailRoutePreview previewNetmailRoute(String owner,
+                                                   String destination,
+                                                   String source,
+                                                   boolean direct)
+            throws UiError {
+        return call(() -> mail.operate(tosser -> NodeNetmailRouting.preview(config,
+                                                                            tosser,
+                                                                            destination,
+                                                                            source,
+                                                                            direct)));
     }
 
     @Override
@@ -229,7 +268,9 @@ public final class NodeUiServiceHandler implements UiService.Iface {
                                        read);
         result.setAttributes(message.getAttributes());
         if (body) {
-            result.setBody(message.getBody().toString());
+            result.setBody(message.isEchomail()
+                    ? message.getBody().toString()
+                    : message.getBody().getBody());
         }
         return result;
     }

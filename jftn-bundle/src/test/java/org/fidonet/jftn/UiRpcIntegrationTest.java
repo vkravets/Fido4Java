@@ -21,6 +21,8 @@ import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
+import org.fidonet.jftn.rpc.NetmailRouteInfo;
+import org.fidonet.jftn.rpc.NetmailRoutingPolicy;
 import org.fidonet.jftn.rpc.ProfileService;
 import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.RobotRuleInfo;
@@ -488,6 +490,110 @@ class UiRpcIntegrationTest {
         return logins.login(new Credential(login, "point-password-123")).getSession_id();
     }
 
+    private SettingsService.Client settingsClient() {
+        return new SettingsService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                   "settings"));
+    }
+
+    private NetmailRoutingPolicy databaseRouting() throws Exception {
+        NetmailRoutingPolicy policy = new NetmailRoutingPolicy("database",
+                                                               "1:500/101",
+                                                               false,
+                                                               List.of(),
+                                                               List.of());
+        settingsClient().saveNetmailRouting(token, policy);
+        ui.saveNetmailRoute(token, new NetmailRouteInfo("zone-two", 10, "2:*", "1:500/101", true));
+        return policy;
+    }
+
+    @Test
+    void managedRoutingLiveWithPreviewValidationAndPointDenial() throws Exception {
+        NetmailRoutingPolicy policy = databaseRouting();
+        byte[] accepted = Files.readAllBytes(root.resolve("jftn.conf"));
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> settingsClient().saveNetmailRouting(token,
+                                                                            policy.deepCopy()
+                                                                                  .setTransitFrom(List.of("invalid")))).getCode());
+        assertArrayEquals(accepted, Files.readAllBytes(root.resolve("jftn.conf")));
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveNetmailRoute(token,
+                                                            new NetmailRouteInfo("bad",
+                                                                                 0,
+                                                                                 "*",
+                                                                                 "1:500/999",
+                                                                                 false))).getCode());
+        ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                            "profile"));
+        String point = approvedPoint(profiles, "routing-point", "1:500/100.1");
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class, () -> ui.netmailRoutes(point)).getCode());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> settingsClient().saveNetmailRouting(point, policy))
+                                                                                           .getCode());
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertEquals("RULE",
+                         browser.previewNetmailRoute(token, "2:500/100", "", false).getReason());
+            assertEquals("FORBIDDEN",
+                         assertThrows(UiError.class,
+                                      () -> browser.deleteNetmailRoute(point, "zone-two"))
+                                                                                          .getCode());
+        }
+        assertTrue(base.getQueuedNetmail().isEmpty());
+    }
+
+    @Test
+    void previewedRealRoutingAndLiveTransitMasksWithoutCreatingMail() throws Exception {
+        NetmailRoutingPolicy policy = databaseRouting();
+        var result = ui.previewNetmailRoute(token, "2:500/100", "", false);
+        assertEquals("RULE", result.getReason());
+        assertEquals("zone-two", result.getRuleId());
+        assertEquals("1:500/101.0", result.getNextHop());
+        assertEquals("LOCAL", ui.previewNetmailRoute(token, "1:500/100", "", false).getReason());
+        assertEquals("DIRECT_UNAVAILABLE",
+                     ui.previewNetmailRoute(token, "2:500/100", "", true).getReason());
+        assertEquals("TRANSIT_DISABLED",
+                     ui.previewNetmailRoute(token, "2:500/100", "1:500/101", false).getReason());
+        settingsClient().saveNetmailRouting(token,
+                                            policy.deepCopy()
+                                                  .setAllowTransit(true)
+                                                  .setTransitFrom(List.of("1:500/999")));
+        assertEquals("SOURCE_DENIED",
+                     ui.previewNetmailRoute(token, "2:500/100", "1:500/101", false).getReason());
+        settingsClient().saveNetmailRouting(token,
+                                            policy.deepCopy()
+                                                  .setAllowTransit(true)
+                                                  .setTransitFrom(List.of("1:500/101")));
+        assertEquals("RETURN_TO_SOURCE",
+                     ui.previewNetmailRoute(token, "2:500/100", "1:500/101", false).getReason());
+        assertTrue(base.getQueuedNetmail().isEmpty());
+    }
+
+    @Test
+    void routingChangesPreservedQueuedNextHopsAndSurvivedRpcRestart() throws Exception {
+        NetmailRoutingPolicy policy = databaseRouting();
+        ui.send(token, draft(Mailbox.OUTBOX).setToAddress("2:500/100"), "retained-hop");
+        transport.close();
+        rpc.close();
+        connect();
+        assertEquals(1, ui.netmailRoutes(token).getRulesSize());
+        ui.deleteNetmailRoute(token, "zone-two");
+        assertEquals("DEFAULT", ui.previewNetmailRoute(token, "2:500/100", "", false).getReason());
+        assertEquals(0, ui.netmailRoutes(token).getRulesSize());
+        settingsClient().saveNetmailRouting(token, policy.deepCopy().setDefaultHop(""));
+        assertEquals("NO_ROUTE", ui.previewNetmailRoute(token, "2:500/100", "", false).getReason());
+        assertEquals("NO_ROUTE",
+                     assertThrows(UiError.class,
+                                  () -> ui.send(token,
+                                                draft(Mailbox.OUTBOX).setToAddress("2:500/100"),
+                                                "no-route-send")).getCode());
+        assertEquals(1, base.getQueuedNetmail().size());
+        assertEquals("1:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
+    }
     @Test
     void isolatedApprovedPointMailboxesAndSendersAcrossTcpAndHttp() throws Exception {
         ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
@@ -496,10 +602,17 @@ class UiRpcIntegrationTest {
         String second = approvedPoint(profiles, "point-two", "1:500/100.2");
         ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.1"), "to-first");
         ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.2"), "to-second");
+        assertTrue(ui.messages(token, Mailbox.OUTBOX, "", 0, 10)
+                     .getItems()
+                     .stream()
+                     .allMatch(item -> (item.getAttributes() & 8) != 0));
         MailPage firstInbox = ui.messages(first, Mailbox.INBOX, "", 0, 10);
         MailPage secondInbox = ui.messages(second, Mailbox.INBOX, "", 0, 10);
         assertEquals(1, firstInbox.getItemsSize());
         assertEquals(1, secondInbox.getItemsSize());
+        var received = ui.message(first, Mailbox.INBOX, "", firstInbox.getItems().get(0).getId());
+        assertFalse(received.getBody().contains("\1"));
+        assertTrue(received.getBody().contains("Hello from UI"));
         long foreignId = secondInbox.getItems().get(0).getId();
         assertEquals("NOT_FOUND",
                      assertThrows(UiError.class,
@@ -512,7 +625,9 @@ class UiRpcIntegrationTest {
         assertEquals("FORBIDDEN",
                      assertThrows(UiError.class,
                                   () -> ui.messages(first, Mailbox.ECHO, "test", 0, 10)).getCode());
-        MailDraft pointDraft = draft(Mailbox.OUTBOX).setFromAddress("1:500/100.1");
+        MailDraft pointDraft = draft(Mailbox.OUTBOX).setFromAddress("1:500/100.1")
+                                                    .setBody("> " + received.getBody())
+                                                    .setReplyTo(received.getMessageId());
         ui.saveDraft(first, pointDraft);
         assertTrue(ui.drafts(second).isEmpty());
         assertEquals("FORBIDDEN",
@@ -527,6 +642,14 @@ class UiRpcIntegrationTest {
                                                                .setFromAddress("1:500/100"))).getCode());
         String msgid = ui.send(first, pointDraft, "point-send");
         assertEquals(msgid, ui.send(first, pointDraft, "point-send"));
+        assertEquals(received.getMessageId(),
+                     base.getQueuedNetmail()
+                         .get(0)
+                         .getMessage()
+                         .getBody()
+                         .getKludges()
+                         .get("REPLY")
+                         .trim());
         assertEquals(1, ui.messages(first, Mailbox.OUTBOX, "", 0, 10).getItemsSize());
         assertTrue(ui.messages(second, Mailbox.OUTBOX, "", 0, 10).getItems().isEmpty());
         try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()

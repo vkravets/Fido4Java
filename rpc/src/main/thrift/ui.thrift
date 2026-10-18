@@ -77,6 +77,35 @@ struct LinkInfo {
     5: required list<string> subscriptions
 }
 
+struct NetmailRoutingPolicy {
+    1: required string mode,
+    2: required string defaultHop,
+    3: required bool allowTransit,
+    4: required list<string> transitFrom,
+    5: required list<string> transitTo
+}
+
+struct NetmailRouteInfo {
+    1: required string id,
+    2: required i32 priority,
+    3: required string pattern,
+    4: required string nextHop,
+    5: required bool enabled
+}
+
+struct NetmailRoutesConfiguration {
+    1: required NetmailRoutingPolicy policy,
+    2: required list<NetmailRouteInfo> rules,
+    3: required list<string> peers
+}
+
+struct NetmailRoutePreview {
+    1: required string reason,
+    2: required string nextHop,
+    3: required string ruleId,
+    4: required bool permitted
+}
+
 struct PollInfo {
     1: required string id,
     2: required string address,
@@ -178,6 +207,10 @@ struct QuarantineRetryResult {
 }
 
 service UiService {
+    NetmailRoutesConfiguration netmailRoutes(1:string session) throws (1:UiError error),
+    void saveNetmailRoute(1:string session, 2:NetmailRouteInfo rule) throws (1:UiError error),
+    void deleteNetmailRoute(1:string session, 2:string id) throws (1:UiError error),
+    NetmailRoutePreview previewNetmailRoute(1:string session, 2:string destination, 3:string source, 4:bool direct) throws (1:UiError error),
     list<ExtensionSettings> extensions(1:string session) throws (1:UiError error),
     void saveExtension(1:string session, 2:string id, 3:string section, 4:map<string,string> values) throws (1:UiError error),
     QuarantinePage quarantine(1:string session, 2:string after, 3:i32 limit) throws (1:UiError error),

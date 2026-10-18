@@ -3,6 +3,7 @@ package org.fidonet.jftn.web;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.jftn.rpc.DirectoryPage;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
+import org.fidonet.jftn.rpc.NetmailRoutingPolicy;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.NodeLookup;
 import org.fidonet.jftn.rpc.SettingsService;
@@ -163,6 +164,18 @@ public final class NodeSettingsRpcHandler implements SettingsService.Iface {
             throw new UiError("FORBIDDEN", "Complete setup and sign in as administrator first");
         }
         sessions.requireAdminUser(sessions.require(authorization));
+    }
+
+    @Override
+    public synchronized boolean saveNetmailRouting(String authorization,
+                                                   NetmailRoutingPolicy policy)
+            throws UiError {
+        authorizeMailSettings(authorization);
+        return call(() -> {
+            NetmailRoutingSettings.save(store, policy);
+            saved = true;
+            return true;
+        });
     }
 
     @Override

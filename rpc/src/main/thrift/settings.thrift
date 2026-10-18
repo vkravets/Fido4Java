@@ -75,6 +75,7 @@ struct DirectoryPage {
 }
 
 service SettingsService {
+    bool saveNetmailRouting(1:string authorization, 2:ui.NetmailRoutingPolicy policy) throws (1:ui.UiError error),
     // Public read-only local catalog search, also used by registration suggestions.
     DirectoryPage searchDirectory(1:string query, 2:i32 offset, 3:i32 limit, 4:bool includePoints) throws (1:ui.UiError error),
     bool reload(1:string authorization) throws (1:ui.UiError error),
