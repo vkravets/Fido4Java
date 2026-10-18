@@ -33,5 +33,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Matches: Story = {};
+export const NodesOnly: Story = { args: { includePoints: false } };
 export const MultipleAkas: Story = { args: { modelValue: '1:500/100 1:500/10', multiple: true } };
 export const Unavailable: Story = { parameters: { offline: true } };

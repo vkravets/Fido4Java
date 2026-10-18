@@ -35,9 +35,11 @@ export const directoryNodes: DirectoryNode[] = [
         flags: ['CM', 'IBN', 'INA:[2001:db8::1]']
     }
 ];
-export const searchDirectory: DirectorySearch = async (query, offset, limit) => {
-    const matches = directoryNodes.filter((node) =>
-        JSON.stringify(node).toLowerCase().includes(query.toLowerCase())
+export const searchDirectory: DirectorySearch = async (query, offset, limit, includePoints) => {
+    const matches = directoryNodes.filter(
+        (node) =>
+            ((includePoints && node.kind === 'POINT') || node.kind !== 'POINT') &&
+            JSON.stringify(node).toLowerCase().includes(query.toLowerCase())
     );
     return {
         items: matches.slice(offset, offset + limit),

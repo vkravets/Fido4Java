@@ -5,7 +5,8 @@ import type { DirectoryNode, DirectoryPage } from '@rpc/bindings.mjs';
 export type DirectorySearch = (
     query: string,
     offset: number,
-    limit: number
+    limit: number,
+    includePoints: boolean
 ) => Promise<DirectoryPage>;
 export const directorySearchKey: InjectionKey<DirectorySearch> = Symbol('directory-search');
 
@@ -18,7 +19,11 @@ export function addressToken(value: string, caret: number, multiple: boolean) {
     return { start, end, query: value.slice(start, end) };
 }
 
-export function createDirectorySearch(search: DirectorySearch, limit = 25) {
+export function createDirectorySearch(
+    search: DirectorySearch,
+    limit = 25,
+    includePoints = () => true
+) {
     const items = ref<DirectoryNode[]>([]);
     const busy = ref(false);
     const hasMore = ref(false);
@@ -33,7 +38,7 @@ export function createDirectorySearch(search: DirectorySearch, limit = 25) {
         items.value = [];
         hasMore.value = false;
         try {
-            const page = await search(query, start, limit);
+            const page = await search(query, start, limit, includePoints());
             if (disposed || version !== generation) return;
             items.value = page.items;
             hasMore.value = page.hasMore;

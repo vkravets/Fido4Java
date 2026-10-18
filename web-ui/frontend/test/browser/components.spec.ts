@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('node-only address suggestions exclude points', async ({ page }) => {
+    await story(page, 'directory-addressinput--nodes-only');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await expect(page.getByRole('option').filter({ hasText: 'First Point' })).toHaveCount(0);
+});
+
 test('address suggestions support the keyboard and replace only the current AKA', async ({
     page
 }) => {

@@ -16,12 +16,17 @@ final class DirectoryBrowser {
     private DirectoryBrowser() {
     }
 
-    static DirectoryPage search(Path path, String query, int offset, int limit) throws IOException {
+    static DirectoryPage search(Path path,
+                                String query,
+                                int offset,
+                                int limit,
+                                boolean includePoints)
+            throws IOException {
         if (limit < 1 || limit > 100) {
             throw new IllegalArgumentException("Directory page size must be 1..100");
         }
         try (DirectoryCatalog catalog = new DirectoryCatalog(path)) {
-            List<DirectoryEntry> entries = catalog.search(query, offset, limit + 1);
+            List<DirectoryEntry> entries = catalog.search(query, offset, limit + 1, includePoints);
             List<DirectoryNode> items = new ArrayList<>();
             for (DirectoryEntry entry : entries.subList(0, Math.min(limit, entries.size()))) {
                 String kind = entry.getAddress().getPnt() != 0

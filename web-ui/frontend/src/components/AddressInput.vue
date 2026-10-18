@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, onUnmounted, ref, useAttrs, useId } from 'vue';
+import { computed, inject, nextTick, onUnmounted, ref, useAttrs, useId, watch } from 'vue';
 import { api } from '../api.ts';
 import { addressToken, createDirectorySearch, directorySearchKey } from '../directory.ts';
 import { t } from '../i18n.ts';
 import type { DirectoryNode } from '@rpc/bindings.mjs';
 defineOptions({ inheritAttrs: false });
 const model = defineModel<string>({ required: true });
-const props = withDefaults(defineProps<{ multiple?: boolean }>(), { multiple: false });
+const props = withDefaults(defineProps<{ multiple?: boolean; includePoints?: boolean }>(), {
+    multiple: false,
+    includePoints: true
+});
 const attrs = useAttrs();
-const search = inject(directorySearchKey, (query, offset, limit) =>
-    api.settings.searchDirectory(query, offset, limit)
+const search = inject(directorySearchKey, (query, offset, limit, includePoints) =>
+    api.settings.searchDirectory(query, offset, limit, includePoints)
 );
-const reader = createDirectorySearch(search, 8);
+const reader = createDirectorySearch(search, 8, () => props.includePoints);
 const { items, busy } = reader;
 const input = ref<HTMLInputElement | null>(null);
 const open = ref(false);
@@ -87,6 +90,13 @@ onUnmounted(() => {
     clearTimeout(timer);
     reader.dispose();
 });
+watch(
+    () => props.includePoints,
+    () => {
+        close();
+        if (document.activeElement === input.value) request();
+    }
+);
 </script>
 <template>
     <span class="address-input">

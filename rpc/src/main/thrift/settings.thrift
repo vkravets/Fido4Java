@@ -76,7 +76,7 @@ struct DirectoryPage {
 
 service SettingsService {
     // Public read-only local catalog search, also used by registration suggestions.
-    DirectoryPage searchDirectory(1:string query, 2:i32 offset, 3:i32 limit) throws (1:ui.UiError error),
+    DirectoryPage searchDirectory(1:string query, 2:i32 offset, 3:i32 limit, 4:bool includePoints) throws (1:ui.UiError error),
     bool reload(1:string authorization) throws (1:ui.UiError error),
     SetupStatus status(),
     NodeConfiguration current(1:string authorization) throws (1:ui.UiError error),

@@ -233,17 +233,21 @@ public final class DirectoryCatalog implements AutoCloseable {
 
     /** Searches all list sources without assigning trust or preferring one source. */
     public List<DirectoryEntry> search(String text, int offset, int limit) throws IOException {
+        return search(text, offset, limit, true);
+    }
+
+    public List<DirectoryEntry> search(String text, int offset, int limit, boolean includePoints)
+            throws IOException {
         if (text == null || text.length() > 160 || offset < 0 || offset > 1000000 || limit < 1
                 || limit > 500) {
             throw new IllegalArgumentException("Search needs at most 160 characters, offset 0..1000000 and limit 1..500");
         }
         String value = text.trim();
+        String pointFilter = includePoints ? "" : " AND address LIKE '%.0'";
         if (value.matches("\\d{1,5}:\\d{0,5}(?:/\\d{0,5}(?:\\.\\d{0,5})?)?")) {
-            return query("SELECT " + COLUMNS
-                    + " FROM directory_entries WHERE address LIKE ? ORDER BY address,source_id LIMIT ? OFFSET ?",
-                         value + "%",
-                         limit,
-                         offset);
+            return query("SELECT "
+                    + COLUMNS + " FROM directory_entries WHERE address LIKE ?" + pointFilter
+                    + " ORDER BY address,source_id LIMIT ? OFFSET ?", value + "%", limit, offset);
         }
         String pattern = "%"
                          + value.toLowerCase(Locale.ROOT)
@@ -273,8 +277,9 @@ public final class DirectoryCatalog implements AutoCloseable {
                      + COLUMNS
                      + " FROM directory_entries WHERE ("
                      + String.join(" OR ", predicates)
-                     + ") ORDER BY address,source_id LIMIT ? OFFSET ?",
-                     parameters.toArray());
+                     + ")"
+                     + pointFilter
+                     + " ORDER BY address,source_id LIMIT ? OFFSET ?", parameters.toArray());
     }
 
     private List<DirectoryEntry> query(String sql, Object... parameters) throws IOException {

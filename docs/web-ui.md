@@ -3,6 +3,12 @@
 The node hosts its browser interface and Thrift HTTP endpoints in the same JVM.
 TCP RPC remains available. No Node.js process is needed when running the node.
 
+Address suggestions share the node/point directory. `AddressInput` defaults to
+including points; use `<AddressInput :include-points="false" />` for a node-only
+field. The component passes the flag through Thrift `searchDirectory` to the
+catalog's SQL query before pagination. The full Node directory includes points.
+This is a presentation filter, not an authorization or link-trust decision.
+
 ## Building and opening the interface
 
 The browser application uses Vue 3 and TypeScript (`strict` mode), built with Vite.

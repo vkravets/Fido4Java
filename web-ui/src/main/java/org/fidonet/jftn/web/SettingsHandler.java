@@ -55,8 +55,13 @@ public final class SettingsHandler implements SettingsService.Iface {
     }
 
     @Override
-    public DirectoryPage searchDirectory(String query, int offset, int limit) throws UiError {
-        return call(() -> DirectoryBrowser.search(store.catalogPath(), query, offset, limit));
+    public DirectoryPage searchDirectory(String query, int offset, int limit, boolean includePoints)
+            throws UiError {
+        return call(() -> DirectoryBrowser.search(store.catalogPath(),
+                                                  query,
+                                                  offset,
+                                                  limit,
+                                                  includePoints));
     }
 
     @Override

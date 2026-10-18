@@ -5,6 +5,25 @@ import type { DirectoryPage } from '../../build/frontend-generated/bindings.mjs'
 
 const page = (address: string): DirectoryPage =>
     ({ items: [{ address }], nextOffset: 25, hasMore: true }) as DirectoryPage;
+
+test('point filtering is requested before pagination and reflects component settings', async () => {
+    let include = false;
+    const requests: boolean[] = [];
+    const reader = createDirectorySearch(
+        async (_query, _offset, _limit, points) => {
+            requests.push(points);
+            return page(points ? '1:500/100.1' : '1:500/100.0');
+        },
+        8,
+        () => include
+    );
+    await reader.load('1:500/100');
+    assert.equal(reader.items.value[0]?.address, '1:500/100.0');
+    include = true;
+    await reader.load('1:500/100');
+    assert.deepEqual(requests, [false, true]);
+    assert.equal(reader.items.value[0]?.address, '1:500/100.1');
+});
 test('finds the token around the caret without replacing other AKAs', () => {
     const value = '1:500/100 1:500/10 1:500/102';
     assert.deepEqual(addressToken(value, 15, true), { start: 10, end: 18, query: '1:500/10' });

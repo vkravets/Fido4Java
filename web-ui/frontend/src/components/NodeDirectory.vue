@@ -8,8 +8,8 @@ import NotificationBanner from './NotificationBanner.vue';
 const query = ref('');
 const error = ref('');
 const waiting = ref(false);
-const search = inject(directorySearchKey, (query, offset, limit) =>
-    api.settings.searchDirectory(query, offset, limit)
+const search = inject(directorySearchKey, (query, offset, limit, includePoints) =>
+    api.settings.searchDirectory(query, offset, limit, includePoints)
 );
 const reader = createDirectorySearch(search);
 const { items, busy, hasMore, offset, nextOffset } = reader;

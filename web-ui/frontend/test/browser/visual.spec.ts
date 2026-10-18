@@ -15,6 +15,7 @@ const screens = [
     { name: 'directory-empty', story: 'directory-directorypanel--empty' },
     { name: 'directory-loading', story: 'directory-directorypanel--loading' },
     { name: 'address-suggestions', story: 'directory-addressinput--matches', suggestions: true },
+    { name: 'address-nodes-only', story: 'directory-addressinput--nodes-only', suggestions: true },
     { name: 'address-multiple', story: 'directory-addressinput--multiple-akas', suggestions: true },
     {
         name: 'address-unavailable',
