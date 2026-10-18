@@ -28,16 +28,11 @@
 
 package org.fidonet.binkp.common;
 
-import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
-import org.fidonet.binkp.common.events.ConnectedEvent;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.events.FileEvent;
-import org.fidonet.binkp.common.events.FileReceivedEvent;
-import org.fidonet.binkp.common.events.FileSendEvent;
 import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.FilesSender;
@@ -46,9 +41,6 @@ import org.fidonet.events.Event;
 import org.fidonet.events.EventBus;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,7 +63,7 @@ import java.util.function.Consumer;
  * Time: 3:49 PM
  */
 public class SessionContext extends HasEventBus {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SessionContext.class);
+    private final SessionTelemetry telemetry = new SessionTelemetry(this);
 
     // send size
     private long sendMailSize;
@@ -154,44 +146,21 @@ public class SessionContext extends HasEventBus {
     private ReceivedFileHandler receivedFileHandler;
     private SentFileHandler sentFileHandler;
     private Consumer<SessionContext> sessionClosedHandler;
-    private volatile SessionActivityListener activityListener;
-    private volatile Consumer<String> protocolLogListener;
 
     public void setProtocolLogListener(Consumer<String> listener) {
-        protocolLogListener = listener;
+        telemetry.setProtocolListener(listener);
     }
 
     public void recordProtocolLog(String line) {
-        Consumer<String> listener = protocolLogListener;
-        if (listener == null) {
-            return;
-        }
-        try {
-            listener.accept(line);
-        } catch (RuntimeException ignored) {
-            // A diagnostic consumer must never interrupt the protocol.
-        }
-    }
-
-    private void info(String line) {
-        LOGGER.info(line);
-        recordProtocolLog(line);
+        telemetry.recordProtocolLog(line);
     }
 
     public void setActivityListener(SessionActivityListener listener) {
-        activityListener = listener;
+        telemetry.setActivityListener(listener);
     }
 
     private void activity(SessionActivityListener.Kind kind, String name, long bytes) {
-        SessionActivityListener listener = activityListener;
-        if (listener == null) {
-            return;
-        }
-        try {
-            listener.record(kind, name, bytes);
-        } catch (RuntimeException ignored) {
-            // Diagnostics must not change protocol or file acknowledgement behavior.
-        }
+        telemetry.activity(kind, name, bytes);
     }
 
     @FunctionalInterface
@@ -626,59 +595,15 @@ public class SessionContext extends HasEventBus {
     }
 
     private void logEvent(Event event) {
-        if (event instanceof ConnectedEvent) {
-            info(String.format("binkp session ready: peer=%s, role=%s, NR=%s",
-                               logPeer(),
-                               serverRole,
-                               isNRMode()));
-        } else if (event instanceof DisconnectedEvent) {
-            info(String.format("binkp transfer ended: peer=%s, role=%s, state=%s",
-                               logPeer(),
-                               serverRole,
-                               state));
-        } else if (event instanceof FileReceivedEvent) {
-            logFile("received", (FileEvent<?>) event);
-        } else if (event instanceof FileSendEvent) {
-            logFile("sent and acknowledged", (FileEvent<?>) event);
-        }
-    }
-
-    private Object logPeer() {
-        Link link = linksInfo == null ? null : linksInfo.getCurLink();
-        return link == null ? "unidentified" : link.getAddr();
-    }
-
-    private void logFile(String action, FileEvent<?> event) {
-        FileInfo info = event.getFile().getInfo();
-        long elapsed = event.getFile().getTransferMillis();
-        long transferred = event.getFile().getTransferredBytes();
-        long cps = (long) (transferred * 1000.0 / Math.max(1, elapsed));
-        info(String.format("binkp file %s: peer=%s, name=%s, bytes=%s, transferred=%s, elapsedMs=%s, CPS=%s",
-                           action,
-                           logPeer(),
-                           BinkpLog.text(info.getName()),
-                           info.getSize(),
-                           transferred,
-                           elapsed,
-                           cps));
+        telemetry.event(event);
     }
 
     public void startFileTransfer(String action, FileData<?> file, long offset) {
-        if (file.startTransfer(offset)) {
-            info(String.format("binkp %s: peer=%s, name=%s, bytes=%s, offset=%s",
-                               action,
-                               logPeer(),
-                               BinkpLog.text(file.getInfo().getName()),
-                               file.getInfo().getSize(),
-                               offset));
-        }
+        telemetry.startFileTransfer(action, file, offset);
     }
 
     public void fileDataWritten(FileData<?> file, long offset) {
-        info(String.format("binkp file data written: name=%s, bytes=%s, offset=%s",
-                           BinkpLog.text(file.getInfo().getName()),
-                           file.getInfo().getCurSize() - offset,
-                           offset));
+        telemetry.fileDataWritten(file, offset);
     }
 
     public boolean isBusy() {
