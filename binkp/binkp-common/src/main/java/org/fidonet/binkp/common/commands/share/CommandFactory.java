@@ -83,6 +83,7 @@ public class CommandFactory {
     public Command createCommand(SessionContext sessionContext, BinkCommand cmd, String args)
             throws UnknownCommandException {
         if (sessionContext != null) {
+            sessionContext.validateIncomingCommand(cmd);
             sessionContext.recordCommand(cmd);
         }
         for (Command command : getCommandsList()) {

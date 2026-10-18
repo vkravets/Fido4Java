@@ -57,6 +57,12 @@ public class NrCompatibilityTest {
     public File temporary;
 
     private SessionContext context() {
+        SessionContext context = handshakeContext();
+        context.beginTransfer();
+        return context;
+    }
+
+    private SessionContext handshakeContext() {
         StationConfig config = new StationConfig("station", "sysop", "city", "BINKP", "1:500/101");
         config.setPartialDirectory(null);
         SessionContext context = new SessionContext(config, new LinksInfo(new ArrayList<>()));
@@ -533,7 +539,7 @@ public class NrCompatibilityTest {
 
     @Test
     public void verifiesIncomingCramPasswordWithoutCryptMode() throws Exception {
-        SessionContext context = context();
+        SessionContext context = handshakeContext();
         Link link = new Link(new FTNAddr(1, 500, 102, 0),
                              Collections.emptyList(),
                              "secret",

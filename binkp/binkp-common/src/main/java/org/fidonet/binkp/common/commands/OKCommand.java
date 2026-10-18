@@ -62,6 +62,7 @@ public class OKCommand extends MessageCommand {
 
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs) {
+        sessionContext.validateIncomingCommand(BinkCommand.M_OK);
         sessionContext.beginTransfer();
 
         if (commandArgs != null && commandArgs.length() > 0) {

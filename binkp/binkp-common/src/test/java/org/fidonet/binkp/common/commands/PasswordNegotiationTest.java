@@ -3,6 +3,7 @@ package org.fidonet.binkp.common.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -56,11 +57,12 @@ public class PasswordNegotiationTest {
     }
 
     @Test
-    public void authenticationRejectsMissingOrMismatchedCramStateAndIgnoresOutOfSequencePwd()
+    public void authenticationRejectsMissingOrMismatchedCramStateAndOutOfSequencePwd()
             throws Exception {
         SessionContext outOfSequence = context(true);
         RecordingSession ignored = new RecordingSession();
-        new PWDCommand().handle(ignored, outOfSequence, "secret");
+        assertThrows(IllegalStateException.class,
+                     () -> new PWDCommand().handle(ignored, outOfSequence, "secret"));
         assertTrue(ignored.frames.isEmpty());
         for (int variant = 0; variant < 4; variant++) {
             SessionContext context = context(true);

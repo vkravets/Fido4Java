@@ -22,9 +22,35 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class HandlerFailureTest extends HasEventBus {
+    @Test
+    public void unauthenticatedTransferAndForgedOkCloseTheSession() throws Exception {
+        for (ServerRole role : ServerRole.values()) {
+            for (byte command : new byte[]{3, 4}) {
+                SessionContext context = context();
+                context.setServerRole(role);
+                context.setState(SessionState.STATE_WAITPWD);
+                DummySession session = new DummySession();
+                session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, context);
+                BinkSessionHandler handler = new BinkSessionHandler(getEventBus());
+                try {
+                    handler.messageReceived(session,
+                                            BinkData.toBinkFrame(new BinkData(true,
+                                                                              command,
+                                                                              "TEST.PKT 1 1 0".getBytes(StandardCharsets.UTF_8))));
+                    fail("Unauthenticated command accepted");
+                } catch (IllegalStateException expected) {
+                    assertEquals(SessionState.STATE_ERR, context.getState());
+                    assertTrue(session.isClosing());
+                    assertTrue(context.getRecvFiles().isEmpty());
+                }
+            }
+        }
+    }
+
     @Test
     public void unknownCommandDoesNotBecomeIncomingFileData() throws Exception {
         SessionContext context = new SessionContext(new StationConfig("test",

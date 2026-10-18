@@ -20,6 +20,7 @@ public final class ReceiveTransfer {
 
     public static FileData<OutputStream> open(SessionContext context, FileInfo info)
             throws IOException {
+        context.requireTransfer();
         Path directory = context.getStationConfig().getPartialDirectory();
         OutputStream stream;
         if (directory == null) {
@@ -59,6 +60,7 @@ public final class ReceiveTransfer {
 
     public static void accept(Session session, SessionContext context, byte[] bytes)
             throws Exception {
+        context.requireTransfer();
         FileData<OutputStream> file = context.getRecvFiles().peek();
         if (file == null || file.getInfo().isFinished() || file.isWaitingForHeader()) {
             return;
@@ -73,6 +75,7 @@ public final class ReceiveTransfer {
     }
 
     public static void complete(Session session, SessionContext context) throws Exception {
+        context.requireTransfer();
         FileData<OutputStream> file = context.getRecvFiles().peek();
         if (file == null || file.getInfo().isFinished()
                 || file.getInfo().getCurSize() != file.getInfo().getSize()) {

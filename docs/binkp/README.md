@@ -22,6 +22,12 @@ interoperability scenarios actually checked.
 
 ## Additional and historical references
 
+Incoming transfer commands and data require a completed password handshake.
+`M_OK` is accepted only by a client waiting for authorization; `M_PWD` only by
+a server waiting for the password. Repeated authentication and address changes
+after authentication terminate the connection. These checks are shared by Netty
+and MINA2 and covered by negative handler tests and normal loopback TCP exchanges.
+
 - [Original HTML specification](<Binkp Specification.html>)
 - [FRL-1006.001](frl-1006.001): early binkp protocol reference.
 - [FRL-1013.001](frl-1013.001): multiple-password extension.

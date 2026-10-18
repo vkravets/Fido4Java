@@ -60,6 +60,7 @@ public class GETCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_GET);
         final FilesSender<Session> filesSender = session.getFileSender();
         if (filesSender != null) {
             final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);

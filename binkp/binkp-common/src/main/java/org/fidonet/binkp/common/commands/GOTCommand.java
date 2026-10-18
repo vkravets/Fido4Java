@@ -64,6 +64,7 @@ public class GOTCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_GOT);
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
         FileData<InputStream> sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {

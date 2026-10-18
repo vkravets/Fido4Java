@@ -17,6 +17,12 @@ public final class SessionTestFixtures {
         return new SessionContext(station, new LinksInfo(new ArrayList<>()));
     }
 
+    public static SessionContext transferContext() {
+        SessionContext context = context();
+        context.beginTransfer();
+        return context;
+    }
+
     public static SessionContext loopbackContext(String own,
                                                  String peer,
                                                  String password,

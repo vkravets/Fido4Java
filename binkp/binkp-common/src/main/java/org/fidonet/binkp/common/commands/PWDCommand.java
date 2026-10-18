@@ -66,6 +66,7 @@ public class PWDCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_PWD);
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
             final String passwordString = commandArgs.trim();

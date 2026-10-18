@@ -54,7 +54,7 @@ public class TransferControlTest {
     }
 
     private SessionContext context() {
-        SessionContext context = SessionTestFixtures.context();
+        SessionContext context = SessionTestFixtures.transferContext();
         context.getStationConfig().setPartialDirectory(null);
         return context;
     }
@@ -140,7 +140,7 @@ public class TransferControlTest {
     @Test
     public void serverSelectsKnownAliasOrRejectsUnknownPeerAndClientSendsPassword()
             throws Exception {
-        SessionContext context = context();
+        SessionContext context = SessionTestFixtures.context();
         Link link = new Link("2:500/2, 2:500/1, secret, localhost");
         context.getLinksInfo().getLinks().add(link);
         context.setServerRole(ServerRole.SERVER);
@@ -149,7 +149,7 @@ public class TransferControlTest {
         assertSame(link, context.getLinksInfo().getCurLink());
         assertEquals(SessionState.STATE_WAITPWD, context.getState());
         assertFalse(session.closed);
-        SessionContext unknown = context();
+        SessionContext unknown = SessionTestFixtures.context();
         unknown.setServerRole(ServerRole.SERVER);
         RecordingSession rejected = new RecordingSession();
         new ADRCommand().handle(rejected, unknown, "2:500/999");

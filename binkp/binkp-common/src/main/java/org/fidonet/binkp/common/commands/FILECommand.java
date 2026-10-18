@@ -64,6 +64,7 @@ public class FILECommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_FILE);
         Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
         FileData curFile = receivedFiles.peek();
         FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);

@@ -64,6 +64,7 @@ public class ADRCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_ADR);
         if (sessionContext.getServerRole().equals(ServerRole.CLIENT)) {
             final Command pwd = new PWDCommand();
             pwd.send(session, sessionContext);

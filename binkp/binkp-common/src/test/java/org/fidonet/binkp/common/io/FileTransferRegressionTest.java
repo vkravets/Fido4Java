@@ -39,7 +39,9 @@ public class FileTransferRegressionTest {
     private SessionContext context() {
         StationConfig config = new StationConfig("station", "sysop", "city", "BINKP", "2:467/1");
         config.setPartialDirectory(null);
-        return new SessionContext(config, new LinksInfo(new ArrayList<>()));
+        SessionContext context = new SessionContext(config, new LinksInfo(new ArrayList<>()));
+        context.beginTransfer();
+        return context;
     }
 
     private FileInfo info(long offset) {

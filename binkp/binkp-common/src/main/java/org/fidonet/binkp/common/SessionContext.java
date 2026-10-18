@@ -250,6 +250,38 @@ public class SessionContext extends HasEventBus {
         transferStarted = true;
     }
 
+    /** Reject peer commands before they can mutate authentication or transfer state. */
+    public synchronized void validateIncomingCommand(BinkCommand command) {
+        if (state == SessionState.STATE_ERR || state == SessionState.STATE_END
+                || state == SessionState.STATE_BSY) {
+            throw new IllegalStateException("Command received after session termination");
+        }
+        if (command == BinkCommand.M_OK) {
+            if (serverRole != ServerRole.CLIENT || state != SessionState.STATE_WAITOK
+                    || transferStarted) {
+                throw new IllegalStateException("Unexpected M_OK");
+            }
+        } else if (command == BinkCommand.M_PWD) {
+            if (serverRole != ServerRole.SERVER || state != SessionState.STATE_WAITPWD
+                    || transferStarted) {
+                throw new IllegalStateException("Unexpected M_PWD");
+            }
+        } else if (command == BinkCommand.M_ADR && transferStarted) {
+            throw new IllegalStateException("Address change after authentication");
+        } else if (command == BinkCommand.M_FILE || command == BinkCommand.M_GET
+                || command == BinkCommand.M_GOT || command == BinkCommand.M_SKIP
+                || command == BinkCommand.M_EOB) {
+            requireTransfer();
+        }
+    }
+
+    public synchronized void requireTransfer() {
+        if (!transferStarted || state == SessionState.STATE_ERR || state == SessionState.STATE_END
+                || state == SessionState.STATE_BSY) {
+            throw new IllegalStateException("File transfer outside authenticated session");
+        }
+    }
+
     public synchronized void recordCommand(BinkCommand command) {
         if (transferStarted && command != BinkCommand.M_EOB && command != BinkCommand.M_OK
                 && command != BinkCommand.M_PWD && command != BinkCommand.M_ADR) {

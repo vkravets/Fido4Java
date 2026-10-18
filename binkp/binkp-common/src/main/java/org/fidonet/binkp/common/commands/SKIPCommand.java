@@ -61,6 +61,7 @@ public class SKIPCommand extends MessageCommand {
     @Override
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
+        sessionContext.validateIncomingCommand(BinkCommand.M_SKIP);
         FilesSender filesSender = session.getFileSender();
         FileInfo info = FileInfo.parseFileInfo(commandArgs);
         if (filesSender != null) {
