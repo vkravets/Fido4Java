@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
 import { computed, ref } from 'vue';
 import { api } from '../api.ts';
@@ -118,8 +119,9 @@ function claimLabel(state: string): string {
             >
                 <label
                     >{{ t('Add a point AKA')
-                    }}<input
+                    }}<AddressInput
                         v-model="requested"
+                        :aria-label="t('Add a point AKA')"
                         required
                         placeholder="1:500/100.1" /></label
                 ><button

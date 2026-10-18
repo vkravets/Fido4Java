@@ -7,6 +7,14 @@ For current unfinished work, read [TODO](../TODO) and inspect the current Git st
 
 ## Product and module boundaries
 
+The node/point directory browser is shared by ADMIN and POINT users. Its local
+catalog search API is deliberately public, also serving pre-login registration
+suggestions. Only imported directory metadata is exposed: no import/download,
+configured-peer credentials, routing permissions or ownership grants. Keep
+administrative settings and the exact lookup/download operation protected.
+Cross-source records remain distinct and labelled. Free-form address inputs use
+bounded debounced suggestions; trusted-peer selectors retain configured-only choices.
+
 Echo autocreation requires both the master switch and an exact configured sender
 in `AutoCreateEchoFrom=address,WRITE|BOTH`. Database-managed subscriptions are
 required. After packet authentication and hooks, SQL creates the absent area and

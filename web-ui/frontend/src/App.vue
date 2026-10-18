@@ -10,6 +10,7 @@ import NodeSettings from './components/NodeSettings.vue';
 import Sidebar from './components/Sidebar.vue';
 import RobotAccess from './components/RobotAccess.vue';
 import Connections from './components/Connections.vue';
+import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
 import LanguageSelector from './components/LanguageSelector.vue';
 const state = createState();
@@ -106,6 +107,7 @@ function logout() {
             @navigate="page = $event"
         />
         <main class="content">
+            <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings
                 v-if="page === 'settings'"
                 :state="state"

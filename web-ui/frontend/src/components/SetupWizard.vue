@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { api, bindings } from '../api.ts';
@@ -222,8 +223,9 @@ function save() {
                     </p>
                     <label
                         >{{ t('Address')
-                        }}<input
+                        }}<AddressInput
                             v-model="model.address"
+                            :aria-label="t('Address')"
                             required
                     /></label>
                     <label

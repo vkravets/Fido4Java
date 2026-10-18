@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddressInput from './AddressInput.vue';
 import { computed } from 'vue';
 import { t } from '../i18n.ts';
 import type { MailLinkConfiguration } from '@rpc/bindings.mjs';
@@ -20,16 +21,19 @@ const addresses = computed({
     <div class="form-grid">
         <label
             >{{ t('Link address')
-            }}<input
+            }}<AddressInput
                 v-model="model.address"
+                :aria-label="t('Link address')"
                 :readonly="existing"
                 required
                 placeholder="1:500/101"
         /></label>
         <label
             >{{ t('Local AKAs for this link')
-            }}<input
+            }}<AddressInput
                 v-model="addresses"
+                :aria-label="t('Local AKAs for this link')"
+                multiple
                 :readonly="stationAkas"
                 required
                 placeholder="1:500/100 1:500/100.1"

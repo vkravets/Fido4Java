@@ -4,7 +4,7 @@ import type { UserProfile } from '@rpc/bindings.mjs';
 
 defineProps<{ profile: UserProfile; page: string }>();
 const emit = defineEmits<{
-    navigate: [page: 'settings' | 'node' | 'accounts' | 'robots' | 'connections'];
+    navigate: [page: 'settings' | 'node' | 'accounts' | 'robots' | 'connections' | 'directory'];
 }>();
 </script>
 
@@ -24,6 +24,13 @@ const emit = defineEmits<{
             </button>
             <button disabled>
                 <span>▤</span>{{ t('Drafts') }}<small>{{ t('Coming soon') }}</small>
+            </button>
+            <span class="nav-label">{{ t('DIRECTORY') }}</span>
+            <button
+                :class="{ active: page === 'directory' }"
+                @click="emit('navigate', 'directory')"
+            >
+                <span>⌕</span>{{ t('Node directory') }}
             </button>
             <span class="nav-label">{{ t('ACCOUNT') }}</span>
             <button

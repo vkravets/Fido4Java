@@ -2,6 +2,50 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('address suggestions support the keyboard and replace only the current AKA', async ({
+    page
+}) => {
+    await story(page, 'directory-addressinput--matches');
+    const input = page.getByRole('combobox', { name: 'Address', exact: true });
+    await expect(page.getByRole('option')).toHaveCount(3);
+    await input.press('ArrowDown');
+    await input.press('Enter');
+    await expect(input).toHaveValue('1:500/101.0');
+    await expect(input).toHaveAttribute('aria-expanded', 'false');
+    await story(page, 'directory-addressinput--multiple-akas');
+    await expect(page.getByRole('option')).toHaveCount(3);
+    await input.press('ArrowUp');
+    await input.press('Enter');
+    await expect(input).toHaveValue('1:500/100 1:500/102.0 ');
+    await input.fill('1:500/100 1:500/10 1:500/999');
+    await input.evaluate((element: HTMLInputElement) => element.setSelectionRange(15, 15));
+    await input.click({ position: { x: 10, y: 10 } });
+    await input.evaluate((element: HTMLInputElement) => {
+        element.setSelectionRange(15, 15);
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.getByRole('option')).toHaveCount(3);
+    await page.getByRole('option').filter({ hasText: 'First Point' }).click();
+    await expect(input).toHaveValue('1:500/100 1:500/101.1 1:500/999');
+});
+
+test('address suggestions close on Escape and permit manual entry while the catalog is unavailable', async ({
+    page
+}) => {
+    await story(page, 'directory-addressinput--matches');
+    const input = page.getByRole('combobox', { name: 'Address', exact: true });
+    await expect(page.getByRole('option').first()).toBeVisible();
+    await input.press('Escape');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await story(page, 'directory-addressinput--unavailable');
+    await expect(
+        page.getByText('Directory search is unavailable. You can enter an address manually.')
+    ).toBeVisible();
+    await input.fill('1:500/999');
+    await input.press('Tab');
+    await expect(input).toHaveValue('1:500/999');
+});
+
 test('multiple uplink editor protects saved addresses and disables edits while saving', async ({
     page
 }) => {

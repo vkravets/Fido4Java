@@ -11,6 +11,16 @@ const screens = [
     { name: 'plugin-files', story: 'plugins-pluginsettingspanel--file-managed' },
     { name: 'plugin-empty', story: 'plugins-pluginsettingspanel--empty' },
     { name: 'station-tabs-plugins', story: 'settings-stationsettingstabs--plugins' },
+    { name: 'directory', story: 'directory-directorypanel--nodes-and-points' },
+    { name: 'directory-empty', story: 'directory-directorypanel--empty' },
+    { name: 'directory-loading', story: 'directory-directorypanel--loading' },
+    { name: 'address-suggestions', story: 'directory-addressinput--matches', suggestions: true },
+    { name: 'address-multiple', story: 'directory-addressinput--multiple-akas', suggestions: true },
+    {
+        name: 'address-unavailable',
+        story: 'directory-addressinput--unavailable',
+        unavailable: true
+    },
     { name: 'administrator-navigation', story: 'navigation-sidebar--administrator' },
     { name: 'point-navigation', story: 'navigation-sidebar--point' },
     { name: 'station-settings', story: 'settings-nodeform--settings' },
@@ -81,6 +91,10 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.suggestions)
+                    await expect(page.getByRole('option').first()).toBeVisible();
+                if (screen.unavailable)
+                    await expect(page.locator('.address-options [role=status]')).toBeVisible();
                 if (screen.notification) {
                     await expect(page.locator('.message')).toBeVisible();
                     await expect(page).toHaveScreenshot(filename);

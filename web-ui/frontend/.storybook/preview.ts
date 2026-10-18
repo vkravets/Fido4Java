@@ -1,7 +1,12 @@
 import type { Preview } from '@storybook/vue3-vite';
+import { setup } from '@storybook/vue3-vite';
+import { directorySearchKey } from '../src/directory.ts';
 import { setLocale } from '../src/i18n.ts';
 import '../src/style.css';
 import './preview.css';
+setup((app) =>
+    app.provide(directorySearchKey, async () => ({ items: [], nextOffset: 0, hasMore: false }))
+);
 
 const preview: Preview = {
     initialGlobals: { theme: 'light', locale: 'en' },

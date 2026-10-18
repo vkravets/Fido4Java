@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
 import { ref } from 'vue';
 import { api } from '../api.ts';
@@ -103,8 +104,9 @@ function submit() {
                         /></label>
                         <label
                             >{{ t('Point address')
-                            }}<input
+                            }}<AddressInput
                                 v-model="address"
+                                :aria-label="t('Point address')"
                                 required
                                 placeholder="1:500/100.1"
                                 spellcheck="false"

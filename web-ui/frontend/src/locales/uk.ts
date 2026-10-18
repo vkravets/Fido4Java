@@ -14,6 +14,30 @@ export const ukrainian = {
     'Clear form': 'Очистити форму',
     'Plugin settings applied. No restart required.':
         'Налаштування плагіна застосовано. Перезапуск не потрібний.',
+    DIRECTORY: 'КАТАЛОГ',
+    Search: 'Пошук',
+    'Previous page': 'Попередня сторінка',
+    'Node directory': 'Каталог вузлів',
+    'Node and point directory': 'Каталог вузлів і поінтів',
+    'Find nodes and points by address, name or connection details.':
+        'Знаходьте вузли й поінтів за адресою, ім’ям або даними з’єднання.',
+    'Imported nodelists and pointlists. Directory records do not grant address ownership or connection permissions.':
+        'Імпортовані нодлисти та поінтлисти. Записи каталогу не підтверджують володіння адресою та не надають дозволів на з’єднання.',
+    'Search the directory': 'Пошук у каталозі',
+    'AKA, sysop, station, location or IP / hostname': 'AKA, сисоп, станція, місце або IP / хост',
+    'Searching directory…': 'Пошук у каталозі…',
+    'Directory search is unavailable. You can enter an address manually.':
+        'Пошук у каталозі недоступний. Адресу можна ввести вручну.',
+    'Directory search is unavailable. Please try again.':
+        'Пошук у каталозі недоступний. Спробуйте ще раз.',
+    'Matching nodes': 'Знайдені вузли',
+    'No matching nodes. Import a nodelist or pointlist, or change your search.':
+        'Вузлів не знайдено. Імпортуйте нодлист чи поінтлист або змініть запит.',
+    'Directory results': 'Результати пошуку в каталозі',
+    'Station and sysop': 'Станція та сисоп',
+    'Connection details': 'Дані з’єднання',
+    'List source': 'Джерело списку',
+    'Showing {count} entries': 'Показано записів: {count}',
     'Outgoing polls': 'Вихідні пули',
     'Binkp log': 'Журнал binkp',
     'Show latest events': 'Показати останні події',

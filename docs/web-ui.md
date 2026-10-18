@@ -200,6 +200,23 @@ this section or call the underlying administrative methods.
 
 ## Nodelist lookup
 
+**Node directory** is a shared navigation item for administrators and points. It
+browses imported nodelists and pointlists and searches partial AKA, sysop/station
+name, location, phone, IP/hostname, flags and source. Rows include the source and
+record type; identical addresses from different lists are retained separately.
+Search is debounced and paged, with previous/next controls and empty/loading states.
+Desktop results use a table; on small screens each record stacks its labelled
+fields so names, endpoints and source remain readable without horizontal scrolling.
+
+Free-form address fields use a keyboard-accessible suggestion list: Up/Down selects
+a result, Enter inserts its address, Escape/Tab closes the popup, and clicking a
+result works too. For multiple AKAs, only the token at the caret is replaced.
+No match or a catalog failure leaves manual input available. The configured-peer
+selectors for polls, robots, access rules and quarantine keep their trust boundary.
+Suggestions also work before login during registration; the underlying local
+catalog search is intentionally public and read-only. It cannot import data or
+create links, accounts, routes or AKA ownership grants.
+
 Setup and administrator station settings can query the local directory or
 explicitly download a full nodelist from `NodeListUrl`. An empty URL in a lookup
 request means local lookup only; a nonempty URL requests a download/import. The default mirror is
@@ -327,9 +344,10 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 408 committed PNG test fixtures:
-administrator/point navigation, first-run setup with multiple uplinks, station
-identity and reload controls, six station settings tabs and their busy state,
+`./gradlew :web-ui:playwrightVisualTest` compares 456 committed PNG test fixtures:
+administrator/point navigation, directory results/empty/loading states,
+address suggestions/multiple-AKA/offline states, first-run setup with multiple uplinks,
+station identity and reload controls, six station settings tabs and their busy state,
 adding/saving uplinks, duplicate-address feedback,
 link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
 quarantine (table/batch confirmation/source selection/results/legacy retry/archive/empty/long filename/unavailable), poll

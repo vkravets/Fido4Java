@@ -11,6 +11,59 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('registration suggests imported points before authentication', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'No account? Register' }).click();
+    const input = page.getByRole('combobox', { name: 'Point address' });
+    await input.fill('1:500/100.');
+    await page.getByRole('option').filter({ hasText: 'First Point' }).click();
+    await expect(input).toHaveValue('1:500/100.1');
+    await expect(input).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('station address suggestions preserve other AKAs while adding successive addresses', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Station/ }).click();
+    const aliases = page.getByRole('combobox', { name: 'Additional AKAs', exact: true });
+    await aliases.fill('1:500/100.1 1:500/10');
+    await page.getByRole('option').filter({ hasText: '1:500/101.0' }).click();
+    await expect(aliases).toHaveValue('1:500/100.1 1:500/101.0');
+    await aliases.pressSequentially(' 1:500/2');
+    await page.getByRole('option').filter({ hasText: '1:500/200.0' }).click();
+    await expect(aliases).toHaveValue('1:500/100.1 1:500/101.0 1:500/200.0');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('administrator browses paged lists and searches addresses names and IPs through RPC', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Node directory/ }).click();
+    await expect(page.getByText('Showing 25 entries', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Next page', exact: true }).click();
+    await expect(page.getByText('Showing 7 entries', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Previous page', exact: true }).click();
+    await expect(page.getByText('Showing 25 entries', { exact: true })).toBeVisible();
+    const input = page.getByRole('searchbox', { name: 'Search the directory' });
+    await input.fill('192.0.2.10');
+    await expect(page.getByText('Showing 1 entries', { exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: /Kyiv Station/ })).toBeVisible();
+    await input.fill('JANE DOE');
+    await expect(page.getByRole('cell', { name: /Kyiv Station/ })).toBeVisible();
+    await input.fill('1:500/100.1');
+    await expect(page.getByRole('cell', { name: /First Point/ })).toBeVisible();
+    await input.fill('missing-node');
+    await expect(
+        page.getByText('No matching nodes. Import a nodelist or pointlist, or change your search.')
+    ).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('administrator sees incoming and outgoing binkp logs through HTTP RPC', async ({ page }) => {
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
@@ -221,7 +274,7 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
         await point.getByRole('textbox', { name: 'Username', exact: true }).fill('new-point');
         await point.getByLabel('Password', { exact: true }).fill('example-point-password');
         await point.getByLabel('Confirm password', { exact: true }).fill('example-point-password');
-        await point.getByRole('textbox', { name: 'Point address' }).fill('1:500/100.1');
+        await point.getByRole('combobox', { name: 'Point address' }).fill('1:500/100.1');
         await point
             .locator('form')
             .getByRole('button', { name: /^Submit request/ })
@@ -240,6 +293,11 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
         await expect(point.getByRole('button', { name: /Connections/ })).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Accounts and requests/ })).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Netmail/ })).toBeDisabled();
+        await point.getByRole('button', { name: /Node directory/ }).click();
+        await point.getByRole('searchbox', { name: 'Search the directory' }).fill('POINT OWNER');
+        await expect(point.getByRole('cell', { name: /First Point/ })).toBeVisible();
+        await expect(point.getByRole('cell', { name: /1:500\/100\.1/ })).toBeVisible();
+        await expect(point.getByRole('alert')).toHaveCount(0);
     } finally {
         await pointContext.close();
     }

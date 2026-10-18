@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
@@ -15,15 +16,18 @@ const aliases = computed({
     <div class="form-grid">
         <label
             >{{ t('Default AKA')
-            }}<input
+            }}<AddressInput
                 v-model="model.address"
+                :aria-label="t('Default AKA')"
                 placeholder="1:500/100"
                 required
         /></label>
         <label
             >{{ t('Additional AKAs')
-            }}<input
+            }}<AddressInput
                 v-model="aliases"
+                :aria-label="t('Additional AKAs')"
+                multiple
                 :placeholder="t('Space-separated')"
         /></label>
         <div

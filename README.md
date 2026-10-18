@@ -22,6 +22,7 @@ Report bugs and feature requests through the repository's issue tracker.
 - Embedded Vue/TypeScript UI with English/Ukrainian, light/dark themes, password
   and passkey login, point registration, node settings and outgoing connection logs.
 - Thrift RPC over framed TCP and HTTP for administration and mail APIs.
+- Node/point directory browsing and FTN address suggestions from imported lists.
 
 The browser mail readers are planned; their navigation is reserved in the UI.
 See [remaining work](TODO) and the limitations in each service guide.
