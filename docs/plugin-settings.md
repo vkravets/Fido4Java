@@ -4,7 +4,7 @@
 contract. A provider owns its schema, localized labels, validation and writes.
 The browser receives data only, never executable JavaScript from a plugin JAR.
 
-Mail providers register with `MailScripts.registerSettingsExtension` during
+Mail providers register with `MailAutomationRuntime.registerSettingsExtension` during
 `MailScriptExtension.register`, before external scripts load. IDs must be unique.
 The host describes active providers through `UiService.extensions`; mutations
 use `UiService.saveExtension`. TCP and HTTP expose the same contract. Both

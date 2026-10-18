@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ConfigurationLink;
 
@@ -77,9 +77,9 @@ class DirectoryMailIntegrationTest {
             throws Exception {
         Path source = source(",102,Directory_Node,City,Test_Sysop,-Unpublished-,300,IBN:node.example\n");
         OrmManager orm = new OrmManager("jdbc:h2:mem:directoryMail" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
-        try (MailService service = new MailService(config(source), base)) {
+        try (MailRuntime service = new MailRuntime(config(source), base)) {
             assertNotNull(service.getTosser());
             assertImported();
             assertEquals(1, orm.getDao(ConfigurationLink.class).countOf());
@@ -92,13 +92,13 @@ class DirectoryMailIntegrationTest {
     void initialImportFailureReleasesTheMailServiceLockAndAllowsRetry() throws Exception {
         Path source = source(",broken\n");
         JFtnConfig config = config(source);
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:directoryRetry"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:directoryRetry"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         try {
-            assertThrows(UncheckedIOException.class, () -> new MailService(config, base));
+            assertThrows(UncheckedIOException.class, () -> new MailRuntime(config, base));
             Files.writeString(source, ",102,Directory_Node,City,Test_Sysop,-Unpublished-,300\n");
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 assertNotNull(service.getTosser());
                 assertImported();
             }

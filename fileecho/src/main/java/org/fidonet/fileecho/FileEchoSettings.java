@@ -4,7 +4,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 
 /** Owns the extension schema and validation; the UI knows only declarative fields and rows. */
 final class FileEchoSettings implements SettingsExtension {
-    private final MailScripts api;
+    private final MailAutomationRuntime api;
     private final FileEchoStore store;
     private final JFtnConfig config;
 
-    FileEchoSettings(MailScripts api, FileEchoStore store) {
+    FileEchoSettings(MailAutomationRuntime api, FileEchoStore store) {
         this.api = api;
         this.store = store;
         config = (JFtnConfig) api.getConfig();

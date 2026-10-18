@@ -1,8 +1,7 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
-import org.fidonet.jftn.engine.script.GroovyScriptManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.share.CommandCollection;
@@ -14,30 +13,23 @@ import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 
 /** A node-owned script runtime, created and closed under the mail processing lock. */
-public final class MailScripts extends ScriptApi implements MailProcessingExtension {
+public final class MailAutomationRuntime extends ScriptApi implements MailProcessingExtension {
     @FunctionalInterface
     public interface FileEchoHandler {
         void accept(FileEchoEvent event) throws IOException;
     }
 
     private final List<FileEchoHandler> fileEchoHandlers = new ArrayList<>();
-    private Path loadingDirectory;
 
     /** Available during registration of an external script; capture it for later callbacks. */
     public Path getScriptDirectory() {
-        if (loadingDirectory == null) {
-            throw new IllegalStateException("An external script directory is required");
-        }
-        return loadingDirectory;
+        return scripts.registrationDirectory();
     }
 
     public void onFileEcho(FileEchoHandler handler) {
@@ -61,13 +53,12 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
     }
 
     private final Tosser tosser;
-    private final DatabaseManager database;
+    private final MailDatabaseFacade database;
     private final ScriptState state;
     private final List<NetmailHandler> handlers = new ArrayList<>();
     private final List<ScanHandler> scans = new ArrayList<>();
     private final List<FileHandler> fileHandlers = new ArrayList<>();
-    private final List<String> loaded = new ArrayList<>();
-    private final GroovyScriptManager manager;
+    private final ExternalMailScripts scripts;
     private final RobotAccess robotAccess;
     private FileEchoService fileEcho;
     private final List<SettingsExtension> settingsExtensions = new ArrayList<>();
@@ -84,15 +75,15 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
         settingsExtensions.add(extension);
     }
 
-    public MailScripts(JFtnConfig config, DatabaseManager database, Tosser tosser)
+    public MailAutomationRuntime(JFtnConfig config, MailDatabaseFacade database, Tosser tosser)
             throws IOException {
         this(config, database, tosser, ServiceLoader.load(MailScriptExtension.class));
     }
 
-    public MailScripts(JFtnConfig config,
-                       DatabaseManager database,
-                       Tosser tosser,
-                       Iterable<MailScriptExtension> extensions)
+    public MailAutomationRuntime(JFtnConfig config,
+                                 MailDatabaseFacade database,
+                                 Tosser tosser,
+                                 Iterable<MailScriptExtension> extensions)
             throws IOException {
         super(null, new ScriptHookRegistry(), new CommandRegistry(new CommandCollection()));
         this.tosser = tosser;
@@ -100,11 +91,7 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
         setConfig(config);
         robotAccess = new RobotAccess(config, database);
         state = new ScriptState(Path.of(config.getTmpDir(), "scripts"));
-        try {
-            manager = new GroovyScriptManager();
-        } catch (Exception e) {
-            throw new IOException("Cannot initialize Groovy", e);
-        }
+        this.scripts = new ExternalMailScripts();
         List<String> scripts = config.getValuesAsList("MailScript");
         try {
             for (MailScriptExtension extension : extensions) {
@@ -112,7 +99,7 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
             }
             if (scripts != null) {
                 for (String script : scripts) {
-                    load(script);
+                    this.scripts.load(script, this);
                 }
             }
         } catch (Exception failure) {
@@ -123,33 +110,6 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
             }
             throw new IOException("Cannot load mail scripts", failure);
         }
-    }
-
-    private void load(String name) throws Exception {
-        if (loaded.contains(name)) {
-            throw new IllegalArgumentException("Duplicate MailScript " + name);
-        }
-        String content;
-        if (name.startsWith("classpath:")) {
-            try (InputStream input = MailScripts.class.getResourceAsStream("/"
-                                                                           + name.substring(10))) {
-                if (input == null) {
-                    throw new IOException("Missing bundled script " + name);
-                }
-                content = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            }
-        } else {
-            content = Files.readString(Path.of(name));
-        }
-        loadingDirectory = name.startsWith("classpath:")
-                ? null
-                : Path.of(name).toAbsolutePath().normalize().getParent();
-        try {
-            manager.registerScript(name, content, this);
-        } finally {
-            loadingDirectory = null;
-        }
-        loaded.add(name);
     }
 
     public Tosser getTosser() {
@@ -171,7 +131,7 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
         fileEcho = service;
     }
 
-    public DatabaseManager getDatabase() {
+    public MailDatabaseFacade getDatabase() {
         return database;
     }
 
@@ -226,21 +186,14 @@ public final class MailScripts extends ScriptApi implements MailProcessingExtens
     @Override
     public void close() throws IOException {
         IOException failure = null;
-        for (int i = loaded.size() - 1; i >= 0; i--) {
-            try {
-                manager.unregisterScript(loaded.get(i), this);
-            } catch (Exception e) {
-                if (failure == null) {
-                    failure = new IOException("Cannot unload mail script", e);
-                } else {
-                    failure.addSuppressed(e);
-                }
-            }
+        try {
+            scripts.close(this);
+        } catch (IOException cleanup) {
+            failure = cleanup;
         }
         for (NetmailHandler handler : handlers) {
             tosser.removeNetmailHandler(handler);
         }
-        loaded.clear();
         handlers.clear();
         scans.clear();
         fileHandlers.clear();

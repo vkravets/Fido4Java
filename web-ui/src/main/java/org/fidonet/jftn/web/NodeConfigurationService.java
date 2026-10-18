@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Replaces configuration atomically and refuses to overwrite an external edit. */
-public final class NodeConfigurationStore {
+public final class NodeConfigurationService {
     private final Path path;
     private byte[] original;
     private boolean originalExists;
@@ -44,11 +44,11 @@ public final class NodeConfigurationStore {
 
     private final Application application;
 
-    public NodeConfigurationStore(Path path) throws IOException {
+    public NodeConfigurationService(Path path) throws IOException {
         this(path, (candidate, publication) -> publication.run());
     }
 
-    public NodeConfigurationStore(Path path, Application application) throws IOException {
+    public NodeConfigurationService(Path path, Application application) throws IOException {
         this.path = path.toAbsolutePath().normalize();
         this.application = application;
         original = Files.exists(path) ? Files.readAllBytes(path) : new byte[0];

@@ -18,7 +18,7 @@ list leaves directory import inactive without opening a catalog.
 A value can also use a `classpath:` resource for compatibility. Scripts are trusted
 operator code and have the JVM's permissions.
 
-MailService loads scripts before its first inbound scan. Each script supplies
+MailRuntime loads scripts before its first inbound scan. Each script supplies
 `register(api)` and optionally `unload(api)`. Startup fails if registration
 fails. Scripts unload in reverse order after processing stops. Automatic hot
 reload is deliberately not enabled while messages are being processed.

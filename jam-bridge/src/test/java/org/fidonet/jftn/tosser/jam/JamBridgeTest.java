@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.jam.JamArea;
@@ -30,7 +30,7 @@ import java.util.Date;
 public class JamBridgeTest {
     @TempDir
     public File temporary;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private JFtnConfig config;
     private JamBridge bridge;
     private JamArea echo;
@@ -60,7 +60,7 @@ public class JamBridgeTest {
                       + "/jam/netmail\n";
         config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:jam" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:jam" + System.nanoTime()));
         assertTrue(base.open());
         assertTrue(base.createArea("test"));
         base.configureLink(config.getLink(new FTNAddr("2:500/101")), "secret");

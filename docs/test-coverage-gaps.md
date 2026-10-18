@@ -31,7 +31,7 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [rpc/jftn/rpc/Server.java](../rpc/src/main/java/org/fidonet/jftn/rpc/Server.java) | 8 | 2 | 137, 140 |
 | [plugin-manager/jftn/plugins/PluginManager.java](../plugin-manager/src/main/java/org/fidonet/jftn/plugins/PluginManager.java) | 6 | 2 | 111, 149 |
 | [fido-database/db/OrmManager.java](../fido-database/src/main/java/org/fidonet/db/OrmManager.java) | 5 | 2 | 95, 192 |
-| [fido-database/db/DatabaseManager.java](../fido-database/src/main/java/org/fidonet/db/DatabaseManager.java) | 5 | 2 | 387, 503 |
+| [fido-database/db/MailDatabaseFacade.java](../fido-database/src/main/java/org/fidonet/db/MailDatabaseFacade.java) | 5 | 2 | 387, 503 |
 | [binkp/binkp-common/binkp/common/io/PartialFileOutputStream.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/io/PartialFileOutputStream.java) | 4 | 2 | 34, 122 |
 | [binkp/binkp-netty/binkp/netty/plugin/handler/BinkServerSessionHandler.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/handler/BinkServerSessionHandler.java) | 3 | 2 | 72, 90 |
 | [binkp/binkp-common/binkp/common/commands/FILECommand.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/commands/FILECommand.java) | 2 | 2 | 68, 69 |

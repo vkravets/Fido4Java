@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.packet.PacketWriter;
@@ -68,8 +68,8 @@ public class NetmailRoutingTest {
     @Test
     public void importsUnambiguousLegacyType2PacketWithoutZoneFields() throws Exception {
         JFtnConfig config = config(false);
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:legacyPacket"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:legacyPacket"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         try {
             Message local = new Message("Author",
@@ -101,8 +101,8 @@ public class NetmailRoutingTest {
     @Test
     public void persistsRoutesExportsAndAcknowledgesOutgoingNetmail() throws Exception {
         JFtnConfig config = config(false);
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:route"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:route"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         try {
             Tosser tosser = new Tosser(config, base);
@@ -139,8 +139,8 @@ public class NetmailRoutingTest {
     public void onlyRoutesTransitWhenExplicitlyAllowed() throws Exception {
         for (boolean allowed : new boolean[]{false, true}) {
             JFtnConfig config = config(allowed);
-            DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:transit"
-                                                                      + System.nanoTime()));
+            MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:transit"
+                                                                            + System.nanoTime()));
             assertTrue(base.open());
             try {
                 byte[] bytes = PacketWriter.write(new FTNAddr("2:500/101"),

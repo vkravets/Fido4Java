@@ -2,11 +2,11 @@ package org.fidonet.jftn;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.tosser.Tosser;
-import org.fidonet.jftn.web.NodeConfigurationStore;
+import org.fidonet.jftn.web.NodeConfigurationService;
 import org.fidonet.types.Link;
 
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /** Validates/stages changes before publishing SQL, file and runtime snapshots. */
-public final class LiveConfiguration implements NodeConfigurationStore.Application {
+public final class LiveConfiguration implements NodeConfigurationService.Application {
     private static final Logger logger = LoggerFactory.getLogger(LiveConfiguration.class);
     private static final Set<String> LIVE = Set.of("link",
                                                    "packetpassword",
@@ -38,15 +38,15 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
                                                    "autocreateechofrom",
                                                    "tossintervalseconds");
     private final JFtnConfig active;
-    private final DatabaseManager database;
-    private final MailService mail;
+    private final MailDatabaseFacade database;
+    private final MailRuntime mail;
     private final PollService polls;
     private final SessionContext context;
     private final ProfileHandler profiles;
 
     public LiveConfiguration(JFtnConfig active,
-                             DatabaseManager database,
-                             MailService mail,
+                             MailDatabaseFacade database,
+                             MailRuntime mail,
                              PollService polls,
                              SessionContext context,
                              ProfileHandler profiles) {
@@ -59,7 +59,7 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
     }
 
     @Override
-    public void apply(JFtnConfig candidate, NodeConfigurationStore.Publication publication)
+    public void apply(JFtnConfig candidate, NodeConfigurationService.Publication publication)
             throws Exception {
         mail.operate(tosser -> {
             applyWithPollQueuePaused(tosser, candidate, publication);
@@ -70,7 +70,7 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
 
     private void applyWithPollQueuePaused(Tosser tosser,
                                           JFtnConfig candidate,
-                                          NodeConfigurationStore.Publication publication)
+                                          NodeConfigurationService.Publication publication)
             throws Exception {
         synchronized (polls) {
             applyWithSessionTemplatePaused(tosser, candidate, publication);
@@ -79,7 +79,7 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
 
     private void applyWithSessionTemplatePaused(Tosser tosser,
                                                 JFtnConfig candidate,
-                                                NodeConfigurationStore.Publication publication)
+                                                NodeConfigurationService.Publication publication)
             throws Exception {
         synchronized (context) {
             publish(tosser, candidate, publication);
@@ -88,7 +88,7 @@ public final class LiveConfiguration implements NodeConfigurationStore.Applicati
 
     private void publish(Tosser tosser,
                          JFtnConfig candidate,
-                         NodeConfigurationStore.Publication publication)
+                         NodeConfigurationService.Publication publication)
             throws Exception {
         validate(candidate);
         Runnable routers = tosser.prepareConfiguration(candidate);

@@ -39,15 +39,16 @@ class SettingsHandlerTest {
     void validatedEveryInitialUplinkBeforeCreatingAdminAndPublishedThemTogether() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        NodeConfigurationService store = new NodeConfigurationService(config);
         AtomicBoolean completed = new AtomicBoolean();
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
-            SettingsHandler handler = new SettingsHandler(store,
-                                                          accounts,
-                                                          new UiSessions(accounts, 3600),
-                                                          auth,
-                                                          "setup",
-                                                          () -> completed.set(true));
+            NodeSettingsRpcHandler handler = new NodeSettingsRpcHandler(store,
+                                                                        accounts,
+                                                                        new UiSessions(accounts,
+                                                                                       3600),
+                                                                        auth,
+                                                                        "setup",
+                                                                        () -> completed.set(true));
             MailLinkConfiguration first = initialLink("1:500/101", "first.example.org");
             MailLinkConfiguration second = initialLink("1:500/102",
                                                        "second.example.org").setSessionPassword("long-session-password")
@@ -93,7 +94,7 @@ class SettingsHandlerTest {
 
     @Test
     void rejectedMissingInitialLinksAndMismatchedStationAkas() throws Exception {
-        NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
+        NodeConfigurationService store = new NodeConfigurationService(directory.resolve("jftn.conf"));
         assertThrows(IllegalArgumentException.class, () -> store.validate(valid()));
         assertThrows(IllegalArgumentException.class,
                      () -> store.validate(valid().setInitialLinks(List.of())));
@@ -118,17 +119,17 @@ class SettingsHandlerTest {
     @Test
     void refusedPublicationWhenFragmentsChangedDuringValidation() throws Exception {
         Path path = directory.resolve("jftn.conf");
-        new NodeConfigurationStore(path).save(initial(), directory.resolve("accounts"));
+        new NodeConfigurationService(path).save(initial(), directory.resolve("accounts"));
         String original = Files.readString(path);
         Path fragment = Files.createDirectories(directory.resolve("conf.d"))
                              .resolve("99-manual.conf");
         Files.writeString(fragment, "Custom=old\n");
-        NodeConfigurationStore store = new NodeConfigurationStore(path,
-                                                                  (candidate, publication) -> {
-                                                                      Files.writeString(fragment,
-                                                                                        "Custom=changed-externally\n");
-                                                                      publication.run();
-                                                                  });
+        NodeConfigurationService store = new NodeConfigurationService(path,
+                                                                      (candidate, publication) -> {
+                                                                          Files.writeString(fragment,
+                                                                                            "Custom=changed-externally\n");
+                                                                          publication.run();
+                                                                      });
         assertThrows(IllegalArgumentException.class,
                      () -> store.save(valid().setSystem("Must not apply"),
                                       directory.resolve("accounts")));
@@ -139,20 +140,21 @@ class SettingsHandlerTest {
     void restoredFileWhenRuntimePublicationFailedAndKeptRejectedCandidatesOffDisk()
             throws Exception {
         Path path = directory.resolve("jftn.conf");
-        new NodeConfigurationStore(path).save(initial(), directory.resolve("accounts"));
+        new NodeConfigurationService(path).save(initial(), directory.resolve("accounts"));
         String original = Files.readString(path);
-        NodeConfigurationStore store = new NodeConfigurationStore(path,
-                                                                  (candidate, publication) -> {
-                                                                      publication.run();
-                                                                      throw new IOException("Simulated commit failure");
-                                                                  });
+        NodeConfigurationService store = new NodeConfigurationService(path,
+                                                                      (candidate, publication) -> {
+                                                                          publication.run();
+                                                                          throw new IOException("Simulated commit failure");
+                                                                      });
         assertThrows(Exception.class,
                      () -> store.save(valid().setSystem("Changed"), directory.resolve("accounts")));
         assertEquals(original, Files.readString(path));
-        NodeConfigurationStore rejected = new NodeConfigurationStore(path,
-                                                                     (candidate, publication) -> {
-                                                                         throw new IllegalArgumentException("Rejected before publication");
-                                                                     });
+        NodeConfigurationService rejected = new NodeConfigurationService(path,
+                                                                         (candidate,
+                                                                          publication) -> {
+                                                                             throw new IllegalArgumentException("Rejected before publication");
+                                                                         });
         assertThrows(IllegalArgumentException.class,
                      () -> rejected.save(valid().setSystem("Rejected"),
                                          directory.resolve("accounts")));
@@ -167,12 +169,13 @@ class SettingsHandlerTest {
         Path auth = directory.resolve("accounts");
         AtomicBoolean completed = new AtomicBoolean();
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
-            SettingsHandler handler = new SettingsHandler(new NodeConfigurationStore(config),
-                                                          accounts,
-                                                          new UiSessions(accounts, 3600),
-                                                          auth,
-                                                          "secret",
-                                                          () -> completed.set(true));
+            NodeSettingsRpcHandler handler = new NodeSettingsRpcHandler(new NodeConfigurationService(config),
+                                                                        accounts,
+                                                                        new UiSessions(accounts,
+                                                                                       3600),
+                                                                        auth,
+                                                                        "secret",
+                                                                        () -> completed.set(true));
             assertThrows(UiError.class, () -> handler.current("wrong"));
             assertTrue(handler.save("secret", initial()));
             assertTrue(completed.get());
@@ -190,7 +193,7 @@ class SettingsHandlerTest {
     @Test
     void refusedInjectionAndExternalEditsAndPreservedUnrelatedSettings() throws Exception {
         Path config = directory.resolve("jftn.conf");
-        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        NodeConfigurationService store = new NodeConfigurationService(config);
         NodeConfiguration value = valid();
         value.setSystem("bad\nRpcEnabled=false");
         assertThrows(IllegalArgumentException.class,
@@ -200,7 +203,7 @@ class SettingsHandlerTest {
         Files.writeString(config,
                           Files.readString(config) + "# external edit\nCustomOption=retained\n");
         assertThrows(Exception.class, () -> store.save(valid(), directory.resolve("accounts")));
-        NodeConfigurationStore refreshed = new NodeConfigurationStore(config);
+        NodeConfigurationService refreshed = new NodeConfigurationService(config);
         refreshed.save(valid(), directory.resolve("accounts"));
         assertTrue(Files.readString(config).contains("CustomOption=retained"));
     }
@@ -216,13 +219,13 @@ class SettingsHandlerTest {
             users.register("point", "point-password", "1:500/100.1");
             users.decide("point", "1:500/100.1", true);
             UiSessions sessions = new UiSessions(accounts, 3600);
-            SettingsHandler normal = new SettingsHandler(new NodeConfigurationStore(config),
-                                                         accounts,
-                                                         sessions,
-                                                         auth,
-                                                         "",
-                                                         () -> {
-                                                         });
+            NodeSettingsRpcHandler normal = new NodeSettingsRpcHandler(new NodeConfigurationService(config),
+                                                                       accounts,
+                                                                       sessions,
+                                                                       auth,
+                                                                       "",
+                                                                       () -> {
+                                                                       });
             String point = sessions.login(new Credential("point", "point-password"))
                                    .getSession_id();
             assertThrows(UiError.class, () -> normal.current(point));
@@ -230,13 +233,13 @@ class SettingsHandlerTest {
             assertThrows(UiError.class, () -> normal.tosser(point));
             assertThrows(UiError.class, () -> normal.saveLinks(point, List.of()));
             assertThrows(UiError.class, () -> normal.saveTosser(point, null));
-            SettingsHandler setup = new SettingsHandler(new NodeConfigurationStore(config),
-                                                        accounts,
-                                                        sessions,
-                                                        auth,
-                                                        "resume",
-                                                        () -> {
-                                                        });
+            NodeSettingsRpcHandler setup = new NodeSettingsRpcHandler(new NodeConfigurationService(config),
+                                                                      accounts,
+                                                                      sessions,
+                                                                      auth,
+                                                                      "resume",
+                                                                      () -> {
+                                                                      });
             assertThrows(UiError.class, () -> setup.links("resume"));
             assertThrows(UiError.class, () -> setup.tosser("resume"));
             NodeConfiguration wrong = initial().setPassword("another-password");
@@ -249,20 +252,20 @@ class SettingsHandlerTest {
     @Test
     void administratorSavedMailSettingsThroughTheSameStoreAsStationSettings() throws Exception {
         Path auth = directory.resolve("accounts");
-        NodeConfigurationStore store = new NodeConfigurationStore(directory.resolve("jftn.conf"));
+        NodeConfigurationService store = new NodeConfigurationService(directory.resolve("jftn.conf"));
         store.save(initial(), auth);
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
             accounts.createUser("admin", "a-long-password");
             UiSessions sessions = new UiSessions(accounts, 3600);
             String session = sessions.login(new Credential("admin", "a-long-password"))
                                      .getSession_id();
-            SettingsHandler handler = new SettingsHandler(store,
-                                                          accounts,
-                                                          sessions,
-                                                          auth,
-                                                          "",
-                                                          () -> {
-                                                          });
+            NodeSettingsRpcHandler handler = new NodeSettingsRpcHandler(store,
+                                                                        accounts,
+                                                                        sessions,
+                                                                        auth,
+                                                                        "",
+                                                                        () -> {
+                                                                        });
             DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {
@@ -311,7 +314,7 @@ class SettingsHandlerTest {
     void savedRetentionToggleWithoutChangingFileOnlyConfiguration() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        NodeConfigurationService store = new NodeConfigurationService(config);
         store.save(initial().setPreserveReceivedFiles(false), auth);
         assertFalse(store.current().isPreserveReceivedFiles());
         Files.createDirectory(directory.resolve("conf.d"));
@@ -332,7 +335,7 @@ class SettingsHandlerTest {
     void savedStationSettingsWithoutManagingPluginFilesOrReenablingRpc() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(initial(), auth);
+        new NodeConfigurationService(config).save(initial(), auth);
         Files.writeString(config,
                           Files.readString(config).replace("rpcenabled=true", "rpcenabled=false"));
         Files.createDirectories(directory.resolve("conf.d"));
@@ -342,7 +345,7 @@ class SettingsHandlerTest {
         Path scripts = directory.resolve("conf.d/40-mail-scripts.conf");
         String scriptsText = "MailScript=custom.groovy\nMailScript=other.groovy\n";
         Files.writeString(scripts, scriptsText);
-        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        NodeConfigurationService store = new NodeConfigurationService(config);
         store.save(store.current().setSystem("Edited station"), auth);
         assertEquals(jamText, Files.readString(jam));
         assertEquals(scriptsText, Files.readString(scripts));
@@ -358,10 +361,10 @@ class SettingsHandlerTest {
     void editedTheFirstLinkPreservedOtherLinksAndEnabledLocalhostPasskeys() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(initial(), auth);
+        new NodeConfigurationService(config).save(initial(), auth);
         String other = "Link=1:500/102,1:500/200,otherpwd,other.example:24554";
         Files.writeString(config, Files.readString(config) + other + "\n");
-        NodeConfigurationStore store = new NodeConfigurationStore(config);
+        NodeConfigurationService store = new NodeConfigurationService(config);
         NodeConfiguration edit = store.current();
         assertEquals("1:500/100.0", edit.getAddress());
         edit.setSystem("Updated");
@@ -384,7 +387,7 @@ class SettingsHandlerTest {
     void didNotReopenSetupWhenTheStoredAdminHadNoConfigPassword() throws Exception {
         Path config = directory.resolve("jftn.conf");
         Path auth = directory.resolve("accounts");
-        new NodeConfigurationStore(config).save(initial(), auth);
+        new NodeConfigurationService(config).save(initial(), auth);
         try (RpcAccounts accounts = new RpcAccounts(auth)) {
             accounts.createUser("admin", "a-long-password");
         }
@@ -397,13 +400,14 @@ class SettingsHandlerTest {
     @Test
     void acceptedSameOriginSetupAndRejectedForeignOriginsOverRealHttp() throws Exception {
         try (RpcAccounts accounts = new RpcAccounts(directory.resolve("accounts"))) {
-            SettingsHandler settings = new SettingsHandler(new NodeConfigurationStore(directory.resolve("jftn.conf")),
-                                                           accounts,
-                                                           new UiSessions(accounts, 3600),
-                                                           directory.resolve("accounts"),
-                                                           "token",
-                                                           () -> {
-                                                           });
+            NodeSettingsRpcHandler settings = new NodeSettingsRpcHandler(new NodeConfigurationService(directory.resolve("jftn.conf")),
+                                                                         accounts,
+                                                                         new UiSessions(accounts,
+                                                                                        3600),
+                                                                         directory.resolve("accounts"),
+                                                                         "token",
+                                                                         () -> {
+                                                                         });
             DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {

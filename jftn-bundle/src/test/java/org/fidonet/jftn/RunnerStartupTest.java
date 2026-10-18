@@ -10,7 +10,7 @@ import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
@@ -68,8 +68,8 @@ public class RunnerStartupTest {
     public void loadsConfigurationStartsConfiguredLinksAndUnloadsPlugins() throws Exception {
         List<String> calls = new ArrayList<>();
         AtomicReference<SessionContext> bound = new AtomicReference<>();
-        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:runnerMail"
-                                                                      + System.nanoTime()));
+        MailDatabaseFacade database = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:runnerMail"
+                                                                            + System.nanoTime()));
         assertTrue(database.open());
         Runner runner = new Runner() {
             @Override
@@ -127,7 +127,7 @@ public class RunnerStartupTest {
 
     private JFtnRunner.PluginContexts contexts(Runner runner,
                                                Scheduler scheduler,
-                                               DatabaseManager database,
+                                               MailDatabaseFacade database,
                                                List<String> calls) {
         return new JFtnRunner.PluginContexts() {
             @Override

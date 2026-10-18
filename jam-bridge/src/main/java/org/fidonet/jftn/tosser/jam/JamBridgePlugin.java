@@ -1,7 +1,7 @@
 package org.fidonet.jftn.tosser.jam;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.plugins.PluginInformation;
@@ -45,7 +45,7 @@ public final class JamBridgePlugin implements Plugin<MailExtensionFactory>, Mail
     }
 
     @Override
-    public Optional<MailProcessingExtension> create(JFtnConfig config, DatabaseManager base) {
+    public Optional<MailProcessingExtension> create(JFtnConfig config, MailDatabaseFacade base) {
         String enabled = config.getValue("JamBridgeEnabled", "true").trim();
         if ("false".equalsIgnoreCase(enabled)) {
             return Optional.empty();

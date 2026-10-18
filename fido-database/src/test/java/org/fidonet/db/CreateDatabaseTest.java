@@ -53,14 +53,14 @@ import java.util.List;
 public class CreateDatabaseTest {
 
     private static OrmManager ormManager;
-    private static DatabaseManager databaseManager;
+    private static MailDatabaseFacade databaseManager;
     private static Dao<ConfigurationLink, Long> daoLinks;
     private static ConfigurationLink configurationLink;
 
     @BeforeAll
     public static void setUp() throws SQLException {
         ormManager = new OrmManager("jdbc:h2:mem:createDatabase" + System.nanoTime());
-        databaseManager = new DatabaseManager(ormManager);
+        databaseManager = new MailDatabaseFacade(ormManager);
         databaseManager.open();
         daoLinks = ormManager.getDao(ConfigurationLink.class);
 

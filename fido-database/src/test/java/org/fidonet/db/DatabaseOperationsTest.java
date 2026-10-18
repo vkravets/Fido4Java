@@ -29,12 +29,12 @@ public class DatabaseOperationsTest {
     @TempDir
     public File temporary;
     private OrmManager database;
-    private DatabaseManager manager;
+    private MailDatabaseFacade manager;
 
     @BeforeEach
     public void open() {
         database = new OrmManager("jdbc:h2:mem:operations" + System.nanoTime());
-        manager = new DatabaseManager(database);
+        manager = new MailDatabaseFacade(database);
         assertTrue(manager.open());
     }
 
@@ -139,7 +139,7 @@ public class DatabaseOperationsTest {
     @Test
     public void invalidDatabaseDriverReportsOpenFailure() {
         OrmManager invalid = new OrmManager("jdbc:unavailable:coverage");
-        DatabaseManager failed = new DatabaseManager(invalid);
+        MailDatabaseFacade failed = new MailDatabaseFacade(invalid);
         try {
             assertFalse(failed.open());
             assertFalse(invalid.isConnect());
@@ -153,7 +153,7 @@ public class DatabaseOperationsTest {
         File blocked = Files.createFile(temporary.toPath().resolve("parent-is-file")).toFile();
         OrmManager invalid = new OrmManager("jdbc:h2:"
                                             + new File(blocked, "database").getAbsolutePath());
-        DatabaseManager failed = new DatabaseManager(invalid);
+        MailDatabaseFacade failed = new MailDatabaseFacade(invalid);
         try {
             assertFalse(failed.open());
             assertFalse(invalid.isConnect());

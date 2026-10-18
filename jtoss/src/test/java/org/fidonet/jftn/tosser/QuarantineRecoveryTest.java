@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
@@ -33,7 +33,7 @@ class QuarantineRecoveryTest extends HasEventBus {
     @TempDir
     Path root;
     private JFtnConfig config;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private Tosser tosser;
     private String initialConfiguration;
     private final FTNAddr peer = new FTNAddr("1:500/101");
@@ -58,7 +58,7 @@ class QuarantineRecoveryTest extends HasEventBus {
         config = new JFtnConfig();
         initialConfiguration = text;
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:quarantine" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:quarantine" + System.nanoTime()));
         assertTrue(base.open());
         base.configureLink(config.getLink(peer), "secret");
         base.configureLink(config.getLink(new FTNAddr("1:500/103")), "secret");

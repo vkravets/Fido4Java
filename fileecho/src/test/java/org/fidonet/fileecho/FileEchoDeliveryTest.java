@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.script.FileEchoEvent;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
@@ -34,8 +34,8 @@ import java.util.zip.CRC32;
 class FileEchoDeliveryTest {
     @TempDir
     Path root;
-    private DatabaseManager base;
-    private MailScripts scripts;
+    private MailDatabaseFacade base;
+    private MailAutomationRuntime scripts;
     private FileEchoProcessor processor;
     private Path inbox;
     private Path ticket;
@@ -60,10 +60,10 @@ class FileEchoDeliveryTest {
         configurationText = text;
         config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:delivery" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:delivery" + System.nanoTime()));
         assertTrue(base.open());
         tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         processor = (FileEchoProcessor) scripts.getFileEcho();
         processor.store().savePolicy("1:500/101", "lists.*", "WRITE");
         inbox = root.resolve("in/peers/1-500-101-0");
@@ -222,7 +222,7 @@ class FileEchoDeliveryTest {
         config.load(new ByteArrayInputStream(configurationText.replace("RobotAccessSource=files",
                                                                        "RobotAccessSource=database")
                                                               .getBytes(StandardCharsets.UTF_8)));
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         SettingsExtension extension = scripts.getSettingsExtensions().get(0);
         extension.apply("robots",
                         Map.of("service",

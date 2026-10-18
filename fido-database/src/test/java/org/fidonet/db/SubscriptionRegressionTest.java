@@ -24,14 +24,14 @@ import java.util.List;
 
 public class SubscriptionRegressionTest {
     private OrmManager database;
-    private DatabaseManager manager;
+    private MailDatabaseFacade manager;
     private Link link;
 
     @BeforeEach
     public void open() throws Exception {
         database = new OrmManager("jdbc:h2:mem:subscriptions" + System.nanoTime());
         database.connect();
-        manager = new DatabaseManager(database);
+        manager = new MailDatabaseFacade(database);
         ConfigurationLink configuration = new ConfigurationLink();
         configuration.setAddress("2:467/1.0@fidonet.org");
         configuration.setPassword("");

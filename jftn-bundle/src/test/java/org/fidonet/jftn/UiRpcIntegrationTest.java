@@ -10,7 +10,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.poll.PollService;
@@ -55,8 +55,8 @@ class UiRpcIntegrationTest {
     @TempDir
     Path root;
     private JFtnConfig config;
-    private DatabaseManager base;
-    private MailService mail;
+    private MailDatabaseFacade base;
+    private MailRuntime mail;
     private NodeRpc rpc;
     private TFramedTransport transport;
     private UiService.Client ui;
@@ -81,10 +81,10 @@ class UiRpcIntegrationTest {
         Path source = root.resolve("jftn.conf");
         Files.writeString(source, text);
         config.load(source.toString());
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:uiRpc" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:uiRpc" + System.nanoTime()));
         assertTrue(base.open());
         base.createArea("test");
-        mail = new MailService(config, base);
+        mail = new MailRuntime(config, base);
         connect();
     }
 

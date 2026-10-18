@@ -3,7 +3,7 @@ package org.fidonet.jftn;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.types.FTNAddr;
@@ -37,7 +37,7 @@ public class JamArchiveImportTest {
                           + directory
                           + "/echo\nSysOp=Test\nLink=2:500/101,2:500/102,secret,localhost\n");
         String url = "jdbc:h2:" + directory + "/database";
-        DatabaseManager base = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));
@@ -56,7 +56,7 @@ public class JamArchiveImportTest {
         source.append(message, JamArea.ECHO | JamArea.LOCAL);
         JamArchiveImport.main(new String[]{configuration.toString(), url,
                 source.getPath().toString(), "test", "2:500/102"});
-        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade reopened = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(reopened.open());
         try {
             assertEquals(1, reopened.getMessageSize("test"));

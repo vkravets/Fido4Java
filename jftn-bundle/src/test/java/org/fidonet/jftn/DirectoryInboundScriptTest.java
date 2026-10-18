@@ -11,7 +11,7 @@ import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.types.FTNAddr;
@@ -66,9 +66,9 @@ class DirectoryInboundScriptTest {
                                    + points.toString()
                                            .replace('\\', '/')
                                    + "\n");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 service.processPending();
                 assertTrue(Files.readString(root.resolve("base/archive.lst")).contains("New"));
@@ -120,9 +120,9 @@ class DirectoryInboundScriptTest {
         return config;
     }
 
-    private DatabaseManager database() {
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:inboundDirectory"
-                                                                  + System.nanoTime()));
+    private MailDatabaseFacade database() {
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:inboundDirectory"
+                + System.nanoTime()));
         assertTrue(base.open());
         return base;
     }
@@ -202,9 +202,9 @@ class DirectoryInboundScriptTest {
                 checked("Boss,1:500/101\r\n,1,Point,City,Sysop,-Unpublished-,300\r\n",
                         LocalDate.of(2026, 1, 2)));
         receive("REGION46.Z02", zip(nodes("Region", 2026, 1, 2)), "1:500/101");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertEquals("New", system("nodes", "1:500/101.0"));
                 assertEquals("Region", system("region", "1:500/101.0"));
@@ -216,7 +216,7 @@ class DirectoryInboundScriptTest {
             }
             Path retained = root.resolve("base/nodes.lst");
             var modified = Files.getLastModifiedTime(retained);
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertEquals("New", system("nodes", "1:500/101.0"));
                 assertEquals(modified, Files.getLastModifiedTime(retained));
@@ -231,9 +231,9 @@ class DirectoryInboundScriptTest {
         JFtnConfig config = config("DirectoryInboundEnabled=true\n");
         String old = nodes("Old", 2026, 10, 9);
         String next = nodes("New", 2026, 10, 16);
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 receive("NODELIST.282", old);
                 service.processPending();
                 receive("NODEDIFF.289",
@@ -244,7 +244,7 @@ class DirectoryInboundScriptTest {
                 service.processPending();
                 assertEquals("New", system("nodes", "1:500/101.0"));
             }
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertEquals("New", system("nodes", "1:500/101.0"));
             }
@@ -256,15 +256,15 @@ class DirectoryInboundScriptTest {
     @Test
     void remainedDisabledByDefaultAndIgnoredUnauthorizedOrUnrecordedFiles() throws Exception {
         receive("NODELIST.289", nodes("Disabled", 2026, 10, 16));
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config(""), base)) {
+            try (MailRuntime service = new MailRuntime(config(""), base)) {
                 service.processPending();
                 assertFalse(Files.exists(root.resolve("catalog.mv.db")));
             }
             Path authorized = root.resolve("in/peers/1-500-101-0");
             clearInbox(authorized);
-            try (MailService service = new MailService(config("DirectoryInboundEnabled=true\n"),
+            try (MailRuntime service = new MailRuntime(config("DirectoryInboundEnabled=true\n"),
                                                        base)) {
                 receive("NODELIST.289",
                         nodes("WrongPeer", 2026, 10, 16).getBytes(StandardCharsets.US_ASCII),
@@ -284,8 +284,8 @@ class DirectoryInboundScriptTest {
     @Test
     void importedAutomaticallyWhenTheTransportCommittedAFileWithoutATic() throws Exception {
         JFtnConfig config = config("DirectoryInboundEnabled=true\n");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(new FTNAddr("1:500/101"));
             service.attach(context);
@@ -312,9 +312,9 @@ class DirectoryInboundScriptTest {
         JFtnConfig config = config("DirectoryInboundEnabled=true\n");
         String old = nodes("Old", 2026, 10, 9);
         String next = nodes("New", 2026, 10, 16);
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 receive("NODEDIFF.289",
                         old.substring(0, old.indexOf('\r')) + "\r\nD2\r\nA2\r\n" + next);
                 service.processPending();
@@ -323,7 +323,7 @@ class DirectoryInboundScriptTest {
                 service.processPending();
                 assertEquals("Old", system("nodes", "1:500/101.0"));
             }
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertEquals("New", system("nodes", "1:500/101.0"));
             }
@@ -335,9 +335,9 @@ class DirectoryInboundScriptTest {
     @Test
     void requiredExplicitOptOutToImportAnUndatedFragment() throws Exception {
         receive("NODELIST.289", ",101,Fragment,City,Sysop,-Unpublished-,300\r\n");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            try (MailService service = new MailService(config("DirectoryInboundEnabled=true\n",
+            try (MailRuntime service = new MailRuntime(config("DirectoryInboundEnabled=true\n",
                                                               false),
                                                        base)) {
                 service.processPending();
@@ -345,7 +345,7 @@ class DirectoryInboundScriptTest {
             }
             JFtnConfig allowed = config("DirectoryInboundEnabled=true\nDirectoryInboundRequireDate=false\n",
                                         false);
-            try (MailService service = new MailService(allowed, base)) {
+            try (MailRuntime service = new MailRuntime(allowed, base)) {
                 service.processPending();
                 assertEquals("Fragment", system("nodes", "1:500/101.0"));
             }
@@ -356,15 +356,15 @@ class DirectoryInboundScriptTest {
 
     @Test
     void refusedUntrustedPeersAndInvalidOptionsBeforeStartingImport() throws Exception {
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
             assertThrows(IOException.class,
-                         () -> new MailService(config("DirectoryInboundEnabled=maybe\n"), base));
+                         () -> new MailRuntime(config("DirectoryInboundEnabled=maybe\n"), base));
             assertThrows(IOException.class,
-                         () -> new MailService(config("DirectoryInboundEnabled=true\nDirectoryInboundRetrySeconds=0\n"),
+                         () -> new MailRuntime(config("DirectoryInboundEnabled=true\nDirectoryInboundRetrySeconds=0\n"),
                                                base));
             assertThrows(IOException.class,
-                         () -> new MailService(config("DirectoryInboundEnabled=true\n"
+                         () -> new MailRuntime(config("DirectoryInboundEnabled=true\n"
                                  + "DirectoryInboundFeed=other|NODELIST|OTHER.*||"
                                  + root.resolve("base/other.lst") + "|1:500/999\n"), base));
         } finally {

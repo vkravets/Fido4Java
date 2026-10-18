@@ -4,8 +4,8 @@ import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.MailScriptExtension;
-import org.fidonet.jftn.script.MailScripts;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -41,7 +41,7 @@ public final class FileEchoPlugin implements Plugin<MailScriptExtension>, MailSc
     }
 
     @Override
-    public void register(MailScripts api) throws IOException {
+    public void register(MailAutomationRuntime api) throws IOException {
         String enabled = api.getConfig().getValue("FileEchoEnabled", "true").trim();
         if (!enabled.equalsIgnoreCase("true") && !enabled.equalsIgnoreCase("false")) {
             throw new IllegalArgumentException("FileEchoEnabled must be true or false");

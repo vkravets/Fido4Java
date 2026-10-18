@@ -16,7 +16,7 @@ public class IncrementalEchoTest {
     @Test
     public void resumesAfterFailureAndKeepsConsumersIndependentAcrossRestart() throws Exception {
         String url = "jdbc:h2:mem:incremental" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        DatabaseManager base = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         try {
             base.createArea("test");
@@ -27,7 +27,7 @@ public class IncrementalEchoTest {
         } finally {
             base.close();
         }
-        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade reopened = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(reopened.open());
         try {
             assertEquals(2, count(reopened, "first"));
@@ -40,7 +40,7 @@ public class IncrementalEchoTest {
         }
     }
 
-    private void assertInterruptedScan(DatabaseManager base) throws IOException {
+    private void assertInterruptedScan(MailDatabaseFacade base) throws IOException {
         int[] accepted = {0};
         try {
             base.visitNewEcho("test", "first", message -> {
@@ -54,7 +54,7 @@ public class IncrementalEchoTest {
         }
     }
 
-    private int count(DatabaseManager base, String consumer) throws IOException {
+    private int count(MailDatabaseFacade base, String consumer) throws IOException {
         int[] count = {0};
         base.visitNewEcho("test", consumer, message -> count[0]++);
         return count[0];

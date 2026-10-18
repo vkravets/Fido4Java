@@ -1,7 +1,7 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.jam.JamArea;
 import org.fidonet.jftn.tosser.jam.JamArchiveImporter;
@@ -29,11 +29,11 @@ public final class JamArchiveImport {
         }
         String area = "-".equals(arguments[3]) ? null : arguments[3].toLowerCase(Locale.ROOT);
         Charset charset = Charset.forName(arguments.length == 6 ? arguments[5] : "CP866");
-        DatabaseManager base = new DatabaseManager(new OrmManager(arguments[1]));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager(arguments[1]));
         if (!base.open()) {
             throw new IOException("Unable to open archive target database");
         }
-        try (MailService service = new MailService(config, base)) {
+        try (MailRuntime service = new MailRuntime(config, base)) {
             if (area != null && !base.isAreaExists(area)) {
                 throw new IllegalArgumentException("Create the SQL echo area before archive import: "
                         + area);

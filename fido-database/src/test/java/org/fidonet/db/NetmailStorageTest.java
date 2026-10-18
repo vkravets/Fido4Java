@@ -17,7 +17,7 @@ public class NetmailStorageTest {
     @Test
     public void preservesSearchKeysAndRejectsArchiveDuplicatesAcrossRestart() throws Exception {
         String url = "jdbc:h2:mem:netmailIndex" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        DatabaseManager base = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         Message original = message("Message without MSGID\r");
         try {
@@ -31,7 +31,7 @@ public class NetmailStorageTest {
 
     private void assertIndexedNetmail(String url, Message original) throws Exception {
         OrmManager orm = new OrmManager(url);
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             assertEquals(1, orm.getDao(NetmailIndex.class).countOf());
@@ -63,7 +63,7 @@ public class NetmailStorageTest {
     @Test
     public void storesIdempotentlyAndPreservesPointsAttributesAndControlLines() throws Exception {
         OrmManager orm = new OrmManager("jdbc:h2:mem:netmail" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             Message message = message("\1MSGID: 2:500/101.1 unique\rHello\r");
@@ -85,7 +85,7 @@ public class NetmailStorageTest {
     @Test
     public void killSentDeletesOnlyAfterAcknowledgementAndKeepsDuplicateHistory() throws Exception {
         OrmManager orm = new OrmManager("jdbc:h2:mem:killSent" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             Message message = message("\1MSGID: 2:500/101.1 kill-sent\rBody\r");

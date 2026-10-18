@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.rpc.RobotRuleChange;
@@ -23,11 +23,12 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 class NodeRobotRulesTest {
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
 
     @BeforeEach
     void open() {
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:robot-admin" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:robot-admin"
+                                                     + System.nanoTime()));
         assertTrue(base.open());
     }
 

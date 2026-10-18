@@ -13,7 +13,7 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
@@ -54,8 +54,8 @@ public class MailServiceTest {
     @Test
     public void preservesInteroperableOriginalNamesForReceivedFileAutomation() throws Exception {
         JFtnConfig config = config("1:500/100", "1:500/101");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(new FTNAddr("1:500/101"));
             context.setServerRole(ServerRole.CLIENT);
@@ -84,10 +84,10 @@ public class MailServiceTest {
     @Test
     public void managedSubscriptionsAreNotRecreatedFromConfigOnRestart() throws Exception {
         JFtnConfig config = config("1:500/102", "1:500/101", "EchoSubscriptions=database\n");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         FTNAddr peer = new FTNAddr("1:500/101");
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 assertFalse(base.isAreaExists("test"));
                 service.getTosser()
                        .configureEchoSubscription(peer,
@@ -97,7 +97,7 @@ public class MailServiceTest {
                 assertTrue(base.canReadEcho(config.getLink(peer), "test"));
                 service.getTosser().removeEchoSubscription(peer, "test");
             }
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertFalse(base.canReadEcho(config.getLink(peer), "test"));
             }
@@ -115,8 +115,8 @@ public class MailServiceTest {
                                    "JamBridgeEnabled=false\nJamEcho=invalid\nJamNetmail="
                                    + jam
                                    + "\nJamCharset=not-a-charset\n");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             service.getTosser().submitNetmail(message("2:500/102", "2:500/101", false), "ui");
             service.processPending();
             assertFalse(new OutboundSpool(config).pending(config.getLink(new FTNAddr("2:500/101")),
@@ -133,8 +133,8 @@ public class MailServiceTest {
     public void discoversJamPluginAndExportsOnlyWhenEnabled() throws Exception {
         Path jam = temporary.toPath().resolve("enabled-jam/netmail");
         JFtnConfig config = config("2:500/102", "2:500/101", "JamNetmail=" + jam + "\n");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             service.getTosser().submitNetmail(message("2:500/102", "2:500/102", false), "local");
             service.processPending();
             assertTrue(Files.exists(Path.of(jam + ".jhr")));
@@ -147,13 +147,13 @@ public class MailServiceTest {
     @Test
     public void runsWithoutAnyExtensionPluginAndOrdersExtensionLifecycle() throws Exception {
         JFtnConfig config = config("2:500/102", "2:500/101");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         List<String> calls = new ArrayList<>();
         try {
-            try (MailService service = new MailService(config, base, Collections.emptyList())) {
+            try (MailRuntime service = new MailRuntime(config, base, Collections.emptyList())) {
                 service.processPending();
             }
-            try (MailService service = new MailService(config,
+            try (MailRuntime service = new MailRuntime(config,
                                                        base,
                                                        Arrays.asList(extension("first", calls),
                                                                      extension("second", calls)))) {
@@ -194,20 +194,20 @@ public class MailServiceTest {
     public void failedExtensionInitializationClosesCreatedExtensionsAndReleasesServiceLock()
             throws Exception {
         JFtnConfig config = config("2:500/102", "2:500/101");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         List<String> calls = new ArrayList<>();
         MailExtensionFactory broken = (settings, database) -> {
             throw new IllegalArgumentException("Invalid extension settings");
         };
         try {
             try {
-                new MailService(config, base, Arrays.asList(extension("created", calls), broken));
+                new MailRuntime(config, base, Arrays.asList(extension("created", calls), broken));
                 fail("Invalid extension accepted");
             } catch (IllegalArgumentException expected) {
                 assertEquals("Invalid extension settings", expected.getMessage());
             }
             assertEquals(Collections.singletonList("close created"), calls);
-            try (MailService service = new MailService(config, base, Collections.emptyList())) {
+            try (MailRuntime service = new MailRuntime(config, base, Collections.emptyList())) {
                 service.processPending();
             }
         } finally {
@@ -219,8 +219,8 @@ public class MailServiceTest {
     public void closingASessionDoesNotWaitForTheTosserScan() throws Exception {
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch resume = new CountDownLatch(1);
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:mailLocks"
-                                                                  + System.nanoTime())) {
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:mailLocks"
+                                                                        + System.nanoTime())) {
             @Override
             public List<String> getAreas() {
                 entered.countDown();
@@ -230,7 +230,7 @@ public class MailServiceTest {
         };
         assertTrue(base.open());
         ExecutorService tasks = Executors.newFixedThreadPool(2);
-        try (MailService service = new MailService(config("2:500/102", "2:500/101"), base)) {
+        try (MailRuntime service = new MailRuntime(config("2:500/102", "2:500/101"), base)) {
             verifyIndependentSessionClose(service, tasks, entered, resume);
         } finally {
             resume.countDown();
@@ -239,7 +239,7 @@ public class MailServiceTest {
         }
     }
 
-    private void verifyIndependentSessionClose(MailService service,
+    private void verifyIndependentSessionClose(MailRuntime service,
                                                ExecutorService tasks,
                                                CountDownLatch entered,
                                                CountDownLatch resume)
@@ -306,9 +306,9 @@ public class MailServiceTest {
         return config;
     }
 
-    private DatabaseManager database() {
-        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:mailService"
-                                                                      + System.nanoTime()));
+    private MailDatabaseFacade database() {
+        MailDatabaseFacade database = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:mailService"
+                + System.nanoTime()));
         assertTrue(database.open());
         return database;
     }
@@ -328,12 +328,12 @@ public class MailServiceTest {
     public void deliversNetmailAndEchomailInBothDirectionsThroughRealTcp() throws Exception {
         JFtnConfig clientConfig = config("2:500/101", "2:500/102");
         JFtnConfig serverConfig = config("2:500/102", "2:500/101");
-        DatabaseManager clientBase = database();
-        DatabaseManager serverBase = database();
+        MailDatabaseFacade clientBase = database();
+        MailDatabaseFacade serverBase = database();
         Server server = new Server(0);
         Client client = null;
-        try (MailService clientMail = new MailService(clientConfig, clientBase);
-                MailService serverMail = new MailService(serverConfig, serverBase)) {
+        try (MailRuntime clientMail = new MailRuntime(clientConfig, clientBase);
+                MailRuntime serverMail = new MailRuntime(serverConfig, serverBase)) {
             clientMail.getTosser()
                       .submitNetmail(message("2:500/101", "2:500/102", false), "client-local");
             serverMail.getTosser()
@@ -381,15 +381,15 @@ public class MailServiceTest {
         }
     }
 
-    private boolean delivered(DatabaseManager client, DatabaseManager server) {
+    private boolean delivered(MailDatabaseFacade client, MailDatabaseFacade server) {
         return client.getLocalNetmail(new FTNAddr("2:500/101")).size() == 1
                 && server.getLocalNetmail(new FTNAddr("2:500/102")).size() == 1
                 && client.getMessageSize("test") == 2 && server.getMessageSize("test") == 2
                 && client.getQueuedNetmail().isEmpty() && server.getQueuedNetmail().isEmpty();
     }
 
-    private boolean awaitDelivery(DatabaseManager client,
-                                  DatabaseManager server,
+    private boolean awaitDelivery(MailDatabaseFacade client,
+                                  MailDatabaseFacade server,
                                   JFtnConfig clientConfig,
                                   JFtnConfig serverConfig)
             throws Exception {
@@ -414,8 +414,8 @@ public class MailServiceTest {
         JFtnConfig config = config("2:500/102",
                                    "2:500/101",
                                    "Link=2:500/103,2:500/102,secret,127.0.0.1\n");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(new FTNAddr("2:500/101"));
             service.attach(context);
@@ -443,7 +443,7 @@ public class MailServiceTest {
     @Test
     public void recoversExistingInboundAndPreventsConcurrentServiceInstances() throws Exception {
         JFtnConfig config = config("2:500/102", "2:500/101");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
             Files.createDirectories(Path.of(config.getInbound()));
             byte[] packet = PacketWriter.write(new FTNAddr("2:500/101"),
@@ -453,9 +453,9 @@ public class MailServiceTest {
                                                                                  "2:500/102",
                                                                                  false)));
             Files.write(Path.of(config.getInbound(), "recovered.pkt"), packet);
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 try {
-                    new MailService(config, base).close();
+                    new MailRuntime(config, base).close();
                     fail("A second service must not acquire the same state directory");
                 } catch (IOException expected) {
                     assertTrue(expected.getMessage().contains("already using"));
@@ -464,7 +464,7 @@ public class MailServiceTest {
                 assertEquals(1, base.getLocalNetmail(new FTNAddr("2:500/102")).size());
                 assertFalse(Files.exists(Path.of(config.getInbound(), "recovered.pkt")));
             }
-            try (MailService reopened = new MailService(config, base)) {
+            try (MailRuntime reopened = new MailRuntime(config, base)) {
                 reopened.start();
                 assertEquals(1, base.getLocalNetmail(new FTNAddr("2:500/102")).size());
             }
@@ -477,8 +477,8 @@ public class MailServiceTest {
     public void publishesOnlyCompletedFilesAndReleasesUnacknowledgedPacketsOnDisconnect()
             throws Exception {
         JFtnConfig config = config("2:500/102", "2:500/101");
-        DatabaseManager base = database();
-        try (MailService service = new MailService(config, base)) {
+        MailDatabaseFacade base = database();
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(new FTNAddr("2:500/101"));
             context.setServerRole(ServerRole.CLIENT);

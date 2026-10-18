@@ -5,13 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.PacketWriter;
@@ -35,24 +35,24 @@ import java.util.List;
 class AreaFixScriptTest {
     @TempDir
     Path root;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private JFtnConfig config;
     private Link peer;
     private Tosser tosser;
-    private MailScripts scripts;
+    private MailAutomationRuntime scripts;
 
     @BeforeEach
     void open() throws Exception {
         config = configuration("files");
         Files.createDirectories(Path.of(config.getTmpDir()));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:areafix" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:areafix" + System.nanoTime()));
         assertTrue(base.open());
         peer = config.getLink(new FTNAddr("1:500/101"));
         base.configureLink(peer, "secret");
         base.createArea("test.one");
         base.createArea("private");
         tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
     }
 
     private JFtnConfig configuration(String source) throws Exception {
@@ -122,7 +122,7 @@ class AreaFixScriptTest {
         scripts.close();
         config = configuration("database");
         tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         toss(request("1:500/101", "robot-password", "+test.one\r", "file-denied"));
         assertTrue(base.getQueuedNetmail().isEmpty());
         base.getRobotRules()
@@ -154,7 +154,7 @@ class AreaFixScriptTest {
         toss(request("1:500/101", "robot-password", "-test.one\r", "two"));
         assertFalse(base.canReadEcho(peer, "test.one"));
         scripts.close();
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         request.setAttributes(1);
         toss(request);
         assertFalse(base.canReadEcho(peer, "test.one"));

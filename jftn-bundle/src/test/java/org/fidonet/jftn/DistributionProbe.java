@@ -1,12 +1,12 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.plugins.Plugin;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
@@ -118,13 +118,15 @@ public final class DistributionProbe {
                 throw new IllegalStateException("Default scripts must use external paths: " + name);
             }
         }
-        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:defaultScripts"));
+        MailDatabaseFacade database = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:defaultScripts"));
         try {
             if (!database.open()) {
                 throw new IllegalStateException("Cannot initialize script test database");
             }
             Tosser tosser = new Tosser(config, database);
-            try (MailScripts scripts = new MailScripts(config, database, tosser)) {
+            try (MailAutomationRuntime scripts = new MailAutomationRuntime(config,
+                                                                           database,
+                                                                           tosser)) {
                 scripts.beforeExport(tosser);
             }
             if (Files.exists(Path.of("database/nodelist"))) {

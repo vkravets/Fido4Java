@@ -1,7 +1,7 @@
 package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
@@ -23,7 +23,7 @@ import java.util.TreeSet;
 /** SQL is the default operational source; explicit file mode never writes operator config. */
 final class FileEchoStore {
     private final JFtnConfig config;
-    private final DatabaseManager base;
+    private final MailDatabaseFacade base;
     private final ScriptState state;
     private final boolean files;
     private final Map<String, FileAreaRecord> declared = new TreeMap<>();
@@ -33,7 +33,8 @@ final class FileEchoStore {
     private Dao<FileAccessRecord, String> access;
     private Dao<FileCreationRecord, String> policies;
 
-    FileEchoStore(JFtnConfig config, DatabaseManager base, ScriptState state) throws IOException {
+    FileEchoStore(JFtnConfig config, MailDatabaseFacade base, ScriptState state)
+            throws IOException {
         this.config = config;
         this.base = base;
         this.state = state;

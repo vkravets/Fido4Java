@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.jftn.poll.PollService;
@@ -36,8 +36,8 @@ class LiveConfigurationTest {
     Path root;
     private JFtnConfig config;
     private OrmManager orm;
-    private DatabaseManager base;
-    private MailService mail;
+    private MailDatabaseFacade base;
+    private MailRuntime mail;
     private PollService polls;
     private RpcAccounts accounts;
     private LiveConfiguration reload;
@@ -63,9 +63,9 @@ class LiveConfigurationTest {
         config = new JFtnConfig();
         config.load(source.toString());
         orm = new OrmManager("jdbc:h2:mem:reload" + System.nanoTime());
-        base = new DatabaseManager(orm);
+        base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
-        mail = new MailService(config, base, List.of());
+        mail = new MailRuntime(config, base, List.of());
         SessionContext template = JFtnRunner.createSessionContext(config);
         mail.attach(template);
         polls = new PollService(config, template);

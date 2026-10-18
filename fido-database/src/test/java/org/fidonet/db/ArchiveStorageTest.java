@@ -31,7 +31,7 @@ public class ArchiveStorageTest {
     public void retainsArchivePolicyAndReceiptsAfterReopeningDatabase() throws Exception {
         String url = "jdbc:h2:mem:archivePolicy" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
         Message message = message();
-        DatabaseManager first = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade first = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(first.open());
         try {
             assertTrue(first.createArea("test"));
@@ -39,7 +39,7 @@ public class ArchiveStorageTest {
         } finally {
             first.close();
         }
-        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade reopened = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(reopened.open());
         try {
             assertTrue(reopened.isArchived(message));
@@ -52,8 +52,8 @@ public class ArchiveStorageTest {
 
     @Test
     public void importingExistingLiveMessageDoesNotDisableItsDistribution() throws Exception {
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:liveArchive"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:liveArchive"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));
@@ -70,7 +70,7 @@ public class ArchiveStorageTest {
     @Test
     public void failedProvenanceWriteRollsBackMessageAndDupeReceipt() throws Exception {
         OrmManager orm = new OrmManager("jdbc:h2:mem:archiveRollback" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));

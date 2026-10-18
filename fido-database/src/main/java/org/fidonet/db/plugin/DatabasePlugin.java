@@ -28,7 +28,7 @@
 
 package org.fidonet.db.plugin;
 
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
@@ -46,12 +46,12 @@ import java.sql.SQLException;
  * Date: 8/7/13
  * Time: 9:53 AM
  */
-public class DatabasePlugin implements Plugin<DatabaseManager> {
+public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
     public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10";
 
-    private DatabaseManager manager;
+    private MailDatabaseFacade manager;
     private String databaseUrl;
-    private WeakReference<DatabaseManager> context;
+    private WeakReference<MailDatabaseFacade> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -75,8 +75,8 @@ public class DatabasePlugin implements Plugin<DatabaseManager> {
             throw new PluginException(e);
         }
 
-        manager = new DatabaseManager(ormManager);
-        context = new WeakReference<DatabaseManager>(manager);
+        manager = new MailDatabaseFacade(ormManager);
+        context = new WeakReference<MailDatabaseFacade>(manager);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class DatabasePlugin implements Plugin<DatabaseManager> {
     }
 
     @Override
-    public WeakReference<DatabaseManager> getContext() {
+    public WeakReference<MailDatabaseFacade> getContext() {
         return context;
     }
 }

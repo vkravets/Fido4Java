@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.FileEchoEvent;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
@@ -48,9 +48,9 @@ class FileEchoToolsTest {
         return config;
     }
 
-    private DatabaseManager database() {
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:tools"
-                                                                  + System.nanoTime()));
+    private MailDatabaseFacade database() {
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:tools"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         return base;
     }
@@ -79,10 +79,10 @@ class FileEchoToolsTest {
                                                     "duplicate",
                                                     List.of(),
                                                     "Filename already exists");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
             Tosser tosser = new Tosser(config, base);
-            try (MailScripts scripts = new MailScripts(config, base, tosser)) {
+            try (MailAutomationRuntime scripts = new MailAutomationRuntime(config, base, tosser)) {
                 scripts.publishFileEcho(accepted);
                 scripts.publishFileEcho(accepted);
                 scripts.publishFileEcho(duplicate);
@@ -100,7 +100,7 @@ class FileEchoToolsTest {
                            .getBody()
                            .getBody()
                            .contains("Filename already exists"));
-            try (MailScripts scripts = new MailScripts(config, base, tosser)) {
+            try (MailAutomationRuntime scripts = new MailAutomationRuntime(config, base, tosser)) {
                 scripts.publishFileEcho(duplicate);
             }
             assertEquals(1, base.getLocalNetmail(local).size());
@@ -112,10 +112,10 @@ class FileEchoToolsTest {
     @Test
     void refusesTemplatePathsOutsideTheScriptDirectory() throws Exception {
         JFtnConfig config = config("FileEchoNoticeTemplate=../outside.txt\n");
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
             assertThrows(Exception.class,
-                         () -> new MailScripts(config, base, new Tosser(config, base)));
+                         () -> new MailAutomationRuntime(config, base, new Tosser(config, base)));
         } finally {
             base.close();
         }

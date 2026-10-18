@@ -36,7 +36,7 @@ import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.poll.OutboundTransportFactory;
 import org.fidonet.jftn.poll.PollService;
@@ -139,7 +139,7 @@ public class JFtnRunner {
         Runner runner;
         Scheduler scheduler;
         SessionContext context;
-        MailService mail = null;
+        MailRuntime mail = null;
         NodeRpc rpc = null;
         PollService polls = null;
         try {
@@ -149,9 +149,9 @@ public class JFtnRunner {
             scheduler = Scheduler.class.cast(requireContext(plugins.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID),
                                                             "scheduler"));
             context = createSessionContext(config);
-            DatabaseManager database = DatabaseManager.class.cast(requireContext(plugins.getContext("database"),
-                                                                                 "database"));
-            mail = new MailService(config, database, plugins.mailExtensions());
+            MailDatabaseFacade database = MailDatabaseFacade.class.cast(requireContext(plugins.getContext("database"),
+                                                                                       "database"));
+            mail = new MailRuntime(config, database, plugins.mailExtensions());
             mail.attach(context);
             mail.start();
             polls = plugins.polling(config, context);
@@ -173,7 +173,7 @@ public class JFtnRunner {
             unloadPlugins.run();
             throw failure;
         }
-        MailService activeMail = mail;
+        MailRuntime activeMail = mail;
         NodeRpc activeRpc = rpc;
         PollService activePolls = polls;
         runNode(runner,
@@ -193,7 +193,7 @@ public class JFtnRunner {
 
     private static void stopServices(Scheduler scheduler,
                                      Runner runner,
-                                     MailService mail,
+                                     MailRuntime mail,
                                      NodeRpc rpc,
                                      PollService polls,
                                      Runnable unloadPlugins) {

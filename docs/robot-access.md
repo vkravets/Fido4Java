@@ -75,7 +75,7 @@ A file rule cannot restore permissions revoked in the database. An unknown mode
 is an error. Changing the source requires a restart.
 
 The independent `mail_robot_access` table is part of the mail database, not the
-RPC account database. `DatabaseManager.getRobotRules()` exposes the repository
+RPC account database. `MailDatabaseFacade.getRobotRules()` exposes the repository
 for trusted administration code. Updates/deletions are read on the next command
 or TIC authorization without restarting scripts. Existing accepted/queued work
 is not cancelled retroactively.

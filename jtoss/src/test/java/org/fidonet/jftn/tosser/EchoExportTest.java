@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.echobase.AccessLevel;
@@ -55,7 +55,7 @@ public class EchoExportTest {
         return config;
     }
 
-    private void subscribe(OrmManager orm, DatabaseManager base, Link link) throws Exception {
+    private void subscribe(OrmManager orm, MailDatabaseFacade base, Link link) throws Exception {
         ConfigurationLink configured = new ConfigurationLink();
         configured.setAddress(link.getAddr().as5D());
         configured.setPassword("secret");
@@ -68,7 +68,7 @@ public class EchoExportTest {
     public void exportsOnlyToEligibleSubscribersAndPreservesOriginalMessage() throws Exception {
         JFtnConfig config = config();
         OrmManager orm = new OrmManager("jdbc:h2:mem:echoExport" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             base.createArea("test");
@@ -122,7 +122,7 @@ public class EchoExportTest {
     public void quarantinesReadOnlyAndUnknownAreaPosts() throws Exception {
         JFtnConfig config = config();
         OrmManager orm = new OrmManager("jdbc:h2:mem:echoAccess" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             base.createArea("test");
@@ -161,7 +161,7 @@ public class EchoExportTest {
     public void crossZoneExportDoesNotReinterpretOtherZoneSeenByOrPathEntries() throws Exception {
         JFtnConfig config = config("Link=3:600/1,2:500/102,secret,localhost\n");
         OrmManager orm = new OrmManager("jdbc:h2:mem:crossZoneEcho" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             base.createArea("test");

@@ -5,7 +5,7 @@ import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.FileEchoEvent;
 import org.fidonet.jftn.script.FileEchoService;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
@@ -30,12 +30,12 @@ import java.util.stream.Stream;
 /** Validates and stores incoming deliveries before publishing callbacks and durable receipts. */
 final class FileEchoProcessor implements FileEchoService {
     private static final Logger LOG = LoggerFactory.getLogger(FileEchoProcessor.class);
-    private final MailScripts api;
+    private final MailAutomationRuntime api;
     private final JFtnConfig config;
     private final FileEchoStore store;
     private final Charset charset;
 
-    FileEchoProcessor(MailScripts api) throws IOException {
+    FileEchoProcessor(MailAutomationRuntime api) throws IOException {
         this.api = api;
         config = (JFtnConfig) api.getConfig();
         charset = Charset.forName(config.getValue("TicCharset", "IBM437"));

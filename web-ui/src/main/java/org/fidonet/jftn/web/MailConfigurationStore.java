@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 
 /** Operational mail settings share the station store's atomic, conflict-aware writer. */
 final class MailConfigurationStore {
-    private final NodeConfigurationStore store;
+    private final NodeConfigurationService store;
 
-    MailConfigurationStore(NodeConfigurationStore store) {
+    MailConfigurationStore(NodeConfigurationService store) {
         this.store = store;
     }
 

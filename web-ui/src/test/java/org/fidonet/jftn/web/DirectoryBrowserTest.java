@@ -42,13 +42,14 @@ class DirectoryBrowserTest {
                                                      false));
         }
         try (RpcAccounts accounts = new RpcAccounts(directory.resolve("accounts"))) {
-            SettingsHandler handler = new SettingsHandler(new NodeConfigurationStore(directory.resolve("jftn.conf")),
-                                                          accounts,
-                                                          new UiSessions(accounts, 60),
-                                                          directory.resolve("accounts"),
-                                                          "private-setup",
-                                                          () -> {
-                                                          });
+            NodeSettingsRpcHandler handler = new NodeSettingsRpcHandler(new NodeConfigurationService(directory.resolve("jftn.conf")),
+                                                                        accounts,
+                                                                        new UiSessions(accounts,
+                                                                                       60),
+                                                                        directory.resolve("accounts"),
+                                                                        "private-setup",
+                                                                        () -> {
+                                                                        });
             DirectoryPage page = handler.searchDirectory("1:500/100", 0, 1, true);
             assertTrue(page.isHasMore());
             assertEquals(1, page.getNextOffset());

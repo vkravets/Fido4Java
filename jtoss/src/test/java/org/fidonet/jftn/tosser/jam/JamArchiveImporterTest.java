@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ArchiveReceipt;
 import org.fidonet.echobase.AccessLevel;
@@ -53,7 +53,7 @@ public class JamArchiveImporterTest {
                 + "/tmp\nOutbound=" + directory + "/out\nEchoPath=" + directory
                 + "/echo\nSysOp=Test\nLink=2:500/101,2:500/102,secret,localhost\n").getBytes(StandardCharsets.UTF_8)));
         OrmManager orm = new OrmManager("jdbc:h2:mem:jamArchive" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));
@@ -99,8 +99,8 @@ public class JamArchiveImporterTest {
 
     @Test
     public void retriesAfterPartialImportWithoutDuplicatingCommittedRecords() throws Exception {
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:partialArchive"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:partialArchive"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         try {
             assertTrue(base.createArea("test"));

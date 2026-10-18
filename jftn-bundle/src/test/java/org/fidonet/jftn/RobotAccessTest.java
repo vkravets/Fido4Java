@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
@@ -53,8 +53,8 @@ class RobotAccessTest {
     @Test
     void defaultDatabaseModeNeverFellBackToFilesAndObservedRevocationWithoutRestart()
             throws Exception {
-        DatabaseManager database = new DatabaseManager(new OrmManager("jdbc:h2:mem:robot-source"
-                                                                      + System.nanoTime()));
+        MailDatabaseFacade database = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:robot-source"
+                + System.nanoTime()));
         assertTrue(database.open());
         try {
             JFtnConfig config = new JFtnConfig();

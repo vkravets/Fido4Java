@@ -1,6 +1,6 @@
 # UI RPC API
 
-The application can start a real sysop RPC service alongside MailService:
+The application can start a real sysop RPC service alongside MailRuntime:
 
 ```ini
 RpcEnabled=true
@@ -23,7 +23,7 @@ the authentication database is empty; restarts never reset its password. Remove
 RpcPassword after successful provisioning.
 
 Runner owns the listeners and authentication sessions. The node-owned poll service
-also works without RPC. These services stop before MailService/database shutdown;
+also works without RPC. These services stop before MailRuntime/database shutdown;
 startup failure releases resources. The standalone default RPC handler rejects
 unconfigured authentication.
 
@@ -282,7 +282,7 @@ export; call processMail to request an immediate processing pass.
 | `logs` | Bounded reads from the configured log file; no client-selected filesystem paths |
 
 Echo administration requires `EchoSubscriptions=database`. Access is READ,
-WRITE or BOTH. All mutations use MailService's processing lock, so UI operations
+WRITE or BOTH. All mutations use MailRuntime's processing lock, so UI operations
 cannot race scripts or inbound/outbound scans.
 
 Polls own independent SessionContexts and use the same Netty transport/mail

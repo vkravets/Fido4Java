@@ -11,12 +11,12 @@ import org.fidonet.binkp.common.io.FileData;
 import org.fidonet.binkp.common.io.FileInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.script.FileDeliveryQueue;
-import org.fidonet.jftn.script.MailScripts;
+import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.jftn.tosser.Tosser;
@@ -43,9 +43,9 @@ class FileFixScriptTest {
     @TempDir
     Path root;
     private JFtnConfig config;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private Tosser tosser;
-    private MailScripts scripts;
+    private MailAutomationRuntime scripts;
     private final FTNAddr sender = new FTNAddr("1:500/101");
     private final FTNAddr recipient = new FTNAddr("1:500/102");
 
@@ -53,11 +53,11 @@ class FileFixScriptTest {
     void open() throws Exception {
         config = configuration("files");
         Files.createDirectories(Path.of(config.getTmpDir()));
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:filefix" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:filefix" + System.nanoTime()));
         assertTrue(base.open());
         config.getConfiguredLinks().forEach(link -> base.configureLink(link, "secret"));
         tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
     }
 
     private JFtnConfig configuration(String source) throws Exception {
@@ -139,7 +139,7 @@ class FileFixScriptTest {
     @Test
     void absentPluginDoesNotRegisterRobotOrProcessTic() throws Exception {
         scripts.close();
-        scripts = new MailScripts(config, base, tosser, List.of());
+        scripts = new MailAutomationRuntime(config, base, tosser, List.of());
         assertEquals(null, scripts.getFileEcho());
         received("NODELIST.288", "list");
         received("FIRST.TIC", tic("list"));
@@ -153,7 +153,7 @@ class FileFixScriptTest {
     void disabledPluginLeavesInputsAndRobotInactive() throws Exception {
         scripts.close();
         config.load(new ByteArrayInputStream("FileEchoEnabled=false\n".getBytes(StandardCharsets.UTF_8)));
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         assertEquals(null, scripts.getFileEcho());
         Path payload = received("NODELIST.288", "list");
         scripts.beforeExport(tosser);
@@ -166,7 +166,7 @@ class FileFixScriptTest {
         scripts.close();
         config = configuration("database");
         tosser = new Tosser(config, base);
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         AtomicInteger delivered = new AtomicInteger();
         scripts.onFile((area, file, name, peer, receipt) -> delivered.incrementAndGet());
         received("NODELIST.288", "hello");
@@ -197,7 +197,7 @@ class FileFixScriptTest {
         Path source = root.resolve("payload");
         Files.writeString(source, "hello");
         queue.enqueue(config.getLink(recipient), "transport", source, "NODELIST.288", "ticket\r\n");
-        try (MailService service = new MailService(config, base)) {
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(recipient);
             context.setServerRole(ServerRole.CLIENT);
@@ -233,7 +233,7 @@ class FileFixScriptTest {
         assertTrue(reply.contains("lists"));
         assertFalse(reply.contains("private"));
         scripts.close();
-        scripts = new MailScripts(config, base, tosser);
+        scripts = new MailAutomationRuntime(config, base, tosser);
         AtomicInteger delivered = new AtomicInteger();
         scripts.onFile((area, file, name, peer, receipt) -> {
             assertEquals("lists", area);
@@ -271,7 +271,7 @@ class FileFixScriptTest {
         Path source = root.resolve("payload");
         Files.writeString(source, "hello");
         queue.enqueue(config.getLink(recipient), "disabled", source, "FILE.TXT", "ticket\r\n");
-        try (MailService service = new MailService(config, base)) {
+        try (MailRuntime service = new MailRuntime(config, base)) {
             SessionContext context = JFtnRunner.createSessionContext(config);
             context.getLinksInfo().setCurLink(recipient);
             context.setServerRole(ServerRole.CLIENT);

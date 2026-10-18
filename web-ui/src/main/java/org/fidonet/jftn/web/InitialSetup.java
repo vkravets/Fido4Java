@@ -44,12 +44,13 @@ public final class InitialSetup {
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(random);
         CountDownLatch completion = new CountDownLatch(1);
         try (RpcAccounts accounts = new RpcAccounts(authPath)) {
-            SettingsHandler settings = new SettingsHandler(new NodeConfigurationStore(configuration),
-                                                           accounts,
-                                                           new UiSessions(accounts, 3600),
-                                                           authPath,
-                                                           token,
-                                                           completion::countDown);
+            NodeSettingsRpcHandler settings = new NodeSettingsRpcHandler(new NodeConfigurationService(configuration),
+                                                                         accounts,
+                                                                         new UiSessions(accounts,
+                                                                                        3600),
+                                                                         authPath,
+                                                                         token,
+                                                                         completion::countDown);
             DefaultRpcServiceProvider handlers = new DefaultRpcServiceProvider() {
                 @Override
                 public SettingsService.Iface getSettingsHandler() {

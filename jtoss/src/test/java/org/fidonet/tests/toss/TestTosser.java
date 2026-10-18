@@ -30,7 +30,7 @@ package org.fidonet.tests.toss;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.echobase.EchoMgr;
@@ -71,12 +71,12 @@ public class TestTosser {
     public File temporary;
 
     private static OrmManager ormManager;
-    private static DatabaseManager databaseManager;
+    private static MailDatabaseFacade databaseManager;
 
     @BeforeAll
     public static void setUp() throws SQLException {
         ormManager = new OrmManager("jdbc:h2:mem:tosser" + System.nanoTime());
-        databaseManager = new DatabaseManager(ormManager);
+        databaseManager = new MailDatabaseFacade(ormManager);
         if (!databaseManager.open()) {
             Assertions.fail();
         }

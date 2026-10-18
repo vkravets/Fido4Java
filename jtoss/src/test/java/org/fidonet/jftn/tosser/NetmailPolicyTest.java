@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.types.FTNAddr;
@@ -126,7 +126,7 @@ public class NetmailPolicyTest {
     @Test
     public void persistsRulesAndDoesNotRerouteAcceptedDeliveries() throws Exception {
         String url = "jdbc:h2:mem:routes" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        DatabaseManager base = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         JFtnConfig config = config("NetmailRoutes=database\n");
         try {
@@ -146,7 +146,7 @@ public class NetmailPolicyTest {
         } finally {
             base.close();
         }
-        DatabaseManager reopened = new DatabaseManager(new OrmManager(url));
+        MailDatabaseFacade reopened = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(reopened.open());
         try {
             NetmailRouter router = new NetmailRouter(config, reopened);

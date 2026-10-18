@@ -30,9 +30,9 @@ import java.security.MessageDigest;
 import java.util.List;
 
 /** Configuration authorization is independent of the chosen RPC transport. */
-public final class SettingsHandler implements SettingsService.Iface {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsHandler.class);
-    private final NodeConfigurationStore store;
+public final class NodeSettingsRpcHandler implements SettingsService.Iface {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NodeSettingsRpcHandler.class);
+    private final NodeConfigurationService store;
     private final RpcAccounts accounts;
     private final UiSessions sessions;
     private final Path authPath;
@@ -40,12 +40,12 @@ public final class SettingsHandler implements SettingsService.Iface {
     private final Runnable completed;
     private boolean saved;
 
-    public SettingsHandler(NodeConfigurationStore store,
-                           RpcAccounts accounts,
-                           UiSessions sessions,
-                           Path authPath,
-                           String setupToken,
-                           Runnable completed) {
+    public NodeSettingsRpcHandler(NodeConfigurationService store,
+                                  RpcAccounts accounts,
+                                  UiSessions sessions,
+                                  Path authPath,
+                                  String setupToken,
+                                  Runnable completed) {
         this.store = store;
         this.accounts = accounts;
         this.sessions = sessions;

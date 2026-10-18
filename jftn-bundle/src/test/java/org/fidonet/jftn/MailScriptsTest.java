@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.packet.PacketWriter;
@@ -48,9 +48,9 @@ class MailScriptsTest {
         return result;
     }
 
-    private DatabaseManager database() {
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:scripts"
-                                                                  + System.nanoTime()));
+    private MailDatabaseFacade database() {
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:scripts"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         return base;
     }
@@ -86,11 +86,11 @@ class MailScriptsTest {
                                   + "}\n"
                                   + "def unload(api) { api.state.put('unloaded', 'yes') }\n");
         JFtnConfig config = config(script.toString());
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         ScriptState state = new ScriptState(Path.of(config.getTmpDir(), "scripts"));
         try {
             Path packet = packet(config);
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertTrue(Files.exists(packet));
                 service.processPending();
@@ -111,11 +111,11 @@ class MailScriptsTest {
         Files.writeString(script,
                           "def register(api) { api.onNetmail { m,p,k -> true }; throw new IOException('bad') }");
         JFtnConfig config = config(script.toString());
-        DatabaseManager base = database();
+        MailDatabaseFacade base = database();
         try {
-            assertThrows(IOException.class, () -> new MailService(config, base));
+            assertThrows(IOException.class, () -> new MailRuntime(config, base));
             Files.writeString(script, "def register(api) {}\ndef unload(api) {}\n");
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
             }
         } finally {

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
@@ -25,7 +25,7 @@ import java.util.Set;
 class FileEchoStoreTest {
     @TempDir
     Path root;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private JFtnConfig config;
     private ScriptState state;
     private FileEchoStore store;
@@ -35,7 +35,7 @@ class FileEchoStoreTest {
     @BeforeEach
     void open() throws Exception {
         config = configuration("");
-        base = new DatabaseManager(new OrmManager("jdbc:h2:mem:fileecho" + System.nanoTime()));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:fileecho" + System.nanoTime()));
         assertTrue(base.open());
         state = new ScriptState(root.resolve("state"));
         store = new FileEchoStore(config, base, state);

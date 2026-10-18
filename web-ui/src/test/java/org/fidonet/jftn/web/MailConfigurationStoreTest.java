@@ -23,7 +23,7 @@ class MailConfigurationStoreTest {
     void requiredExplicitCreationModesAndSavedOnlyTheSubmittedRules() throws Exception {
         station();
         Files.writeString(path(), Files.readString(path()) + "EchoSubscriptions=database\n");
-        MailConfigurationStore store = new MailConfigurationStore(new NodeConfigurationStore(path()));
+        MailConfigurationStore store = new MailConfigurationStore(new NodeConfigurationService(path()));
         List<MailLinkConfiguration> links = store.links();
         assertEquals("NONE", links.get(0).getAutoCreateEchoAccess());
         links.get(0).setAutoCreateEchoAccess("WRITE");
@@ -50,13 +50,13 @@ class MailConfigurationStoreTest {
         return directory.resolve("jftn.conf");
     }
 
-    private NodeConfigurationStore station() throws Exception {
+    private NodeConfigurationService station() throws Exception {
         Files.writeString(path(),
                           "Inbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\nSysOp=Test\n"
                           + "# Preserve this comment\nCustomOption=retained\n"
                           + "Link=1:500/101,1:500/100,session,example.org:24554\n"
                           + "Link=1:500/102,1:500/100.1,other,other.example:24555\n");
-        return new NodeConfigurationStore(path());
+        return new NodeConfigurationService(path());
     }
 
     private JFtnConfig loaded() throws Exception {
@@ -67,7 +67,7 @@ class MailConfigurationStoreTest {
 
     @Test
     void editedPacketAndSessionPasswordsIndependentlyAndNeverReturnedSecrets() throws Exception {
-        NodeConfigurationStore station = station();
+        NodeConfigurationService station = station();
         MailConfigurationStore store = new MailConfigurationStore(station);
         List<MailLinkConfiguration> links = store.links();
         assertEquals("INHERIT", links.get(0).getPacketPasswordMode());
@@ -156,7 +156,7 @@ class MailConfigurationStoreTest {
 
     @Test
     void sharedWriterKeptTosserAndLinkEditsAndRefusedExternalChanges() throws Exception {
-        NodeConfigurationStore station = station();
+        NodeConfigurationService station = station();
         MailConfigurationStore store = new MailConfigurationStore(station);
         TosserConfiguration defaults = store.tosser();
         assertEquals(5, defaults.getIntervalSeconds());
@@ -179,7 +179,7 @@ class MailConfigurationStoreTest {
 
     @Test
     void refusedToSilentlyMaskOptionsDefinedInConfigurationFragments() throws Exception {
-        NodeConfigurationStore station = station();
+        NodeConfigurationService station = station();
         Files.createDirectory(directory.resolve("conf.d"));
         Path fragment = directory.resolve("conf.d/tosser.conf");
         String content = "TossIntervalSeconds=15\n";

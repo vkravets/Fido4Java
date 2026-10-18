@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -34,13 +34,13 @@ public class TosserBundleTest {
     @TempDir
     public File temporary;
     private OrmManager orm;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
 
     @BeforeEach
     public void open() throws Exception {
         orm = new OrmManager("jdbc:h2:mem:toss" + System.nanoTime());
         orm.connect();
-        base = new DatabaseManager(orm);
+        base = new MailDatabaseFacade(orm);
         assertTrue(base.createArea("test"));
     }
 
@@ -255,8 +255,8 @@ public class TosserBundleTest {
     public void resumesPartialImportAfterStorageFailureAndTosserRestart() throws Exception {
         Path inbound = Files.createTempDirectory(temporary.toPath(), "test-");
         Path bad = Files.createTempDirectory(temporary.toPath(), "test-");
-        DatabaseManager normal = base;
-        base = new DatabaseManager(orm) {
+        MailDatabaseFacade normal = base;
+        base = new MailDatabaseFacade(orm) {
             @Override
             public void addMessage(Message message, String area) {
                 if (message.getMsgId().endsWith("second")) {

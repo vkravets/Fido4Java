@@ -2,11 +2,11 @@ package org.fidonet.jftn.ui;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.StoredMail;
-import org.fidonet.jftn.MailService;
+import org.fidonet.jftn.MailRuntime;
 import org.fidonet.jftn.poll.PollAttempt;
 import org.fidonet.jftn.poll.PollDiagnostics;
 import org.fidonet.jftn.poll.PollLogSlice;
@@ -55,17 +55,20 @@ import java.util.Map;
 import java.util.Set;
 
 /** Sysop UI adapter. Authentication is supplied by AuthenticatedUi at the RPC boundary. */
-public final class NodeUi implements UiService.Iface {
-    private static final Logger logger = LoggerFactory.getLogger(NodeUi.class);
+public final class NodeUiServiceHandler implements UiService.Iface {
+    private static final Logger logger = LoggerFactory.getLogger(NodeUiServiceHandler.class);
     private final JFtnConfig config;
-    private final DatabaseManager base;
-    private final MailService mail;
+    private final MailDatabaseFacade base;
+    private final MailRuntime mail;
     private final UserMailStateStore state;
     private final PollService polls;
     private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
 
-    public NodeUi(JFtnConfig config, DatabaseManager base, MailService mail, PollService polls)
+    public NodeUiServiceHandler(JFtnConfig config,
+                                MailDatabaseFacade base,
+                                MailRuntime mail,
+                                PollService polls)
             throws Exception {
         this.config = config;
         this.base = base;

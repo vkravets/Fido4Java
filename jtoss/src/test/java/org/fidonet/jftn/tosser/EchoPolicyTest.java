@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
@@ -33,7 +33,7 @@ import java.util.List;
 public class EchoPolicyTest {
     @TempDir
     public File temporary;
-    private DatabaseManager base;
+    private MailDatabaseFacade base;
     private JFtnConfig config;
     private Tosser tosser;
     private OutboundSpool spool;
@@ -64,7 +64,7 @@ public class EchoPolicyTest {
     public void open() throws Exception {
         config = settings("");
         url = "jdbc:h2:mem:echoPolicy" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        base = new DatabaseManager(new OrmManager(url));
+        base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         for (Link link : config.getConfiguredLinks()) {
             base.configureLink(link, "secret");
@@ -162,7 +162,7 @@ public class EchoPolicyTest {
         assertEquals(1, pending("101").size());
         acknowledge("101");
         base.close();
-        base = new DatabaseManager(new OrmManager(url));
+        base = new MailDatabaseFacade(new OrmManager(url));
         assertTrue(base.open());
         tosser = new Tosser(config, base);
         assertTrue(base.canReadEcho(link("101"), "test"));

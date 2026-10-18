@@ -1,7 +1,7 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotRules;
@@ -14,7 +14,7 @@ public final class RobotAccess {
     private final RobotRules rules;
     private final String source;
 
-    public RobotAccess(JFtnConfig config, DatabaseManager database) {
+    public RobotAccess(JFtnConfig config, MailDatabaseFacade database) {
         this.config = config;
         source = source(config);
         switch (source) {

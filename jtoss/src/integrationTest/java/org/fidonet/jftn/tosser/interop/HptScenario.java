@@ -1,7 +1,7 @@
 package org.fidonet.jftn.tosser.interop;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.jam.JamArea;
@@ -21,7 +21,7 @@ final class HptScenario implements AutoCloseable {
     static final FTNAddr PEER = new FTNAddr("2:500/101");
     final Path root;
     final JFtnConfig config;
-    final DatabaseManager base;
+    final MailDatabaseFacade base;
     final Tosser tosser;
     final JamBridge bridge;
     final JamArea echo;
@@ -31,7 +31,7 @@ final class HptScenario implements AutoCloseable {
         this.root = root;
         createDirectories();
         config = configuration();
-        base = new DatabaseManager(new OrmManager("jdbc:h2:" + root.resolve("database")));
+        base = new MailDatabaseFacade(new OrmManager("jdbc:h2:" + root.resolve("database")));
         if (!base.open()) {
             throw new IOException("Cannot open integration SQL database");
         }

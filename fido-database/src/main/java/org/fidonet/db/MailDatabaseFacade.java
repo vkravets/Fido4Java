@@ -83,7 +83,7 @@ import java.util.concurrent.Callable;
  * Date: 10/3/12
  * Time: 7:55 AM
  */
-public class DatabaseManager
+public class MailDatabaseFacade
         implements
             IBase,
             NetmailStore,
@@ -233,7 +233,7 @@ public class DatabaseManager
         new EchoRepository(dbManager).visitNew(area, consumer, handler);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(MailDatabaseFacade.class);
 
     private OrmManager dbManager;
 
@@ -317,7 +317,7 @@ public class DatabaseManager
         }
     }
 
-    public DatabaseManager(OrmManager manager) {
+    public MailDatabaseFacade(OrmManager manager) {
         this.dbManager = manager;
         netmailRepository = new NetmailRepository(manager);
         areas = new AreaRepository(manager);

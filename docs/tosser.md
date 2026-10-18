@@ -190,7 +190,7 @@ requires final netmail addresses to stay independent of the packet envelope.
 Optional [Groovy mail scripts](mail-scripts.md) provide AreaFix and FileFix.
 A nodelist router and RPC endpoints remain separate features.
 
-The Runner starts `MailService` after loading the transport, scheduler and
+The Runner starts `MailRuntime` after loading the transport, scheduler and
 database plugins. A process lock in `Tmp` prevents two mail services from using
 the same state directory. Existing inbound files and queues are processed at
 startup and then periodically. The Groovy `tosspack` command reuses the running
@@ -291,7 +291,7 @@ existing configurations; without `JamEcho` / `JamNetmail` entries there are no
 views to synchronize. Changing the flag requires restarting the node.
 
 The Runner obtains extension factories from loaded plugins. Standalone
-`MailService` / `runOnce` calls discover the same factories through `ServiceLoader`.
+`MailRuntime` / `runOnce` calls discover the same factories through `ServiceLoader`.
 Extensions are created per mail service, run under its processing lock before
 and after packet export, and are closed before the database plugin is unloaded.
 Without the plugin JAR, SQL storage, packet generation and binkp delivery still

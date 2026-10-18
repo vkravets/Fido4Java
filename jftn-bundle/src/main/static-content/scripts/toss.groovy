@@ -29,8 +29,8 @@
 import org.fidonet.config.JFtnConfig
 import org.fidonet.jftn.engine.script.ScriptApi
 import org.fidonet.jftn.share.Command
-import org.fidonet.jftn.MailService
-import org.fidonet.db.DatabaseManager
+import org.fidonet.jftn.MailRuntime
+import org.fidonet.db.MailDatabaseFacade
 import org.fidonet.jftn.plugins.PluginManager
 
 class TossCommand implements Command<String, Boolean> {
@@ -44,8 +44,8 @@ class TossCommand implements Command<String, Boolean> {
     @Override
     public Boolean execute(String param) {
         def config = (JFtnConfig) share.getConfig()
-        def database = (DatabaseManager) PluginManager.getInstance().getContext("database").get()
-        MailService.runOnce(config, database)
+        def database = (MailDatabaseFacade) PluginManager.getInstance().getContext("database").get()
+        MailRuntime.runOnce(config, database)
         return true
     }
 }

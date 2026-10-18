@@ -14,7 +14,7 @@ class EchoCreationTest {
     @Test
     void createdAreaAndGrantTogetherAndRolledBackIfGrantFailed() throws Exception {
         OrmManager orm = new OrmManager("jdbc:h2:mem:echoCreation" + System.nanoTime());
-        DatabaseManager base = new DatabaseManager(orm);
+        MailDatabaseFacade base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         try {
             Link first = new Link("1:500/101,1:500/100,secret,localhost");

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.DatabaseManager;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.types.FTNAddr;
@@ -110,14 +110,14 @@ class DirectoryFeedScriptTest {
     void importsDeliveredNodeAndPointListsAndDiffsThroughTheBundledScriptsAndSurvivesRestart()
             throws Exception {
         JFtnConfig config = config();
-        DatabaseManager base = new DatabaseManager(new OrmManager("jdbc:h2:mem:directoryFeed"
-                                                                  + System.nanoTime()));
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:directoryFeed"
+                                                                        + System.nanoTime()));
         assertTrue(base.open());
         String old = checked(",101,Old,City,Sysop,-Unpublished-,300\r\n", 288);
         String next = checked(",101,New,City,Sysop,-Unpublished-,300\r\n", 295);
         String points = checked("Boss,1:500/101\r\n,1,Point,City,Sysop,-Unpublished-,300\r\n", 288);
         try {
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 // There is no base file at startup: the first complete delivery initializes it.
                 receive(config, "NODELIST.288", old, "tic-password");
                 receive(config, "POINTS.288", points, "tic-password");
@@ -132,7 +132,7 @@ class DirectoryFeedScriptTest {
                 service.processPending();
                 assertEquals("New", node("nodes", "1:500/101.0"));
             }
-            try (MailService service = new MailService(config, base)) {
+            try (MailRuntime service = new MailRuntime(config, base)) {
                 service.processPending();
                 assertEquals("New", node("nodes", "1:500/101.0"));
                 assertEquals("Point", node("points", "1:500/101.1"));

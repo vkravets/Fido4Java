@@ -7,8 +7,8 @@ import org.fidonet.jftn.rpc.auth.AccountAuthentication;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.rpc.auth.RpcAccounts;
-import org.fidonet.jftn.web.NodeConfigurationStore;
-import org.fidonet.jftn.web.SettingsHandler;
+import org.fidonet.jftn.web.NodeConfigurationService;
+import org.fidonet.jftn.web.NodeSettingsRpcHandler;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,11 +21,11 @@ final class RpcIdentity implements AutoCloseable {
     private final AccountAuthentication authentication;
     private final ProfileHandler profiles;
     private SettingsService.Iface settings;
-    private NodeConfigurationStore.Application reload = (candidate, publication) -> {
+    private NodeConfigurationService.Application reload = (candidate, publication) -> {
         throw new IllegalArgumentException("Live configuration is not available");
     };
 
-    void reloadWith(NodeConfigurationStore.Application application) {
+    void reloadWith(NodeConfigurationService.Application application) {
         reload = application;
     }
 
@@ -66,16 +66,16 @@ final class RpcIdentity implements AutoCloseable {
                                                          Boolean.parseBoolean(registration));
             RpcIdentity identity = new RpcIdentity(resources, sessions, authentication, profiles);
             if (config.getSourcePath() != null) {
-                identity.settings = new SettingsHandler(new NodeConfigurationStore(config.getSourcePath(),
-                                                                                   (candidate,
-                                                                                    publication) -> identity.reload.apply(candidate,
-                                                                                                                          publication)),
-                                                        accounts,
-                                                        sessions,
-                                                        path,
-                                                        "",
-                                                        () -> {
-                                                        });
+                identity.settings = new NodeSettingsRpcHandler(new NodeConfigurationService(config.getSourcePath(),
+                                                                                            (candidate,
+                                                                                             publication) -> identity.reload.apply(candidate,
+                                                                                                                                   publication)),
+                                                               accounts,
+                                                               sessions,
+                                                               path,
+                                                               "",
+                                                               () -> {
+                                                               });
             }
             return identity;
         } catch (Exception failure) {

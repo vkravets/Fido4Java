@@ -10,13 +10,13 @@ import java.util.List;
 
 /** Common request identity, credential checks and durable replies; commands belong to scripts. */
 public final class RobotRequest {
-    private final MailScripts api;
+    private final MailAutomationRuntime api;
     private final Message message;
     private final String robot;
     private final String id;
     private final List<String> policy;
 
-    private RobotRequest(MailScripts api,
+    private RobotRequest(MailAutomationRuntime api,
                          Message message,
                          String robot,
                          String deliveryKey,
@@ -33,7 +33,7 @@ public final class RobotRequest {
     }
 
     /** Only direct requests from an explicitly configured robot peer are authorized. */
-    public static RobotRequest authorize(MailScripts api,
+    public static RobotRequest authorize(MailAutomationRuntime api,
                                          String robot,
                                          Message message,
                                          Link peer,

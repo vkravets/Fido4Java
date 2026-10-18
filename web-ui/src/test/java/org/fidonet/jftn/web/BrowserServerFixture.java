@@ -51,13 +51,13 @@ final class BrowserServerFixture implements AutoCloseable {
                                                     sessions,
                                                     List.of("1:500/100"),
                                                     true);
-        SettingsHandler settings = new SettingsHandler(new NodeConfigurationStore(directory.resolve("jftn.conf")),
-                                                       accounts,
-                                                       sessions,
-                                                       authPath,
-                                                       setupToken,
-                                                       () -> {
-                                                       });
+        NodeSettingsRpcHandler settings = new NodeSettingsRpcHandler(new NodeConfigurationService(directory.resolve("jftn.conf")),
+                                                                     accounts,
+                                                                     sessions,
+                                                                     authPath,
+                                                                     setupToken,
+                                                                     () -> {
+                                                                     });
         server = new HttpRpcServer(0,
                                    "127.0.0.1",
                                    handlers(sessions, authentication, profile, settings),
@@ -68,7 +68,7 @@ final class BrowserServerFixture implements AutoCloseable {
     private static DefaultRpcServiceProvider handlers(UiSessions sessions,
                                                       AccountAuthentication authentication,
                                                       ProfileHandler profile,
-                                                      SettingsHandler settings) {
+                                                      NodeSettingsRpcHandler settings) {
         UiService.Iface echoAccess = AuthenticatedUi.wrap(sessions,
                                                           new BrowserEchoAccess().handler());
         return new DefaultRpcServiceProvider() {
