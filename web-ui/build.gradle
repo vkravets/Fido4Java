@@ -120,7 +120,15 @@ def frontendTest = tasks.register('frontendTest', Exec) {
     }
 }
 
-tasks.named('check') { dependsOn frontendTest }
+// Local backend checks do not implicitly run browser application tests.
+// CI keeps the full check graph; developers can opt in with -PuiChecks=true.
+def uiChecks = providers.gradleProperty('uiChecks')
+        .orElse(providers.environmentVariable('CI'))
+        .map { it.equalsIgnoreCase('true') }
+        .orElse(false)
+tasks.named('check') {
+    if (uiChecks.get()) { dependsOn frontendTest }
+}
 
 tasks.named('test', Test) {
     useJUnitPlatform { excludeTags 'browser' }
