@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
@@ -100,6 +101,19 @@ public final class UiSessions implements LoginService.Iface {
         } catch (SQLException failure) {
             throw new UiError("FORBIDDEN", "Cannot verify administrator permissions");
         }
+    }
+
+    /** Current approved identities; callers must first resolve an authenticated session. */
+    public List<String> mailAddresses(String owner, List<String> station) throws UiError {
+        try {
+            return new AccountDirectory(accounts).allowed(owner, station);
+        } catch (SQLException failure) {
+            throw new UiError("FORBIDDEN", "Cannot verify mailbox permissions");
+        }
+    }
+
+    public List<String> hostedMailAddresses() throws SQLException {
+        return new AccountDirectory(accounts).hostedAddresses();
     }
 
     @Override

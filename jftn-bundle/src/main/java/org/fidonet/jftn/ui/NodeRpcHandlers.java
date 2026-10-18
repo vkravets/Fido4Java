@@ -18,7 +18,7 @@ final class NodeRpcHandlers extends DefaultRpcServiceProvider {
 
     NodeRpcHandlers(RpcIdentity identity, UiService.Iface backend) {
         this.identity = identity;
-        ui = AuthenticatedUi.wrap(identity.sessions(), backend);
+        ui = AuthenticatedUi.wrap(identity.sessions(), backend, true);
     }
 
     @Override

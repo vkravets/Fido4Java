@@ -451,6 +451,20 @@ and outputs. Originals are not rewritten. Rule definitions participate in script
 receipt identity, and relaxed/strict parsing have different catalog definitions,
 preventing a previous relaxed import from bypassing a later strict reimport.
 
+## 27. Web netmail uses approved account identities
+
+Node administration and echomail access remain administrator-only. The full node's
+mail backend resolves approved author addresses on every request and applies them
+to SQL pagination, detail reads, read marks and draft submission. A guessed ID in
+another mailbox returns NOT_FOUND. Drafts and send receipts remain owner-scoped;
+the sender address is checked on the server.
+
+While the full RPC runtime is active, approved account AKAs are local netmail
+mailboxes in the tosser. Disabling an account denies login but retains incoming
+mail. The mailbox provider is detached before the authentication database closes.
+Headless operation continues to use configured station AKAs; directory imports
+never create local mailboxes or grant account permissions.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -91,6 +91,22 @@ public class Tosser extends HasEventBus {
     private final PacketQuarantine quarantine;
     private String packetRejection = "Packet import was rejected; inspect the node log.";
     private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
+    private LocalMailboxes hostedMailboxes = Set::of;
+
+    @FunctionalInterface
+    public interface LocalMailboxes {
+        Set<FTNAddr> addresses() throws IOException;
+    }
+
+    /** Trusted application integration; never populated from received directory lists. */
+    public synchronized void hostedMailboxes(LocalMailboxes mailboxes) {
+        hostedMailboxes = Objects.requireNonNull(mailboxes);
+    }
+
+    private boolean localNetmailAddress(FTNAddr address) throws IOException {
+        return config.getLocalAddresses().contains(address)
+                || hostedMailboxes.addresses().contains(address);
+    }
 
     public synchronized void addNetmailHandler(NetmailHandler handler) {
         netmailHandlers.add(Objects.requireNonNull(handler));
@@ -590,7 +606,7 @@ public class Tosser extends HasEventBus {
         if (netmailStore == null || !message.isValid()) {
             return rejectPacket("Netmail storage is unavailable or a processing hook rejected the message.");
         }
-        boolean local = config.getLocalAddresses().contains(message.getTAddr())
+        boolean local = localNetmailAddress(message.getTAddr())
                 || link.getMyaddr() != null && link.getMyaddr().contains(message.getTAddr());
         NetmailDecision decision = netmailRouter.explainTransit(message, link.getAddr());
         Link route = decision.getNextHop();
@@ -627,11 +643,11 @@ public class Tosser extends HasEventBus {
             throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
         }
         if (message.isEchomail() || netmailStore == null
-                || !config.getLocalAddresses().contains(message.getFAddr())) {
+                || !localNetmailAddress(message.getFAddr())) {
             throw new IllegalArgumentException("Outgoing netmail must originate from a local AKA");
         }
         MessageIds.ensure(message, Path.of(config.getTmpDir()));
-        if (config.getLocalAddresses().contains(message.getTAddr())) {
+        if (localNetmailAddress(message.getTAddr())) {
             netmailStore.saveNetmail(message, deliveryKey, null);
             return;
         }
@@ -700,7 +716,7 @@ public class Tosser extends HasEventBus {
             if (result.isEmpty()) {
                 throw new IllegalStateException("No configured recipients for local echomail");
             }
-        } else if (!config.getLocalAddresses().contains(message.getTAddr())) {
+        } else if (!localNetmailAddress(message.getTAddr())) {
             Link route = netmailRouter.route(message);
             if (route == null) {
                 throw new IllegalStateException("No route for " + message.getTAddr());

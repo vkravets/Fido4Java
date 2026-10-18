@@ -21,6 +21,7 @@ import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
+import org.fidonet.jftn.rpc.ProfileService;
 import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.RobotRuleInfo;
 import org.fidonet.jftn.rpc.SettingsService;
@@ -478,6 +479,67 @@ class UiRpcIntegrationTest {
                              "Hello from UI");
     }
 
+    private String approvedPoint(ProfileService.Client profiles, String login, String address)
+            throws Exception {
+        profiles.register(login, "point-password-123", address);
+        profiles.decideAka(token, login, address, true);
+        LoginService.Client logins = new LoginService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                      "login"));
+        return logins.login(new Credential(login, "point-password-123")).getSession_id();
+    }
+
+    @Test
+    void isolatedApprovedPointMailboxesAndSendersAcrossTcpAndHttp() throws Exception {
+        ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                            "profile"));
+        String first = approvedPoint(profiles, "point-one", "1:500/100.1");
+        String second = approvedPoint(profiles, "point-two", "1:500/100.2");
+        ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.1"), "to-first");
+        ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.2"), "to-second");
+        MailPage firstInbox = ui.messages(first, Mailbox.INBOX, "", 0, 10);
+        MailPage secondInbox = ui.messages(second, Mailbox.INBOX, "", 0, 10);
+        assertEquals(1, firstInbox.getItemsSize());
+        assertEquals(1, secondInbox.getItemsSize());
+        long foreignId = secondInbox.getItems().get(0).getId();
+        assertEquals("NOT_FOUND",
+                     assertThrows(UiError.class,
+                                  () -> ui.message(first, Mailbox.INBOX, "", foreignId)).getCode());
+        assertEquals("NOT_FOUND",
+                     assertThrows(UiError.class,
+                                  () -> ui.markRead(first, Mailbox.INBOX, "", foreignId, true))
+                                                                                               .getCode());
+        assertEquals("FORBIDDEN", assertThrows(UiError.class, () -> ui.status(first)).getCode());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.messages(first, Mailbox.ECHO, "test", 0, 10)).getCode());
+        MailDraft pointDraft = draft(Mailbox.OUTBOX).setFromAddress("1:500/100.1");
+        ui.saveDraft(first, pointDraft);
+        assertTrue(ui.drafts(second).isEmpty());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.send(first,
+                                                pointDraft.deepCopy().setFromAddress("1:500/100.2"),
+                                                "forged-point")).getCode());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveDraft(first,
+                                                     pointDraft.deepCopy()
+                                                               .setFromAddress("1:500/100"))).getCode());
+        String msgid = ui.send(first, pointDraft, "point-send");
+        assertEquals(msgid, ui.send(first, pointDraft, "point-send"));
+        assertEquals(1, ui.messages(first, Mailbox.OUTBOX, "", 0, 10).getItemsSize());
+        assertTrue(ui.messages(second, Mailbox.OUTBOX, "", 0, 10).getItems().isEmpty());
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertEquals(1, browser.messages(first, Mailbox.INBOX, "", 0, 10).getItemsSize());
+            assertEquals("NOT_FOUND",
+                         assertThrows(UiError.class,
+                                      () -> browser.message(first, Mailbox.INBOX, "", foreignId))
+                                                                                                 .getCode());
+        }
+    }
+
     @Test
     void sendsNetmailIdempotentlyPersistsDraftsAndDoesNotExposePasswords() throws Exception {
         MailDraft draft = draft(Mailbox.OUTBOX);
@@ -556,7 +618,7 @@ class UiRpcIntegrationTest {
                                       new Date());
         base.saveNetmail(message, "incoming", null);
         assertEquals(1, ui.messages(token, Mailbox.INBOX, "", 0, 10).getItemsSize());
-        assertEquals("INVALID_ARGUMENT",
+        assertEquals("FORBIDDEN",
                      assertThrows(UiError.class,
                                   () -> ui.send(token,
                                                 draft(Mailbox.OUTBOX).setFromAddress("1:500/999"),

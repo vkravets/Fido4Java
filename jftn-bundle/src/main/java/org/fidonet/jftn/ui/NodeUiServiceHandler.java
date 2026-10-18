@@ -31,6 +31,7 @@ import org.fidonet.jftn.rpc.RobotAccessConfiguration;
 import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
+import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.PacketQuarantine;
@@ -57,6 +58,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     private final MailRuntime mail;
     private final UserMailStateStore state;
     private final MailDraftValidator draftValidator;
+    private final MailboxAccess access;
     private final MailSubmissionService submissions;
     private final PollService polls;
     private final NodeRobotRules robotRules;
@@ -65,10 +67,12 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     public NodeUiServiceHandler(JFtnConfig config,
                                 MailDatabaseFacade base,
                                 MailRuntime mail,
-                                PollService polls)
+                                PollService polls,
+                                UiSessions sessions)
             throws Exception {
         this.config = config;
         draftValidator = new MailDraftValidator(config);
+        access = new MailboxAccess(config, sessions);
         this.base = base;
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
@@ -199,11 +203,12 @@ public final class NodeUiServiceHandler implements UiService.Iface {
         return MailDraftValidator.area(box, area);
     }
 
-    private List<StoredMail> rows(Mailbox box, String area, long after, int limit)
+    private List<StoredMail> rows(String owner, Mailbox box, String area, long after, int limit)
             throws Exception {
+        access.mailbox(owner, box);
         return box == Mailbox.ECHO
                 ? base.readEchoPage(area, after, limit)
-                : base.readNetmailPage(config.getLocalAddresses(),
+                : base.readNetmailPage(access.addresses(owner),
                                        box == Mailbox.OUTBOX,
                                        after,
                                        limit);
@@ -237,7 +242,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
             throw new IllegalArgumentException("Page size must be 1..200 and cursor nonnegative");
         }
         return call(() -> {
-            List<StoredMail> rows = rows(box, area, after, limit + 1);
+            List<StoredMail> rows = rows(owner, box, area, after, limit + 1);
             List<MailItem> items = new ArrayList<>();
             List<Long> ids = new ArrayList<>();
             for (int i = 0; i < Math.min(limit, rows.size()); i++) {
@@ -260,7 +265,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
             throw new IllegalArgumentException("Message ID must be positive");
         }
         return call(() -> {
-            List<StoredMail> rows = rows(box, area, id - 1, 1);
+            List<StoredMail> rows = rows(owner, box, area, id - 1, 1);
             if (rows.isEmpty() || rows.get(0).getId() != id) {
                 throw new UiError("NOT_FOUND", "Message not found in this mailbox");
             }
@@ -280,12 +285,33 @@ public final class NodeUiServiceHandler implements UiService.Iface {
 
     @Override
     public List<MailDraft> drafts(String owner) throws UiError {
-        return call(() -> state.drafts(owner));
+        return call(() -> {
+            List<MailDraft> result = new ArrayList<>();
+            for (MailDraft draft : state.drafts(owner)) {
+                if (visibleDraft(owner, draft)) {
+                    result.add(draft);
+                }
+            }
+            return result;
+        });
+    }
+
+    private boolean visibleDraft(String owner, MailDraft draft) throws UiError {
+        try {
+            access.draft(owner, draft);
+            return true;
+        } catch (UiError denied) {
+            if (!"FORBIDDEN".equals(denied.getCode())) {
+                throw denied;
+            }
+            return false;
+        }
     }
 
     @Override
     public void saveDraft(String owner, MailDraft draft) throws UiError {
         draftValidator.fields(draft);
+        access.draft(owner, draft);
         call(() -> {
             state.save(owner, draft);
             return null;
@@ -303,7 +329,9 @@ public final class NodeUiServiceHandler implements UiService.Iface {
 
     @Override
     public String send(String owner, MailDraft draft, String requestId) throws UiError {
-        draftValidator.submission(draft);
+        draftValidator.fields(draft);
+        access.draft(owner, draft);
+        draftValidator.submission(draft, access.addresses(owner));
         MailDraftValidator.id(requestId);
         return call(() -> submissions.sendValidated(owner, draft, requestId));
     }

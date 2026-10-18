@@ -6,6 +6,7 @@ import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.types.FTNAddr;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
@@ -57,12 +58,16 @@ final class MailDraftValidator {
     }
 
     void submission(MailDraft draft) {
+        submission(draft, config.getLocalAddresses());
+    }
+
+    void submission(MailDraft draft, Collection<FTNAddr> authors) {
         fields(draft);
         header(draft.getFromName(), 35);
         header(draft.getToName(), 35);
         header(draft.getSubject(), 71);
         if (!validAddress(new FTNAddr(draft.getToAddress()))
-                || !config.getLocalAddresses().contains(new FTNAddr(draft.getFromAddress()))
+                || !authors.contains(new FTNAddr(draft.getFromAddress()))
                 || draft.getBody().getBytes(StandardCharsets.UTF_8).length > 60000
                 || draft.getBody().indexOf('\0') >= 0 || draft.getBody().indexOf('\u0001') >= 0
                 || draft.getBody().replace('\n', '\r').matches("(?s)(?:.*\\r)?AREA:.*")) {

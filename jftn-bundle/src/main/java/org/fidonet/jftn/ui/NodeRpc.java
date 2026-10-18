@@ -7,6 +7,12 @@ import org.fidonet.jftn.LiveConfiguration;
 import org.fidonet.jftn.MailRuntime;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.ui.transport.RpcTransports;
+import org.fidonet.types.FTNAddr;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /** Owns the optional node RPC runtime. Close before the mail service and database. */
 public final class NodeRpc implements AutoCloseable {
@@ -47,13 +53,37 @@ public final class NodeRpc implements AutoCloseable {
                                                       polls,
                                                       context,
                                                       identity.profiles()));
-            NodeUiServiceHandler backend = new NodeUiServiceHandler(config, base, mail, polls);
+            NodeUiServiceHandler backend = new NodeUiServiceHandler(config,
+                                                                    base,
+                                                                    mail,
+                                                                    polls,
+                                                                    identity.sessions());
+            mail.operate(tosser -> {
+                tosser.hostedMailboxes(() -> hostedAddresses(identity));
+                return null;
+            });
+            resources.add((AutoCloseable) () -> mail.operate(tosser -> {
+                tosser.hostedMailboxes(Set::of);
+                return null;
+            }));
             NodeRpcHandlers handlers = new NodeRpcHandlers(identity, backend);
             RpcTransports transports = resources.add(RpcTransports.open(config, handlers));
             return new NodeRpc(resources, transports);
         } catch (Exception failure) {
             resources.closeAfterFailure(failure);
             throw failure;
+        }
+    }
+
+    private static Set<FTNAddr> hostedAddresses(RpcIdentity identity) throws IOException {
+        try {
+            Set<FTNAddr> addresses = new LinkedHashSet<>();
+            for (String address : identity.sessions().hostedMailAddresses()) {
+                addresses.add(new FTNAddr(address));
+            }
+            return addresses;
+        } catch (SQLException failure) {
+            throw new IOException("Cannot resolve hosted mailboxes", failure);
         }
     }
 

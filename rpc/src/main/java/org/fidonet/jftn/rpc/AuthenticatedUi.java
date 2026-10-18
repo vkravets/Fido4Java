@@ -3,6 +3,7 @@ package org.fidonet.jftn.rpc;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Set;
 
 /** Every UI method carries a bearer token as its first argument. Backend receives the owner. */
 public final class AuthenticatedUi {
@@ -10,6 +11,13 @@ public final class AuthenticatedUi {
     }
 
     public static UiService.Iface wrap(UiSessions sessions, UiService.Iface backend) {
+        return wrap(sessions, backend, false);
+    }
+
+    /** Enable only for backends enforcing address-scoped mail access. */
+    public static UiService.Iface wrap(UiSessions sessions,
+                                       UiService.Iface backend,
+                                       boolean scopedMail) {
         for (Method method : UiService.Iface.class.getMethods()) {
             if (method.getParameterCount() == 0 || method.getParameterTypes()[0] != String.class) {
                 throw new IllegalStateException("UI methods must declare a session token first");
@@ -22,26 +30,39 @@ public final class AuthenticatedUi {
                                                          args) -> invokeAuthenticated(sessions,
                                                                                       backend,
                                                                                       method,
-                                                                                      args));
+                                                                                      args,
+                                                                                      scopedMail));
     }
 
     private static Object invokeAuthenticated(UiSessions sessions,
                                               UiService.Iface backend,
                                               Method method,
-                                              Object[] args)
+                                              Object[] args,
+                                              boolean scopedMail)
             throws Throwable {
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(backend, args);
         }
         args[0] = sessions.require((String) args[0]);
-        // Point mail access will be exposed with the future reader's scoped mailbox API.
-        // Until then, existing node-wide UI operations remain administrator-only.
-        sessions.requireAdminUser((String) args[0]);
+        if (!scopedMail || !mailOperation(method.getName())) {
+            sessions.requireAdminUser((String) args[0]);
+        }
         try {
             return method.invoke(backend, args);
         } catch (InvocationTargetException failure) {
             throw translateFailure(failure.getCause());
         }
+    }
+
+    private static boolean mailOperation(String name) {
+        return Set.of("messages",
+                      "message",
+                      "markRead",
+                      "drafts",
+                      "saveDraft",
+                      "deleteDraft",
+                      "send")
+                  .contains(name);
     }
 
     private static UiError translateFailure(Throwable cause) {

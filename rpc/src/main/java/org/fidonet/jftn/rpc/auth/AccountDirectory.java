@@ -196,6 +196,19 @@ public final class AccountDirectory {
         return result;
     }
 
+    /** Approved mailboxes remain local while their account is disabled. */
+    public List<String> hostedAddresses() throws SQLException {
+        try (Connection connection = accounts.open();
+                PreparedStatement sql = connection.prepareStatement("SELECT DISTINCT address FROM rpc_akas WHERE state='APPROVED' ORDER BY address");
+                ResultSet rows = sql.executeQuery()) {
+            List<String> result = new ArrayList<>();
+            while (rows.next()) {
+                result.add(rows.getString(1));
+            }
+            return result;
+        }
+    }
+
     private static void insertClaim(Connection connection,
                                     String owner,
                                     String address,

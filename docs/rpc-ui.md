@@ -223,9 +223,9 @@ activates the account.
 
 `me`, `savePreferences` and `requestAka` operate on the session's owner only.
 `accounts` and `decideAka` require ADMIN. Light/dark theme and the default approved
-posting AKA persist in the account database. The current node-wide `ui` service
-remains ADMIN-only, including over TCP: point mailbox access will use a separately
-scoped API when the reader is implemented. Personal settings and passkeys remain
+posting AKA persist in the account database. The `ui` service keeps node
+administration ADMIN-only on TCP and HTTP. Mail operations are scoped to the
+account's current approved AKAs; echo access remains ADMIN-only. Personal settings and passkeys remain
 available to approved points through `profile` and `auth`.
 
 | Methods | Behavior |
