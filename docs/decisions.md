@@ -390,6 +390,32 @@ Java owns storage guarantees. An external Groovy script owns description indexes
 and local netmail reports. Literal templates are files beneath the script folder;
 received descriptions cannot execute code and reports expose no TIC passwords.
 
+## 24. Runtime, adapters and repositories have explicit roles
+
+`MailRuntime` owns lifecycle, the processing lock and extension ownership.
+`MailProcessingCoordinator` runs processing cycles, `BinkpMailTransferAdapter`
+adapts durable queues to transport callbacks, and `MailDatabaseConfiguration`
+seeds configured links/subscriptions. `MailAutomationRuntime` exposes the script
+API; `ExternalMailScripts` owns Groovy engines and registration directories.
+
+`NodeUiServiceHandler` is the RPC adapter. `MailDraftValidator` owns pure draft
+validation and `MailSubmissionService` owns idempotent submission under the mail
+runtime lock. Authorization remains at the existing `AuthenticatedUi` boundary.
+`UserMailStateStore` explicitly names persistent drafts/read/submission data.
+`NodeConfigurationService` coordinates validation, publication and live application;
+`MailDatabaseFacade` composes mail storage/repositories, not just JDBC lifecycle.
+
+`SessionTelemetry` owns diagnostic listeners and formatting. Authentication guards,
+batch transitions and their synchronization remain together in `SessionContext`.
+`FileMetadata` is immutable; mutable progress is separate in `FileTransferState`,
+composed by `FileTransferInfo`. Only metadata participates in transfer identity.
+`FileEchoAreaService` owns domain operations and policy; `FileEchoRepository`
+owns SQL access and transactions. No database schema or wire protocol changed.
+
+These internal class/API names replace the earlier ambiguous names directly;
+external Java/Groovy integrations must rebuild/update imports. No binary alias
+layer is provided. Existing runtime databases and operational state are retained.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

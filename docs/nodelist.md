@@ -50,8 +50,8 @@ metadata without login; it does not expose account/link passwords, perform DNS
 lookups, download lists or grant permissions. Administrative APIs remain protected.
 Fixed selectors for trusted/configured peers still allow only those peers.
 
-The API is `SettingsService.searchDirectory(query, offset, limit)`, with a maximum
-160-character literal, case-insensitive query and pages of 1..100 records. The
+The API is `SettingsService.searchDirectory(query, offset, limit, includePoints)`,
+with a maximum 160-character literal, case-insensitive query and pages of 1..100 records. The
 browser retains one 25-record page; suggestions request at most eight records.
 Queries beginning with an FTN zone/net prefix search addresses directly using
 the catalog's address index; other terms search across the text fields.
