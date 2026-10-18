@@ -8,6 +8,7 @@ import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
@@ -162,6 +163,17 @@ public final class MailService implements AutoCloseable {
 
     public Tosser getTosser() {
         return tosser;
+    }
+
+    /** Call under operate(), so settings changes and mail scans share one lifecycle lock. */
+    public List<SettingsExtension> getSettingsExtensions() {
+        List<SettingsExtension> result = new ArrayList<>();
+        for (MailProcessingExtension extension : extensions) {
+            if (extension instanceof MailScripts) {
+                result.addAll(((MailScripts) extension).getSettingsExtensions());
+            }
+        }
+        return List.copyOf(result);
     }
 
     @FunctionalInterface

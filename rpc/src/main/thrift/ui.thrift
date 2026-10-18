@@ -7,6 +7,30 @@ exception UiError {
 
 enum Mailbox { ECHO = 1, INBOX = 2, OUTBOX = 3 }
 
+// Declarative extension forms. No executable plugin code is sent to the browser.
+struct ExtensionField {
+    1: required string name,
+    2: required string label,
+    3: required string type,
+    4: required list<string> choices
+}
+
+struct ExtensionSection {
+    1: required string id,
+    2: required string title,
+    3: required list<ExtensionField> fields,
+    4: required list<map<string,string>> rows,
+    5: required bool writable
+}
+
+struct ExtensionSettings {
+    1: required string id,
+    2: required string title,
+    3: required string source,
+    4: required list<ExtensionSection> sections,
+    5: required map<string,map<string,string>> translations
+}
+
 struct MailItem {
     1: required i64 id,
     2: required string fromName,
@@ -154,6 +178,8 @@ struct QuarantineRetryResult {
 }
 
 service UiService {
+    list<ExtensionSettings> extensions(1:string session) throws (1:UiError error),
+    void saveExtension(1:string session, 2:string id, 3:string section, 4:map<string,string> values) throws (1:UiError error),
     QuarantinePage quarantine(1:string session, 2:string after, 3:i32 limit) throws (1:UiError error),
     QuarantineRetryResult retryQuarantine(1:string session, 2:string id, 3:string checksum, 4:string peer) throws (1:UiError error),
     void archiveQuarantine(1:string session, 2:string id, 3:string checksum) throws (1:UiError error),

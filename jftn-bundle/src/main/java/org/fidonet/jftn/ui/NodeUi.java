@@ -13,6 +13,7 @@ import org.fidonet.jftn.poll.PollLogSlice;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
 import org.fidonet.jftn.rpc.EchoAccessConfiguration;
+import org.fidonet.jftn.rpc.ExtensionSettings;
 import org.fidonet.jftn.rpc.LinkInfo;
 import org.fidonet.jftn.rpc.LogPage;
 import org.fidonet.jftn.rpc.MailDraft;
@@ -50,6 +51,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /** Sysop UI adapter. Authentication is supplied by AuthenticatedUi at the RPC boundary. */
@@ -92,6 +94,20 @@ public final class NodeUi implements UiService.Iface {
     @Override
     public RobotAccessConfiguration robotAccess(String owner) throws UiError {
         return call(robotRules::current);
+    }
+
+    @Override
+    public List<ExtensionSettings> extensions(String owner) throws UiError {
+        return call(() -> mail.operate(tosser -> NodeExtensions.describe(mail.getSettingsExtensions())));
+    }
+
+    @Override
+    public void saveExtension(String owner, String id, String section, Map<String, String> values)
+            throws UiError {
+        call(() -> mail.operate(tosser -> {
+            NodeExtensions.save(mail.getSettingsExtensions(), id, section, values);
+            return null;
+        }));
     }
 
     @Override

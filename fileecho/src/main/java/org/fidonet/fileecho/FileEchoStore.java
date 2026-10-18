@@ -147,8 +147,8 @@ final class FileEchoStore {
             throws IOException {
         writable();
         String tag = tag(name);
-        if (directory == null || directory.isBlank() || description == null
-                || description.length() > 1024) {
+        if (directory == null || directory.isBlank() || directory.length() > 4096
+                || description == null || description.length() > 1024) {
             throw new IllegalArgumentException("File area directory and description are invalid");
         }
         Path path = Path.of(directory).toAbsolutePath().normalize();
@@ -224,6 +224,10 @@ final class FileEchoStore {
         if (config.getLink(new FTNAddr(peer)) == null || masks == null || masks.isBlank()
                 || masks.length() > 1024 || !Set.of("NONE", "WRITE", "BOTH").contains(level)) {
             throw new IllegalArgumentException("Invalid file area creation policy");
+        }
+        if (Arrays.stream(masks.split(",", -1)).anyMatch(String::isBlank)
+                || masks.chars().anyMatch(c -> c < 32 || c == 127)) {
+            throw new IllegalArgumentException("Invalid file area masks");
         }
         sql(() -> {
             if (level.equals("NONE")) {

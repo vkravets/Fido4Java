@@ -49,6 +49,7 @@ public final class FileEchoPlugin implements Plugin<MailScriptExtension>, MailSc
         if (Boolean.parseBoolean(enabled)) {
             FileEchoProcessor service = new FileEchoProcessor(api);
             api.registerFileEcho(service);
+            api.registerSettingsExtension(new FileEchoSettings(api, service.store()));
             api.onScan(service::scan);
         }
     }

@@ -263,6 +263,26 @@ class FileFixScriptTest {
     }
 
     @Test
+    void disabledPluginDoesNotLoadOrDeletePendingFilePairs() throws Exception {
+        scripts.close();
+        scripts = null;
+        config.load(new ByteArrayInputStream("FileEchoEnabled=false\n".getBytes(StandardCharsets.UTF_8)));
+        FileDeliveryQueue queue = new FileDeliveryQueue(config);
+        Path source = root.resolve("payload");
+        Files.writeString(source, "hello");
+        queue.enqueue(config.getLink(recipient), "disabled", source, "FILE.TXT", "ticket\r\n");
+        try (MailService service = new MailService(config, base)) {
+            SessionContext context = JFtnRunner.createSessionContext(config);
+            context.getLinksInfo().setCurLink(recipient);
+            context.setServerRole(ServerRole.CLIENT);
+            service.attach(context);
+            context.loadOutbound();
+            assertTrue(context.getSendFiles().isEmpty());
+            assertEquals(2, queue.pending(config.getLink(recipient)).size());
+        }
+    }
+
+    @Test
     void defersMissingPayloadAndConsumerFailuresWithoutLosingTheIncomingFiles() throws Exception {
         received("abcdefgh.tic", tic("hello"));
         scripts.beforeExport(tosser);

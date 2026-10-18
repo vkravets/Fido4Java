@@ -1,5 +1,13 @@
 # File echo plugin
 
+Open **Station > Plugins > File echoes** to manage areas, per-link access,
+automatic creation and FileFix/TIC credentials. Changes use the active provider
+and apply without restart. READ means the link receives from us; WRITE means it
+can send to us. Choose NONE to remove an access/creation rule. Disable an area
+to retain its files and metadata while rejecting new imports.
+
+The generic extension mechanism is described in [plugin-settings.md](plugin-settings.md).
+
 The optional `fileecho` JAR owns TIC parsing, validation, durable storage and
 forwarding. Shared script/queue contracts live in `mail-api`, outside the runner.
 The editable `filefix.groovy` handles robot commands through `api.fileEcho` and

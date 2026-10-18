@@ -7,7 +7,7 @@ import com.j256.ormlite.table.DatabaseTable;
 public final class FileCreationRecord {
     @DatabaseField(id = true)
     String peer;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, width = 1024)
     String masks;
     @DatabaseField(canBeNull = false)
     String access;

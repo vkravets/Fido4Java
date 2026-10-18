@@ -4,6 +4,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.engine.script.GroovyScriptManager;
 import org.fidonet.jftn.engine.script.JFtnScriptService;
+import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandInterpreter;
 import org.fidonet.jftn.share.HookInterpreter;
@@ -44,6 +45,19 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
     private final GroovyScriptManager manager;
     private final RobotAccess robotAccess;
     private FileEchoService fileEcho;
+    private final List<SettingsExtension> settingsExtensions = new ArrayList<>();
+
+    public List<SettingsExtension> getSettingsExtensions() {
+        return List.copyOf(settingsExtensions);
+    }
+
+    public void registerSettingsExtension(SettingsExtension extension) {
+        if (settingsExtensions.stream()
+                              .anyMatch(existing -> existing.id().equals(extension.id()))) {
+            throw new IllegalArgumentException("Duplicate settings extension");
+        }
+        settingsExtensions.add(extension);
+    }
 
     public MailScripts(JFtnConfig config, DatabaseManager database, Tosser tosser)
             throws IOException {
@@ -154,7 +168,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         fileHandlers.add(handler);
     }
 
-    /** Invoked by the TIC script only after authentication, CRC checks and durable storage. */
+    /** Invoked by the fileecho provider after authentication, CRC checks and durable storage. */
     public void publishFile(String area, Path file, String name, FTNAddr peer, String receipt)
             throws IOException {
         for (FileHandler handler : fileHandlers) {

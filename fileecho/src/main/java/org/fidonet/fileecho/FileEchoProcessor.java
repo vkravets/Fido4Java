@@ -158,16 +158,21 @@ final class FileEchoProcessor implements FileEchoService {
                                      String name,
                                      TicDocument tic)
             throws IOException {
+        boolean found = false;
         for (ReceivedFile candidate : inbox) {
             if (!candidate.getPeer().equals(ticket.getPeer())
                     || !candidate.getName().equalsIgnoreCase(name)) {
                 continue;
             }
             FileChecksum checksum = FileChecksum.read(candidate.getPath());
+            found = true;
             if (checksum.crc.equalsIgnoreCase(tic.value("crc")) && (tic.value("size").isEmpty()
                     || tic.value("size").equals(Long.toString(checksum.size)))) {
                 return candidate;
             }
+        }
+        if (found) {
+            throw new IOException("TIC CRC or size does not match the received payload");
         }
         return null;
     }

@@ -5,5 +5,6 @@ description = 'Shared mail automation and optional mail service contracts'
 dependencies {
     api project(':jtoss')
     api project(':script-api')
+    api project(':plugin-manager')
     implementation 'org.slf4j:slf4j-api:2.0.20'
 }

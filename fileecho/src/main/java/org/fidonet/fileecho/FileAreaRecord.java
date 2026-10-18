@@ -7,9 +7,9 @@ import com.j256.ormlite.table.DatabaseTable;
 public final class FileAreaRecord {
     @DatabaseField(id = true)
     String name;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, width = 4096)
     String directory;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, width = 1024)
     String description;
     @DatabaseField
     boolean enabled;

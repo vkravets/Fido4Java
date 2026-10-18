@@ -31,6 +31,7 @@ public final class DistributionProbe {
                                         "schedule",
                                         "binkp_netty",
                                         "jam-bridge",
+                                        "fileecho",
                                         "nodelist"))) {
             throw new IllegalStateException("Missing packaged plugins: " + plugins);
         }

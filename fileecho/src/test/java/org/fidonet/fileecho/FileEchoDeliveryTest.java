@@ -2,11 +2,13 @@ package org.fidonet.fileecho;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
+import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.Tosser;
@@ -21,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.CRC32;
 
@@ -33,6 +36,8 @@ class FileEchoDeliveryTest {
     private Path inbox;
     private Path ticket;
     private Tosser tosser;
+    private JFtnConfig config;
+    private String configurationText;
 
     @BeforeEach
     void open() throws Exception {
@@ -48,7 +53,8 @@ class FileEchoDeliveryTest {
                       + root.resolve("areas")
                       + "\nLink=1:500/101,1:500/100,session-password,localhost"
                       + "\nRobotAccessSource=files\nTicPeer=1:500/101|tic-password|lists.*\n";
-        JFtnConfig config = new JFtnConfig();
+        configurationText = text;
+        config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         base = new DatabaseManager(new OrmManager("jdbc:h2:mem:delivery" + System.nanoTime()));
         assertTrue(base.open());
@@ -109,5 +115,49 @@ class FileEchoDeliveryTest {
         assertTrue(processor.store().canReceive("lists.nodes", new FTNAddr("1:500/101")));
         assertTrue(Files.exists(payload));
         assertTrue(Files.exists(ticket));
+    }
+
+    @Test
+    void extensionValidatesFieldsAndNeverReturnsStoredPasswords() throws Exception {
+        scripts.close();
+        config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(configurationText.replace("RobotAccessSource=files",
+                                                                       "RobotAccessSource=database")
+                                                              .getBytes(StandardCharsets.UTF_8)));
+        scripts = new MailScripts(config, base, tosser);
+        SettingsExtension extension = scripts.getSettingsExtensions().get(0);
+        extension.apply("robots",
+                        Map.of("service",
+                               "Tic",
+                               "peer",
+                               "1:500/101",
+                               "masks",
+                               "lists.*",
+                               "enabled",
+                               "true",
+                               "password",
+                               "private-tic-password"));
+        SettingsExtension.Section robots = extension.describe().sections.stream()
+                                                                        .filter(section -> section.id.equals("robots"))
+                                                                        .findFirst()
+                                                                        .orElseThrow();
+        assertEquals("", robots.rows.get(0).get("password"));
+        extension.apply("robots",
+                        Map.of("service",
+                               "Tic",
+                               "peer",
+                               "1:500/101",
+                               "masks",
+                               "lists.*,new.*",
+                               "enabled",
+                               "true",
+                               "password",
+                               ""));
+        assertTrue(scripts.getRobotAccess()
+                          .find("Tic", new FTNAddr("1:500/101"))
+                          .verifyPassword("private-tic-password"));
+        assertThrows(IllegalArgumentException.class,
+                     () -> extension.apply("areas", Map.of("name", "missing-fields")));
+        assertThrows(IllegalArgumentException.class, () -> extension.apply("unknown", Map.of()));
     }
 }

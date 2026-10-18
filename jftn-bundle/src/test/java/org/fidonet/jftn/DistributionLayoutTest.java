@@ -35,7 +35,7 @@ class DistributionLayoutTest {
         assertTrue(Files.isRegularFile(home.resolve("scripts/mail-scripts/areafix.groovy")));
         try (var plugins = Files.list(home.resolve("plugins"));
                 var groovy = Files.list(home.resolve("lib/groovy"))) {
-            assertEquals(5, plugins.count());
+            assertEquals(6, plugins.count());
             assertTrue(groovy.count() > 1);
         }
         try (var files = Files.list(home.resolve("lib"))) {

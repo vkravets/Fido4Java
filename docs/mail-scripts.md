@@ -99,13 +99,17 @@ TicCharset=IBM437
 ```
 
 FileFix/FileMgr accepts the same basic list and subscribe/unsubscribe commands
-as AreaFix, without rescan. Subscriptions persist in script state and affect
-new accepted files only. `TicPeer` explicitly allows a configured transport
+as AreaFix, without rescan. It requires the optional fileecho plugin; without
+that provider the script does not register a robot. Subscriptions persist in
+SQL by default, or script state with `FileEchoSource=files`, and affect new
+accepted files only. `TicPeer` explicitly allows a configured transport
 peer to exchange files in the listed area masks. It uses one shared password
 per link, case-insensitive for TIC interoperability, separate from FileFix.
-Only declared file areas can be used; the third FileArea field is descriptive.
+Areas can be managed in the plugin UI or auto-created from explicitly permitted
+links. The third FileArea field is descriptive. Database area permissions remain
+separate from TIC/FileFix authentication. See [file echo settings](fileecho.md).
 
-`filefix.groovy` also processes TICs from completed authenticated peer inboxes.
+The optional Java fileecho plugin processes TICs from completed authenticated peer inboxes.
 Transport metadata preserves original filenames even when the mailer renames
 physical files. Area, File, From, Origin, Crc, Path and Seenby are required;
 an optional Size is checked. A configured TIC password is mandatory. From must
@@ -136,9 +140,9 @@ must connect to the recipient.
 
 `onFile { area, storedPath, originalName, peer, receipt -> ... }` callbacks run
 after validation and storage. Their failure leaves the incoming TIC retryable.
-Receipts are marked complete after forwarding and callbacks succeed. Keep
-FileFix before dependent scripts in configuration; all scripts register before
-the first scan. Inputs, stored files and receipts have no automatic retention
+Receipts are marked complete after forwarding and callbacks succeed. The plugin
+registers before external scripts, and all scripts register before the first
+scan. Inputs, stored files and receipts have no automatic retention
 cleanup in this version; configure operational retention separately.
 
 The TIC format was checked against
