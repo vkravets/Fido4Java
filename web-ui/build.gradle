@@ -243,6 +243,17 @@ tasks.register('playwrightVisualTest', Exec) {
     commandLine nodeExecutable.get(), '--experimental-strip-types', file('frontend/test/browser/run-visual.ts')
 }
 
+// A focused local run must not narrow the CI verification matrix.
+def localUiGrep = providers.gradleProperty('uiTestGrep')
+def runningInCi = providers.environmentVariable('CI').map { it.equalsIgnoreCase('true') }.orElse(false)
+['playwrightComponentsTest', 'playwrightVisualTest'].each { taskName ->
+    tasks.named(taskName, Exec) {
+        if (localUiGrep.isPresent() && !runningInCi.get()) {
+            args '--grep', localUiGrep.get()
+        }
+    }
+}
+
 tasks.register('playwrightTest', Test) {
     group = 'verification'
     description = 'Runs Chromium against real HTTP RPC handlers and compiled Vue assets.'

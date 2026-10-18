@@ -11,5 +11,16 @@ Visible changes also require relevant Storybook states and the pinned Linux VRT
 workflow described in [web-ui.md](web-ui.md). Component/browser/VRT suites remain
 explicit tasks, so server changes do not require a container or browser launch.
 
+For a focused local browser or visual comparison, use a Playwright title regex:
+
+```sh
+./gradlew :web-ui:playwrightComponentsTest -PuiTestGrep='plugin settings|station groups'
+./gradlew :web-ui:playwrightVisualTest -PuiTestGrep='plugin-|station-tabs-'
+```
+
+`uiTestGrep` is ignored when `CI=true`; CI still runs the complete suites.
+Snapshot updates remain a deliberate separate operation, as documented in the
+UI guide. Do not run them to bypass a failing comparison.
+
 Frontend compilation and type checking can still be dependencies of packaging
 and Java resource preparation. Building assets is distinct from running UI tests.
