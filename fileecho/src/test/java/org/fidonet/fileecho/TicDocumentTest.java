@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Set;
 
 class TicDocumentTest {
@@ -42,6 +43,17 @@ class TicDocumentTest {
                 "1:500/99999999999999999999"}) {
             assertThrows(IOException.class, () -> document(address + " 1700000000"));
         }
+    }
+
+    @Test
+    void usesFirstRecordedHopRatherThanLaterRelayForIndexDate() throws Exception {
+        TicDocument tic = document("1:500/101 757382400\r\nPath 1:500/102 1700000000");
+        assertEquals(Instant.parse("1994-01-01T00:00:00Z"), tic.indexDate());
+    }
+
+    @Test
+    void unrepresentableTimestampDoesNotInvalidateTheDelivery() throws Exception {
+        assertEquals(null, document("1:500/101 9223372036854775807").indexDate());
     }
 
     private TicDocument document(String path) throws IOException {

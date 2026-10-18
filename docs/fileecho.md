@@ -73,10 +73,32 @@ Templates are `templates/fileecho-index.txt` and `templates/fileecho-notice.txt`
 beneath the directory containing the external script. Override
 `FileEchoIndexTemplate`/`FileEchoNoticeTemplate` with relative paths inside it;
 outside paths and symbolic-link escapes are refused. Literal placeholders are
-`${name}`, `${description}` for index rows, and `${status}`, `${area}`, `${name}`,
+`${name}`, `${size}`, `${date}`, `${description}` for index rows, and `${status}`, `${area}`, `${name}`,
 `${peer}`, `${detail}`, `${path}` for reports. Templates are re-read per operation;
 received descriptions are never executable template source. Notification keys
 survive restarts; a changed failure reason can generate a new report.
+
+The default index template aligns filename, size, date and description:
+
+```text
+${name:<14} ${size:>10}  ${date}  ${description}
+```
+
+`${size}` is the validated payload size in bytes with comma thousands separators,
+independent of the host locale. TIC `Size`, when present, must match those bytes;
+when absent, the actual payload size is used. `${date}` is the **first TIC Path
+timestamp**, formatted as `MM-dd-yy` in UTC, not a file modification date or a
+date parsed from the human-readable Path comment. For matching archived copies,
+the earliest first-hop timestamp is retained. A missing/unrepresentable date
+prints `-- -- --`; files without matching archived TICs still show their actual
+size. The format is shared by live delivery and offline rebuild.
+
+An optional `:<width>` or `:>width` aligns a literal placeholder left/right; widths
+are 1..256 characters. Widths are minimums: long values are not truncated. Choose
+a larger filename width when an area contains long names. The example uses
+`${name:<14}` and `${size:>10}`; `${name}` still expands without padding in custom
+templates. Rebuild existing indexes once after changing their column layout;
+live updates retain untouched rows already present in the index.
 
 Existing installations retain their active `40-mail-scripts.conf`: explicitly add
 `MailScript=./scripts/mail-scripts/fileecho-tools.groovy` before directory-import
@@ -120,7 +142,7 @@ are not changed.
 
 The external script renders a fresh index using `FileEchoIndexName`,
 `FileEchoIndexCharset` and `FileEchoIndexTemplate`, even if automatic indexing is
-disabled. Files without matching metadata are included by name only. The command
+disabled. Files without matching metadata retain blank descriptions and an unknown date. The command
 prints counts with/without descriptions. It indexes only direct regular payloads,
 excluding hidden files, existing indexes, symlinks and subdirectories such as
 `dupes`. Filename whitespace/control characters and case-insensitive collisions

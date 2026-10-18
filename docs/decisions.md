@@ -430,6 +430,12 @@ events and offline recovery. Offline rebuild replaces all rows atomically and
 preserves an existing index as a hidden backup. Unmatched files remain visible
 without descriptions; missing originals are never fabricated.
 
+Index rows expose size and date as literal template values, with optional bounded
+column padding. Size is validated payload bytes (TIC Size must agree when present).
+Date is the first TIC Path timestamp in UTC, not a guessed payload mtime. Rebuilds
+choose the earliest matching copy's first-hop time. Unknown/unrepresentable dates
+stay visibly unknown. Host locale/timezone cannot alter the default columns.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -6,6 +6,9 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.time.DateTimeException
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Matcher
@@ -53,16 +56,21 @@ class FileEchoTools {
     }
 
     private String clean(Object value) {
-        return value.toString().replaceAll('[\\p{Cntrl}]', ' ')
+        return value == null ? '' : value.toString().replaceAll('[\\p{Cntrl}]', ' ')
     }
 
     private String render(String text, Map values) {
         // Literal substitution; received descriptions never become executable template source.
-        def pattern = Pattern.compile('\\$\\{([a-z]+)\\}')
+        def pattern = Pattern.compile('\\$\\{([a-z]+)(?::([<>])([1-9][0-9]{0,2}))?\\}')
         def matcher = pattern.matcher(text)
         def result = new StringBuffer()
         while (matcher.find()) {
             String value = values.containsKey(matcher.group(1)) ? clean(values[matcher.group(1)]) : ''
+            if (matcher.group(3) != null) {
+                int width = Integer.parseInt(matcher.group(3))
+                if (width > 256) throw new IllegalArgumentException('Template column width exceeds 256')
+                value = matcher.group(2) == '>' ? value.padLeft(width) : value.padRight(width)
+            }
             matcher.appendReplacement(result, Matcher.quoteReplacement(value))
         }
         matcher.appendTail(result)
@@ -95,24 +103,35 @@ class FileEchoTools {
                 String name = file.fileName.toString()
                 String key = name.toLowerCase(Locale.ROOT)
                 if (!name.startsWith('.') && !(key in ['file.bbs', 'files.bbs']) && !rows.containsKey(key)) {
-                    rows[key] = name
+                    rows[key] = indexRow(name, [], Files.size(file), null)
                 }
             }
         }
-        rows[event.name.toLowerCase(Locale.ROOT)] = indexRow(event.name, event.descriptions)
+        rows[event.name.toLowerCase(Locale.ROOT)] = indexRow(event.name, event.descriptions,
+                event.size == null ? Files.size(event.file) : event.size, event.date)
         writeIndex(index, rows.values())
     }
 
-    private String indexRow(name, descriptions) {
+    private String indexRow(name, descriptions, size, date) {
         return render(template('FileEchoIndexTemplate', 'templates/fileecho-index.txt'),
-                [name: name, description: descriptions.collect { clean(it) }.join(' | ')])
+                [name: name, size: String.format(Locale.US, '%,d', size), date: indexDate(date),
+                 description: descriptions.collect { clean(it) }.join(' | ')])
                 .replaceAll('[\\r\\n]+', ' ').trim()
+    }
+
+    private String indexDate(date) {
+        if (date == null) return '-- -- --'
+        try {
+            return DateTimeFormatter.ofPattern('MM-dd-yy', Locale.US).withZone(ZoneOffset.UTC).format(date)
+        } catch (DateTimeException ignored) {
+            return '-- -- --'
+        }
     }
 
     Path rebuild(Path directory, records) {
         Path index = directory.resolve(indexName)
         if (Files.isSymbolicLink(index)) throw new IOException('Fileecho index cannot be a symbolic link')
-        def rows = records.collect { record -> indexRow(record.name, record.descriptions) }
+        def rows = records.collect { record -> indexRow(record.name, record.descriptions, record.size, record.date) }
         if (Files.exists(index)) {
             // Backups are hidden so subsequent indexing cannot treat them as payloads.
             Path backup = Files.createTempFile(directory, '.' + indexName + '-backup-', '.bak')

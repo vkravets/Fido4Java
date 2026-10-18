@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.DateTimeException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -68,6 +70,15 @@ final class TicDocument {
             Long.parseLong(parts[1]);
         } catch (NumberFormatException failure) {
             throw new IOException("Invalid TIC Path timestamp", failure);
+        }
+    }
+
+    /** First recorded hop time, not the payload modification time. */
+    Instant indexDate() {
+        try {
+            return Instant.ofEpochSecond(Long.parseLong(value("path").trim().split("\\s+", 3)[1]));
+        } catch (DateTimeException failure) {
+            return null;
         }
     }
 

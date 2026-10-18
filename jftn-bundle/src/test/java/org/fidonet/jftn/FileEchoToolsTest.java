@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 
 class FileEchoToolsTest {
@@ -70,7 +71,9 @@ class FileEchoToolsTest {
                                                    "receipt",
                                                    List.of("Український опис",
                                                            "${name}\nsecond line"),
-                                                   "");
+                                                   "",
+                                                   123456L,
+                                                   Instant.parse("1994-01-01T23:59:59Z"));
         FileEchoEvent duplicate = new FileEchoEvent("duplicate",
                                                     "lists",
                                                     payload,
@@ -90,7 +93,13 @@ class FileEchoToolsTest {
             }
             List<String> rows = Files.readAllLines(area.resolve("files.bbs"));
             assertEquals(2, rows.size());
-            assertTrue(rows.stream().anyMatch(row -> row.equals("OTHER.ZIP")));
+            assertTrue(rows.stream()
+                           .anyMatch(row -> row.equals("OTHER.ZIP               5  -- -- --")));
+            String indexed = rows.stream()
+                                 .filter(row -> row.startsWith("LIST.001"))
+                                 .findFirst()
+                                 .orElseThrow();
+            assertEquals("LIST.001          123,456  01-01-94  ", indexed.substring(0, 37));
             assertTrue(rows.stream()
                            .anyMatch(row -> row.contains("Український опис | ${name} second line")));
             FTNAddr local = new FTNAddr("1:500/100");

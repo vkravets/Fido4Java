@@ -166,7 +166,9 @@ final class FileEchoProcessor implements FileEchoService {
                                               descriptions,
                                               duplicate
                                                       ? "Filename already exists; original retained"
-                                                      : ""));
+                                                      : "",
+                                              checksum.size,
+                                              tic.indexDate()));
         if (!duplicate) {
             forward(tic, tag, name, stored, ticket.getPeer(), seen, receipt);
             api.publishFile(tag, stored, name, ticket.getPeer(), receipt);

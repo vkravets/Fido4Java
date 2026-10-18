@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +68,10 @@ class FileEchoIndexRecoveryTest {
         Files.writeString(malformed, "Pw never-log-this\n");
         List<Map<String, Object>> rows = recover();
         assertEquals(2, rows.size());
+        assertEquals(7L, rows.get(0).get("size"));
+        assertEquals(Instant.ofEpochSecond(1), rows.get(0).get("date"));
+        assertEquals(5L, rows.get(1).get("size"));
+        assertEquals(null, rows.get(1).get("date"));
         assertEquals(List.of("Український опис ${name}"), rows.get(0).get("descriptions"));
         assertEquals(List.of(), rows.get(1).get("descriptions"));
         assertEquals("stale", Files.readString(area().resolve("files.bbs")));
@@ -95,6 +100,19 @@ class FileEchoIndexRecoveryTest {
                                                          area(),
                                                          root.resolve("missing"),
                                                          StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void usesEarliestFirstHopForIdenticalArchivedCopies() throws Exception {
+        Path payload = Files.writeString(area().resolve("LIST.001"), "payload");
+        String crc = FileChecksum.read(payload).crc;
+        tic("first-sorted", "lists", payload, crc, "same");
+        Path later = archive().resolve("first-sorted/delivery.TIC");
+        Files.writeString(later,
+                          Files.readString(later)
+                               .replace("Path 1:500/101 1\r", "Path 1:500/101 999\r"));
+        tic("last-sorted", "lists", payload, crc, "same");
+        assertEquals(Instant.ofEpochSecond(1), recover().get(0).get("date"));
     }
 
     @Test

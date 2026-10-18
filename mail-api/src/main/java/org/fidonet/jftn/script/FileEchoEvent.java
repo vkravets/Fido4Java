@@ -3,6 +3,7 @@ package org.fidonet.jftn.script;
 import org.fidonet.types.FTNAddr;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 
 /** Validated file delivery metadata, or a bounded diagnostic without TIC secrets. */
@@ -15,6 +16,8 @@ public final class FileEchoEvent {
     public final String receipt;
     public final List<String> descriptions;
     public final String detail;
+    public final Long size;
+    public final Instant date;
 
     public FileEchoEvent(String status,
                          String area,
@@ -24,6 +27,19 @@ public final class FileEchoEvent {
                          String receipt,
                          List<String> descriptions,
                          String detail) {
+        this(status, area, file, name, peer, receipt, descriptions, detail, null, null);
+    }
+
+    public FileEchoEvent(String status,
+                         String area,
+                         Path file,
+                         String name,
+                         FTNAddr peer,
+                         String receipt,
+                         List<String> descriptions,
+                         String detail,
+                         Long size,
+                         Instant date) {
         this.status = status;
         this.area = area;
         this.file = file;
@@ -32,5 +48,7 @@ public final class FileEchoEvent {
         this.receipt = receipt;
         this.descriptions = List.copyOf(descriptions);
         this.detail = detail;
+        this.size = size;
+        this.date = date;
     }
 }

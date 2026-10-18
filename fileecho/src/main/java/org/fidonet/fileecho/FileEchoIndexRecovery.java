@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ public final class FileEchoIndexRecovery {
         Map<String, Path> files = payloads(directory);
         Map<String, FileChecksum> checksums = new LinkedHashMap<>();
         Map<String, List<String>> descriptions = new LinkedHashMap<>();
+        Map<String, Instant> dates = new LinkedHashMap<>();
         try (Stream<Path> paths = Files.walk(archive)) {
             for (Path path : (Iterable<Path>) paths.sorted()::iterator) {
                 if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
@@ -49,15 +51,18 @@ public final class FileEchoIndexRecovery {
                 if (tic == null || !area.equalsIgnoreCase(tic.value("area"))) {
                     continue;
                 }
-                match(tic, files, checksums, descriptions);
+                match(tic, files, checksums, descriptions, dates);
             }
         }
         List<Map<String, Object>> result = new ArrayList<>();
-        files.forEach((key,
-                       file) -> result.add(Map.of("name",
-                                                  file.getFileName().toString(),
-                                                  "descriptions",
-                                                  descriptions.getOrDefault(key, List.of()))));
+        for (Map.Entry<String, Path> entry : files.entrySet()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("name", entry.getValue().getFileName().toString());
+            row.put("descriptions", descriptions.getOrDefault(entry.getKey(), List.of()));
+            row.put("size", Files.size(entry.getValue()));
+            row.put("date", dates.get(entry.getKey()));
+            result.add(row);
+        }
         return result;
     }
 
@@ -96,7 +101,8 @@ public final class FileEchoIndexRecovery {
     private static void match(TicDocument tic,
                               Map<String, Path> files,
                               Map<String, FileChecksum> checksums,
-                              Map<String, List<String>> descriptions)
+                              Map<String, List<String>> descriptions,
+                              Map<String, Instant> dates)
             throws IOException {
         String key = tic.value("file").toLowerCase(Locale.ROOT);
         Path file = files.get(key);
@@ -117,6 +123,12 @@ public final class FileEchoIndexRecovery {
         List<String> previous = descriptions.putIfAbsent(key, text);
         if (previous != null && !previous.equals(text)) {
             throw new IOException("Conflicting archived descriptions for " + file.getFileName());
+        }
+        Instant date = tic.indexDate();
+        if (date != null) {
+            dates.merge(key,
+                        date,
+                        (previousDate, next) -> previousDate.isBefore(next) ? previousDate : next);
         }
     }
 }

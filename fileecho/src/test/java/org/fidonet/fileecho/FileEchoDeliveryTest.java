@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +104,8 @@ class FileEchoDeliveryTest {
         Path directory = Path.of(processor.store().area("lists.nodes").directory);
         assertEquals("first", Files.readString(directory.resolve("LIST.001")));
         assertEquals("accepted", events.get(0).status);
+        assertEquals(5L, events.get(0).size);
+        assertEquals(Instant.ofEpochSecond(1700000000), events.get(0).date);
         receive(payload, "second");
         assertEquals("first", Files.readString(directory.resolve("LIST.001")));
         assertEquals("duplicate", events.get(1).status);

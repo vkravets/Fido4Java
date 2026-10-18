@@ -1,1 +1,1 @@
-${name} ${description}
+${name:<14} ${size:>10}  ${date}  ${description}

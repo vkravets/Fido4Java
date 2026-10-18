@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.zip.CRC32;
 
@@ -46,21 +47,41 @@ class FileEchoIndexCommandTest {
                                   + "\r\nDesc Український опис ${name}\r\nLDesc second line\r\n",
                           StandardCharsets.UTF_8);
         Path config = root.resolve("jftn.conf");
+        Path scriptRoot = Files.createDirectory(root.resolve("scripts"));
+        Files.createDirectory(scriptRoot.resolve("templates"));
+        Path script = scriptRoot.resolve("fileecho-tools.groovy");
+        Files.copy(Path.of("src/main/resources/mail-scripts/fileecho-tools.groovy"), script);
+        Path template = scriptRoot.resolve("templates/fileecho-index.txt");
+        Files.copy(Path.of("src/main/resources/mail-scripts/templates/fileecho-index.txt"),
+                   template);
         Files.writeString(config,
-                          "SysOp=Test\nLink=1:500/101,1:500/100,secret,localhost\n" + "Inbound="
-                                  + portable(root.resolve("in")) + "\nOutbound="
-                                  + portable(root.resolve("out")) + "\nEchoPath="
-                                  + portable(root.resolve("echo")) + "\nTmp="
-                                  + portable(root.resolve("tmp")) + "\nReceivedArchivePath="
-                                  + portable(archive)
-                                  + "\nTicCharset=UTF-8\nFileEchoIndexName=file.bbs\nMailScript="
-                                  + portable(Path.of("src/main/resources/mail-scripts/fileecho-tools.groovy"))
-                                  + "\n");
+                          "SysOp=Test\nLink=1:500/101,1:500/100,secret,localhost\n"
+                          + "Inbound="
+                          + portable(root.resolve("in"))
+                          + "\nOutbound="
+                          + portable(root.resolve("out"))
+                          + "\nEchoPath="
+                          + portable(root.resolve("echo"))
+                          + "\nTmp="
+                          + portable(root.resolve("tmp"))
+                          + "\nReceivedArchivePath="
+                          + portable(archive)
+                          + "\nTicCharset=UTF-8\nFileEchoIndexName=file.bbs\nMailScript="
+                          + portable(script)
+                          + "\n");
         OfflineCommand command = ServiceLoader.load(OfflineCommand.class).iterator().next();
         String[] arguments = {"--rebuild-fileecho-index", "lists", area.toString(),
                 config.toString()};
         assertTrue(command.handle(arguments));
-        String expected = "LIST.001 Український опис ${name} | second line\r\nOTHER.ZIP\r\n";
+        String expected = String.format(Locale.US,
+                                        "%-14s %10s  %s  %s\r\n%-14s %10s  %s\r\n",
+                                        "LIST.001",
+                                        "7",
+                                        "01-01-70",
+                                        "Український опис ${name} | second line",
+                                        "OTHER.ZIP",
+                                        "5",
+                                        "-- -- --");
         assertEquals(expected, Files.readString(index));
         try (var files = Files.list(area)) {
             Path backup = files.filter(file -> file.getFileName()
@@ -72,6 +93,13 @@ class FileEchoIndexCommandTest {
         }
         assertTrue(command.handle(arguments));
         assertEquals(expected, Files.readString(index));
+        Files.writeString(template, "${name} | ${size} | ${date} | ${description}\n");
+        assertTrue(command.handle(arguments));
+        assertTrue(Files.readString(index).startsWith("LIST.001 | 7 | 01-01-70 | "));
+        String customIndex = Files.readString(index);
+        Files.writeString(template, "${name:<999} ${description}\n");
+        assertThrows(Exception.class, () -> command.handle(arguments));
+        assertEquals(customIndex, Files.readString(index));
         assertEquals("payload", Files.readString(payload));
         assertTrue(Files.notExists(root.resolve("database")));
     }
