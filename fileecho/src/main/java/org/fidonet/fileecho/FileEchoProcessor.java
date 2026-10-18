@@ -99,7 +99,7 @@ final class FileEchoProcessor implements FileEchoService {
             throw new IOException("TIC path loop");
         }
         String name = ReceivedFile.safeName(tic.value("file"));
-        if (!name.matches("[A-Za-z0-9_~-]{1,8}(\\.[A-Za-z0-9_~-]{1,3})?")
+        if (!name.matches("[A-Za-z0-9!#$%&'()@^_`{}~-]{1,8}(\\.[A-Za-z0-9!#$%&'()@^_`{}~-]{1,3})?")
                 || name.toLowerCase(Locale.ROOT).endsWith(".tic")) {
             throw new IOException("TIC File must be a DOS 8.3 payload name");
         }

@@ -17,6 +17,7 @@ import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
+import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
@@ -50,6 +51,36 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class MailServiceTest {
+    @Test
+    public void preservesInteroperableOriginalNamesForReceivedFileAutomation() throws Exception {
+        JFtnConfig config = config("1:500/100", "1:500/101");
+        DatabaseManager base = database();
+        try (MailService service = new MailService(config, base)) {
+            SessionContext context = JFtnRunner.createSessionContext(config);
+            context.getLinksInfo().setCurLink(new FTNAddr("1:500/101"));
+            context.setServerRole(ServerRole.CLIENT);
+            service.attach(context);
+            List<String> names = List.of("abc def.zip", "TOOLS$.ZIP", "лист.001");
+            for (int index = 0; index < names.size(); index++) {
+                Path path = Path.of(config.getTmpDir(), "name-" + index + ".part");
+                PartialFileOutputStream partial = new PartialFileOutputStream(path, 1);
+                partial.write(42);
+                partial.close();
+                context.commitReceivedFile(new FileData<>(new FileInfo(names.get(index), 1, 1),
+                                                          partial));
+            }
+            List<String> received = new ArrayList<>();
+            for (ReceivedFile file : ReceivedFile.list(config)) {
+                received.add(file.getName());
+                assertEquals(42, Files.readAllBytes(file.getPath())[0]);
+            }
+            assertEquals(names.size(), received.size());
+            assertTrue(received.containsAll(names));
+        } finally {
+            base.close();
+        }
+    }
+
     @Test
     public void managedSubscriptionsAreNotRecreatedFromConfigOnRestart() throws Exception {
         JFtnConfig config = config("1:500/102", "1:500/101", "EchoSubscriptions=database\n");

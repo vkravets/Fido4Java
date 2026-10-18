@@ -111,7 +111,12 @@ separate from TIC/FileFix authentication. See [file echo settings](fileecho.md).
 
 The optional Java fileecho plugin processes TICs from completed authenticated peer inboxes.
 Transport metadata preserves original filenames even when the mailer renames
-physical files. Area, File, From, Origin, Crc, Path and Seenby are required;
+physical files. Safe original basenames may contain spaces, DOS punctuation such
+as `$`, and Unicode, with a limit of 255 UTF-8 bytes. Separators, control
+characters, Windows device names and other nonportable path syntax cannot be used
+as automation filenames. TIC payload names retain their DOS 8.3 restriction,
+including legal DOS punctuation; spaces and Unicode are not added to that format.
+Area, File, From, Origin, Crc, Path and Seenby are required;
 an optional Size is checked. A configured TIC password is mandatory. From must
 match the peer; To, when present, must be local. Path loops are rejected.
 DOS 8.3 File names are supported; Lfile/Fullname are preserved but not used as

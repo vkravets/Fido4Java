@@ -140,6 +140,27 @@ class FileEchoDeliveryTest {
     }
 
     @Test
+    void acceptsLegalDosPunctuationInPayloadNames() throws Exception {
+        byte[] bytes = "payload".getBytes(StandardCharsets.UTF_8);
+        CRC32 crc = new CRC32();
+        crc.update(bytes);
+        Path payload = inbox.resolve("payload");
+        Files.write(payload, bytes);
+        ReceivedFile.record(payload, "TOOLS$.ZIP");
+        Files.writeString(ticket,
+                          tic("tic-password",
+                              String.format("%08X", crc.getValue())).replace("File LIST.001",
+                                                                             "File TOOLS$.ZIP"));
+        AtomicInteger deliveries = new AtomicInteger();
+        scripts.onFile((area, path, name, peer, receipt) -> {
+            assertEquals("TOOLS$.ZIP", name);
+            deliveries.incrementAndGet();
+        });
+        scripts.beforeExport(tosser);
+        assertEquals(1, deliveries.get());
+    }
+
+    @Test
     void extensionValidatesFieldsAndNeverReturnsStoredPasswords() throws Exception {
         scripts.close();
         config = new JFtnConfig();

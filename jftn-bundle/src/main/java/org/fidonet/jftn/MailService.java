@@ -326,8 +326,7 @@ public final class MailService implements AutoCloseable {
                                                     .getFileName()
                                                     .toString()
                                                     .replaceFirst("\\.part$", extension));
-        if (!extension.equalsIgnoreCase(".pkt")
-                && original.matches("[A-Za-z0-9_~-][A-Za-z0-9_.~-]{0,127}")) {
+        if (!extension.equalsIgnoreCase(".pkt") && ReceivedFile.isSafeName(original)) {
             ReceivedFile.record(destination, original);
         }
         partial.commitTo(destination);
