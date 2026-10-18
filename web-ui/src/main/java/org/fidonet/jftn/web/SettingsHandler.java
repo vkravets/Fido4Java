@@ -1,6 +1,7 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.config.ParseConfigException;
+import org.fidonet.jftn.rpc.DirectoryPage;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.NodeLookup;
@@ -51,6 +52,11 @@ public final class SettingsHandler implements SettingsService.Iface {
         this.authPath = authPath;
         this.setupToken = setupToken;
         this.completed = completed;
+    }
+
+    @Override
+    public DirectoryPage searchDirectory(String query, int offset, int limit) throws UiError {
+        return call(() -> DirectoryBrowser.search(store.catalogPath(), query, offset, limit));
     }
 
     @Override

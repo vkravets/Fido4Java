@@ -231,9 +231,56 @@ public final class DirectoryCatalog implements AutoCloseable {
                      offset);
     }
 
+    /** Searches all list sources without assigning trust or preferring one source. */
+    public List<DirectoryEntry> search(String text, int offset, int limit) throws IOException {
+        if (text == null || text.length() > 160 || offset < 0 || offset > 1000000 || limit < 1
+                || limit > 500) {
+            throw new IllegalArgumentException("Search needs at most 160 characters, offset 0..1000000 and limit 1..500");
+        }
+        String value = text.trim();
+        if (value.matches("\\d{1,5}:\\d{0,5}(?:/\\d{0,5}(?:\\.\\d{0,5})?)?")) {
+            return query("SELECT " + COLUMNS
+                    + " FROM directory_entries WHERE address LIKE ? ORDER BY address,source_id LIMIT ? OFFSET ?",
+                         value + "%",
+                         limit,
+                         offset);
+        }
+        String pattern = "%"
+                         + value.toLowerCase(Locale.ROOT)
+                                .replace('_', ' ')
+                                .replace("!", "!!")
+                                .replace("%", "!%")
+                         + "%";
+        List<String> fields = List.of("address",
+                                      "sysop",
+                                      "system_name",
+                                      "location",
+                                      "phone",
+                                      "flags",
+                                      "source_id",
+                                      "keyword");
+        List<String> predicates = new ArrayList<>();
+        List<Object> parameters = new ArrayList<>();
+        for (String field : fields) {
+            predicates.add("LOWER(REPLACE(" + field + ", '_', ' ')) LIKE ? ESCAPE '!'");
+            parameters.add(pattern);
+        }
+        predicates.add("REPLACE(phone, '-', '.') LIKE ? ESCAPE '!'");
+        parameters.add(pattern);
+        parameters.add(limit);
+        parameters.add(offset);
+        return query("SELECT "
+                     + COLUMNS
+                     + " FROM directory_entries WHERE ("
+                     + String.join(" OR ", predicates)
+                     + ") ORDER BY address,source_id LIMIT ? OFFSET ?",
+                     parameters.toArray());
+    }
+
     private List<DirectoryEntry> query(String sql, Object... parameters) throws IOException {
         try (Connection connection = connect();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setQueryTimeout(5);
             for (int i = 0; i < parameters.length; i++) {
                 statement.setObject(i + 1, parameters[i]);
             }

@@ -56,7 +56,27 @@ struct NodeLookup {
     8: required string source
 }
 
+struct DirectoryNode {
+    1: required string address,
+    2: required string source,
+    3: required string kind,
+    4: required string system,
+    5: required string sysop,
+    6: required string location,
+    7: required string phone,
+    8: required list<string> endpoints,
+    9: required list<string> flags
+}
+
+struct DirectoryPage {
+    1: required list<DirectoryNode> items,
+    2: required i32 nextOffset,
+    3: required bool hasMore
+}
+
 service SettingsService {
+    // Public read-only local catalog search, also used by registration suggestions.
+    DirectoryPage searchDirectory(1:string query, 2:i32 offset, 3:i32 limit) throws (1:ui.UiError error),
     bool reload(1:string authorization) throws (1:ui.UiError error),
     SetupStatus status(),
     NodeConfiguration current(1:string authorization) throws (1:ui.UiError error),

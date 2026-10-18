@@ -31,6 +31,7 @@ final class BrowserServerFixture implements AutoCloseable {
     }
 
     BrowserServerFixture(Path directory, String setupToken) throws Exception {
+        Path directoryPath = BrowserDirectoryFixture.create(directory);
         Path authPath = directory.resolve("accounts");
         accounts = new RpcAccounts(authPath);
         if (setupToken.isEmpty()) {
@@ -41,7 +42,8 @@ final class BrowserServerFixture implements AutoCloseable {
                                       + "Outbound=" + directory.resolve("outbound") + "\n"
                                       + "EchoPath=" + directory.resolve("echo") + "\n" + "Tmp="
                                       + directory.resolve("tmp")
-                                      + "\nEchoSubscriptions=database\n");
+                                      + "\nEchoSubscriptions=database\nNodeDirectoryPath="
+                                      + directoryPath + "\n");
         }
         UiSessions sessions = new UiSessions(accounts, 3600);
         authentication = new AccountAuthentication(accounts, sessions, "", Set.of());

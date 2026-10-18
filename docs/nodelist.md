@@ -12,6 +12,30 @@ outbound packets or routing rules.
 
 ## Configuration and import
 
+The web UI's **Node directory** is available to both administrators and points.
+It searches all imported node/point sources by partial FTN address, sysop, station,
+location, phone, Internet hostname/IP, flags and source. Duplicate addresses remain
+separate records labelled with their source. Results are paged; no source gains
+implicit priority or trust. Empty searches browse the catalog.
+
+Free-form FTN address fields offer matching records after two characters, including
+registration before sign-in and first setup. Public read-only search was enabled
+deliberately to support registration suggestions. This exposes imported directory
+metadata without login; it does not expose account/link passwords, perform DNS
+lookups, download lists or grant permissions. Administrative APIs remain protected.
+Fixed selectors for trusted/configured peers still allow only those peers.
+
+The API is `SettingsService.searchDirectory(query, offset, limit)`, with a maximum
+160-character literal, case-insensitive query and pages of 1..100 records. The
+browser retains one 25-record page; suggestions request at most eight records.
+Queries beginning with an FTN zone/net prefix search addresses directly using
+the catalog's address index; other terms search across the text fields.
+SQL queries have a five-second execution timeout. Name underscores and spaces are
+equivalent, `%` and `!` are literal, and legacy `000-a-b-c-d` IP notation can be
+found by dotted IP. Entries show source/type, sysop/station/location, phone, flags
+and validated binkp endpoints. This reads `NodeDirectoryPath` independently of the
+scheduled-import enable switch; an empty catalog returns no results.
+
 Edit `conf.d/30-nodelist.conf` (paths are relative to the working directory):
 
 ```ini

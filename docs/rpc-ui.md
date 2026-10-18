@@ -29,6 +29,15 @@ unconfigured authentication.
 
 ## Transport and authentication
 
+`SettingsService.searchDirectory(query, offset, limit)` is an explicitly public,
+read-only local-directory search. It supports pre-login registration suggestions
+as well as the administrator/point browser. It accepts no session token and
+does not grant access to configuration or trigger downloads/imports. Queries are
+literal and case-insensitive (at most 160 characters), offset is 0..1000000 and
+limit is 1..100. `DirectoryPage` returns records, `nextOffset` and `hasMore`.
+Rows include address, list source, kind, station/sysop/location/phone, flags and
+binkp endpoints; duplicate source records are not merged. See [directory browsing](nodelist.md).
+
 `SettingsService.save`, `saveLinks` and `saveTosser` apply supported settings live
 after candidate validation. `SettingsService.reload(authorization)` explicitly
 reads the main file and ordered fragments; it requires an administrator session
@@ -343,7 +352,7 @@ already available. See [browser interface](web-ui.md).
 
 Remaining API/UI work includes tracking or terminating incoming sessions,
 full-text mail search, trash, message editing, safe link removal/renaming and routing-rule CRUD,
-directory search, file subscription administration and durable automatic poll
+file subscription administration and durable automatic poll
 retry scheduling. Station settings support adding and editing all configured links,
 including separate PKT passwords. AreaFix/FileFix can be addressed through ordinary netmail sends;
 their authorization rules can be managed through the administrative UI/API.
@@ -356,8 +365,8 @@ override rather than disabling PKT validation. Existing links cannot be removed
 or renamed through this API until their dependent configuration is reviewed.
 `SettingsService.tosser/saveTosser` manage the processing interval, processed-file
 cleanup, echo access checks and automatic area creation. All four methods require
-an administrator session; the setup token is not accepted. Saves require a node
-restart and share the station configuration's atomic, external-edit-aware writer.
+an administrator session; the setup token is not accepted. Saves apply supported
+settings live through the station configuration's atomic, external-edit-aware writer.
 
 ## Database accounts and optional passkeys
 
