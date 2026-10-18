@@ -236,6 +236,14 @@ public class DatabaseManager
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
     private OrmManager dbManager;
+
+    public <T, ID> Dao<T, ID> extensionDao(Class<T> type) throws SQLException {
+        return dbManager.extensionDao(type);
+    }
+
+    public <T> T extensionTransaction(Callable<T> operation) throws SQLException {
+        return dbManager.inTransaction(operation);
+    }
     private final NetmailRepository netmailRepository;
     private final AreaRepository areas;
     private final SubscriptionRepository subscriptions;

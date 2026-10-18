@@ -19,13 +19,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /** Validates and stores incoming deliveries before publishing callbacks and durable receipts. */
@@ -33,54 +30,42 @@ final class FileEchoProcessor implements FileEchoService {
     private static final Logger LOG = LoggerFactory.getLogger(FileEchoProcessor.class);
     private final MailScripts api;
     private final JFtnConfig config;
-    private final Map<String, Path> areas = new TreeMap<>();
+    private final FileEchoStore store;
     private final Charset charset;
 
-    FileEchoProcessor(MailScripts api) {
+    FileEchoProcessor(MailScripts api) throws IOException {
         this.api = api;
         config = (JFtnConfig) api.getConfig();
         charset = Charset.forName(config.getValue("TicCharset", "IBM437"));
-        List<String> declarations = config.getValuesAsList("FileArea");
-        for (String value : declarations == null ? List.<String>of() : declarations) {
-            String[] fields = value.split("\\|", -1);
-            if (fields.length < 2 || fields.length > 3 || !fields[0].matches("[A-Za-z0-9_.-]{1,60}")
-                    || fields[1].isBlank()) {
-                throw new IllegalArgumentException("FileArea=tag|directory[|description]");
-            }
-            String tag = fields[0].toLowerCase(Locale.ROOT);
-            if (areas.put(tag, Path.of(fields[1]).toAbsolutePath().normalize()) != null) {
-                throw new IllegalArgumentException("Duplicate FileArea " + tag);
-            }
-        }
+        store = new FileEchoStore(config, api.getDatabase(), api.getState());
+    }
+
+    FileEchoStore store() {
+        return store;
     }
 
     @Override
-    public Set<String> areas() {
-        return Set.copyOf(areas.keySet());
-    }
-
-    @Override
-    public Set<String> subscriptions(FTNAddr peer) throws IOException {
-        String saved = api.getState().get("filefix-subscriptions:" + peer);
+    public Set<String> areas() throws IOException {
         Set<String> result = new TreeSet<>();
-        if (saved != null && !saved.isEmpty()) {
-            result.addAll(Arrays.asList(saved.split("\n")));
+        for (FileAreaRecord area : store.list()) {
+            if (area.enabled) {
+                result.add(area.name);
+            }
         }
         return result;
     }
 
     @Override
+    public Set<String> subscriptions(FTNAddr peer) throws IOException {
+        return store.subscriptions(peer);
+    }
+
+    @Override
     public void subscribe(FTNAddr peer, String area, boolean enabled) throws IOException {
-        if (!areas.containsKey(area) || config.getLink(peer) == null) {
+        if (!areas().contains(area) || config.getLink(peer) == null) {
             throw new IllegalArgumentException("Unknown file area or link");
         }
-        Set<String> linked = subscriptions(peer);
-        if (enabled) {
-            linked.add(area);
-        } else {
-            linked.remove(area);
-        }
-        api.getState().put("filefix-subscriptions:" + peer, String.join("\n", linked));
+        store.subscribe(peer, area, enabled);
     }
 
     void scan() throws IOException {
@@ -105,7 +90,7 @@ final class FileEchoProcessor implements FileEchoService {
 
     private void process(ReceivedFile ticket, List<ReceivedFile> inbox) throws IOException {
         TicDocument tic = new TicDocument(ticket.getPath(), charset);
-        String tag = tic.value("area").toLowerCase(Locale.ROOT);
+        String tag = FileEchoStore.tag(tic.value("area"));
         authorize(tic, ticket, tag);
         FTNAddr origin = TicDocument.address(tic.value("origin"));
         Set<FTNAddr> seen = tic.addresses("seenby");
@@ -136,7 +121,15 @@ final class FileEchoProcessor implements FileEchoService {
         if (api.getState().get("tic:" + receipt) != null) {
             return;
         }
-        Path stored = store(payload.getPath(), areas.get(tag), receipt + "-" + name, checksum);
+        if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || (!tic.value("size").isEmpty()
+                && !tic.value("size").equals(Long.toString(checksum.size)))) {
+            throw new IOException("Payload changed after matching TIC");
+        }
+        FileAreaRecord area = store.createAfterValidation(tag, ticket.getPeer());
+        Path stored = store(payload.getPath(),
+                            Path.of(area.directory),
+                            receipt + "-" + name,
+                            checksum);
         forward(tic, tag, name, stored, ticket.getPeer(), seen, receipt);
         api.publishFile(tag, stored, name, ticket.getPeer(), receipt);
         api.getState().put("tic:" + receipt, "done");
@@ -150,8 +143,8 @@ final class FileEchoProcessor implements FileEchoService {
     private void authorize(TicDocument tic, ReceivedFile ticket, String tag) throws IOException {
         RobotAccessRule rule = api.getRobotAccess().find("Tic", ticket.getPeer());
         if (rule == null || !TicDocument.address(tic.value("from")).equals(ticket.getPeer())
-                || !areas.containsKey(tag) || !rule.allows(tag) || tic.value("pw").isEmpty()
-                || !rule.verifyPassword(tic.value("pw"))) {
+                || !store.canReceive(tag, ticket.getPeer()) || !rule.allows(tag)
+                || tic.value("pw").isEmpty() || !rule.verifyPassword(tic.value("pw"))) {
             throw new IOException("TIC sender, area or password is not authorized");
         }
         if (!tic.value("to").isEmpty()

@@ -11,8 +11,31 @@ originals, receipts and pending delivery jobs remain intact. The mail service
 does not load pending file delivery pairs while this provider is unavailable.
 An already active transfer is not cancelled by editing a configuration file.
 
-Existing `FileArea`, `TicPeer`, `TicCharset` and FileFix declarations continue to
-apply. FileFix/TIC authorization retains its explicit database/files source.
+`FileEchoSource=database` is the default. The plugin owns area, access and
+automatic-creation tables in the node's SQL database. Declared `FileArea` entries
+seed missing initial records only; existing records and disabled areas are not
+overwritten on startup. FileFix subscriptions update SQL live.
+
+`FileEchoSource=files` keeps areas in `FileArea` declarations and FileFix
+subscriptions in durable script state. In this mode, `AutoCreateFileFrom` uses
+`peer|comma-separated-masks|WRITE-or-BOTH`. Automatically created areas and their
+creator are retained in state across restarts. UI mutation is unavailable in
+file mode. Files configuration is read at startup.
+
+In database mode, configure initial area permissions and creation policies in
+the plugin settings. READ permits delivery to a link; WRITE permits imports
+from that link; BOTH permits both. A FileFix unsubscribe removes the link's
+subscription, including write permission, consistently with AreaFix.
+
+New areas are created only after TIC sender/password, loop, filename, payload
+CRC and optional size checks pass. Creation grants access only to the matched
+link. Existing areas never gain access implicitly through a creation policy.
+Auto-created paths are derived from validated tags beneath `FileEchoRoot`.
+An absent or corrupt payload does not create an area. Database creation and
+the initial permission grant are one transaction.
+
+TIC authorization retains its explicit database/files source, independently of
+the area source. Existing `TicPeer` and `TicCharset` declarations remain supported.
 TIC and FileFix passwords are separate from binkp and PKT passwords.
 
 The parser retains unknown fields, validates the authenticated sender and TIC

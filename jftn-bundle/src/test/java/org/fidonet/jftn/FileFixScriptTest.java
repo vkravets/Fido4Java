@@ -62,7 +62,7 @@ class FileFixScriptTest {
 
     private JFtnConfig configuration(String source) throws Exception {
         String path = root.toString().replace('\\', '/');
-        String text = "SysOp=Test\nInbound="
+        String text = "FileEchoSource=files\nSysOp=Test\nInbound="
                       + path
                       + "/in\nOutbound="
                       + path
