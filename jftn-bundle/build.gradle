@@ -36,6 +36,8 @@ dependencies {
     implementation project(':plugin-manager')
     implementation project(':scheduler')
     implementation project(':jtoss')
+    implementation project(':mail-api')
+    runtimeOnly project(':fileecho')
     runtimeOnly project(':jam-bridge')
     runtimeOnly project(':nodelist')
     implementation project(':binkp-root:binkp-common')

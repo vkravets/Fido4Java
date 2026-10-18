@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 
 /** A node-owned script runtime, created and closed under the mail processing lock. */
 public final class MailScripts extends JFtnScriptService implements MailProcessingExtension {
@@ -42,8 +43,17 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
     private final List<String> loaded = new ArrayList<>();
     private final GroovyScriptManager manager;
     private final RobotAccess robotAccess;
+    private FileEchoService fileEcho;
 
     public MailScripts(JFtnConfig config, DatabaseManager database, Tosser tosser)
+            throws IOException {
+        this(config, database, tosser, ServiceLoader.load(MailScriptExtension.class));
+    }
+
+    public MailScripts(JFtnConfig config,
+                       DatabaseManager database,
+                       Tosser tosser,
+                       Iterable<MailScriptExtension> extensions)
             throws IOException {
         super(null, new HookInterpreter(), new CommandInterpreter(new CommandCollection()));
         this.tosser = tosser;
@@ -58,6 +68,9 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         }
         List<String> scripts = config.getValuesAsList("MailScript");
         try {
+            for (MailScriptExtension extension : extensions) {
+                extension.register(this);
+            }
             if (scripts != null) {
                 for (String script : scripts) {
                     load(script);
@@ -99,6 +112,17 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
 
     public RobotAccess getRobotAccess() {
         return robotAccess;
+    }
+
+    public FileEchoService getFileEcho() {
+        return fileEcho;
+    }
+
+    public void registerFileEcho(FileEchoService service) {
+        if (fileEcho != null) {
+            throw new IllegalStateException("Multiple fileecho providers");
+        }
+        fileEcho = service;
     }
 
     public DatabaseManager getDatabase() {

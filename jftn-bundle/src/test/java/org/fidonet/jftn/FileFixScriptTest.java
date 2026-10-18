@@ -137,6 +137,31 @@ class FileFixScriptTest {
     }
 
     @Test
+    void absentPluginDoesNotRegisterRobotOrProcessTic() throws Exception {
+        scripts.close();
+        scripts = new MailScripts(config, base, tosser, List.of());
+        assertEquals(null, scripts.getFileEcho());
+        received("NODELIST.288", "list");
+        received("FIRST.TIC", tic("list"));
+        scripts.beforeExport(tosser);
+        command("+lists", "no-provider");
+        assertEquals(null, scripts.getState().get("filefix-subscriptions:" + recipient));
+        assertFalse(Files.exists(root.resolve("lists")));
+    }
+
+    @Test
+    void disabledPluginLeavesInputsAndRobotInactive() throws Exception {
+        scripts.close();
+        config.load(new ByteArrayInputStream("FileEchoEnabled=false\n".getBytes(StandardCharsets.UTF_8)));
+        scripts = new MailScripts(config, base, tosser);
+        assertEquals(null, scripts.getFileEcho());
+        Path payload = received("NODELIST.288", "list");
+        scripts.beforeExport(tosser);
+        assertTrue(Files.exists(payload));
+        assertFalse(Files.exists(root.resolve("lists")));
+    }
+
+    @Test
     void databaseTicAuthorizationAppliedLiveWithoutUsingFileCredentials() throws Exception {
         scripts.close();
         config = configuration("database");

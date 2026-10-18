@@ -141,10 +141,7 @@ public final class MailService implements AutoCloseable {
             for (MailExtensionFactory factory : factories) {
                 factory.create(config, base).ifPresent(created::add);
             }
-            if (config.getValuesAsList("MailScript") != null
-                    && !config.getValuesAsList("MailScript").isEmpty()) {
-                created.add(new MailScripts(config, base, tosser));
-            }
+            created.add(new MailScripts(config, base, tosser));
             extensions = created;
             worker = workerFactory.get();
         } catch (IOException | RuntimeException e) {
@@ -344,8 +341,13 @@ public final class MailService implements AutoCloseable {
         for (Path path : spool.pending(link, context.getServerRole() == ServerRole.SERVER)) {
             enqueueOutboundFile(context, path);
         }
-        for (Path path : fileQueue.pending(link)) {
-            enqueueOutboundFile(context, path);
+        if (extensions.stream()
+                      .filter(MailScripts.class::isInstance)
+                      .map(MailScripts.class::cast)
+                      .anyMatch(api -> api.getFileEcho() != null)) {
+            for (Path path : fileQueue.pending(link)) {
+                enqueueOutboundFile(context, path);
+            }
         }
     }
 

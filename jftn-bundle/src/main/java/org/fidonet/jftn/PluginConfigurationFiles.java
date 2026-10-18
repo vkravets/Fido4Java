@@ -12,6 +12,7 @@ final class PluginConfigurationFiles {
     static final List<String> NAMES = List.of("10-binkp.conf",
                                               "20-jam-bridge.conf",
                                               "30-nodelist.conf",
+                                              "32-fileecho.conf",
                                               "40-mail-scripts.conf",
                                               "41-areafix.conf",
                                               "42-filefix.conf",

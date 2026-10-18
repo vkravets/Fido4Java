@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+
+description = 'Optional TIC file echo delivery plugin'
+
+dependencies {
+    implementation project(':mail-api')
+    implementation project(':plugin-manager')
+    implementation 'org.slf4j:slf4j-api:2.0.20'
+    testImplementation project(':mail-api')
+    testRuntimeOnly 'com.h2database:h2:2.5.252'
+}
