@@ -112,11 +112,16 @@ public class FtsPackMsg {
     }
 
     public static Charset detectCharset(byte[] text) {
+        String controls = new String(text, StandardCharsets.ISO_8859_1);
         Matcher matcher = Pattern.compile("(?:^|\\r)\\n?\\u0001(?:CHRS|CHARSET):\\s*([^\\s\\r]+)")
-                                 .matcher(new String(text, StandardCharsets.ISO_8859_1));
-        return CharsetTools.charsetDetect(matcher.find()
-                ? matcher.group(1)
-                : CharsetTools.DEFAULT_ENCODING);
+                                 .matcher(controls);
+        String chrs = matcher.find() ? matcher.group(1) : null;
+        Matcher codepage = Pattern.compile("(?:^|\\r)\\n?\\u0001CODEPAGE:\\s*([0-9]+)[ \\t]*(?=\\r|$)")
+                                  .matcher(controls);
+        return CharsetTools.charsetDetect(CharsetTools.messageEncoding(chrs,
+                                                                       codepage.find()
+                                                                               ? codepage.group(1)
+                                                                               : null));
     }
 
     public boolean isValid() {

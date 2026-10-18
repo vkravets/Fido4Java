@@ -31,7 +31,7 @@ package org.fidonet.tools;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -44,19 +44,45 @@ import java.util.Map;
 public class CharsetTools {
 
     public static final String DEFAULT_ENCODING = "CP866";
+    private static final Charset CP848 = new UkrainianCharset();
+    private static final Map<String, String> ALIASES = Map.of("IBMPC",
+                                                              DEFAULT_ENCODING,
+                                                              "+7_FIDO",
+                                                              DEFAULT_ENCODING,
+                                                              "CP10000",
+                                                              "x-MacRoman",
+                                                              "MAC",
+                                                              "x-MacRoman",
+                                                              "LATIN-1",
+                                                              "ISO-8859-1",
+                                                              "LATIN-2",
+                                                              "ISO-8859-2",
+                                                              "LATIN-5",
+                                                              "ISO-8859-9",
+                                                              "LATIN-9",
+                                                              "ISO-8859-15");
+
+    public static String messageEncoding(String chrs, String codepage) {
+        String identifier = chrs == null || chrs.trim().isEmpty()
+                ? DEFAULT_ENCODING
+                : chrs.trim().split("\\s+")[0];
+        if (identifier.equalsIgnoreCase("IBMPC") && codepage != null
+                && codepage.trim().matches("[0-9]+")) {
+            return "CP" + codepage.trim();
+        }
+        return identifier;
+    }
 
     public static Charset charsetDetect(String messageCharset) {
-        Map<String, Charset> fidoToJavaCharsetMap = new HashMap<String, Charset>();
-        fidoToJavaCharsetMap.put("IBMPC", Charset.forName(DEFAULT_ENCODING));
-        fidoToJavaCharsetMap.put("+7_FIDO", Charset.forName(DEFAULT_ENCODING));
+        String identifier = messageEncoding(messageCharset, null).toUpperCase(Locale.ROOT);
+        if (identifier.equals("CP848") || identifier.equals("IBM848")
+                || identifier.equals("IBM-848")) {
+            return CP848;
+        }
         try {
-            return Charset.forName(messageCharset);
+            return Charset.forName(ALIASES.getOrDefault(identifier, identifier));
         } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
-            Charset charset = fidoToJavaCharsetMap.get(messageCharset);
-            if (charset == null) {
-                charset = Charset.forName(DEFAULT_ENCODING);
-            }
-            return charset;
+            return Charset.forName(DEFAULT_ENCODING);
         }
     }
 }

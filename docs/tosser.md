@@ -8,6 +8,15 @@ Runner's netmail store.
 
 ## Configuration
 
+Packed-message decoding and export recognize FTSC `LATIN-1`, `LATIN-2`,
+`LATIN-5`, `LATIN-9`, `CP10000` and Ukrainian `CP848` identifiers, in addition
+to JDK-supported encodings. CP848 uses the IBM/ICU mapping for Ukrainian letters
+and euro, preserving ASCII control bytes for FTN framing. The mapping reference is
+[IBM CP848 in ICU](https://github.com/unicode-org/icu-data/blob/main/charset/data/ucm/ibm-848_P100-1999.ucm).
+For incoming legacy `CHRS: IBMPC`, a numeric `CODEPAGE` overrides the ambiguous
+identifier, as specified by FTS-5003. It does not override an explicit modern
+`CHRS` identifier. Unknown encodings retain the historical CP866 fallback.
+
 ```text
 Inbound=inbound
 Outbound=outbound

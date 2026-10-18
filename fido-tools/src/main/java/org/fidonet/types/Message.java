@@ -390,10 +390,7 @@ public class Message {
         if (messageEncoding == null) {
             messageEncoding = body.getKludges().get("CHARSET");
         }
-        if (messageEncoding == null) {
-            return CharsetTools.DEFAULT_ENCODING;
-        }
-        return messageEncoding.trim().split("\\s+")[0];
+        return CharsetTools.messageEncoding(messageEncoding, body.getKludges().get("CODEPAGE"));
     }
 
     @Override
