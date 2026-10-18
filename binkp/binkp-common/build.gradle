@@ -7,6 +7,7 @@ dependencies {
   implementation project(':tools')
 
   compileOnly project(':plugin-manager')
+    testImplementation 'org.apache.logging.log4j:log4j-core:2.26.1'
     compileOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }
 

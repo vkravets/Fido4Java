@@ -28,9 +28,11 @@
 
 package org.fidonet.binkp.netty.plugin.codec;
 
+import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.codec.DataInfo;
 import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -66,7 +68,20 @@ public class BinkDataDecoder extends ReplayingDecoder<BinkDataDecoder.State> {
                 byte[] buf = new byte[dataInfo.getSize()];
                 in.readBytes(buf);
                 checkpoint(State.READ_LENGTH);
-                out.add(new BinkFrame(dataInfoRaw, buf));
+                BinkFrame frame = new BinkFrame(dataInfoRaw, buf);
+                if (frame.getDataInfo() < 0) {
+                    BinkpLog.command(ctx.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get(),
+                                     "id="
+                                     + ctx.channel()
+                                          .id()
+                                          .asShortText()
+                                     + " remote="
+                                     + ctx.channel()
+                                          .remoteAddress(),
+                                     true,
+                                     frame);
+                }
+                out.add(frame);
                 break;
             default :
                 throw new Error("Shouldn't reach here!");

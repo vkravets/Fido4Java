@@ -173,7 +173,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         }
         if (command != null) {
             log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command data: {}", new String(binkData.getData(), StandardCharsets.UTF_8));
+            log.debug("Command payload length: {} bytes", binkData.getData().length);
             command.handle(mina2Session,
                            sessionContext,
                            new String(binkData.getData(), StandardCharsets.UTF_8));

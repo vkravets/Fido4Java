@@ -146,7 +146,11 @@ integrations, VRT and UI checks, then packages the same tested binaries. See [di
 Per-case artifacts are under `binkp/binkp-<backend>/build/reports/binkdDockerTest/`,
 with role directories `jftn-client` / `jftn-server`, each containing `ordinary`
 and `nr`: `container.txt` (ID and endpoint), `binkd-console.log`,
-`binkd.log`, and `protocol.log`. Server-role cases also save `binkd-client.log`
+`binkd.log`, `protocol.log` and `jftn-info.log`. The last file captures actual
+production binkp INFO messages, rather than the decoded-frame test probe. Tests
+verify both command directions, redacted PWD, transfer starts, byte/rate summaries
+and successful sending only after GOT. No file payload bytes are logged.
+Server-role cases also save `binkd-client.log`
 with the client's process output. Password commands are redacted in `protocol.log`;
 the binkd logs contain only disposable test credentials. HTML and JUnit reports
 are under `build/reports/tests/binkdDockerTest` and

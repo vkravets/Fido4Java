@@ -44,6 +44,27 @@ public class FileData<T> {
     private boolean rewindBeforeSend;
     private boolean resumeResponse;
     private SendResource sendResource;
+    private volatile long transferStartedNanos;
+    private volatile long transferOffset;
+
+    public boolean startTransfer(long offset) {
+        if (transferStartedNanos != 0) {
+            return false;
+        }
+        transferOffset = offset;
+        transferStartedNanos = System.nanoTime();
+        return true;
+    }
+
+    public long getTransferMillis() {
+        return transferStartedNanos == 0
+                ? 0
+                : Math.max(1, (System.nanoTime() - transferStartedNanos) / 1_000_000);
+    }
+
+    public long getTransferredBytes() {
+        return Math.max(0, info.getCurSize() - transferOffset);
+    }
 
     public interface SendResource extends AutoCloseable {
         @Override

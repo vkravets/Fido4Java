@@ -84,6 +84,7 @@ public class FILECommand extends MessageCommand {
             receivedFiles.addFirst(fileData);
         }
 
+        sessionContext.startFileTransfer("receiving", fileData, fileData.getInfo().getCurSize());
         if (fileData.getInfo().getCurSize() == fileInfo.getSize()) {
             ReceiveTransfer.complete(session, sessionContext);
             return;

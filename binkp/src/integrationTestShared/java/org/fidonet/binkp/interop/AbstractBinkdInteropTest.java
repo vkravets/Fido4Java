@@ -36,7 +36,8 @@ public abstract class AbstractBinkdInteropTest {
     public void exchangesFilesWithExternalBinkdPeer() throws Exception {
         Path artifacts = artifactDirectory();
         ExchangeFiles files = new ExchangeFiles();
-        try (JftnPeer jftn = createPeer(role, requestNr, files);
+        try (InfoLog info = new InfoLog();
+                JftnPeer jftn = createPeer(role, requestNr, files);
                 BinkdTestPeer binkd = new BinkdTestPeer(files)) {
             try {
                 if (role == ServerRole.SERVER) {
@@ -52,7 +53,9 @@ public abstract class AbstractBinkdInteropTest {
                 binkd.assertClientFinished(artifacts);
                 binkd.assertTransferredFiles();
                 jftn.assertProtocol();
+                info.assertExchange();
             } finally {
+                info.save(artifacts);
                 jftn.saveDiagnostics(artifacts);
                 binkd.saveDiagnostics(artifacts);
             }

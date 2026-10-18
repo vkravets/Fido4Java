@@ -28,9 +28,12 @@
 
 package org.fidonet.binkp.mina2.codec;
 
+import org.fidonet.binkp.common.SessionContext;
+import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.codec.DataInfo;
 import org.fidonet.binkp.common.codec.DataReader;
 import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.mina2.commons.SessionKeys;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -64,6 +67,12 @@ public class BinkDataDecoder extends CumulativeProtocolDecoder {
         byte[] dataBuf = new byte[dataInfo.getSize()];
         in.get(dataBuf);
         BinkFrame data = new BinkFrame(dataInfoRaw, dataBuf);
+        if (data.getDataInfo() < 0) {
+            BinkpLog.command((SessionContext) session.getAttribute(SessionKeys.SESSION_CONTEXT_KEY),
+                             "id=" + session.getId() + " remote=" + session.getRemoteAddress(),
+                             true,
+                             data);
+        }
         out.write(data);
         in.position(start + 2 + dataInfo.getSize());
         return true;

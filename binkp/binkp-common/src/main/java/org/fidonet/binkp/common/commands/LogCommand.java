@@ -53,6 +53,6 @@ public class LogCommand extends NULCommand {
     @Override
     protected void handleCommand(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
-        log.info("REMOTE -> {}", commandArgs);
+        // The transport logs the complete NUL frame once, with control characters escaped.
     }
 }

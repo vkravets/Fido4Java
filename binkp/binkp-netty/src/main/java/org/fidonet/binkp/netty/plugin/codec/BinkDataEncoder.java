@@ -28,7 +28,9 @@
 
 package org.fidonet.binkp.netty.plugin.codec;
 
+import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.io.BinkFrame;
+import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -47,5 +49,17 @@ public class BinkDataEncoder extends MessageToByteEncoder<BinkFrame> {
     protected void encode(ChannelHandlerContext ctx, BinkFrame msg, ByteBuf out) throws Exception {
         out.writeShort(msg.getDataInfo());
         out.writeBytes(msg.getData());
+        if (msg.getDataInfo() < 0) {
+            BinkpLog.command(ctx.channel().attr(SessionKeys.SESSION_CONTEXT_KEY).get(),
+                             "id="
+                             + ctx.channel()
+                                  .id()
+                                  .asShortText()
+                             + " remote="
+                             + ctx.channel()
+                                  .remoteAddress(),
+                             false,
+                             msg);
+        }
     }
 }

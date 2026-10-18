@@ -124,6 +124,7 @@ public class FilesSender<T extends Session> implements Runnable {
             throw new IOException("Invalid file offset: " + offset);
         }
         skipFully(reader, offset);
+        sessionContext.startFileTransfer("sending", data, offset);
         sessionContext.setState(SessionState.STATE_TRANSFER);
         final byte[] buf = new byte[FILE_BLOCK_SIZE];
         int read = reader.read(buf);
@@ -152,6 +153,7 @@ public class FilesSender<T extends Session> implements Runnable {
         if (fileSize != fileInfo.getSize()) {
             throw new EOFException("Input ends before advertised file size");
         }
+        sessionContext.fileDataWritten(data, offset);
         return true;
     }
 

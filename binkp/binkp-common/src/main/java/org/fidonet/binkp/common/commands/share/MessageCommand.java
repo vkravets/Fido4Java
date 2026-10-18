@@ -72,8 +72,6 @@ public abstract class MessageCommand implements Command {
     public void send(Session session, SessionContext sessionContext) throws Exception {
         String cmdArgs = getCommandArguments(sessionContext);
         cmdArgs = cmdArgs == null ? "" : cmdArgs;
-        final BinkCommand command = BinkCommand.findCommand(commandType.getCmd());
-        log.debug("Sending message {} [{}]", command, cmdArgs);
         sessionContext.recordCommand(commandType);
         session.write(getData(cmdArgs));
     }

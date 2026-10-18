@@ -28,6 +28,7 @@
 
 package org.fidonet.binkp.common;
 
+import org.fidonet.binkp.common.codec.BinkpLog;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.config.Password;
 import org.fidonet.binkp.common.config.ServerRole;
@@ -154,6 +155,28 @@ public class SessionContext extends HasEventBus {
     private SentFileHandler sentFileHandler;
     private Consumer<SessionContext> sessionClosedHandler;
     private volatile SessionActivityListener activityListener;
+    private volatile Consumer<String> protocolLogListener;
+
+    public void setProtocolLogListener(Consumer<String> listener) {
+        protocolLogListener = listener;
+    }
+
+    public void recordProtocolLog(String line) {
+        Consumer<String> listener = protocolLogListener;
+        if (listener == null) {
+            return;
+        }
+        try {
+            listener.accept(line);
+        } catch (RuntimeException ignored) {
+            // A diagnostic consumer must never interrupt the protocol.
+        }
+    }
+
+    private void info(String line) {
+        LOGGER.info(line);
+        recordProtocolLog(line);
+    }
 
     public void setActivityListener(SessionActivityListener listener) {
         activityListener = listener;
@@ -572,15 +595,15 @@ public class SessionContext extends HasEventBus {
 
     private void logEvent(Event event) {
         if (event instanceof ConnectedEvent) {
-            LOGGER.info("binkp session ready: peer={}, role={}, NR={}",
-                        logPeer(),
-                        serverRole,
-                        isNRMode());
+            info(String.format("binkp session ready: peer=%s, role=%s, NR=%s",
+                               logPeer(),
+                               serverRole,
+                               isNRMode()));
         } else if (event instanceof DisconnectedEvent) {
-            LOGGER.info("binkp transfer ended: peer={}, role={}, state={}",
-                        logPeer(),
-                        serverRole,
-                        state);
+            info(String.format("binkp transfer ended: peer=%s, role=%s, state=%s",
+                               logPeer(),
+                               serverRole,
+                               state));
         } else if (event instanceof FileReceivedEvent) {
             logFile("received", (FileEvent<?>) event);
         } else if (event instanceof FileSendEvent) {
@@ -595,11 +618,35 @@ public class SessionContext extends HasEventBus {
 
     private void logFile(String action, FileEvent<?> event) {
         FileInfo info = event.getFile().getInfo();
-        LOGGER.info("binkp file {}: peer={}, name={}, bytes={}",
-                    action,
-                    logPeer(),
-                    info.getName(),
-                    info.getSize());
+        long elapsed = event.getFile().getTransferMillis();
+        long transferred = event.getFile().getTransferredBytes();
+        long cps = (long) (transferred * 1000.0 / Math.max(1, elapsed));
+        info(String.format("binkp file %s: peer=%s, name=%s, bytes=%s, transferred=%s, elapsedMs=%s, CPS=%s",
+                           action,
+                           logPeer(),
+                           BinkpLog.text(info.getName()),
+                           info.getSize(),
+                           transferred,
+                           elapsed,
+                           cps));
+    }
+
+    public void startFileTransfer(String action, FileData<?> file, long offset) {
+        if (file.startTransfer(offset)) {
+            info(String.format("binkp %s: peer=%s, name=%s, bytes=%s, offset=%s",
+                               action,
+                               logPeer(),
+                               BinkpLog.text(file.getInfo().getName()),
+                               file.getInfo().getSize(),
+                               offset));
+        }
+    }
+
+    public void fileDataWritten(FileData<?> file, long offset) {
+        info(String.format("binkp file data written: name=%s, bytes=%s, offset=%s",
+                           BinkpLog.text(file.getInfo().getName()),
+                           file.getInfo().getCurSize() - offset,
+                           offset));
     }
 
     public boolean isBusy() {
