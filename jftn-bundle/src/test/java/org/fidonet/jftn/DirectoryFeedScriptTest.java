@@ -47,12 +47,14 @@ class DirectoryFeedScriptTest {
                       + "NodeDirectoryPath="
                       + path
                       + "/catalog\n"
-                      + "DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|"
+                      + "DirectorySource=nodes|NODELIST|"
                       + path
-                      + "/base/nodes.lst|1:500/101|1|500\n"
-                      + "DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|"
+                      + "/base/nodes.lst|1|500|US-ASCII|true\n"
+                      + "DirectorySource=points|BOSS|"
                       + path
-                      + "/base/points.lst|1:500/101\n";
+                      + "/base/points.lst|0|0|US-ASCII|true\n"
+                      + "DirectoryFeed=nodes|lists|NODELIST.*|NODEDIFF.*|1:500/101\n"
+                      + "DirectoryFeed=points|lists|POINTS.*|POINTDIF.*|1:500/101\n";
         JFtnConfig config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         return config;

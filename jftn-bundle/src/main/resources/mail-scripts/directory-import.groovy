@@ -1,14 +1,9 @@
 import org.fidonet.jftn.script.RobotRequest
 import org.fidonet.jftn.script.ScriptState
 import org.fidonet.jftn.script.ReceivedFile
-import org.fidonet.nodelist.DirectoryEdition
-import org.fidonet.nodelist.DirectoryCatalog
-import org.fidonet.nodelist.DirectorySource
-import org.fidonet.nodelist.DirectoryUpdate
 import org.fidonet.types.FTNAddr
 
 import java.io.IOException
-import java.nio.charset.Charset
 import org.slf4j.LoggerFactory
 
 import java.nio.file.Files
@@ -18,7 +13,7 @@ import java.util.Locale
 
 class DirectoryFeed {
     final String definition
-    final DirectorySource source
+    final String id
     final String area
     final String fullMask
     final String diffMask
@@ -27,23 +22,17 @@ class DirectoryFeed {
     DirectoryFeed(String definition) {
         this.definition = definition
         def fields = definition.split('\\|', -1)
-        if (fields.length < 7 || fields.length > 11) {
-            throw new IllegalArgumentException('DirectoryFeed=id|format|area|full-mask|diff-mask|base-file|peer[|zone|net|charset|requireChecksum]')
+        if (fields.length != 5) {
+            throw new IllegalArgumentException('DirectoryFeed=source-id|area|full-mask|diff-mask|peer; define the source once in 30-nodelist.conf')
         }
-        area = fields[2].trim().toLowerCase(Locale.ROOT)
-        fullMask = fields[3].trim()
-        diffMask = fields[4].trim()
-        peer = new FTNAddr(fields[6].trim())
-        String required = fields.length > 10 ? fields[10].trim() : 'true'
-        if (!peer.valid || area.isEmpty() || fullMask.isEmpty() || !(required in ['true', 'false'])) {
+        id = fields[0].trim()
+        area = fields[1].trim().toLowerCase(Locale.ROOT)
+        fullMask = fields[2].trim()
+        diffMask = fields[3].trim()
+        peer = new FTNAddr(fields[4].trim())
+        if (!peer.valid || id.isEmpty() || area.isEmpty() || fullMask.isEmpty()) {
             throw new IllegalArgumentException('Invalid DirectoryFeed settings')
         }
-        source = new DirectorySource(fields[0].trim(),
-                DirectorySource.Format.valueOf(fields[1].trim().toUpperCase(Locale.ROOT)),
-                Path.of(fields[5].trim()), fields.length > 7 ? Integer.parseInt(fields[7]) : 0,
-                fields.length > 8 ? Integer.parseInt(fields[8]) : 0,
-                Charset.forName(fields.length > 9 ? fields[9].trim() : 'US-ASCII'),
-                Boolean.parseBoolean(required))
     }
 }
 
@@ -51,15 +40,15 @@ class DirectoryFeed {
 class InboundDirectoryImports {
     private static final log = LoggerFactory.getLogger('jftn.directory-import')
     final api
-    DirectoryCatalog catalog
+    final directories
     final List<DirectoryFeed> feeds
     final boolean requireDate
     final long retryMillis
     final Map<String, Long> retries = new LinkedHashMap<>()
 
-    InboundDirectoryImports(api, DirectoryCatalog catalog, List<DirectoryFeed> feeds) {
+    InboundDirectoryImports(api, directories, List<DirectoryFeed> feeds) {
         this.api = api
-        this.catalog = catalog
+        this.directories = directories
         this.feeds = feeds
         String required = api.config.getValue('DirectoryInboundRequireDate', 'true')
         if (!(required in ['true', 'false'])) {
@@ -117,12 +106,12 @@ class InboundDirectoryImports {
         String receipt = null
         try {
             def attributes = Files.readAttributes(file.path, BasicFileAttributes)
-            receipt = 'directory-inbound:' + ScriptState.digest(feed.definition + '|' + file.peer
+            receipt = 'directory-inbound:' + ScriptState.digest(feed.definition + '|' + directories.sourceDefinition(feed.id) + '|' + file.peer
                     + '|' + file.path.toAbsolutePath() + '|' + file.name + '|'
                     + attributes.size() + '|' + attributes.lastModifiedTime())
             if (api.state.get(receipt) != null || waiting(receipt)) return null
             if (full && diff) throw new IOException('Directory inbound full and diff masks overlap')
-            def edition = DirectoryEdition.read(file.path).orElse(null)
+            def edition = directories.publicationDate(file.path)
             if (requireDate && edition == null) {
                 throw new IOException('Directory publication date is missing; set DirectoryInboundRequireDate=false only for an explicitly ordered feed')
             }
@@ -141,25 +130,16 @@ class InboundDirectoryImports {
 
     private void install(DirectoryFeed feed, Map candidate) {
         try {
-            if (!candidate.diff && superseded(feed, candidate)) {
-                api.state.put(candidate.receipt, 'superseded')
-                return
-            }
-            def result = DirectoryUpdate.install(catalog, feed.source, candidate.file.path, candidate.diff)
+            def result = directories.importFile(feed.id, candidate.file.path, candidate.diff)
             api.state.put(candidate.receipt, 'done')
             retries.remove(candidate.receipt)
-            log.info('Imported inbound directory {} from {}: {} records ({})',
-                    result.source, feed.peer, result.records, candidate.file.name)
+            if (result.changed) {
+                log.info('Imported inbound directory {} from {}: {} records ({})',
+                        result.source, feed.peer, result.records, candidate.file.name)
+            }
         } catch (IOException | IllegalArgumentException failure) {
             deferred(feed, candidate.file, candidate.receipt, failure)
         }
-    }
-
-    private boolean superseded(DirectoryFeed feed, Map candidate) {
-        if (candidate.edition == null || !Files.isRegularFile(feed.source.path)) return false
-        def current = DirectoryEdition.read(feed.source.path).orElse(null)
-        // Re-import an equal edition to recover SQL after interrupted publication, using its journal.
-        return current != null && candidate.edition < current
     }
 
     private void deferred(DirectoryFeed feed, file, String receipt, Exception failure) {
@@ -168,13 +148,13 @@ class InboundDirectoryImports {
             if (retries.size() > 1024) retries.remove(retries.keySet().iterator().next())
         }
         log.warn('Directory import deferred: source={}, peer={}, file={}: {}',
-                feed.source.id, file.peer, file.name, failure.message, failure)
+                feed.id, file.peer, file.name, failure.message, failure)
     }
 }
 
-catalog = null
-
 def register(api) {
+    def directories = api.directoryImports
+    if (directories == null) return
     def feeds = (api.config.getValuesAsList('DirectoryFeed') ?: []).collect { new DirectoryFeed(it) }
     String enabled = api.config.getValue('DirectoryInboundEnabled', 'false')
     if (!(enabled in ['true', 'false'])) {
@@ -184,10 +164,10 @@ def register(api) {
     if (Boolean.parseBoolean(enabled)) {
         inbound = (api.config.getValuesAsList('DirectoryInboundFeed') ?: []).collect { definition ->
             def fields = definition.split('\\|', -1) as List
-            if (fields.size() < 6 || fields.size() > 10) {
-                throw new IllegalArgumentException('DirectoryInboundFeed=id|format|full-mask|diff-mask|base-file|peer[|zone|net|charset|requireChecksum]')
+            if (fields.size() != 4) {
+                throw new IllegalArgumentException('DirectoryInboundFeed=source-id|full-mask|diff-mask|peer')
             }
-            fields.add(2, '@inbound')
+            fields.add(1, '@inbound')
             new DirectoryFeed(fields.join('|'))
         }
     }
@@ -198,32 +178,33 @@ def register(api) {
         }
         return
     }
-    if (all.collect { it.source.id }.toSet().size() != all.size()
-            || all.collect { it.source.path }.toSet().size() != all.size()) {
-        throw new IllegalArgumentException('DirectoryFeed IDs and base paths must be unique')
+    if (all.collect { it.id }.toSet().size() != all.size()) {
+        throw new IllegalArgumentException('A directory source must have one delivery feed')
     }
     all.each { feed ->
+        if (!directories.hasSource(feed.id)) {
+            throw new IllegalArgumentException('Unknown directory source ' + feed.id + '; define DirectorySource in 30-nodelist.conf')
+        }
         if (api.config.getLink(feed.peer) == null) {
             throw new IllegalArgumentException('DirectoryFeed requires a configured transport peer')
         }
+        directories.claimDeliverySource(feed.id)
     }
     def folders = new LinkedHashMap<DirectoryFeed, Path>()
     (api.config.getValuesAsList('DirectoryFeedFolder') ?: []).each { definition ->
         def fields = definition.split('\\|', -1)
-        def feed = fields.length == 2 ? feeds.find { it.source.id == fields[0].trim() } : null
+        def feed = fields.length == 2 ? feeds.find { it.id == fields[0].trim() } : null
         if (feed == null || fields[1].trim().isEmpty() || folders.containsKey(feed)) {
             throw new IllegalArgumentException('DirectoryFeedFolder=existing-feed-id|accepted-file-folder')
         }
         Path folder = Path.of(fields[1].trim()).toAbsolutePath().normalize()
-        if (feed.source.path.startsWith(folder)) {
+        if (directories.sourcePath(feed.id).startsWith(folder)) {
             throw new IllegalArgumentException('Retained directory base must be outside its source folder')
         }
         folders[feed] = folder
     }
-    def importer = inbound.isEmpty() && folders.isEmpty() ? null : new InboundDirectoryImports(api, null, inbound)
-    catalog = new DirectoryCatalog(Path.of(api.config.getValue('NodeDirectoryPath', './database/nodelist/catalog')))
+    def importer = inbound.isEmpty() && folders.isEmpty() ? null : new InboundDirectoryImports(api, directories, inbound)
     if (importer != null) {
-        importer.catalog = catalog
         api.onScan { importer.scan() }
         folders.each { feed, path -> api.onScan { importer.scanFolder(feed, path) } }
         LoggerFactory.getLogger('jftn.directory-import').info('Automatic directory import enabled: {} inbound feeds, {} accepted folders', inbound.size(), folders.size())
@@ -236,16 +217,13 @@ def register(api) {
                 throw new IOException('DirectoryFeed full and diff masks overlap for ' + name)
             }
             if (full || diff) {
-                def result = DirectoryUpdate.install(catalog, feed.source, file, diff)
-                LoggerFactory.getLogger('jftn.directory-import').info('Imported {}: {} records', result.source, result.records)
+                def result = directories.importFile(feed.id, file, diff)
+                if (result.changed) LoggerFactory.getLogger('jftn.directory-import').info('Imported {}: {} records', result.source, result.records)
             }
         }
     }
 }
 
 def unload(api) {
-    if (catalog != null) {
-        catalog.close()
-        catalog = null
-    }
+    // The node-owned directory service closes the catalog after scripts unload.
 }

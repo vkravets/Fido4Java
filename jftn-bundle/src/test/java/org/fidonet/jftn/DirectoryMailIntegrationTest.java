@@ -29,28 +29,12 @@ class DirectoryMailIntegrationTest {
 
     private JFtnConfig config(Path source) throws Exception {
         String root = temporary.toString().replace('\\', '/');
-        String text = "Inbound="
-                      + root
-                      + "/inbound\n"
-                      + "Tmp="
-                      + root
-                      + "/tmp\n"
-                      + "EchoPath="
-                      + root
-                      + "/echo\n"
-                      + "Outbound="
-                      + root
-                      + "/outbound\n"
-                      + "SysOp=Directory Test\n"
-                      + "Link=1:500/101,1:500/100,secret,localhost\n"
-                      + "NodeDirectoryEnabled=true\n"
-                      + "NodeDirectoryPath="
-                      + root
-                      + "/catalog\n"
-                      + "DirectorySource=nodes|NODELIST|"
-                      + source.toString()
-                              .replace('\\', '/')
-                      + "|1|500\n";
+        String text = "Inbound=" + root + "/inbound\n" + "Tmp=" + root + "/tmp\n" + "EchoPath="
+                + root + "/echo\n" + "Outbound=" + root + "/outbound\n" + "SysOp=Directory Test\n"
+                + "Link=1:500/101,1:500/100,secret,localhost\n"
+                + "NodeDirectoryEnabled=true\nDirectoryRefreshEnabled=true\nDirectoryLocalSource=nodes\n"
+                + "NodeDirectoryPath=" + root + "/catalog\n" + "DirectorySource=nodes|NODELIST|"
+                + source.toString().replace('\\', '/') + "|1|500\n";
         JFtnConfig config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         return config;

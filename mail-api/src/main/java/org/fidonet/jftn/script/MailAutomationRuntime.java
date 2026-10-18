@@ -60,6 +60,11 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
     private final List<FileHandler> fileHandlers = new ArrayList<>();
     private final ExternalMailScripts scripts;
     private final RobotAccess robotAccess;
+    private final DirectoryImportService directoryImports;
+
+    public DirectoryImportService getDirectoryImports() {
+        return directoryImports;
+    }
     private FileEchoService fileEcho;
     private final List<SettingsExtension> settingsExtensions = new ArrayList<>();
 
@@ -85,7 +90,17 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
                                  Tosser tosser,
                                  Iterable<MailScriptExtension> extensions)
             throws IOException {
+        this(config, database, tosser, extensions, null);
+    }
+
+    public MailAutomationRuntime(JFtnConfig config,
+                                 MailDatabaseFacade database,
+                                 Tosser tosser,
+                                 Iterable<MailScriptExtension> extensions,
+                                 DirectoryImportService directoryImports)
+            throws IOException {
         super(null, new ScriptHookRegistry(), new CommandRegistry(new CommandCollection()));
+        this.directoryImports = directoryImports;
         this.tosser = tosser;
         this.database = database;
         setConfig(config);

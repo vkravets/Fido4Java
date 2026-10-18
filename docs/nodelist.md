@@ -9,8 +9,10 @@ cannot replace a newer retained base. Reuse the same feed for future TIC events.
 For example (adjust area names, masks and trusted peer to your installation):
 
 ```ini
-DirectoryFeed=nodes|NODELIST|nodelist|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|1:500/101|0|0|CP866|true
-DirectoryFeed=points|BOSS|pnt46|PNT46REG.*||./lists/points.lst|1:500/101|0|0|CP866|true
+DirectorySource=nodes|NODELIST|./lists/nodes.lst|0|0|CP866|true
+DirectoryFeed=nodes|nodelist|NODELIST.*|NODEDIFF.*|1:500/101
+DirectorySource=points|BOSS|./lists/points.lst|0|0|CP866|true
+DirectoryFeed=points|pnt46|PNT46REG.*||1:500/101
 DirectoryFeedFolder=nodes|./fileecho/nodelist
 DirectoryFeedFolder=points|./fileecho/pnt46
 ```
@@ -23,9 +25,11 @@ Point and node sources share the same catalog and UI directory.
 
 The `nodelist` module imports node/point lists into a separate H2 catalog.
 The full application includes it for setup/settings lookup and scripted feeds.
-Scheduled `DirectorySource` refresh is disabled by default. Its
-`NodeDirectoryEnabled` switch does not disable explicit imports or the UI's
-lookup/download operation. Direct inbound import has a separate opt-in switch,
+The node owns one `DirectoryService` and one source registry.
+`NodeDirectoryEnabled=false` disables all automatic local and scripted imports;
+explicit offline/UI operations and reads of the retained catalog remain available.
+Local refresh is separately opt-in through `DirectoryRefreshEnabled` and
+`DirectoryLocalSource` IDs. Direct inbound import has a separate opt-in switch,
 `DirectoryInboundEnabled`.
 Its two tables belong to the plugin; the mail database schema is unchanged.
 Imported records never create trusted `Link` entries, passwords, subscriptions,
@@ -62,14 +66,18 @@ Edit `conf.d/30-nodelist.conf` (paths are relative to the working directory):
 ```ini
 NodeDirectoryEnabled=true
 NodeDirectoryPath=./database/nodelist/catalog
+DirectoryRefreshEnabled=true
 DirectoryRefreshSeconds=300
+DirectoryLocalSource=nodes
+DirectoryLocalSource=points
 DirectorySource=nodes|NODELIST|./lists/NODELIST.288|0|0|US-ASCII|true
 DirectorySource=points|BOSS|./lists/POINTS.288
 ```
 
 `DirectorySource` is repeatable:
 `id|format|filename[|defaultZone|defaultNet|charset|requireChecksum]`.
-IDs are case-sensitive and unique. Optional defaults are `0|0|US-ASCII|false`.
+IDs and normalized base paths are unique across the registry. IDs are case-sensitive.
+A source cannot be both local-refresh-managed and delivery-managed. Optional defaults are `0|0|US-ASCII|false`.
 Use zone `1` and net `500` for a fragment with no enclosing Zone/Host records.
 Other examples:
 
@@ -98,8 +106,9 @@ It uses the existing Groovy script for sender/name policy and this plugin for
 parsing, CRC validation, ZIP streaming and atomic source replacement. No new
 trusted mail links are created from the resulting directory records.
 
-Automatic import occurs when the mail service starts. Invalid initial sources
-fail startup. Later checks run before mail export, at most once per configured
+Only explicitly selected `DirectoryLocalSource` files are imported on startup
+when `DirectoryRefreshEnabled=true`. Invalid initial local files fail startup.
+Delivery-managed sources may have missing retained bases until their first full list arrives. Later checks run before mail export, at most once per configured
 interval (and no more often than mail scans). Update errors are logged and
 ordinary mail processing continues with the previous valid source snapshot.
 Removing the module or disabling it prevents automatic work and preserves data.
@@ -163,7 +172,9 @@ sources are independent; valid ones can update even if another source fails.
 SHA-256 plus parser settings avoid importing unchanged files and survive
 restart. A changed file is hashed again during import to detect races.
 
-`DirectoryService.open(IConfig)` owns the catalog and exposes `refresh()` and
+`DirectoryService.open(IConfig)` owns the catalog and source registry. It exposes
+`DirectoryImportService` to automation; scripts never open or close a catalog.
+It also exposes `refresh()` and
 `getCatalog()`. Close the service after use. A catalog can also be opened for
 queries directly with `new DirectoryCatalog(path)`:
 
@@ -192,3 +203,22 @@ Automatic nodelist-based mail routing remains future work.
 The mail-extension SPI owns automatic file refresh; the parser and catalog are
 also usable directly without a running mail service. See
 [UI lookup](web-ui.md#nodelist-lookup) for its separate download settings.
+
+## Configuration consolidation
+
+`30-nodelist.conf` owns enablement, catalog path and every `DirectorySource`
+definition (format, base path, charset, address context and checksum requirement).
+`43-directory-feed.conf` only selects delivery events using those source IDs.
+Use `DirectoryFeed=id|area|full-mask|diff-mask|peer` for TIC and
+`DirectoryInboundFeed=id|full-mask|diff-mask|peer` for direct inbound. Folder
+catch-up still uses `DirectoryFeedFolder=id|folder`. The full package enables the
+provider by default but declares no trusted sources or deliveries.
+
+Existing configurations must move the format/base/charset/CRC parts out of old
+feed declarations into `DirectorySource`, then shorten feeds to ID references.
+Old inline feed formats are rejected with a configuration error. Startup never
+overwrites existing operator files. Sources disabled through the old
+`NodeDirectoryEnabled=false` must be explicitly enabled to allow scripted imports.
+Periodic local imports additionally need `DirectoryRefreshEnabled=true` and
+one or more `DirectoryLocalSource=id` entries. CLI `importDirectory` explicitly
+imports all declared sources regardless of automatic refresh selection.

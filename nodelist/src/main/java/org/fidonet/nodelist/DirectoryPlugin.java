@@ -46,17 +46,22 @@ public final class DirectoryPlugin implements Plugin<MailExtensionFactory>, Mail
 
     @Override
     public Optional<MailProcessingExtension> create(JFtnConfig config, MailDatabaseFacade base) {
-        String enabled = config.getValue("NodeDirectoryEnabled", "false").trim();
-        if (enabled.equalsIgnoreCase("false")) {
+        if (!DirectoryService.flag(config, "NodeDirectoryEnabled", true)) {
             return Optional.empty();
         }
-        if (!enabled.equalsIgnoreCase("true")) {
-            throw new IllegalArgumentException("NodeDirectoryEnabled must be true or false");
+        if (config.getValuesAsList("DirectorySource") == null
+                || config.getValuesAsList("DirectorySource").isEmpty()) {
+            if (hasValues(config, "DirectoryFeed") || hasValues(config, "DirectoryInboundFeed")) {
+                throw new IllegalArgumentException("Define DirectorySource in 30-nodelist.conf before configuring delivery feeds");
+            }
+            return Optional.empty();
         }
         try {
             DirectoryService service = DirectoryService.open(config);
             try {
-                service.refresh();
+                if (service.isRefreshEnabled()) {
+                    service.refreshLocal();
+                }
                 return Optional.of(service);
             } catch (IOException | RuntimeException failure) {
                 service.close();
@@ -65,5 +70,9 @@ public final class DirectoryPlugin implements Plugin<MailExtensionFactory>, Mail
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to initialize node directory", e);
         }
+    }
+
+    private static boolean hasValues(JFtnConfig config, String key) {
+        return config.getValuesAsList(key) != null && !config.getValuesAsList(key).isEmpty();
     }
 }

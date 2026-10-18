@@ -4,7 +4,9 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
+import org.fidonet.jftn.script.DirectoryImportService;
 import org.fidonet.jftn.script.MailAutomationRuntime;
+import org.fidonet.jftn.script.MailScriptExtension;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.Tosser;
@@ -122,7 +124,22 @@ public final class MailRuntime implements AutoCloseable {
             for (MailExtensionFactory factory : factories) {
                 factory.create(config, base).ifPresent(created::add);
             }
-            created.add(new MailAutomationRuntime(config, base, tosser));
+            List<DirectoryImportService> directories = new ArrayList<>();
+            for (MailProcessingExtension extension : created) {
+                if (extension instanceof DirectoryImportService) {
+                    directories.add((DirectoryImportService) extension);
+                }
+            }
+            if (directories.size() > 1) {
+                throw new IOException("Multiple directory catalog owners");
+            }
+            created.add(new MailAutomationRuntime(config,
+                                                  base,
+                                                  tosser,
+                                                  ServiceLoader.load(MailScriptExtension.class),
+                                                  directories.isEmpty()
+                                                          ? null
+                                                          : directories.get(0)));
             extensions = created;
             coordinator = new MailProcessingCoordinator(config, tosser, extensions);
             transfers = new BinkpMailTransferAdapter(config,

@@ -53,15 +53,17 @@ class DirectoryInboundScriptTest {
                           checked("Boss,1:500/101\r\n,1,Point,City,Sysop,-Unpublished-,300\r\n",
                                   LocalDate.of(2026, 10, 16)));
         String prefix = root.toString().replace('\\', '/');
-        JFtnConfig config = config("DirectoryFeed=archive|NODELIST|nodelist|NODELIST.*||"
+        JFtnConfig config = config("DirectorySource=archive|NODELIST|"
                                    + prefix
-                                   + "/base/archive.lst|1:500/101|1|500|US-ASCII|true\n"
+                                   + "/base/archive.lst|1|500|US-ASCII|true\n"
+                                   + "DirectoryFeed=archive|nodelist|NODELIST.*||1:500/101\n"
                                    + "DirectoryFeedFolder=archive|"
                                    + folder.toString()
                                            .replace('\\', '/')
-                                   + "\nDirectoryFeed=archivepoints|BOSS|pnt46|PNT46REG.*||"
+                                   + "\nDirectorySource=archivepoints|BOSS|"
                                    + prefix
-                                   + "/base/archivepoints.lst|1:500/101\n"
+                                   + "/base/archivepoints.lst|0|0|US-ASCII|true\n"
+                                   + "DirectoryFeed=archivepoints|pnt46|PNT46REG.*||1:500/101\n"
                                    + "DirectoryFeedFolder=archivepoints|"
                                    + points.toString()
                                            .replace('\\', '/')
@@ -98,22 +100,25 @@ class DirectoryInboundScriptTest {
                       + "/echo\n"
                       + "Link=1:500/101,1:500/100,secret,localhost\n"
                       + "Link=1:500/102,1:500/100,secret,localhost\n"
-                      + "JamBridgeEnabled=false\nNodeDirectoryEnabled=false\n"
+                      + "JamBridgeEnabled=false\nDirectoryRefreshEnabled=false\n"
                       + "MailScript=classpath:mail-scripts/directory-import.groovy\n"
                       + "NodeDirectoryPath="
                       + prefix
                       + "/catalog\n"
-                      + "DirectoryInboundFeed=nodes|NODELIST|NODELIST.*|NODEDIFF.*|"
+                      + "DirectorySource=nodes|NODELIST|"
                       + prefix
-                      + "/base/nodes.lst|1:500/101|1|500|US-ASCII|"
+                      + "/base/nodes.lst|1|500|US-ASCII|"
                       + checksum
                       + "\n"
-                      + "DirectoryInboundFeed=points|BOSS|PNT46REG.*||"
+                      + "DirectorySource=points|BOSS|"
                       + prefix
-                      + "/base/points.lst|1:500/101\n"
-                      + "DirectoryInboundFeed=region|NODELIST|REGION46.*||"
+                      + "/base/points.lst|0|0|US-ASCII|true\n"
+                      + "DirectorySource=region|NODELIST|"
                       + prefix
-                      + "/base/region.lst|1:500/101|1|500\n"
+                      + "/base/region.lst|1|500|US-ASCII|true\n"
+                      + "DirectoryInboundFeed=nodes|NODELIST.*|NODEDIFF.*|1:500/101\n"
+                      + "DirectoryInboundFeed=points|PNT46REG.*||1:500/101\n"
+                      + "DirectoryInboundFeed=region|REGION46.*||1:500/101\n"
                       + extra;
         JFtnConfig config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
@@ -254,13 +259,18 @@ class DirectoryInboundScriptTest {
     }
 
     @Test
-    void remainedDisabledByDefaultAndIgnoredUnauthorizedOrUnrecordedFiles() throws Exception {
+    void globalDisableAndInboundOptInPreventUntrustedImports() throws Exception {
         receive("NODELIST.289", nodes("Disabled", 2026, 10, 16));
         MailDatabaseFacade base = database();
         try {
-            try (MailRuntime service = new MailRuntime(config(""), base)) {
+            try (MailRuntime service = new MailRuntime(config("NodeDirectoryEnabled=false\nDirectoryInboundEnabled=true\n"),
+                                                       base)) {
                 service.processPending();
                 assertFalse(Files.exists(root.resolve("catalog.mv.db")));
+            }
+            try (MailRuntime service = new MailRuntime(config(""), base)) {
+                service.processPending();
+                assertNull(system("nodes", "1:500/101.0"));
             }
             Path authorized = root.resolve("in/peers/1-500-101-0");
             clearInbox(authorized);
@@ -365,8 +375,9 @@ class DirectoryInboundScriptTest {
                                                base));
             assertThrows(IOException.class,
                          () -> new MailRuntime(config("DirectoryInboundEnabled=true\n"
-                                 + "DirectoryInboundFeed=other|NODELIST|OTHER.*||"
-                                 + root.resolve("base/other.lst") + "|1:500/999\n"), base));
+                                 + "DirectorySource=other|NODELIST|"
+                                 + root.resolve("base/other.lst") + "\n"
+                                 + "DirectoryInboundFeed=other|OTHER.*||1:500/999\n"), base));
         } finally {
             base.close();
         }

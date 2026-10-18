@@ -39,12 +39,19 @@ class DirectoryPluginTest {
                 if (key.equals("NodeDirectoryPath")) {
                     return temporary.resolve("catalog").toString();
                 }
+                if (key.equals("DirectoryRefreshEnabled")) {
+                    return "true";
+                }
                 return fallback;
             }
 
             @Override
             public List<String> getValuesAsList(String key) {
-                return List.of(source);
+                if (key.equals("DirectorySource"))
+                    return List.of(source);
+                if (key.equals("DirectoryLocalSource"))
+                    return List.of("nodes");
+                return List.of();
             }
         };
     }

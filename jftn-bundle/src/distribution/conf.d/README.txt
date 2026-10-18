@@ -23,7 +23,9 @@ The database and scheduler plugins currently have no configurable options.
 
 Default mail scripts load from ./scripts/mail-scripts/ as external files.
 AreaFix uses database subscriptions. Configure peer/area/feed rules explicitly;
-no directory catalog is opened when DirectoryFeed is absent.
+directory sources are defined once in 30-nodelist.conf; 43-directory-feed.conf
+only selects deliveries by source ID. No automatic imports run without explicit
+sources and local/delivery rules.
 
 RobotAccessSource=database is the default for the full package with UI/RPC.
 Select RobotAccessSource=files explicitly for file-only administration; it works

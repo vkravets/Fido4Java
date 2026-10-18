@@ -1,6 +1,8 @@
 package org.fidonet.nodelist;
 
-public final class DirectoryImportResult {
+import org.fidonet.jftn.script.DirectoryImportService;
+
+public final class DirectoryImportResult implements DirectoryImportService.Result {
     private final String source;
     private final long records;
     private final boolean changed;

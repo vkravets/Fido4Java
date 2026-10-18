@@ -164,20 +164,23 @@ Add the bundled import script after FileFix:
 ```ini
 MailScript=./scripts/mail-scripts/directory-import.groovy
 NodeDirectoryPath=./database/nodelist/catalog
-DirectoryFeed=nodes|NODELIST|lists|NODELIST.*|NODEDIFF.*|./lists/current-nodes.lst|1:500/101|1|500
-DirectoryFeed=points|BOSS|lists|POINTS.*|POINTDIF.*|./lists/current-points.lst|1:500/101
+DirectorySource=nodes|NODELIST|./lists/current-nodes.lst|1|500|US-ASCII|true
+DirectoryFeed=nodes|lists|NODELIST.*|NODEDIFF.*|1:500/101
+DirectorySource=points|BOSS|./lists/current-points.lst|0|0|US-ASCII|true
+DirectoryFeed=points|lists|POINTS.*|POINTDIF.*|1:500/101
 ```
 
 The repeatable definition is
-`id|format|file-area|full-mask|diff-mask|retained-base-file|peer[|zone|net|charset|requireChecksum]`.
-Defaults are zone/net 0, US-ASCII and requireChecksum=true. A blank diff mask
+`source-id|file-area|full-mask|diff-mask|peer`.
+Define the referenced `DirectorySource` once in `30-nodelist.conf`.
+Parser properties and retained bases come from that central source definition. A blank diff mask
 disables diffs. IDs and retained paths must be unique. Full/diff masks must not
 overlap for an incoming name. Match the actual distribution names, including
 ZIP names such as NODELIST.Z?? and NODEDIFF.Z?? when applicable.
 
-This script opens the existing directory catalog directly. It does not require
-`NodeDirectoryEnabled=true` or DirectorySource settings; leave automatic file
-polling disabled when feeds own the imports. This also allows startup before
+The script uses the node-owned `DirectoryImportService`; it neither opens nor
+closes a catalog. `NodeDirectoryEnabled` must be enabled and the referenced
+`DirectorySource` must exist. Do not select delivery IDs as `DirectoryLocalSource`. This also allows startup before
 the first list arrives. The nodelist module must remain in the distribution.
 After validated TIC delivery, only matching area/name/sender combinations are
 imported. A full list or a single-member ZIP initializes the retained plain
@@ -222,15 +225,17 @@ PNT46REG publications received from a configured `2:467/70` link:
 DirectoryInboundEnabled=true
 DirectoryInboundRequireDate=true
 DirectoryInboundRetrySeconds=300
-DirectoryInboundFeed=nodes|NODELIST|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|2:467/70|0|0|US-ASCII|true
-DirectoryInboundFeed=region46|NODELIST|REGION46.*||./lists/region46.lst|2:467/70|2|0|US-ASCII|true
-DirectoryInboundFeed=points46|BOSS|PNT46REG.*||./lists/points46.lst|2:467/70|0|0|US-ASCII|true
+DirectorySource=nodes|NODELIST|./lists/nodes.lst|0|0|US-ASCII|true
+DirectoryInboundFeed=nodes|NODELIST.*|NODEDIFF.*|2:467/70
+DirectorySource=region46|NODELIST|./lists/region46.lst|2|0|US-ASCII|true
+DirectoryInboundFeed=region46|REGION46.*||2:467/70
+DirectorySource=points46|BOSS|./lists/points46.lst|0|0|US-ASCII|true
+DirectoryInboundFeed=points46|PNT46REG.*||2:467/70
 ```
 
 The repeatable format is
-`id|format|full-mask|diff-mask|base-file|peer[|zone|net|charset|requireChecksum]`.
-An empty diff mask disables diffs for that feed. Parser defaults match
-`DirectoryFeed` (`0|0|US-ASCII|true`). Use NODELIST for complete lists and regional
+`source-id|full-mask|diff-mask|peer`.
+An empty diff mask disables diffs for that feed. Parser properties come from the central `DirectorySource` definition. Use NODELIST for complete lists and regional
 or net segments, with an explicit enclosing zone/net where necessary; use BOSS
 for Boss-style pointlists. Other supported formats can also be configured.
 The peer must already be a configured transport link. Automatic direct import
@@ -273,4 +278,10 @@ modification order and automatic rollback protection is unavailable. Feed those
 publications in order. Plain text and single-member ZIP work; ARC/ARJ/LZH/RAR still
 require external unpacking. Parsing remains bounded and streamed by the plugin.
 The switch requires restart and does not disable TIC `DirectoryFeed` imports,
-manually configured `DirectorySource` imports or explicit UI downloads.
+local refresh or explicit UI downloads. `NodeDirectoryEnabled=false` disables
+all automatic import adapters together.
+
+Source definitions shown in examples belong to `30-nodelist.conf`; delivery and
+folder rules belong to `43-directory-feed.conf`. There is one registry and catalog
+owner for both local refresh and script-driven imports. Restart after changing
+these internal settings.

@@ -172,9 +172,17 @@ Classpath loading remains useful for isolated tests and explicit compatibility.
 Existing operator scripts/configurations are preserved during startup; upgrading
 JARs alone does not overwrite an old customized external script.
 
-## 9. Directory delivery paths are explicit
+## 9. One directory owner with explicit delivery adapters
 
-`DirectoryFeed` imports after FileFix validates and stores a TIC delivery.
+`DirectoryService` owns the catalog and every `DirectorySource` definition.
+The automation runtime passes its `DirectoryImportService` API to scripts.
+`30-nodelist.conf` contains definitions; feeds in `43-directory-feed.conf` refer
+to IDs without repeating formats, base paths, charsets or checksum settings.
+Local refresh selects explicit `DirectoryLocalSource` IDs. Duplicate IDs/base
+paths and competing local/delivery owners are rejected. `NodeDirectoryEnabled`
+controls all automatic adapters; local refresh has a separate opt-in switch.
+
+`DirectoryFeed` imports after the fileecho plugin validates and stores a TIC delivery.
 The direct mode (`DirectoryInboundEnabled`, `DirectoryInboundFeed`) imports
 completed binkp inbox files from an explicitly authorized configured peer,
 without requiring a TIC. A bare file in the inbound root is not implicitly trusted.
