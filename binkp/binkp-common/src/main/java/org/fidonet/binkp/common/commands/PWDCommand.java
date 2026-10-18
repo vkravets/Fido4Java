@@ -69,7 +69,7 @@ public class PWDCommand extends MessageCommand {
         sessionContext.validateIncomingCommand(BinkCommand.M_PWD);
         if (sessionContext.getState() == SessionState.STATE_WAITPWD) {
             Password password = sessionContext.getPassword();
-            final String passwordString = commandArgs.trim();
+            final String passwordString = credential(commandArgs);
             if (password != null) {
                 password.setCrypt(false);
             }
@@ -118,6 +118,13 @@ public class PWDCommand extends MessageCommand {
                 session.close(false);
             }
         }
+    }
+
+    private String credential(String arguments) {
+        String value = arguments == null ? "" : arguments.trim();
+        // FTS-1027 permits optional arguments after the CRAM response token.
+        // Plain-text passwords retain their complete value, including internal spaces.
+        return value.startsWith("CRAM-") ? value.split("\\s+", 2)[0] : value;
     }
 
     @Override

@@ -29,6 +29,54 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class PasswordNegotiationTest {
     @Test
+    public void acceptsOptionalCramArgumentsForBothAlgorithmsWithoutWeakeningPasswordChecks()
+            throws Exception {
+        for (String algorithm : new String[]{"MD5", "SHA1"}) {
+            SessionContext context = awaitingPassword(algorithm);
+            Password response = new Password("secret",
+                                             true,
+                                             MessageDigest.getInstance(algorithm),
+                                             context.getPasswordKey());
+            RecordingSession session = new RecordingSession();
+            try {
+                new PWDCommand().handle(session, context, response.getText() + "\tFUTURE_OPTION");
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+                while (!context.isSendingIsFinish() && System.nanoTime() < deadline) {
+                    Thread.sleep(1);
+                }
+                assertTrue(context.isSendingIsFinish());
+                assertFalse(session.closed);
+                assertTrue(context.getPassword().isCrypt());
+            } finally {
+                context.closeReceiveStreams();
+            }
+            SessionContext rejected = awaitingPassword(algorithm);
+            RecordingSession failure = new RecordingSession();
+            new PWDCommand().handle(failure, rejected, "CRAM-" + algorithm + "-wrong OPTION");
+            assertEquals(SessionState.STATE_ERR, rejected.getState());
+            assertTrue(failure.closed);
+        }
+    }
+
+    @Test
+    public void doesNotTreatPlaintextSuffixAsOptionalCramArguments() throws Exception {
+        SessionContext context = awaitingPassword("MD5");
+        RecordingSession session = new RecordingSession();
+        new PWDCommand().handle(session, context, "secret OPTION");
+        assertEquals(SessionState.STATE_ERR, context.getState());
+        assertTrue(session.closed);
+    }
+
+    private SessionContext awaitingPassword(String algorithm) throws Exception {
+        SessionContext context = context(true);
+        context.setServerRole(ServerRole.SERVER);
+        context.setState(SessionState.STATE_WAITPWD);
+        context.setMessageDigest(MessageDigest.getInstance(algorithm));
+        context.setPasswordKey("01020304");
+        return context;
+    }
+
+    @Test
     public void authenticatedSha1SessionSendsEobAndInsecureGreetingDoesNotClaimPassword()
             throws Exception {
         SessionContext context = context(true);

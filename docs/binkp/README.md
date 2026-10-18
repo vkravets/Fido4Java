@@ -27,6 +27,8 @@ Incoming transfer commands and data require a completed password handshake.
 a server waiting for the password. Repeated authentication and address changes
 after authentication terminate the connection. These checks are shared by Netty
 and MINA2 and covered by negative handler tests and normal loopback TCP exchanges.
+CRAM responses may include optional arguments after the digest token; those do
+not change password verification. Plain-text password suffixes are not ignored.
 
 - [Original HTML specification](<Binkp Specification.html>)
 - [FRL-1006.001](frl-1006.001): early binkp protocol reference.
