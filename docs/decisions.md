@@ -351,6 +351,21 @@ RPC and Vue renderer have no dependency on fileecho implementation classes.
 No executable plugin JavaScript is loaded by the browser. See
 [file echoes](fileecho.md) and [plugin settings](plugin-settings.md).
 
+## 22. Binkp streams reuse the protocol engine
+
+TCP and process-stream sessions share handshake and command dispatch in
+`BinkpSessionEngine`. Stream framing handles short reads and switches CRYPT at
+frame boundaries. Outgoing writes have a bounded queue and explicit flush/failure
+completion. External stderr is drained separately from binary stdout.
+
+Outgoing SSH uses a managed OpenSSH process and remote `binkd -i`; no source was
+copied from jnode. The usual link AKA and binkp credentials remain authoritative.
+File-only `BinkpSsh` mappings in `conf.d` select SSH per link, with TCP as the default.
+OpenSSH owns accounts, keys and host trust. Noninteractive authentication and strict
+host-key checking are mandatory; arbitrary browser-supplied commands are not exposed.
+The poll service uses `ClientConnector` and waits for transport completion before
+recording success. See [SSH operation and integration checks](binkp/README.md#outgoing-ssh-connections).
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -6,6 +6,8 @@ test "$(cat build/ci-integration/revision.txt)" = "$(git rev-parse HEAD)"
 docker info
 case "${1:-}" in
   binkd)
+    command -v ssh
+    command -v ssh-keygen
     bash ./gradlew :binkp-root:binkp-netty:binkdDockerTest \
       :binkp-root:binkp-mina2:binkdDockerTest \
       -PciIntegrationSnapshot --continue --warning-mode fail --no-daemon --console=plain

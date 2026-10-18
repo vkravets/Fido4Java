@@ -89,3 +89,24 @@ inactivity timeout aborts a stalled child. Process stderr is drained separately
 and included in poll diagnostics, with the link password redacted. Successful
 poll completion waits for final stream writes and a zero process exit status.
 Cancellation terminates the child process and retains unacknowledged mail.
+
+The Netty module hosts SSH interoperability tests alongside its existing binkd
+suite. They run a real OpenSSH server and `binkd -i` in an isolated container,
+generate temporary client keys, pin the container's host key, exchange files in
+both directions with NR on/off, and reject unknown host/unaccepted client keys.
+No private keys are copied to test report artifacts. The normal binkd CI stage
+runs these scenarios too, using the sealed compiled integration runtime.
+
+To run only SSH scenarios with the Podman CLI on a Windows development host:
+
+```powershell
+.\gradlew.bat :binkp-root:binkp-netty:binkdDockerTest --tests '*SshBinkdInteropTest' -PsshContainerEngine=podman
+```
+
+The test runner needs `ssh` and `ssh-keygen` on PATH, or explicit
+`-PsshExecutable=...` and `-PsshKeygen=...` paths. CI defaults to the Docker CLI.
+This fixture does not require a Docker-compatible API endpoint when using Podman.
+If Windows/WSL localhost forwarding is unavailable, supply a reachable VM address
+with `'-PsshContainerHost=<VM-IP>'`. Discover that address from the current engine;
+do not reuse another machine's IP. This changes only the fixture endpoint and
+does not alter SSH trust checks or the production transport configuration.

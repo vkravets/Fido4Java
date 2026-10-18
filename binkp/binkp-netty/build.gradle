@@ -24,3 +24,10 @@ dependencies {
 }
 
 apply from: "$rootDir/gradle/binkd-integration.gradle"
+
+tasks.named('binkdDockerTest') {
+    systemProperty 'ssh.container.engine', providers.gradleProperty('sshContainerEngine').getOrElse('docker')
+    systemProperty 'ssh.executable', providers.gradleProperty('sshExecutable').getOrElse('ssh')
+    systemProperty 'ssh.keygen', providers.gradleProperty('sshKeygen').getOrElse('ssh-keygen')
+    systemProperty 'ssh.container.host', providers.gradleProperty('sshContainerHost').getOrElse('127.0.0.1')
+}
