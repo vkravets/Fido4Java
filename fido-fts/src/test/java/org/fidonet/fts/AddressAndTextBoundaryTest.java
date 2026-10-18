@@ -20,6 +20,22 @@ import java.util.Collections;
 
 public class AddressAndTextBoundaryTest {
     @Test
+    public void rejectsOutOfRangeComponentsInBothAddressConstructors() {
+        for (int index = 0; index < 4; index++) {
+            for (int invalid : new int[]{-1, 65536, Integer.MAX_VALUE}) {
+                int[] parts = {1, 500, 100, 0};
+                parts[index] = invalid;
+                String text = parts[0] + ":" + parts[1] + "/" + parts[2] + "." + parts[3];
+                assertFalse(new FTNAddr(text).isValid(), text);
+                assertFalse(new FTNAddr(parts[0], parts[1], parts[2], parts[3]).isValid(), text);
+            }
+        }
+        assertTrue(new FTNAddr("65535:65535/65535.65535").isValid());
+        assertTrue(new FTNAddr(0, 0, 0, 0).isValid());
+        assertFalse(new FTNAddr("1:500/+100").isValid());
+    }
+
+    @Test
     public void addressIdentityAndOrderingIncludeEveryComponent() {
         FTNAddr address = new FTNAddr("2:500/1.3@fidonet.org");
         assertEquals(new FTNAddr(2, 500, 1, 3), address);

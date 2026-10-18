@@ -43,7 +43,7 @@ public class FTNAddr implements Comparable<FTNAddr> {
         net = ne;
         node = no;
         pnt = p;
-        valid = true;
+        valid = validComponents();
     }
 
     public FTNAddr(String _addr) {
@@ -85,7 +85,15 @@ public class FTNAddr implements Comparable<FTNAddr> {
         } else {
             pnt = 0;
         }
-        valid = true;
+        valid = validComponents() && addr.matches("[0-9]+:[0-9]+/[0-9]+(?:\\.[0-9]+)?");
+    }
+
+    private boolean validComponents() {
+        return component(zone) && component(net) && component(node) && component(pnt);
+    }
+
+    private boolean component(int value) {
+        return value >= 0 && value <= 0xffff;
     }
 
     public FTNAddr(FTNAddr addr) {
