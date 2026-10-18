@@ -17,6 +17,28 @@ import java.util.Map;
 
 class CharsetCompatibilityTest {
     @Test
+    void koi8rDecodesKnownCyrillicBytesAndEncodesThemWithoutSubstitution() {
+        // KOI8-R: Russian letters and both forms of yo, independent of encoder output.
+        byte[] bytes = {(byte) 0xf0, (byte) 0xd2, (byte) 0xc9, (byte) 0xd7, (byte) 0xc5,
+                (byte) 0xd4, 0x20, (byte) 0xb3, (byte) 0xa3};
+        for (String identifier : new String[]{"KOI8-R", "koi8-r"}) {
+            Charset charset = CharsetTools.charsetDetect(identifier);
+            assertEquals(Charset.forName("KOI8-R"), charset);
+            assertEquals("Привет Ёё", new String(bytes, charset));
+            assertArrayEquals(bytes, "Привет Ёё".getBytes(charset));
+        }
+    }
+
+    @Test
+    void detectsKoi8rFromModernAndLegacyControlNamesWithoutCodepageOverride() {
+        for (String control : new String[]{"CHRS: KOI8-R 2", "CHARSET: koi8-r 2", "CHRS: KOI8-R"}) {
+            byte[] body = ("\1" + control
+                    + "\r\1CODEPAGE: 1251\r").getBytes(StandardCharsets.US_ASCII);
+            assertEquals(Charset.forName("KOI8-R"), FtsPackMsg.detectCharset(body));
+        }
+    }
+
+    @Test
     void mapsFtscAliasesToTheirActualCharsets() {
         Map<String, String> aliases = Map.of("LATIN-1",
                                              "ISO-8859-1",
