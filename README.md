@@ -44,7 +44,6 @@ example and disable RPC explicitly; see the same guide.
 
 - [Developer environment, bootstrap and offline recovery](docs/development-environment.md)
 - [Architecture decisions and working agreements](docs/decisions.md)
-- [Current development checkpoint and chat handoff](docs/handoff.md)
 - [Browser setup, settings and UI testing](docs/web-ui.md)
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [RPC contracts, transports and authentication](docs/rpc-ui.md)
@@ -57,13 +56,13 @@ example and disable RPC explicitly; see the same guide.
 
 ### DEVELOPERS
 
-When starting a new development session, read [AGENTS.md](AGENTS.md), the
-[current handoff](docs/handoff.md) and [architecture decisions](docs/decisions.md),
+When starting a new development session, read [AGENTS.md](AGENTS.md) and
+[architecture decisions](docs/decisions.md),
 then check `git status --short` and `git log -8 --oneline`.
 For a new coding-agent chat with this repository open, use:
 
-> Read AGENTS.md, docs/handoff.md and docs/decisions.md. Check Git status and the
-> latest commits, restore the project context, and summarize the current checkpoint
+> Read AGENTS.md and docs/decisions.md. Check Git status, TODO and the
+> latest commits, restore the project context, and summarize the current state
 > before continuing with the next task I specify.
 
 For a clean Windows checkout, run `tools/bootstrap.ps1 -Frontend`, then load

@@ -1,9 +1,9 @@
 # Development environment and recovery runbook
 
 Last reconciled: 2026-10-17. This guide is for a developer checkout, not a running
-mail node. Start with [decisions](decisions.md) and [handoff](handoff.md) to restore
-the project context. The top-level [AGENTS.md](../AGENTS.md) is the entry point for
-coding agents. User-facing operation remains documented in the service guides.
+mail node. Start with [decisions](decisions.md), [TODO](../TODO) and the current Git
+state to restore project context. The top-level [AGENTS.md](../AGENTS.md) is the
+entry point for coding agents. User-facing operation remains documented in the service guides.
 
 ## What is reproducible, and what is not
 
@@ -34,7 +34,6 @@ GitHub, restore credentials or start interoperability tests automatically.
 | --- | --- |
 | `AGENTS.md` | Stable editing, testing and collaboration instructions |
 | `docs/decisions.md` | Accepted architecture and the reasons for it |
-| `docs/handoff.md` | Current checkpoint, verified results, known failures and next work |
 | `tools/development-tools.lock.json` | Download URLs, versions, platform variants and SHA-256 |
 | `tools/bootstrap.py`, `.ps1`, `.sh` | Tool preparation and environment generation |
 | `gradle/wrapper/gradle-wrapper.properties` | Gradle distribution and external wrapper pins |
@@ -455,7 +454,7 @@ not this repository. See [distribution/upgrade operations](distributions.md).
 4. Run `python -m unittest discover -s tools/tests -p 'test_*.py'`.
 5. Exercise bootstrap and `--check`; test offline reuse and a real Gradle/frontend
    task. For Unix extraction/compiler changes, record a real Unix verification.
-6. Update [handoff](handoff.md), including which host/tool profile was verified.
+6. Update this runbook, including which host/tool profile was verified.
 
 The lock's URLs are fetched artifacts, not a `latest` resolver at bootstrap time.
 SHA-256 values were collected from official Node/Apache/Adoptium metadata and the

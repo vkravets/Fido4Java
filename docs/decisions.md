@@ -3,7 +3,7 @@
 Last reconciled: 2026-10-18. This is a decision record, not a complete chat transcript.
 The implementation and tests are authoritative when this document becomes stale.
 Update the relevant entry when a decision changes; record the replacement and reason.
-For current unfinished work, read [handoff](handoff.md) and [TODO](../TODO).
+For current unfinished work, read [TODO](../TODO) and inspect the current Git state.
 
 ## Product and module boundaries
 
@@ -330,6 +330,6 @@ commit production credentials or publish a change merely to make a local task en
 
 Before replacing a behavior, check the implementation, relevant tests and the
 linked guide. Write the new decision and its consequences, adjust tests, and
-update [handoff](handoff.md). Ask about genuine product/protocol ambiguity; routine
-implementation choices do not need another approval round. Keep future proposals
+update the relevant service guide and TODO. Ask about genuine product/protocol
+ambiguity; routine implementation choices do not need another approval round. Keep future proposals
 visibly separate from accepted and shipped behavior.

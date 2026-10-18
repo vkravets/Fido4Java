@@ -2,7 +2,6 @@
 
 ## Recover context at the start of a new session
 
-- Read `docs/handoff.md` for the current checkpoint and unresolved issues.
 - Read `docs/decisions.md` for accepted architecture and working agreements.
 - Use `docs/development-environment.md` for setup, commands, cache recovery and
   platform limitations. `TODO` tracks unfinished product work.
@@ -85,8 +84,8 @@
 - When commits are requested, stage coherent changes/hunks as separate commits;
   use concise English past-tense messages (`Added ...`, `Fixed ...`). Do not push
   or publish without a request. Preserve unrelated/user work.
-- Keep `docs/handoff.md` current at meaningful task boundaries, and update relevant
-  decisions/runbooks when behavior or recovery steps change. Mark proposals and
+- Update relevant decisions/runbooks when behavior or recovery steps change.
+  Track unfinished product work in `TODO`. Mark proposals and
   unverified platforms as such; distinguish test evidence from assumptions.
 - Do not modify an installed/running node's private configuration, databases or
   mail as a side effect of development tests. Read-only diagnosis can inform the
