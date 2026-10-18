@@ -202,6 +202,13 @@ first returned record; the catalog API itself returns all matches. Setup lookup
 can fall back to a point's boss, without claiming the boss's sysop is the point.
 Automatic nodelist-based mail routing remains future work.
 
+Setup/administrative HTTP nodelist downloads use the canonical `nodes` source ID,
+shared with the default automatic feed. After a successful validated download and
+catalog import, the earlier `setup-nodelist` source is removed. Failed downloads
+retain both previous sources; unrelated directory sources are never removed.
+Existing alias records disappear on the next successful UI download, not merely
+by opening the read-only directory browser.
+
 The mail-extension SPI owns automatic file refresh; the parser and catalog are
 also usable directly without a running mail service. See
 [UI lookup](web-ui.md#nodelist-lookup) for its separate download settings.

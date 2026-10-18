@@ -103,7 +103,7 @@ public final class NodeSettingsRpcHandler implements SettingsService.Iface {
         NodeLookup result = new NodeLookup(false, false, "", "", "", "", 24554, "");
         try (DirectoryCatalog catalog = new DirectoryCatalog(store.catalogPath())) {
             if (url != null && !url.isBlank()) {
-                DirectorySource source = new DirectorySource("setup-nodelist",
+                DirectorySource source = new DirectorySource("nodes",
                                                              DirectorySource.Format.NODELIST,
                                                              store.directory()
                                                                   .resolve("database/nodelist/nodelist"),
@@ -115,6 +115,8 @@ public final class NodeSettingsRpcHandler implements SettingsService.Iface {
                                               source,
                                               URI.create(url),
                                               store.receivedArchivePath());
+                // Retire the earlier setup alias only after its canonical replacement imported.
+                catalog.removeSource("setup-nodelist");
             }
             List<DirectoryEntry> entries = catalog.lookup(target);
             if (entries.isEmpty() && target.getPnt() != 0) {
