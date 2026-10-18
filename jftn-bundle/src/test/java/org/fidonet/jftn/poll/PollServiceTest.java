@@ -114,6 +114,9 @@ class PollServiceTest {
                 assertEquals("SUCCEEDED", job.getState(), job.getDetail());
                 List<String> log = polls.logs(job.getId(), 0, 200).getLines();
                 assertTrue(log.stream().anyMatch(line -> line.contains("STATE_WAITOK")));
+                assertTrue(log.stream().anyMatch(line -> line.contains("INFO binkp <<< [")));
+                assertTrue(log.stream().anyMatch(line -> line.contains("INFO binkp >>> [")));
+                assertTrue(log.stream().anyMatch(line -> line.contains("PWD [redacted]")));
                 assertTrue(log.stream().noneMatch(line -> line.contains("secret")));
             }
         } finally {

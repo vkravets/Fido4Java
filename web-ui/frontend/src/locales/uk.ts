@@ -1,4 +1,12 @@
 export const ukrainian = {
+    'Outgoing polls': 'Вихідні пули',
+    'Binkp log': 'Журнал binkp',
+    'Show latest events': 'Показати останні події',
+    'The log was rotated. Showing the new file.': 'Файл журналу ротовано. Показано новий файл.',
+    'Incoming and outgoing connections: commands, file transfers and acknowledgements. Passwords and file contents are not shown.':
+        'Вхідні та вихідні з’єднання: команди, передавання файлів і підтвердження. Паролі та вміст файлів не показуються.',
+    'Commands and file transfer events are recorded below; passwords and file contents are omitted.':
+        'Нижче записуються команди та події передавання файлів; паролі та вміст файлів не показуються.',
     General: 'Загальні',
     'Restore selected': 'Відновити вибрані',
     Packet: 'Пакет',

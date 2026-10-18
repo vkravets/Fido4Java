@@ -12,7 +12,7 @@ RpcSessionSeconds=3600
 # Optional separate authentication DB; default is Tmp/rpc-auth.
 # RpcAuthPath=./database/rpc-auth
 # Optional: an existing UTF-8 node log written by your logging configuration.
-RpcLogFile=./logs/jftn.log
+RpcLogFile=./logs/binkp.log
 ```
 
 RPC defaults to disabled when the setting is absent. A new full installation
@@ -290,10 +290,12 @@ timeout is 30 seconds; `PollTimeoutSeconds` defaults to 120 (1..86400) after con
 Only configured links can be dialed. Scheduler polls use this same service and
 are visible through RPC when enabled. Incoming connections are outside this queue.
 
-Each attempt has a dedicated `Tmp/polls/<id>.log` journal of protocol states and
-confirmed sent/received file metadata. Netty callbacks only enqueue bounded events;
-the poll worker flushes them. Protocol payloads, PWD values and CRAM responses are
-not journalled. `PollLogLimitBytes` defaults to 262144 per attempt (4096..16777216);
+Each attempt has a dedicated `Tmp/polls/<id>.log` journal of protocol states,
+`<<<` (incoming) / `>>>` (outgoing) binkp commands and file-transfer events with
+byte counts, elapsed time and CPS. Netty callbacks only enqueue bounded events;
+the poll worker flushes them.
+PWD values (including CRAM responses), binary file contents and unknown command
+payloads are omitted. `PollLogLimitBytes` defaults to 262144 per attempt (4096..16777216);
 when full, a marker is written and subsequent events are omitted. Pruning history
 also removes its journals. Readers use bounded UTF-8 pages and byte cursors.
 All poll methods require an administrator session. `pollHistory` uses a stable
@@ -308,19 +310,25 @@ The attempt journal and application logger include a bounded stack trace with
 causes and suppressed exceptions, correlated by attempt ID and peer. Asynchronous
 Netty/sender exceptions and remote ERR/BSY explanations are retained too. Known
 link passwords, session keys and authentication tokens are redacted before these
-diagnostics are stored or exposed through RPC; command payloads are still omitted.
+diagnostics are stored or exposed through RPC. Known command arguments are bounded
+and escaped; authentication command arguments are always redacted.
 
 The outbound method is a snapshot of prepared disk files, including held mail;
 it does not enumerate all unexported database deliveries or every queued file
 job. Request processMail before reading it when you need freshly exported mail.
 It cannot delete files currently owned by a transport session.
 
-For logs, start offset=0 and limit=1..200. nextOffset is a byte cursor; rotated
+For `logs`, use offset=-1 to read the latest limit lines in the final 64 KiB,
+or offset=0 to read from the beginning; limit is 1..200. nextOffset is a byte cursor; rotated
 is true if the file shrank below the cursor. Reads cover at most 64 KiB per call.
 Unfinished final lines are deferred, oversized lines are skipped. Same-size or
 larger file replacement cannot be detected by this cursor alone: reset offset
-when switching a rotated log. RpcLogFile selects an existing log, it does not
-configure logging or create a log file.
+when switching a rotated log. The default RpcLogFile is `logs/binkp.log`, written
+by the bundled Log4j2 configuration for incoming and outgoing binkp sessions.
+Before the first connection, a missing file returns an empty page. An explicit
+RpcLogFile selects another log; an empty value disables this endpoint. This
+setting does not configure logging, so custom Log4j2 configurations must also
+provide the intended file appender. Known secrets are redacted before RPC output.
 
 Common errors include UNAUTHORIZED (missing/expired session), FORBIDDEN (role or
 setup authorization), INVALID_ARGUMENT, NOT_FOUND, UNSUPPORTED and OPERATION_FAILED.

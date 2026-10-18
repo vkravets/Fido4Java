@@ -48,6 +48,11 @@ const screens = [
     },
     { name: 'poll-queue', story: 'connections-pollattempts--mixed-states' },
     { name: 'poll-details', story: 'connections-polldetails--failed' },
+    { name: 'poll-protocol', story: 'connections-polldetails--transferring' },
+    { name: 'binkp-log', story: 'connections-binkplogpanel--connections' },
+    { name: 'binkp-log-empty', story: 'connections-binkplogpanel--empty' },
+    { name: 'binkp-log-rotated', story: 'connections-binkplogpanel--rotated' },
+    { name: 'binkp-log-busy', story: 'connections-binkplogpanel--busy' },
     { name: 'information', story: 'feedback-notificationbanner--information', notification: true },
     { name: 'warning', story: 'feedback-notificationbanner--warning', notification: true },
     { name: 'error', story: 'feedback-notificationbanner--error', notification: true }

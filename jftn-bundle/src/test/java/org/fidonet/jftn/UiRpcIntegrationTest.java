@@ -572,6 +572,10 @@ class UiRpcIntegrationTest {
         assertEquals("Second", ui.logs(token, first.getNextOffset(), 1).getLines().get(0));
         Files.writeString(root.resolve("node.log"), "New\n");
         assertTrue(ui.logs(token, 99, 1).isRotated());
+        Files.writeString(root.resolve("node.log"), "INFO password=secret\nINFO PWD [redacted]\n");
+        var tail = ui.logs(token, -1, 2);
+        assertTrue(tail.getLines().get(0).contains("[REDACTED]"));
+        assertTrue(tail.getLines().stream().noneMatch(line -> line.contains("secret")));
         assertEquals("2.0", ui.status(token).getApiVersion());
     }
 

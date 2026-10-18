@@ -183,5 +183,6 @@ service UiService {
     PollLogPage pollLog(1:string session, 2:string id, 3:i64 offset, 4:i32 limit) throws (1:UiError error),
     void cancelPoll(1:string session, 2:string id) throws (1:UiError error),
     list<QueueItem> outbound(1:string session, 2:string peer, 3:i32 limit) throws (1:UiError error),
+    // offset=-1 requests the latest bounded window; subsequent cursors are UTF-8 byte offsets.
     LogPage logs(1:string session, 2:i64 offset, 3:i32 limit) throws (1:UiError error)
 }

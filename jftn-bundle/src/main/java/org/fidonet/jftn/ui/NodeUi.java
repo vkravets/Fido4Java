@@ -8,6 +8,7 @@ import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.StoredMail;
 import org.fidonet.jftn.MailService;
 import org.fidonet.jftn.poll.PollAttempt;
+import org.fidonet.jftn.poll.PollDiagnostics;
 import org.fidonet.jftn.poll.PollLogSlice;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
@@ -544,14 +545,23 @@ public final class NodeUi implements UiService.Iface {
 
     @Override
     public LogPage logs(String owner, long offset, int limit) throws UiError {
-        if (offset < 0 || limit < 1 || limit > 200) {
+        if (offset < -1 || limit < 1 || limit > 200) {
             throw new IllegalArgumentException("Invalid log cursor or page size");
         }
-        String filename = config.getValue("RpcLogFile", "");
+        String filename = config.getValue("RpcLogFile", "logs/binkp.log");
         if (filename.isEmpty()) {
             throw new UnsupportedOperationException("Configure RpcLogFile to read node logs");
         }
-        return call(() -> NodeLogReader.read(Path.of(filename), offset, limit));
+        return call(() -> {
+            LogPage page = NodeLogReader.read(Path.of(filename), offset, limit);
+            PollDiagnostics diagnostics = new PollDiagnostics(config);
+            List<String> safe = new ArrayList<>();
+            for (String line : page.getLines()) {
+                safe.add(diagnostics.clean(line));
+            }
+            page.setLines(safe);
+            return page;
+        });
     }
 
 }

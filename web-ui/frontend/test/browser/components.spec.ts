@@ -209,6 +209,24 @@ for (const theme of ['light', 'dark']) {
     }
 }
 
+test('global binkp logs show both connection roles, support tabs and follow controls', async ({
+    page
+}) => {
+    await story(page, 'connections-binkplogpanel--connections');
+    const log = page.locator('pre[aria-label="Binkp log"]');
+    await expect(log).toContainText('role=SERVER');
+    await expect(log).toContainText('role=CLIENT');
+    await expect(log).toContainText('PWD [redacted]');
+    await page.getByRole('checkbox', { name: 'Follow new events' }).uncheck();
+    await page.getByRole('tab', { name: 'Outgoing polls', exact: true }).click();
+    await expect(log).toBeHidden();
+    await page.getByRole('tab', { name: 'Binkp log', exact: true }).click();
+    await expect(log).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Follow new events' })).not.toBeChecked();
+    await story(page, 'connections-binkplogpanel--busy');
+    await expect(page.getByRole('button', { name: 'Show latest events' })).toBeDisabled();
+});
+
 test('journal text is escaped and busy queue actions cannot be clicked', async ({ page }) => {
     await story(page, 'connections-polldetails--failed');
     const journal = page.getByLabel('Selected poll log');

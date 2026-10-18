@@ -11,15 +11,20 @@ import java.util.List;
 import java.util.Set;
 
 /** Bounded exception diagnostics with configured credentials removed before persistence or display. */
-final class PollDiagnostics {
+public final class PollDiagnostics {
     private final List<String> secrets = new ArrayList<>();
 
     PollDiagnostics(JFtnConfig config, SessionContext context) {
-        config.getConfiguredLinks().forEach(link -> secret(link.getPass()));
+        this(config);
         if (context.getLinksInfo() != null) {
             context.getLinksInfo().getLinks().forEach(link -> secret(link.getPass()));
         }
         secret(context.getPasswordKey());
+        secrets.sort(Comparator.comparingInt(String::length).reversed());
+    }
+
+    public PollDiagnostics(JFtnConfig config) {
+        config.getConfiguredLinks().forEach(link -> secret(link.getPass()));
         secrets.sort(Comparator.comparingInt(String::length).reversed());
     }
 
@@ -29,7 +34,7 @@ final class PollDiagnostics {
         }
     }
 
-    String clean(String value) {
+    public String clean(String value) {
         if (value == null) {
             return "";
         }

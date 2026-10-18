@@ -179,6 +179,10 @@ public class PollService implements AutoCloseable {
     }
 
     private void run(Job job, Link link, SessionContext context) {
+        PollDiagnostics diagnostics = new PollDiagnostics(config, context);
+        context.setProtocolLogListener(line -> job.journal.record("INFO",
+                                                                  diagnostics.clean(line),
+                                                                  0));
         context.setActivityListener((kind, name, bytes) -> job.journal.record(kind.name(),
                                                                               name,
                                                                               bytes));
@@ -284,6 +288,7 @@ public class PollService implements AutoCloseable {
         try {
             context.setActivityListener(null);
             context.closeReceiveStreams();
+            context.setProtocolLogListener(null);
             job.journal.flush();
         } finally {
             synchronized (this) {

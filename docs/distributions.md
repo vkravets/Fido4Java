@@ -40,8 +40,17 @@ jftn-<version>/
 The default Log4j2 configuration writes INFO and higher to both the console and
 `logs/jftn.log`, rotating the file at 10 MB. It includes binkp connection and
 authentication events, completed file transfers, mail-service startup, and tosser
-file/packet processing. Idle inbound scans and protocol-frame details remain at
-DEBUG. PKT password mismatches identify the peer and destination without logging
+file/packet processing. Netty and MINA2 log binkp commands at INFO with `<<<`
+(incoming) / `>>>` (outgoing), connection ID and remote endpoint. PWD passwords
+and CRAM responses are redacted;
+file blocks are never logged. Remote command text is bounded and control characters
+are escaped. File transfers show direction, name, size, resume offset, elapsed
+milliseconds and CPS (new bytes per second); successful sending is reported only
+after the peer's GOT acknowledgement. Idle inbound scans remain at DEBUG.
+The dedicated rotating `logs/binkp.log` contains incoming and outgoing binkp
+events too; administrators can read it in **Connections → Binkp log**. Individual
+outgoing attempts also retain these safe INFO events in their poll journals.
+PKT password mismatches identify the peer and destination without logging
 passwords. Exceptions include full stack traces in both outputs.
 
 Launchers set the working directory to the installation root and load `scripts/`,

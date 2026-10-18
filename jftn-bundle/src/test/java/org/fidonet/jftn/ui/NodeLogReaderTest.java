@@ -19,6 +19,26 @@ class NodeLogReaderTest {
     Path root;
 
     @Test
+    void tailsTheLatestCompleteLinesAndReturnsAnAppendCursor() throws Exception {
+        Path log = root.resolve("binkp.log");
+        Files.writeString(log,
+                          "old\n".repeat(20000) + "перший\nsecond\npartial",
+                          StandardCharsets.UTF_8);
+        LogPage page = NodeLogReader.read(log, -1, 2);
+        assertEquals(List.of("перший", "second"), page.getLines());
+        Files.writeString(log, "\n", StandardOpenOption.APPEND);
+        assertEquals(List.of("partial"),
+                     NodeLogReader.read(log, page.getNextOffset(), 2).getLines());
+    }
+
+    @Test
+    void absentLogBeforeFirstConnectionIsEmpty() throws Exception {
+        LogPage page = NodeLogReader.read(root.resolve("missing.log"), -1, 200);
+        assertTrue(page.getLines().isEmpty());
+        assertEquals(0, page.getNextOffset());
+    }
+
+    @Test
     void preservesUtf8ByteCursorsAndDefersIncompleteLines() throws Exception {
         Path log = root.resolve("node.log");
         Files.writeString(log, "Привет\r\nsecond\npartial", StandardCharsets.UTF_8);

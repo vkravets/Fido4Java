@@ -11,6 +11,22 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('administrator sees incoming and outgoing binkp logs through HTTP RPC', async ({ page }) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Connections/ }).click();
+    await page.getByRole('tab', { name: 'Binkp log', exact: true }).click();
+    const log = page.locator('pre[aria-label="Binkp log"]');
+    await expect(log).toContainText('role=SERVER');
+    await expect(log).toContainText('PWD [redacted]');
+    await expect(log).toContainText('binkp >>>');
+    await expect(log).toContainText('binkp <<<');
+    await expect(log).toContainText('id=outgoing');
+    await page.getByRole('button', { name: 'Show latest events', exact: true }).click();
+    await expect(log).toContainText('role=SERVER');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('station tabs preserve unsaved station, link and tosser values across groups', async ({
     page
 }) => {

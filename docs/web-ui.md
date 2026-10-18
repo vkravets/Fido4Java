@@ -164,21 +164,33 @@ rules. Point accounts have neither this navigation entry nor RPC permission to
 inspect/change rules. Technical script loading, file-area paths and directory-feed
 configuration remain in `conf.d`; see [robot access](robot-access.md).
 
-## Outgoing connections
+## Connections and binkp logs
 
 Administrators have a **Connections** page with active/waiting attempts, paged
 history and a **Poll now** action for configured links. Scheduled and manual
 attempts use the same queue and duplicate active requests select the existing
 job. Attempts can be cancelled or retried; cancellation closes the connection
-without deleting queued outgoing files. Incoming server sessions are not listed.
+without deleting queued outgoing files. The **Outgoing polls** tab lists these
+attempts; incoming server sessions are outside that queue.
 
 Selecting an attempt shows its source, start/end times, result and dedicated
 journal. Prepared outbound files for that link are shown separately (up to 50);
-this snapshot is not a list of messages still awaiting packaging. Protocol secrets
-are not journalled, and log text is rendered as plain text. The page refreshes
+this snapshot is not a list of messages still awaiting packaging. The journal
+includes INFO-level `<<<` (incoming) / `>>>` (outgoing) commands and transfer
+progress/completion, with passwords and CRAM responses redacted and binary file
+contents omitted. Log text is rendered
+as plain text. The page refreshes
 every two seconds after the preceding request completes, pauses in hidden tabs,
 and stops on navigation away. Auto refresh and following the journal can be toggled.
 The browser retains only one history page and the last 1000 loaded log lines.
+
+The **Binkp log** tab shows the same safe INFO format for both incoming and outgoing
+connections from `logs/binkp.log`. It starts with the latest 200 complete lines
+within the final 64 KiB, then reads new events every two seconds while visible.
+Use **Show latest events** to reset the cursor. Following the log can be toggled;
+the browser keeps at most 1000 loaded lines. A detected file truncation clears the
+old view and displays a rotation notice. Same-size/larger file replacement cannot
+be detected by the byte cursor alone. Both tabs require administrator authorization.
 
 History and journals survive restarts under `Tmp/polls`. Unfinished attempts are
 marked INTERRUPTED; they are not resumed automatically. `PollHistoryLimit`,
@@ -315,13 +327,14 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 312 committed PNG test fixtures:
+`./gradlew :web-ui:playwrightVisualTest` compares 352 committed PNG test fixtures:
 administrator/point navigation, first-run setup with multiple uplinks, station
 identity and reload controls, five station settings tabs and their busy state,
 adding/saving uplinks, duplicate-address feedback,
 link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
 quarantine (table/batch confirmation/source selection/results/legacy retry/archive/empty/long filename/unavailable), poll
-queue/details, and information/warning/error/configuration-applied notifications.
+queue/details, per-poll protocol output, global binkp logs (populated/empty/rotated/busy),
+and information/warning/error/configuration-applied notifications.
 Each has light/dark and English/Ukrainian
 variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
 

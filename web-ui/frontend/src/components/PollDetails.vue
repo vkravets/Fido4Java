@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { nextTick, ref, watch } from 'vue';
+import LogOutput from './LogOutput.vue';
 import { activePoll, pollState, pollTime } from '../polling.ts';
 import type { PollInfo, QueueItem } from '@rpc/bindings.mjs';
-const props = defineProps<{
+defineProps<{
     attempt: PollInfo;
     lines: string[];
     files: QueueItem[];
@@ -12,16 +12,6 @@ const props = defineProps<{
     busy: boolean;
 }>();
 const emit = defineEmits<{ more: []; cancel: [id: string]; retry: [address: string] }>();
-const follow = ref(true);
-const output = ref<HTMLElement | null>(null);
-watch(
-    () => props.lines.at(-1),
-    async () => {
-        if (!follow.value) return;
-        await nextTick();
-        if (output.value) output.value.scrollTop = output.value.scrollHeight;
-    }
-);
 </script>
 
 <template>
@@ -60,33 +50,21 @@ watch(
             </button>
         </div>
         <h3>{{ t('Attempt log') }}</h3>
-        <label class="inline-option"
-            ><input
-                v-model="follow"
-                type="checkbox"
-            />
-            {{ t('Follow new events') }}</label
-        >
-        <p
-            v-if="clipped"
-            class="muted"
-        >
-            {{ t('The browser shows the latest 1000 loaded lines.') }}
+        <p class="muted">
+            {{
+                t(
+                    'Commands and file transfer events are recorded below; passwords and file contents are omitted.'
+                )
+            }}
         </p>
-        <pre
-            ref="output"
-            class="poll-log"
-            tabindex="0"
-            :aria-label="t('Selected poll log')"
-            >{{ lines.length ? lines.join('\n') : t('No events yet.') }}</pre>
-        <button
-            v-if="more"
-            class="secondary"
-            :disabled="busy"
-            @click="emit('more')"
-        >
-            {{ t('Load more events') }}
-        </button>
+        <LogOutput
+            :lines="lines"
+            :label="t('Selected poll log')"
+            :clipped="clipped"
+            :more="more"
+            :busy="busy"
+            @more="emit('more')"
+        />
         <h3>{{ t('Prepared files for this link') }}</h3>
         <p class="muted">
             {{
@@ -119,24 +97,8 @@ watch(
 </template>
 
 <style scoped>
-.poll-log {
-    background: var(--field);
-    color: var(--text);
-    border: 1px solid var(--line);
-    padding: 16px;
-    border-radius: 8px;
-    max-height: 28rem;
-    overflow: auto;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-size: 12px;
-}
 dd {
     overflow-wrap: anywhere;
-}
-.inline-option {
-    flex-direction: row;
-    align-items: center;
 }
 .rows li {
     gap: 16px;
