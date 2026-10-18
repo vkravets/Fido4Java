@@ -57,7 +57,8 @@ SPA and `/rpc/` endpoints. Light and dark themes can be changed in appearance
 settings or with the header toggle and are saved in the signed-in profile.
 Session tokens remain in browser memory: reloading the page requires signing in
 again. Public registration submits a point AKA claim for administrator approval.
-The sidebar reserves navigation for future mail readers; those items are disabled.
+The sidebar opens netmail and drafts. Echomail navigation remains reserved for a
+future reader.
 
 English is the default language; Ukrainian is the other supported language.
 The header selector is available during setup and before sign-in. Its choice is
@@ -410,9 +411,15 @@ test fixtures; runtime/build reports remain untracked.
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts
 remain disabled until an administrator approves an AKA claim. Users can select
 only approved identities as their default AKA. Personal profile and theme settings
-are separate from node settings. The existing node-wide mail/control RPC remains
-administrator-only; scoped point mail reading and sending belong to the next UI
-phase. Netmail and echo readers are not part of this initial interface.
+are separate from node settings. Node control and echo APIs remain administrator-only.
+Netmail reads, drafts and sending are scoped to approved account AKAs on both RPC
+transports. The UI offers inbox/outbox pages, full plain-text message details,
+read marks, replies with quoted text and REPLY linkage, draft saving/deletion and
+composition with directory suggestions including points. Outgoing status changes
+from queued to sent after transport acknowledgement; submission alone does not
+mean delivery. Network retries retain the same send request ID. Unsaved edits are
+protected when switching folders, leaving the reader or signing out. Mail search,
+trash and message deletion are not implemented yet.
 
 Passkeys are an additional sign-in method. A new localhost setup enables WebAuthn
 for `localhost`. Remote access requires an HTTPS reverse proxy and matching

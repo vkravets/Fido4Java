@@ -4,6 +4,18 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'mail-workspace', story: 'mail-netmailview--inbox' },
+    { name: 'mail-drafts', story: 'mail-netmaildrafts--saved' },
+    { name: 'mail-drafts-empty', story: 'mail-netmaildrafts--empty' },
+    { name: 'mail-inbox', story: 'mail-netmaillist--inbox' },
+    { name: 'mail-outbox', story: 'mail-netmaillist--outbox' },
+    { name: 'mail-empty', story: 'mail-netmaillist--empty' },
+    { name: 'mail-loading', story: 'mail-netmaillist--loading' },
+    { name: 'mail-reading', story: 'mail-netmailmessage--reading' },
+    { name: 'mail-long-text', story: 'mail-netmailmessage--long-text' },
+    { name: 'mail-reply', story: 'mail-mailcomposer--reply' },
+    { name: 'mail-compose', story: 'mail-mailcomposer--new-message' },
+    { name: 'mail-sending', story: 'mail-mailcomposer--sending' },
     { name: 'plugin-areas', story: 'plugins-pluginsettingspanel--areas' },
     { name: 'plugin-access', story: 'plugins-pluginsettingspanel--access' },
     { name: 'plugin-creation', story: 'plugins-pluginsettingspanel--creation' },

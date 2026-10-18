@@ -930,6 +930,74 @@ footer.actions {
         grid-template-columns: 100px 1fr;
     }
 }
+.mail-workspace {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.7fr);
+    gap: 20px;
+    align-items: start;
+}
+.mail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--line);
+    margin-bottom: 10px;
+    overflow-wrap: anywhere;
+}
+.mail-row.unread .mail-row-title {
+    font-weight: 700;
+}
+.mail-row.active {
+    border-color: var(--accent);
+}
+.mail-row small {
+    color: var(--muted);
+}
+.mail-body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono, monospace);
+    line-height: 1.65;
+    max-height: 70vh;
+    overflow: auto;
+}
+.mail-envelope {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 16px;
+}
+.mail-envelope dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.mail-envelope dt {
+    color: var(--muted);
+}
+.mail-composer fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+.mail-composer textarea {
+    resize: vertical;
+    font-family: monospace;
+}
+.mail-draft-row {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+@media (max-width: 800px) {
+    .mail-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

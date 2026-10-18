@@ -7,10 +7,9 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
-- Implement browser netmail/echomail readers, drafts and composition.
-  Administrative mail reading, drafts and submission already exist in RPC.
-- Add point-scoped mailbox permissions and APIs. Approved AKA claims already exist;
-  the current node-wide UiService still requires ADMIN for every operation.
+- Implement the browser echomail reader and echo-specific composition.
+  Netmail reading, replies, drafts and approved-AKA submission now exist in the UI.
+  Point netmail operations are scoped on the server; echo access remains ADMIN-only.
 - Add RPC/UI editing for netmail routing rules and safe link removal/renaming.
   Link creation/editing, separate PKT passwords and basic tosser settings already
   exist in the UI. Core/SQL routing-rule APIs are available.

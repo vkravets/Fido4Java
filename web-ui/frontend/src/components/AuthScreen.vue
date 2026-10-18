@@ -39,7 +39,7 @@ function submit() {
             >
                 <i></i><i></i><i></i><i></i><b>JFtn</b>
             </div>
-            <small>{{ t('Netmail and echomail are coming in the next stage.') }}</small>
+            <small>{{ t('Read netmail and manage your station.') }}</small>
         </section>
         <section class="card auth-card">
             <template v-if="pending">

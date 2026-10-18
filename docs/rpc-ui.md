@@ -346,9 +346,10 @@ SETTINGS_FAILED. This is not a closed enumeration; clients should display a safe
 fallback for unknown codes. Detailed backend failures remain in the node log.
 
 The browser UI implements setup, account approval, personal settings, station
-settings (including links and basic tosser options), robot access rules and outgoing poll management. Its mail-reader
-navigation is reserved for future work; the administrative mail APIs above are
-already available. See [browser interface](web-ui.md).
+settings (including links and basic tosser options), robot access rules and outgoing
+poll management. Its netmail reader supports approved account AKAs, inbox/outbox,
+replies and persistent drafts. Echo reader navigation remains reserved. See
+[browser interface](web-ui.md).
 
 Remaining API/UI work includes tracking or terminating incoming sessions,
 full-text mail search, trash, message editing, safe link removal/renaming and routing-rule CRUD,

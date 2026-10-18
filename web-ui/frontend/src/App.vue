@@ -13,10 +13,17 @@ import Connections from './components/Connections.vue';
 import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
 import LanguageSelector from './components/LanguageSelector.vue';
+import NetmailView from './components/NetmailView.vue';
 const state = createState();
 const page = ref('settings');
+const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
+function navigate(next: string) {
+    if (netmail.value && !netmail.value.canLeave()) return;
+    page.value = next;
+}
 onMounted(state.start);
 function logout() {
+    if (netmail.value && !netmail.value.canLeave()) return;
     page.value = 'settings';
     state.run(state.logout);
 }
@@ -104,9 +111,16 @@ function logout() {
         <Sidebar
             :profile="state.profile.value"
             :page="page"
-            @navigate="page = $event"
+            @navigate="navigate"
         />
         <main class="content">
+            <NetmailView
+                v-if="page === 'netmail' || page === 'drafts'"
+                :key="page"
+                ref="netmail"
+                :state="state"
+                :initial-folder="page === 'drafts' ? 'drafts' : 'inbox'"
+            />
             <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings
                 v-if="page === 'settings'"

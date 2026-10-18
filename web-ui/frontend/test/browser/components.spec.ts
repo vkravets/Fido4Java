@@ -2,6 +2,56 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('point netmail workflow opens a letter, replies, saves a draft and sends', async ({
+    page
+}) => {
+    await story(page, 'mail-netmailview--inbox');
+    await page.getByRole('button', { name: /Welcome to FidoNet/ }).click();
+    await expect(page.locator('.mail-body')).toContainText('Your station is ready');
+    await page.getByRole('button', { name: 'Reply', exact: true }).click();
+    await expect(page.getByRole('combobox', { name: 'Sender AKA', exact: true })).toHaveValue(
+        '1:500/100.1'
+    );
+    await expect(
+        page.getByRole('combobox', { name: 'Recipient address', exact: true })
+    ).toHaveValue('1:500/101.2');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: 'Drafts', exact: true }).click();
+    await page
+        .getByRole('button', { name: /Re: Welcome to FidoNet/ })
+        .last()
+        .click();
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Outbox', exact: true })).toHaveAttribute(
+        'aria-current',
+        'page'
+    );
+});
+
+test('netmail displays received HTML as literal text and offers reply', async ({ page }) => {
+    await story(page, 'mail-netmailmessage--reading');
+    await expect(page.locator('.mail-body')).toContainText('<script>alert("example")</script>');
+    await expect(page.locator('.mail-body script')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Reply', exact: true })).toBeEnabled();
+});
+
+test('netmail composer restricts sender AKA and disables controls during send', async ({
+    page
+}) => {
+    await story(page, 'mail-mailcomposer--new-message');
+    const sender = page.getByRole('combobox', { name: 'Sender AKA', exact: true });
+    await expect(sender.locator('option')).toHaveCount(2);
+    await sender.selectOption('1:500/100.1');
+    await expect(sender).toHaveValue('1:500/100.1');
+    await page
+        .getByRole('textbox', { name: 'Message text', exact: true })
+        .fill('Plain text message');
+    await story(page, 'mail-mailcomposer--sending');
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
+});
+
 test('node-only address suggestions exclude points', async ({ page }) => {
     await story(page, 'directory-addressinput--nodes-only');
     await expect(page.getByRole('option')).toHaveCount(2);
@@ -156,22 +206,27 @@ test('echo creation requires an explicit per-link grant and keeps receiving righ
     await expect(page.getByText('Only links explicitly allowed', { exact: false })).toBeVisible();
 });
 
-test('every catalogue story renders without browser errors', async ({ page, request }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    const response = await request.get('/index.json');
-    expect(response.ok()).toBeTruthy();
-    const index = (await response.json()) as {
-        entries: Record<string, { id: string; type: string }>;
-    };
-    const stories = Object.values(index.entries).filter((entry) => entry.type === 'story');
-    expect(stories.length).toBeGreaterThanOrEqual(16);
-    for (const entry of stories) {
-        await story(page, entry.id);
-        await expect(page.locator('#storybook-root')).not.toBeEmpty();
-        expect(errors, entry.id).toEqual([]);
-    }
-});
+for (let batch = 0; batch < 4; batch++) {
+    test(`catalogue stories render without browser errors (batch ${batch + 1})`, async ({
+        page,
+        request
+    }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        const response = await request.get('/index.json');
+        expect(response.ok()).toBeTruthy();
+        const index = (await response.json()) as {
+            entries: Record<string, { id: string; type: string }>;
+        };
+        const stories = Object.values(index.entries).filter((entry) => entry.type === 'story');
+        expect(stories.length).toBeGreaterThanOrEqual(16);
+        for (const entry of stories.filter((_entry, index) => index % 4 === batch)) {
+            await story(page, entry.id);
+            await expect(page.locator('#storybook-root')).not.toBeEmpty();
+            expect(errors, entry.id).toEqual([]);
+        }
+    });
+}
 
 test('quarantine batch uses a source selector only for unknown peers and validates confirmation', async ({
     page

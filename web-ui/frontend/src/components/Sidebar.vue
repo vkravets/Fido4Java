@@ -4,7 +4,17 @@ import type { UserProfile } from '@rpc/bindings.mjs';
 
 defineProps<{ profile: UserProfile; page: string }>();
 const emit = defineEmits<{
-    navigate: [page: 'settings' | 'node' | 'accounts' | 'robots' | 'connections' | 'directory'];
+    navigate: [
+        page:
+            | 'settings'
+            | 'node'
+            | 'accounts'
+            | 'robots'
+            | 'connections'
+            | 'directory'
+            | 'netmail'
+            | 'drafts'
+    ];
 }>();
 </script>
 
@@ -16,14 +26,20 @@ const emit = defineEmits<{
         </div>
         <nav :aria-label="t('Main navigation')">
             <span class="nav-label">{{ t('MAIL') }}</span>
-            <button disabled>
-                <span>✉</span>{{ t('Netmail') }}<small>{{ t('Coming soon') }}</small>
+            <button
+                :class="{ active: page === 'netmail' }"
+                @click="emit('navigate', 'netmail')"
+            >
+                <span>✉</span>{{ t('Netmail') }}
             </button>
             <button disabled>
                 <span>◎</span>{{ t('Echomail') }}<small>{{ t('Coming soon') }}</small>
             </button>
-            <button disabled>
-                <span>▤</span>{{ t('Drafts') }}<small>{{ t('Coming soon') }}</small>
+            <button
+                :class="{ active: page === 'drafts' }"
+                @click="emit('navigate', 'drafts')"
+            >
+                <span>▤</span>{{ t('Drafts') }}
             </button>
             <span class="nav-label">{{ t('DIRECTORY') }}</span>
             <button
