@@ -37,6 +37,7 @@ import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.jftn.plugins.OfflineCommand;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.poll.OutboundTransportFactory;
 import org.fidonet.jftn.poll.PollService;
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -79,8 +81,16 @@ public class JFtnRunner {
             System.out.println("JFtn " + (version == null ? "development" : version));
             return;
         }
+        for (OfflineCommand command : ServiceLoader.load(OfflineCommand.class)) {
+            if (command.handle(args)) {
+                return;
+            }
+        }
         if (RobotAccessCommand.handle(args)) {
             return;
+        }
+        if (args.length > 0 && args[0].startsWith("--")) {
+            throw new IllegalArgumentException("Unknown command; its optional plugin may be missing");
         }
         NodeDirectories.defaults(Path.of("."));
         logger.info("Starting JFtnNode...");
