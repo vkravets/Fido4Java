@@ -156,7 +156,7 @@ public class FileInfo {
             String name = unescapeName(tokens[0]);
             long size = Long.parseLong(tokens[1].trim());
             long timestamp = Long.parseLong(tokens[2].trim());
-            if (name.isEmpty() || size < 0) {
+            if (name.isEmpty() || size < 0 || timestamp < 0) {
                 throw new IllegalArgumentException("Invalid file metadata");
             }
             FileInfo info = new FileInfo(name, size, timestamp);
