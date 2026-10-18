@@ -9,6 +9,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.db.OrmManager;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
+import org.fidonet.jftn.script.FileEchoEvent;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.Tosser;
@@ -20,9 +21,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.CRC32;
@@ -85,6 +89,57 @@ class FileEchoDeliveryTest {
         if (base != null) {
             base.close();
         }
+    }
+
+    @Test
+    void preservesOriginalNameAndIsolatesCollisionsWithoutPublishingThem() throws Exception {
+        Path payload = inbox.resolve("payload");
+        ReceivedFile.record(payload, "LIST.001");
+        List<FileEchoEvent> events = new ArrayList<>();
+        scripts.onFileEcho(events::add);
+        AtomicInteger deliveries = new AtomicInteger();
+        scripts.onFile((area, path, name, peer, receipt) -> deliveries.incrementAndGet());
+        receive(payload, "first");
+        Path directory = Path.of(processor.store().area("lists.nodes").directory);
+        assertEquals("first", Files.readString(directory.resolve("LIST.001")));
+        assertEquals("accepted", events.get(0).status);
+        receive(payload, "second");
+        assertEquals("first", Files.readString(directory.resolve("LIST.001")));
+        assertEquals("duplicate", events.get(1).status);
+        assertEquals(directory.resolve("dupes").resolve(events.get(1).receipt).resolve("LIST.001"),
+                     events.get(1).file);
+        assertEquals("second", Files.readString(events.get(1).file));
+        assertEquals(1, deliveries.get());
+        scripts.beforeExport(tosser);
+        assertEquals(2, events.size());
+    }
+
+    private void receive(Path payload, String text) throws Exception {
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        CRC32 crc = new CRC32();
+        crc.update(bytes);
+        Files.write(payload, bytes);
+        Files.writeString(ticket, tic("tic-password", String.format("%08X", crc.getValue())));
+        scripts.beforeExport(tosser);
+    }
+
+    @Test
+    void resumesStoredDeliveryAfterCallbackFailureWithoutTurningItIntoADuplicate()
+            throws Exception {
+        Path payload = inbox.resolve("payload");
+        ReceivedFile.record(payload, "LIST.001");
+        AtomicInteger attempts = new AtomicInteger();
+        scripts.onFile((area, path, name, peer, receipt) -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw new IOException("Retry this callback");
+            }
+        });
+        receive(payload, "stable");
+        scripts.beforeExport(tosser);
+        assertEquals(2, attempts.get());
+        Path directory = Path.of(processor.store().area("lists.nodes").directory);
+        assertEquals("stable", Files.readString(directory.resolve("LIST.001")));
+        assertTrue(Files.notExists(directory.resolve("dupes")));
     }
 
     @Test

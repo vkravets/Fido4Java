@@ -110,8 +110,8 @@ public final class DistributionProbe {
         if (!config.getValue("RobotAccessSource").equals("database")) {
             throw new IllegalStateException("The full distribution must default to database rules");
         }
-        if (config.getValuesAsList("MailScript").size() != 3) {
-            throw new IllegalStateException("Expected three default handlers");
+        if (config.getValuesAsList("MailScript").size() != 4) {
+            throw new IllegalStateException("Expected four default handlers");
         }
         for (String name : config.getValuesAsList("MailScript")) {
             if (name.startsWith("classpath:") || !Files.isRegularFile(Path.of(name))) {

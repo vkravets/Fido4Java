@@ -1,0 +1,10 @@
+File echo processing report
+
+Status: ${status}
+Area: ${area}
+File: ${name}
+Peer: ${peer}
+Reason: ${detail}
+Saved copy: ${path}
+
+The existing file and received originals have been preserved.

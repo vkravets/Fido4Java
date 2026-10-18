@@ -55,5 +55,33 @@ The plugin publishes accepted-file callbacks after durable storage; dependent
 directory import scripts continue to receive the same callback. Direct inbound
 directory feeds remain independent of TIC processing.
 
+Accepted payloads retain their original names. Case-insensitive name collisions
+preserve the incoming copy under `dupes/<receipt>/<name>` without replacing or
+forwarding the existing file. Old receipt-prefixed archives are not renamed.
+The optional external `fileecho-tools.groovy` script maintains `files.bbs` from
+TIC Desc/LDesc fields and creates deduplicated private local netmail reports for
+duplicates and errors. These reports never go to an untrusted remote sender.
+
+`conf.d/44-fileecho-tools.conf` controls `FileEchoIndexEnabled`,
+`FileEchoIndexName` (`files.bbs` or `file.bbs`), `FileEchoIndexCharset` (UTF-8)
+and `FileEchoNotifyEnabled`. Reports go to the sysop at the first local AKA.
+The index includes existing regular payloads without known descriptions by name,
+excludes subdirectories/staging files, and is replaced atomically. Descriptions
+are flattened to one line. Index and report settings apply after script reload.
+
+Templates are `templates/fileecho-index.txt` and `templates/fileecho-notice.txt`
+beneath the directory containing the external script. Override
+`FileEchoIndexTemplate`/`FileEchoNoticeTemplate` with relative paths inside it;
+outside paths and symbolic-link escapes are refused. Literal placeholders are
+`${name}`, `${description}` for index rows, and `${status}`, `${area}`, `${name}`,
+`${peer}`, `${detail}`, `${path}` for reports. Templates are re-read per operation;
+received descriptions are never executable template source. Notification keys
+survive restarts; a changed failure reason can generate a new report.
+
+Existing installations retain their active `40-mail-scripts.conf`: explicitly add
+`MailScript=./scripts/mail-scripts/fileecho-tools.groovy` before directory-import
+and install the adjacent templates. Completed TICs are not replayed, and inbound
+originals remain preserved. Java enforces collision safety even without the script.
+
 TIC `Path` entries require a valid address and nonnegative Unix timestamp; optional
 human-readable date comments are retained when forwarding.

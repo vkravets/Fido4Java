@@ -17,6 +17,7 @@ final class PluginConfigurationFiles {
                                               "41-areafix.conf",
                                               "42-filefix.conf",
                                               "43-directory-feed.conf",
+                                              "44-fileecho-tools.conf",
                                               "90-rpc.conf");
 
     private PluginConfigurationFiles() {

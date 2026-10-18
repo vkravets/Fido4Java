@@ -127,7 +127,10 @@ Cross-domain routing is not implemented.
 Payloads are streamed through CRC-32 and SHA-256, limited to 128 MiB. TICs are
 limited to 64 KiB and lines to 1024 characters. Missing payloads and invalid
 TICs remain in inbound for later delivery, inspection or retry. Accepted files
-are stored under immutable receipt-prefixed names in their area directory.
+are stored under their original names in their area directory. Case-insensitive
+name collisions go into `dupes/<receipt>/<name>` without replacing the existing
+file. Collisions do not forward or trigger directory imports. A placement journal
+makes callback retries reuse their own stored copy.
 They are forwarded only to authorized subscribers, excluding the sender,
 local addresses and Seenby entries. Unknown TIC lines are preserved; outgoing
 From, To, Pw, Created, Path and Seenby are rebuilt as appropriate. Replaces is

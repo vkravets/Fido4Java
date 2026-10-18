@@ -25,6 +25,31 @@ import java.util.ServiceLoader;
 /** A node-owned script runtime, created and closed under the mail processing lock. */
 public final class MailScripts extends JFtnScriptService implements MailProcessingExtension {
     @FunctionalInterface
+    public interface FileEchoHandler {
+        void accept(FileEchoEvent event) throws IOException;
+    }
+
+    private final List<FileEchoHandler> fileEchoHandlers = new ArrayList<>();
+    private Path loadingDirectory;
+
+    /** Available during registration of an external script; capture it for later callbacks. */
+    public Path getScriptDirectory() {
+        if (loadingDirectory == null) {
+            throw new IllegalStateException("An external script directory is required");
+        }
+        return loadingDirectory;
+    }
+
+    public void onFileEcho(FileEchoHandler handler) {
+        fileEchoHandlers.add(handler);
+    }
+
+    public void publishFileEcho(FileEchoEvent event) throws IOException {
+        for (FileEchoHandler handler : fileEchoHandlers) {
+            handler.accept(event);
+        }
+    }
+    @FunctionalInterface
     public interface ScanHandler {
         void run() throws IOException;
     }
@@ -116,7 +141,14 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         } else {
             content = Files.readString(Path.of(name));
         }
-        manager.registerScript(name, content, this);
+        loadingDirectory = name.startsWith("classpath:")
+                ? null
+                : Path.of(name).toAbsolutePath().normalize().getParent();
+        try {
+            manager.registerScript(name, content, this);
+        } finally {
+            loadingDirectory = null;
+        }
         loaded.add(name);
     }
 
@@ -212,6 +244,7 @@ public final class MailScripts extends JFtnScriptService implements MailProcessi
         handlers.clear();
         scans.clear();
         fileHandlers.clear();
+        fileEchoHandlers.clear();
         if (failure != null) {
             throw failure;
         }

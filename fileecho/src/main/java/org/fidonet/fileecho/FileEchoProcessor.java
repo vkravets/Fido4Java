@@ -3,6 +3,7 @@ package org.fidonet.fileecho;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.jftn.script.FileDeliveryQueue;
+import org.fidonet.jftn.script.FileEchoEvent;
 import org.fidonet.jftn.script.FileEchoService;
 import org.fidonet.jftn.script.MailScripts;
 import org.fidonet.jftn.script.ReceivedFile;
@@ -16,14 +17,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 /** Validates and stores incoming deliveries before publishing callbacks and durable receipts. */
 final class FileEchoProcessor implements FileEchoService {
@@ -85,6 +87,23 @@ final class FileEchoProcessor implements FileEchoService {
                      ticket.getPath().getFileName(),
                      ticket.getPeer(),
                      failure.getMessage());
+            String reason = failure.getMessage() == null
+                    ? "Fileecho processing failed"
+                    : failure.getMessage();
+            try {
+                api.publishFileEcho(new FileEchoEvent("error",
+                                                      "",
+                                                      null,
+                                                      ticket.getName(),
+                                                      ticket.getPeer(),
+                                                      ScriptState.digest(ticket.getPath()
+                                                                         + ":"
+                                                                         + reason),
+                                                      List.of(),
+                                                      reason));
+            } catch (IOException | RuntimeException notification) {
+                LOG.warn("Cannot publish fileecho diagnostic", notification);
+            }
         }
     }
 
@@ -126,26 +145,70 @@ final class FileEchoProcessor implements FileEchoService {
             throw new IOException("Payload changed after matching TIC");
         }
         FileAreaRecord area = store.createAfterValidation(tag, ticket.getPeer());
-        Path stored = store(payload.getPath(),
-                            Path.of(area.directory),
-                            receipt + "-" + name,
-                            checksum);
-        forward(tic, tag, name, stored, ticket.getPeer(), seen, receipt);
-        api.publishFile(tag, stored, name, ticket.getPeer(), receipt);
+        String placementKey = "tic-placement:" + receipt;
+        String placement = api.getState().get(placementKey);
+        Path directory = Path.of(area.directory);
+        if (placement == null) {
+            placement = occupied(directory, name) ? "duplicate" : "accepted";
+            api.getState().put(placementKey, placement);
+        }
+        boolean duplicate = placement.equals("duplicate");
+        Path destination = duplicate ? directory.resolve("dupes").resolve(receipt) : directory;
+        Path stored = store(payload.getPath(), destination, name, checksum);
+        List<String> descriptions = new ArrayList<>(tic.values("desc"));
+        descriptions.addAll(tic.values("ldesc"));
+        api.publishFileEcho(new FileEchoEvent(placement,
+                                              tag,
+                                              stored,
+                                              name,
+                                              ticket.getPeer(),
+                                              receipt,
+                                              descriptions,
+                                              duplicate
+                                                      ? "Filename already exists; original retained"
+                                                      : ""));
+        if (!duplicate) {
+            forward(tic, tag, name, stored, ticket.getPeer(), seen, receipt);
+            api.publishFile(tag, stored, name, ticket.getPeer(), receipt);
+        }
         api.getState().put("tic:" + receipt, "done");
-        LOG.info("Accepted fileecho {} / {} from {} ({} bytes)",
+        LOG.info("Processed fileecho {} / {} from {} ({} bytes, {})",
                  tag,
                  name,
                  ticket.getPeer(),
-                 checksum.size);
+                 checksum.size,
+                 placement);
+    }
+
+    private boolean occupied(Path directory, String name) throws IOException {
+        if (Set.of("files.bbs", "file.bbs", "dupes").contains(name.toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+        if (!Files.isDirectory(directory)) {
+            return false;
+        }
+        try (Stream<Path> entries = Files.list(directory)) {
+            return entries.anyMatch(path -> path.getFileName().toString().equalsIgnoreCase(name));
+        }
     }
 
     private void authorize(TicDocument tic, ReceivedFile ticket, String tag) throws IOException {
         RobotAccessRule rule = api.getRobotAccess().find("Tic", ticket.getPeer());
-        if (rule == null || !TicDocument.address(tic.value("from")).equals(ticket.getPeer())
-                || !store.canReceive(tag, ticket.getPeer()) || !rule.allows(tag)
-                || tic.value("pw").isEmpty() || !rule.verifyPassword(tic.value("pw"))) {
-            throw new IOException("TIC sender, area or password is not authorized");
+        if (rule == null) {
+            throw new IOException("No enabled TIC rule for the transport peer");
+        }
+        if (!TicDocument.address(tic.value("from")).equals(ticket.getPeer())) {
+            throw new IOException("TIC From differs from the transport peer");
+        }
+        if (!store.canReceive(tag, ticket.getPeer())) {
+            throw new IOException("File area import or automatic creation is not permitted: "
+                                  + tag);
+        }
+        if (!rule.allows(tag)) {
+            throw new IOException("TIC area is excluded by the peer's area masks: " + tag);
+        }
+        if (tic.value("pw").isEmpty() || !rule.verifyPassword(tic.value("pw"))) {
+            throw new IOException("TIC password is missing or does not match");
         }
         if (!tic.value("to").isEmpty()
                 && !config.getLocalAddresses().contains(TicDocument.address(tic.value("to")))) {
@@ -181,16 +244,20 @@ final class FileEchoProcessor implements FileEchoService {
             throws IOException {
         Files.createDirectories(directory);
         Path stored = directory.resolve(name);
+        if (Files.exists(stored, LinkOption.NOFOLLOW_LINKS)) {
+            if (!Files.isRegularFile(stored, LinkOption.NOFOLLOW_LINKS)
+                    || !checksum.same(FileChecksum.read(stored))) {
+                throw new IOException("Previously stored file changed; refusing to overwrite it");
+            }
+            return stored;
+        }
         Path staging = Files.createTempFile(directory, ".incoming-", ".tmp");
         try {
             FileDeliveryQueue.copy(payload, staging);
             if (!checksum.same(FileChecksum.read(staging))) {
                 throw new IOException("Payload changed while storing it");
             }
-            Files.move(staging,
-                       stored,
-                       StandardCopyOption.ATOMIC_MOVE,
-                       StandardCopyOption.REPLACE_EXISTING);
+            Files.move(staging, stored);
         } finally {
             Files.deleteIfExists(staging);
         }

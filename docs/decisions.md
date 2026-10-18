@@ -366,6 +366,16 @@ host-key checking are mandatory; arbitrary browser-supplied commands are not exp
 The poll service uses `ClientConnector` and waits for transport completion before
 recording success. See [SSH operation and integration checks](binkp/README.md#outgoing-ssh-connections).
 
+## 23. File echo storage and script policy
+
+Validated fileecho payloads retain original names. Case-insensitive collisions
+preserve the existing copy and place incoming copies under `dupes/<receipt>/`.
+A placement journal preserves retry identity. Collisions do not forward or trigger
+directory imports. Historical prefixed files require explicit operator migration.
+Java owns storage guarantees. An external Groovy script owns description indexes
+and local netmail reports. Literal templates are files beneath the script folder;
+received descriptions cannot execute code and reports expose no TIC passwords.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the
