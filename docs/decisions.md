@@ -326,6 +326,23 @@ changes need relevant tests; expand testing when failures or unresolved concerns
 justify it. Preserve user changes and inspect Git status before staging. Never
 commit production credentials or publish a change merely to make a local task end.
 
+## 21. File echoes are optional and plugin settings are declarative
+
+The `fileecho` plugin owns TIC parsing, validation, areas, permissions and delivery.
+FileFix remains an external command script and registers only when that service
+is active. Disabling/removing the plugin preserves inbound files, receipts and
+pending file pairs; the host does not load those pairs without the provider.
+
+File areas use SQL by default, with an explicit file-managed mode. Automatic
+creation requires a permitted sender, valid TIC authentication and a validated
+payload, and grants rights only to that sender. Existing rights are not expanded.
+
+Plugin settings use the transport-independent `SettingsExtension` contract.
+Providers own fields, translations, validation and writes; the shared admin-only
+RPC and Vue renderer have no dependency on fileecho implementation classes.
+No executable plugin JavaScript is loaded by the browser. See
+[file echoes](fileecho.md) and [plugin settings](plugin-settings.md).
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

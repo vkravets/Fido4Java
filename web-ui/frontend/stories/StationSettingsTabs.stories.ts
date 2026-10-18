@@ -7,6 +7,8 @@ import MailLinksEditor from '../src/components/MailLinksEditor.vue';
 import TosserForm from '../src/components/TosserForm.vue';
 import EchoAccessPanel from '../src/components/EchoAccessPanel.vue';
 import QuarantinePanel from '../src/components/QuarantinePanel.vue';
+import PluginSettingsPanel from '../src/components/PluginSettingsPanel.vue';
+import { fileEchoExtensions } from './plugin-fixtures.ts';
 import { station, uplinks } from './fixtures.ts';
 import { t } from '../src/i18n.ts';
 
@@ -22,12 +24,14 @@ const meta = {
             MailLinksEditor,
             TosserForm,
             EchoAccessPanel,
-            QuarantinePanel
+            QuarantinePanel,
+            PluginSettingsPanel
         },
         setup() {
             return {
                 args,
                 t,
+                extensions: fileEchoExtensions(),
                 model: reactive(station()),
                 links: reactive(uplinks()),
                 tosser: reactive({
@@ -40,6 +44,7 @@ const meta = {
         },
         template: `<StationSettingsHeader :busy="args.busy" />
             <StationSettingsTabs v-bind="args" v-slot="{ group }">
+                <PluginSettingsPanel v-if="group === 'plugins'" :extensions="extensions" :busy="args.busy" />
                 <form v-show="group === 'general'" class="card" @submit.prevent>
                     <NodeForm :model="model" :initial="false" />
                     <button class="primary" :disabled="args.busy">{{ t('Save configuration') }}</button>
@@ -69,3 +74,4 @@ export const Tosser: Story = { args: { modelValue: 'tosser' } };
 export const Echoes: Story = { args: { modelValue: 'echoes' } };
 export const Quarantine: Story = { args: { modelValue: 'quarantine' } };
 export const Busy: Story = { args: { busy: true } };
+export const Plugins: Story = { args: { modelValue: 'plugins' } };

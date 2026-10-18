@@ -9,6 +9,7 @@ import MailSettings from './MailSettings.vue';
 import EchoSettings from './EchoSettings.vue';
 import QuarantineSettings from './QuarantineSettings.vue';
 import NotificationBanner from './NotificationBanner.vue';
+import PluginSettings from './PluginSettings.vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
 const props = defineProps<{ state: AppState }>();
@@ -63,6 +64,10 @@ async function reload() {
         v-slot="{ group }"
         :busy="state.busy.value"
     >
+        <PluginSettings
+            v-if="group === 'plugins'"
+            :state="state"
+        />
         <form
             v-if="model.aliases"
             v-show="group === 'general'"

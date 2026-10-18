@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
 
-type Group = 'general' | 'links' | 'tosser' | 'echoes' | 'quarantine';
+type Group = 'general' | 'links' | 'tosser' | 'echoes' | 'quarantine' | 'plugins';
 const active = defineModel<Group>({ default: 'general' });
 defineProps<{ busy?: boolean }>();
 const groups = [
@@ -9,7 +9,8 @@ const groups = [
     { id: 'links', label: 'Mail links' },
     { id: 'tosser', label: 'Tosser settings' },
     { id: 'echoes', label: 'Echo areas and link access' },
-    { id: 'quarantine', label: 'Packet quarantine' }
+    { id: 'quarantine', label: 'Packet quarantine' },
+    { id: 'plugins', label: 'Plugins' }
 ] as const;
 function navigate(event: KeyboardEvent) {
     const index = groups.findIndex((group) => group.id === active.value);

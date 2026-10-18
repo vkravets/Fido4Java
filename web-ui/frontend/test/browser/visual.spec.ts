@@ -4,6 +4,13 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'plugin-areas', story: 'plugins-pluginsettingspanel--areas' },
+    { name: 'plugin-access', story: 'plugins-pluginsettingspanel--access' },
+    { name: 'plugin-creation', story: 'plugins-pluginsettingspanel--creation' },
+    { name: 'plugin-robots', story: 'plugins-pluginsettingspanel--robots' },
+    { name: 'plugin-files', story: 'plugins-pluginsettingspanel--file-managed' },
+    { name: 'plugin-empty', story: 'plugins-pluginsettingspanel--empty' },
+    { name: 'station-tabs-plugins', story: 'settings-stationsettingstabs--plugins' },
     { name: 'administrator-navigation', story: 'navigation-sidebar--administrator' },
     { name: 'point-navigation', story: 'navigation-sidebar--point' },
     { name: 'station-settings', story: 'settings-nodeform--settings' },

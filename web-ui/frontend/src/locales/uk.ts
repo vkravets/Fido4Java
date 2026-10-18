@@ -1,4 +1,19 @@
 export const ukrainian = {
+    Save: 'Зберегти',
+    Plugins: 'Плагіни',
+    'Plugin settings': 'Налаштування плагінів',
+    Plugin: 'Плагін',
+    'No active settings extensions.': 'Немає активних розширень налаштувань.',
+    'Configuration source': 'Джерело конфігурації',
+    'This section is managed through configuration files.':
+        'Цей розділ керується через файли конфігурації.',
+    'No entries yet.': 'Записів поки немає.',
+    'Add or update an entry': 'Додати або змінити запис',
+    'Leave the password empty to keep the existing secret.':
+        'Залиште пароль порожнім, щоб зберегти поточний.',
+    'Clear form': 'Очистити форму',
+    'Plugin settings applied. No restart required.':
+        'Налаштування плагіна застосовано. Перезапуск не потрібний.',
     'Outgoing polls': 'Вихідні пули',
     'Binkp log': 'Журнал binkp',
     'Show latest events': 'Показати останні події',

@@ -155,7 +155,7 @@ test('station groups support keyboard navigation and keep unsaved form values', 
     await expect(page.getByRole('tab', { name: 'Mail links', exact: true })).toBeFocused();
     await expect(page.getByLabel('Station name', { exact: true })).toBeHidden();
     await page.getByRole('tab', { selected: true }).press('End');
-    await expect(page.getByRole('tab', { name: 'Packet quarantine', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('tab', { name: 'Plugins', exact: true })).toHaveAttribute(
         'aria-selected',
         'true'
     );
@@ -312,3 +312,28 @@ for (const theme of ['light', 'dark']) {
         });
     }
 }
+
+test('plugin settings edit permissions and preserve empty password edits', async ({ page }) => {
+    await story(page, 'plugins-pluginsettingspanel--areas');
+    await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+    await expect(page.getByLabel('Area', { exact: true })).toHaveValue('lists.nodes');
+    await page.getByLabel('Description', { exact: true }).fill('Updated lists');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByLabel('Last saved entry')).toContainText('Updated lists');
+    await story(page, 'plugins-pluginsettingspanel--robots');
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByLabel('Last saved entry')).toContainText('"password":""');
+    await story(page, 'plugins-pluginsettingspanel--file-managed');
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
+    await expect(
+        page.getByText('This section is managed through configuration files.')
+    ).toBeVisible();
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+    ).toBeTruthy();
+    await story(page, 'plugins-pluginsettingspanel--empty');
+    await expect(page.getByText('No active settings extensions.')).toBeVisible();
+});

@@ -327,14 +327,16 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 352 committed PNG test fixtures:
+`./gradlew :web-ui:playwrightVisualTest` compares 408 committed PNG test fixtures:
 administrator/point navigation, first-run setup with multiple uplinks, station
-identity and reload controls, five station settings tabs and their busy state,
+identity and reload controls, six station settings tabs and their busy state,
 adding/saving uplinks, duplicate-address feedback,
 link/PKT password and tosser forms, echo access (database/file/empty/revocation), packet
 quarantine (table/batch confirmation/source selection/results/legacy retry/archive/empty/long filename/unavailable), poll
 queue/details, per-poll protocol output, global binkp logs (populated/empty/rotated/busy),
 and information/warning/error/configuration-applied notifications.
+Plugin scenarios cover areas, link permissions, automatic creation, FileFix/TIC credentials,
+file-managed settings and unavailable providers. See [plugin settings](plugin-settings.md).
 Each has light/dark and English/Ukrainian
 variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
 
