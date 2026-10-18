@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Set;
 
-class FileEchoStoreTest {
+class FileEchoAreaServiceTest {
     @TempDir
     Path root;
     private MailDatabaseFacade base;

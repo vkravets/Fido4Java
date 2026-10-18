@@ -69,7 +69,7 @@
 //        bind_ip = System.getenv("RPC_BIND_IP");
 //        bind_ip = bind_ip == null || bind_ip.isEmpty() ? DEFAULT_TEST_SERVER_IP : bind_ip;
 //
-//        server = new Server(TEST_SERVER_PORT, bind_ip, new ServerHandlerTestMock());
+//        server = new Server(TEST_SERVER_PORT, bind_ip, new RpcServiceProviderTestStub());
 //        server.run();
 //        System.out.println("Server Started");
 //    }

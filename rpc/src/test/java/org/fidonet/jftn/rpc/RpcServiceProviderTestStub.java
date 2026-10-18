@@ -41,7 +41,7 @@ import java.util.List;
  * Date: 1/24/14
  * Time: 6:31 PM
  */
-public class ServerHandlerTestMock implements RpcServiceProvider {
+public class RpcServiceProviderTestStub implements RpcServiceProvider {
     @Override
     public Api.Iface getApiHandler() {
         return new Api.Iface() {

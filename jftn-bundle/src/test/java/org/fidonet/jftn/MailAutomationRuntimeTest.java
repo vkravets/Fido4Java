@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 
-class MailScriptsTest {
+class MailAutomationRuntimeTest {
     @TempDir
     Path root;
 

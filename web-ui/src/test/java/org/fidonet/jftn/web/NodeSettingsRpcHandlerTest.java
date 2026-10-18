@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-class SettingsHandlerTest {
+class NodeSettingsRpcHandlerTest {
     @Test
     void validatedEveryInitialUplinkBeforeCreatingAdminAndPublishedThemTogether() throws Exception {
         Path config = directory.resolve("jftn.conf");

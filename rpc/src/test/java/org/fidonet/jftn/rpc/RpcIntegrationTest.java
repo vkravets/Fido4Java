@@ -20,7 +20,7 @@ public class RpcIntegrationTest {
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS)
     public void dispatchesAllServicesOverRealTcp() throws Exception {
-        try (Server server = new Server(0, "127.0.0.1", new ServerHandlerTestMock())) {
+        try (Server server = new Server(0, "127.0.0.1", new RpcServiceProviderTestStub())) {
             server.run();
             try (TFramedTransport connection = connect(server)) {
                 assertEquals(Response.OK, new Api.Client(protocol(connection, "api")).ping());

@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class ScriptGeneratorTest {
+public class DatabaseSchemaScriptGeneratorTest {
     @Test
     public void generatedSchemaCanBeDroppedAndRecreatedInH2() throws Exception {
         String url = "jdbc:h2:mem:generatedSchema" + System.nanoTime();

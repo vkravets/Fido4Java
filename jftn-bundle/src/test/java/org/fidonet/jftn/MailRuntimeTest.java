@@ -50,7 +50,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class MailServiceTest {
+public class MailRuntimeTest {
     @Test
     public void preservesInteroperableOriginalNamesForReceivedFileAutomation() throws Exception {
         JFtnConfig config = config("1:500/100", "1:500/101");
