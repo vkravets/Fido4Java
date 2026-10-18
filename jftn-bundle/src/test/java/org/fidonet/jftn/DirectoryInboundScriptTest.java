@@ -40,6 +40,47 @@ class DirectoryInboundScriptTest {
     @TempDir
     Path root;
 
+    @Test
+    void importsNewestAcceptedFolderListsAndPointsWithoutScanningDupes() throws Exception {
+        Path folder = Files.createDirectories(root.resolve("accepted"));
+        Files.writeString(folder.resolve("NODELIST.001"), nodes("Old", 2026, 10, 9));
+        Files.writeString(folder.resolve("a".repeat(64) + "-NODELIST.002"),
+                          nodes("New", 2026, 10, 16));
+        Path dupes = Files.createDirectories(folder.resolve("dupes"));
+        Files.writeString(dupes.resolve("NODELIST.003"), nodes("Duplicate", 2026, 10, 17));
+        Path points = Files.createDirectories(root.resolve("points"));
+        Files.writeString(points.resolve("PNT46REG.289"),
+                          checked("Boss,1:500/101\r\n,1,Point,City,Sysop,-Unpublished-,300\r\n",
+                                  LocalDate.of(2026, 10, 16)));
+        String prefix = root.toString().replace('\\', '/');
+        JFtnConfig config = config("DirectoryFeed=archive|NODELIST|nodelist|NODELIST.*||"
+                                   + prefix
+                                   + "/base/archive.lst|1:500/101|1|500|US-ASCII|true\n"
+                                   + "DirectoryFeedFolder=archive|"
+                                   + folder.toString()
+                                           .replace('\\', '/')
+                                   + "\nDirectoryFeed=archivepoints|BOSS|pnt46|PNT46REG.*||"
+                                   + prefix
+                                   + "/base/archivepoints.lst|1:500/101\n"
+                                   + "DirectoryFeedFolder=archivepoints|"
+                                   + points.toString()
+                                           .replace('\\', '/')
+                                   + "\n");
+        DatabaseManager base = database();
+        try {
+            try (MailService service = new MailService(config, base)) {
+                service.processPending();
+                service.processPending();
+                assertTrue(Files.readString(root.resolve("base/archive.lst")).contains("New"));
+                assertFalse(Files.readString(root.resolve("base/archive.lst"))
+                                 .contains("Duplicate"));
+                assertEquals("Point", system("archivepoints", "1:500/101.1"));
+            }
+        } finally {
+            base.close();
+        }
+    }
+
     private JFtnConfig config(String extra) throws Exception {
         return config(extra, true);
     }

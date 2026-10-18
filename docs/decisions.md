@@ -172,13 +172,19 @@ Classpath loading remains useful for isolated tests and explicit compatibility.
 Existing operator scripts/configurations are preserved during startup; upgrading
 JARs alone does not overwrite an old customized external script.
 
-## 9. Two directory delivery paths are deliberately supported
+## 9. Directory delivery paths are explicit
 
 `DirectoryFeed` imports after FileFix validates and stores a TIC delivery.
 The direct mode (`DirectoryInboundEnabled`, `DirectoryInboundFeed`) imports
 completed binkp inbox files from an explicitly authorized configured peer,
 without requiring a TIC. A bare file in the inbound root is not implicitly trusted.
 Direct mode is opt-in and processes both existing completed deliveries and new ones.
+
+`DirectoryFeedFolder` attaches an accepted-file folder to an existing TIC feed.
+It scans only direct regular files, recognizes historical receipt-prefixed names,
+and ignores duplicate subdirectories. The retained base must be outside the source
+folder. This explicit local source can catch up completed TICs without replaying
+mail or bypassing checksum/date validation.
 
 Publication dates include the year; filename day suffixes alone are insufficient
 for ordering a backlog. Older full publications must not replace a newer retained

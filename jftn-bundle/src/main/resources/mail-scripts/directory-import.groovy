@@ -1,5 +1,6 @@
 import org.fidonet.jftn.script.RobotRequest
 import org.fidonet.jftn.script.ScriptState
+import org.fidonet.jftn.script.ReceivedFile
 import org.fidonet.nodelist.DirectoryEdition
 import org.fidonet.nodelist.DirectoryCatalog
 import org.fidonet.nodelist.DirectorySource
@@ -75,6 +76,19 @@ class InboundDirectoryImports {
     void scan() {
         def inbox = api.receivedFiles
         feeds.each { feed -> scanFeed(feed, inbox) }
+    }
+
+    /** Explicitly configured accepted-file folders; never scan dupes or arbitrary subfolders. */
+    void scanFolder(DirectoryFeed feed, Path directory) {
+        if (!Files.isDirectory(directory)) return
+        def files = []
+        try (def entries = Files.list(directory)) {
+            entries.filter { Files.isRegularFile(it) && !Files.isSymbolicLink(it) }.forEach { path ->
+                String name = path.fileName.toString().replaceFirst('^[a-fA-F0-9]{64}-', '')
+                if (ReceivedFile.isSafeName(name)) files.add(new ReceivedFile(path, name, feed.peer))
+            }
+        }
+        scanFeed(feed, files)
     }
 
     private void scanFeed(DirectoryFeed feed, List inbox) {
@@ -179,6 +193,9 @@ def register(api) {
     }
     def all = feeds + inbound
     if (all.isEmpty()) {
+        if (api.config.getValuesAsList('DirectoryFeedFolder')) {
+            throw new IllegalArgumentException('DirectoryFeedFolder requires a matching DirectoryFeed')
+        }
         return
     }
     if (all.collect { it.source.id }.toSet().size() != all.size()
@@ -190,12 +207,26 @@ def register(api) {
             throw new IllegalArgumentException('DirectoryFeed requires a configured transport peer')
         }
     }
-    def importer = inbound.isEmpty() ? null : new InboundDirectoryImports(api, null, inbound)
+    def folders = new LinkedHashMap<DirectoryFeed, Path>()
+    (api.config.getValuesAsList('DirectoryFeedFolder') ?: []).each { definition ->
+        def fields = definition.split('\\|', -1)
+        def feed = fields.length == 2 ? feeds.find { it.source.id == fields[0].trim() } : null
+        if (feed == null || fields[1].trim().isEmpty() || folders.containsKey(feed)) {
+            throw new IllegalArgumentException('DirectoryFeedFolder=existing-feed-id|accepted-file-folder')
+        }
+        Path folder = Path.of(fields[1].trim()).toAbsolutePath().normalize()
+        if (feed.source.path.startsWith(folder)) {
+            throw new IllegalArgumentException('Retained directory base must be outside its source folder')
+        }
+        folders[feed] = folder
+    }
+    def importer = inbound.isEmpty() && folders.isEmpty() ? null : new InboundDirectoryImports(api, null, inbound)
     catalog = new DirectoryCatalog(Path.of(api.config.getValue('NodeDirectoryPath', './database/nodelist/catalog')))
     if (importer != null) {
         importer.catalog = catalog
         api.onScan { importer.scan() }
-        LoggerFactory.getLogger('jftn.directory-import').info('Automatic inbound directory import enabled: {} feeds', inbound.size())
+        folders.each { feed, path -> api.onScan { importer.scanFolder(feed, path) } }
+        LoggerFactory.getLogger('jftn.directory-import').info('Automatic directory import enabled: {} inbound feeds, {} accepted folders', inbound.size(), folders.size())
     }
     api.onFile { area, file, name, peer, receipt ->
         feeds.findAll { it.area == area && it.peer == peer }.each { feed ->

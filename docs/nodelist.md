@@ -1,5 +1,26 @@
 # Node and point directory plugin
 
+Accepted fileecho archives can also be scanned on startup and subsequent mail
+scans. Configure a `DirectoryFeed` for the actual area/name/peer and attach a
+`DirectoryFeedFolder=feed-id|folder` rule. This includes old receipt-prefixed
+payload names, reads only regular files directly in the folder, and skips
+`dupes` subdirectories. Publication dates order full editions; older editions
+cannot replace a newer retained base. Reuse the same feed for future TIC events.
+For example (adjust area names, masks and trusted peer to your installation):
+
+```ini
+DirectoryFeed=nodes|NODELIST|nodelist|NODELIST.*|NODEDIFF.*|./lists/nodes.lst|1:500/101|0|0|CP866|true
+DirectoryFeed=points|BOSS|pnt46|PNT46REG.*||./lists/points.lst|1:500/101|0|0|CP866|true
+DirectoryFeedFolder=nodes|./fileecho/nodelist
+DirectoryFeedFolder=points|./fileecho/pnt46
+```
+
+The retained base paths must be outside the scanned source folders. Keep CRC and
+publication-date validation enabled. Local folders are an explicit trusted source;
+the importer does not infer trusted links from their contents. This scan can catch
+up already completed TIC receipts without replaying the TIC deliveries themselves.
+Point and node sources share the same catalog and UI directory.
+
 The `nodelist` module imports node/point lists into a separate H2 catalog.
 The full application includes it for setup/settings lookup and scripted feeds.
 Scheduled `DirectorySource` refresh is disabled by default. Its
