@@ -32,17 +32,17 @@ final class FileEchoProcessor implements FileEchoService {
     private static final Logger LOG = LoggerFactory.getLogger(FileEchoProcessor.class);
     private final MailAutomationRuntime api;
     private final JFtnConfig config;
-    private final FileEchoStore store;
+    private final FileEchoAreaService store;
     private final Charset charset;
 
     FileEchoProcessor(MailAutomationRuntime api) throws IOException {
         this.api = api;
         config = (JFtnConfig) api.getConfig();
         charset = Charset.forName(config.getValue("TicCharset", "IBM437"));
-        store = new FileEchoStore(config, api.getDatabase(), api.getState());
+        store = new FileEchoAreaService(config, api.getDatabase(), api.getState());
     }
 
-    FileEchoStore store() {
+    FileEchoAreaService store() {
         return store;
     }
 
@@ -109,7 +109,7 @@ final class FileEchoProcessor implements FileEchoService {
 
     private void process(ReceivedFile ticket, List<ReceivedFile> inbox) throws IOException {
         TicDocument tic = new TicDocument(ticket.getPath(), charset);
-        String tag = FileEchoStore.tag(tic.value("area"));
+        String tag = FileEchoAreaService.tag(tic.value("area"));
         authorize(tic, ticket, tag);
         FTNAddr origin = TicDocument.address(tic.value("origin"));
         Set<FTNAddr> seen = tic.addresses("seenby");

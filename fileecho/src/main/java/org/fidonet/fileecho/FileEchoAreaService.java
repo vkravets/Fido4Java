@@ -6,8 +6,6 @@ import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
 
-import com.j256.ormlite.dao.Dao;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -20,23 +18,19 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** SQL is the default operational source; explicit file mode never writes operator config. */
-final class FileEchoStore {
+/** File area operations and access/creation policy over SQL or explicit file-managed state. */
+final class FileEchoAreaService {
     private final JFtnConfig config;
-    private final MailDatabaseFacade base;
     private final ScriptState state;
     private final boolean files;
+    private FileEchoRepository repository;
     private final Map<String, FileAreaRecord> declared = new TreeMap<>();
     private final Map<String, FileCreationRecord> creation = new TreeMap<>();
     private final Map<String, String> fileCreators = new TreeMap<>();
-    private Dao<FileAreaRecord, String> areas;
-    private Dao<FileAccessRecord, String> access;
-    private Dao<FileCreationRecord, String> policies;
 
-    FileEchoStore(JFtnConfig config, MailDatabaseFacade base, ScriptState state)
+    FileEchoAreaService(JFtnConfig config, MailDatabaseFacade base, ScriptState state)
             throws IOException {
         this.config = config;
-        this.base = base;
         this.state = state;
         String source = config.getValue("FileEchoSource", "database");
         if (!source.equals("files") && !source.equals("database")) {
@@ -63,14 +57,12 @@ final class FileEchoStore {
             }
         }
         if (!files) {
+            repository = new FileEchoRepository(base);
             sql(() -> {
-                areas = base.extensionDao(FileAreaRecord.class);
-                access = base.extensionDao(FileAccessRecord.class);
-                policies = base.extensionDao(FileCreationRecord.class);
                 // Configured initial areas are insert-only. UI edits/disabled records survive restart.
                 for (FileAreaRecord area : declared.values()) {
-                    if (!areas.idExists(area.name)) {
-                        areas.create(area);
+                    if (!repository.areas.idExists(area.name)) {
+                        repository.areas.create(area);
                     }
                 }
                 return null;
@@ -129,19 +121,21 @@ final class FileEchoStore {
     }
 
     List<FileAreaRecord> list() throws IOException {
-        return files ? List.copyOf(declared.values()) : sql(() -> areas.queryForAll());
+        return files ? List.copyOf(declared.values()) : sql(() -> repository.areas.queryForAll());
     }
 
     FileAreaRecord area(String tag) throws IOException {
-        return files ? declared.get(tag) : sql(() -> areas.queryForId(tag));
+        return files ? declared.get(tag) : sql(() -> repository.areas.queryForId(tag));
     }
 
     List<FileAccessRecord> access() throws IOException {
-        return files ? List.of() : sql(() -> access.queryForAll());
+        return files ? List.of() : sql(() -> repository.access.queryForAll());
     }
 
     List<FileCreationRecord> policies() throws IOException {
-        return files ? List.copyOf(creation.values()) : sql(() -> policies.queryForAll());
+        return files
+                ? List.copyOf(creation.values())
+                : sql(() -> repository.policies.queryForAll());
     }
 
     void saveArea(String name, String directory, String description, boolean enabled)
@@ -153,10 +147,10 @@ final class FileEchoStore {
             throw new IllegalArgumentException("File area directory and description are invalid");
         }
         Path path = Path.of(directory).toAbsolutePath().normalize();
-        sql(() -> areas.createOrUpdate(new FileAreaRecord(tag,
-                                                          path.toString(),
-                                                          description,
-                                                          enabled)));
+        sql(() -> repository.areas.createOrUpdate(new FileAreaRecord(tag,
+                                                                     path.toString(),
+                                                                     description,
+                                                                     enabled)));
     }
 
     Set<String> subscriptions(FTNAddr peer) throws IOException {
@@ -168,7 +162,8 @@ final class FileEchoStore {
             }
             return result;
         }
-        for (FileAccessRecord rule : sql(() -> access.queryForEq("peer", peer.toString()))) {
+        for (FileAccessRecord rule : sql(() -> repository.access.queryForEq("peer",
+                                                                            peer.toString()))) {
             if (Set.of("READ", "BOTH").contains(rule.access)) {
                 result.add(rule.area);
             }
@@ -187,15 +182,15 @@ final class FileEchoStore {
             state.put("filefix-subscriptions:" + peer, String.join("\n", linked));
             return;
         }
-        sql(() -> base.extensionTransaction(() -> {
-            FileAccessRecord previous = access.queryForId(tag + ":" + peer);
+        sql(() -> repository.transaction(() -> {
+            FileAccessRecord previous = repository.access.queryForId(tag + ":" + peer);
             if (!enabled) {
-                access.deleteById(tag + ":" + peer);
+                repository.access.deleteById(tag + ":" + peer);
             } else if (previous == null) {
-                access.create(new FileAccessRecord(tag, peer.toString(), "READ"));
+                repository.access.create(new FileAccessRecord(tag, peer.toString(), "READ"));
             } else if (previous.access.equals("WRITE")) {
                 previous.access = "BOTH";
-                access.update(previous);
+                repository.access.update(previous);
             }
             return null;
         }));
@@ -211,9 +206,9 @@ final class FileEchoStore {
         }
         sql(() -> {
             if (level.equals("NONE")) {
-                access.deleteById(tag + ":" + address);
+                repository.access.deleteById(tag + ":" + address);
             } else {
-                access.createOrUpdate(new FileAccessRecord(tag, address, level));
+                repository.access.createOrUpdate(new FileAccessRecord(tag, address, level));
             }
             return null;
         });
@@ -232,9 +227,9 @@ final class FileEchoStore {
         }
         sql(() -> {
             if (level.equals("NONE")) {
-                policies.deleteById(address);
+                repository.policies.deleteById(address);
             } else {
-                policies.createOrUpdate(new FileCreationRecord(address, masks, level));
+                repository.policies.createOrUpdate(new FileCreationRecord(address, masks, level));
             }
             return null;
         });
@@ -255,12 +250,12 @@ final class FileEchoStore {
                 return !fileCreators.containsKey(tag)
                         || fileCreators.get(tag).equals(peer.toString());
             }
-            FileAccessRecord rule = sql(() -> access.queryForId(tag + ":" + peer));
+            FileAccessRecord rule = sql(() -> repository.access.queryForId(tag + ":" + peer));
             return rule != null && Set.of("WRITE", "BOTH").contains(rule.access);
         }
         FileCreationRecord policy = files
                 ? creation.get(peer.toString())
-                : sql(() -> policies.queryForId(peer.toString()));
+                : sql(() -> repository.policies.queryForId(peer.toString()));
         return matches(policy, tag);
     }
 
@@ -285,17 +280,17 @@ final class FileEchoStore {
             declared.put(tag, created);
             return created;
         }
-        return sql(() -> base.extensionTransaction(() -> {
-            FileAreaRecord current = areas.queryForId(tag);
+        return sql(() -> repository.transaction(() -> {
+            FileAreaRecord current = repository.areas.queryForId(tag);
             if (current != null) {
                 return current;
             }
-            FileCreationRecord policy = policies.queryForId(peer.toString());
+            FileCreationRecord policy = repository.policies.queryForId(peer.toString());
             if (!matches(policy, tag)) {
                 throw new SQLException("File creation policy changed");
             }
-            areas.create(created);
-            access.create(new FileAccessRecord(tag, peer.toString(), policy.access));
+            repository.areas.create(created);
+            repository.access.create(new FileAccessRecord(tag, peer.toString(), policy.access));
             return created;
         }));
     }
@@ -317,16 +312,7 @@ final class FileEchoStore {
         }
     }
 
-    @FunctionalInterface
-    private interface SqlWork<T> {
-        T run() throws SQLException;
-    }
-
-    private <T> T sql(SqlWork<T> work) throws IOException {
-        try {
-            return work.run();
-        } catch (SQLException e) {
-            throw new IOException("Cannot access fileecho storage", e);
-        }
+    private <T> T sql(FileEchoRepository.Work<T> work) throws IOException {
+        return repository.execute(work);
     }
 }

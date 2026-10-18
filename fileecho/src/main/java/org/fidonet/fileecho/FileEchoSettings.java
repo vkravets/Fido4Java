@@ -17,10 +17,10 @@ import java.util.stream.Collectors;
 /** Owns the extension schema and validation; the UI knows only declarative fields and rows. */
 final class FileEchoSettings implements SettingsExtension {
     private final MailAutomationRuntime api;
-    private final FileEchoStore store;
+    private final FileEchoAreaService store;
     private final JFtnConfig config;
 
-    FileEchoSettings(MailAutomationRuntime api, FileEchoStore store) {
+    FileEchoSettings(MailAutomationRuntime api, FileEchoAreaService store) {
         this.api = api;
         this.store = store;
         config = (JFtnConfig) api.getConfig();

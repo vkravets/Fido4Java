@@ -28,7 +28,7 @@ class FileEchoStoreTest {
     private MailDatabaseFacade base;
     private JFtnConfig config;
     private ScriptState state;
-    private FileEchoStore store;
+    private FileEchoAreaService store;
     private final FTNAddr first = new FTNAddr("1:500/101");
     private final FTNAddr other = new FTNAddr("1:500/102");
 
@@ -38,7 +38,7 @@ class FileEchoStoreTest {
         base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:fileecho" + System.nanoTime()));
         assertTrue(base.open());
         state = new ScriptState(root.resolve("state"));
-        store = new FileEchoStore(config, base, state);
+        store = new FileEchoAreaService(config, base, state);
     }
 
     private JFtnConfig configuration(String additional) throws Exception {
@@ -94,7 +94,7 @@ class FileEchoStoreTest {
         assertEquals("BOTH", store.access().get(0).access);
         assertEquals(Set.of("lists"), store.subscriptions(first));
         store.saveArea("lists", root.resolve("lists").toString(), "Disabled", false);
-        FileEchoStore reopened = new FileEchoStore(config, base, state);
+        FileEchoAreaService reopened = new FileEchoAreaService(config, base, state);
         assertFalse(reopened.canReceive("lists", first));
         assertEquals("Disabled", reopened.area("lists").description);
         reopened.subscribe(first, "lists", false);
@@ -116,9 +116,9 @@ class FileEchoStoreTest {
     @Test
     void fileModeRetainsAutoCreatedAreasAndRejectsUiWrites() throws Exception {
         JFtnConfig files = configuration("FileEchoSource=files\nAutoCreateFileFrom=1:500/101|lists.*|WRITE\n");
-        FileEchoStore original = new FileEchoStore(files, base, state);
+        FileEchoAreaService original = new FileEchoAreaService(files, base, state);
         original.createAfterValidation("lists.nodes", first);
-        FileEchoStore reopened = new FileEchoStore(files, base, state);
+        FileEchoAreaService reopened = new FileEchoAreaService(files, base, state);
         assertEquals("lists.nodes", reopened.area("lists.nodes").name);
         assertTrue(reopened.canReceive("lists.nodes", first));
         assertFalse(reopened.canReceive("lists.nodes", other));
