@@ -32,22 +32,18 @@ import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.script.FileDeliveryQueue;
-import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.tosser.PacketQuarantine;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
-import org.apache.thrift.TSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,6 +57,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     private final MailRuntime mail;
     private final UserMailStateStore state;
     private final MailDraftValidator draftValidator;
+    private final MailSubmissionService submissions;
     private final PollService polls;
     private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
@@ -76,6 +73,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
         state = new UserMailStateStore(Path.of(config.getTmpDir(), "ui-state"));
+        submissions = new MailSubmissionService(mail, state);
         this.polls = polls;
     }
 
@@ -307,36 +305,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     public String send(String owner, MailDraft draft, String requestId) throws UiError {
         draftValidator.submission(draft);
         MailDraftValidator.id(requestId);
-        return call(() -> mail.operate(tosser -> {
-            String key = ScriptState.digest(owner + ":" + requestId);
-            String msgid = draft.getFromAddress() + " ui-" + key;
-            String hash = ScriptState.digest(Base64.getEncoder()
-                                                   .encodeToString(new TSerializer().serialize(draft)));
-            String text = draft.getBody().replace("\r\n", "\r").replace('\n', '\r');
-            Message message = new Message(draft.getFromName(),
-                                          draft.getToName(),
-                                          new FTNAddr(draft.getFromAddress()),
-                                          new FTNAddr(draft.getToAddress()),
-                                          draft.getSubject(),
-                                          (draft.getMailbox() == Mailbox.ECHO
-                                                  ? "AREA:" + draft.getArea() + "\r"
-                                                  : "") + "\1CHRS: UTF-8 4\r" + text,
-                                          new Date());
-            message.setMsgId(msgid);
-            if (draft.isSetReplyTo()) {
-                message.getBody().getKludges().put("REPLY", draft.getReplyTo());
-            }
-            tosser.submissionTargets(message);
-            state.reserve(key, hash, msgid);
-            if (draft.getMailbox() == Mailbox.ECHO) {
-                tosser.submitEchomail(message);
-            } else {
-                message.setAttributes(1);
-                tosser.submitNetmail(message, "ui:" + key);
-            }
-            state.delete(owner, draft.getId());
-            return msgid;
-        }));
+        return call(() -> submissions.sendValidated(owner, draft, requestId));
     }
 
     @Override
