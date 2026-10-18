@@ -28,6 +28,7 @@ public final class ProcessConnector extends ClientConnector {
     private volatile StreamSession session;
     private volatile SessionContext context;
     private volatile Thread errors;
+    private volatile Thread exitObserver;
     private volatile boolean stopped;
 
     public ProcessConnector(Link link, List<String> command, Duration timeout) {
@@ -74,7 +75,8 @@ public final class ProcessConnector extends ClientConnector {
         errors.start();
         try {
             session.start();
-            daemon(this::observeExit, "binkp-process-exit").start();
+            exitObserver = daemon(this::observeExit, "binkp-process-exit");
+            exitObserver.start();
         } catch (Exception failure) {
             stop();
             throw failure;
@@ -153,6 +155,7 @@ public final class ProcessConnector extends ClientConnector {
             throw new IOException("Binkp process did not exit after exchange completion");
         }
         errors.join(1000);
+        joinObserver();
         if (process.exitValue() != 0) {
             throw new IOException("Binkp process failed with exit code " + process.exitValue());
         }
@@ -185,8 +188,16 @@ public final class ProcessConnector extends ClientConnector {
             if (errors != null) {
                 errors.join(1000);
             }
+            joinObserver();
         } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void joinObserver() throws InterruptedException {
+        Thread observer = exitObserver;
+        if (observer != null && observer != Thread.currentThread()) {
+            observer.join(1000);
         }
     }
 }

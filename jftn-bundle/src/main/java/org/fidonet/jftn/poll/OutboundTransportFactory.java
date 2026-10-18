@@ -49,7 +49,7 @@ public final class OutboundTransportFactory {
         }
         command.add(route[1]);
         String executable = route.length == 4 ? route[3] : "binkd";
-        command.add("exec " + quote(executable) + " -i -q " + quote(route[2]));
+        command.add("exec " + quote(executable) + " -i " + quote(route[2]));
         return List.copyOf(command);
     }
 

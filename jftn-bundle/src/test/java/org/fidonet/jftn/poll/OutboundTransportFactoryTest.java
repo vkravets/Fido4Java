@@ -41,7 +41,7 @@ class OutboundTransportFactoryTest {
         assertTrue(command.contains("BatchMode=yes"));
         assertTrue(command.contains("StrictHostKeyChecking=yes"));
         assertTrue(command.contains("-T"));
-        assertEquals("exec 'binkd' -i -q '/mail with '\"'\"'quotes'\"'\"'/binkd.conf'",
+        assertEquals("exec 'binkd' -i '/mail with '\"'\"'quotes'\"'\"'/binkd.conf'",
                      command.get(command.size() - 1));
         assertFalse(String.join(" ", command).contains("binkp-password"));
     }
