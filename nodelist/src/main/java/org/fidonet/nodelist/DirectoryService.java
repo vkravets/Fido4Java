@@ -30,17 +30,20 @@ public final class DirectoryService implements MailProcessingExtension, Director
     private final Map<String, DirectorySource> registry;
     private final List<DirectorySource> localSources;
     private final Set<String> deliverySources = new HashSet<>();
+    private final DirectoryChecksumExceptions checksumExceptions;
     private long lastAttempt;
 
     private DirectoryService(DirectoryCatalog catalog,
                              List<DirectorySource> sources,
                              long seconds,
                              boolean refreshEnabled,
-                             Set<String> localIds) {
+                             Set<String> localIds,
+                             DirectoryChecksumExceptions checksumExceptions) {
         this.catalog = catalog;
         this.sources = List.copyOf(sources);
         interval = TimeUnit.SECONDS.toNanos(seconds);
         this.refreshEnabled = refreshEnabled;
+        this.checksumExceptions = checksumExceptions;
         Map<String, DirectorySource> definitions = new LinkedHashMap<>();
         sources.forEach(source -> definitions.put(source.getId(), source));
         registry = Map.copyOf(definitions);
@@ -100,12 +103,15 @@ public final class DirectoryService implements MailProcessingExtension, Director
                 }
             }
         }
+        DirectoryChecksumExceptions checksumExceptions = new DirectoryChecksumExceptions(config,
+                                                                                         names);
         return new DirectoryService(new DirectoryCatalog(Path.of(config.getValue("NodeDirectoryPath",
                                                                                  "./database/nodelist/catalog"))),
                                     sources,
                                     seconds,
                                     refreshEnabled,
-                                    localIds);
+                                    localIds,
+                                    checksumExceptions);
     }
 
     static boolean flag(IConfig config, String key, boolean fallback) {
@@ -149,7 +155,8 @@ public final class DirectoryService implements MailProcessingExtension, Director
 
     @Override
     public String sourceDefinition(String id) {
-        return source(id).definition();
+        String masks = checksumExceptions.definition(id);
+        return source(id).definition() + (masks.isEmpty() ? "" : "|ignore-crc-masks=" + masks);
     }
 
     @Override
@@ -158,7 +165,10 @@ public final class DirectoryService implements MailProcessingExtension, Director
     }
 
     @Override
-    public synchronized DirectoryImportResult importFile(String id, Path incoming, boolean diff)
+    public synchronized DirectoryImportResult importFile(String id,
+                                                         Path incoming,
+                                                         String originalName,
+                                                         boolean diff)
             throws IOException {
         DirectorySource source = source(id);
         if (!diff && Files.isRegularFile(source.getPath())) {
@@ -168,7 +178,10 @@ public final class DirectoryService implements MailProcessingExtension, Director
                 return new DirectoryImportResult(id, 0, false, "", "Older publication skipped");
             }
         }
-        return DirectoryUpdate.install(catalog, source, incoming, diff);
+        return DirectoryUpdate.install(catalog,
+                                       checksumExceptions.select(source, originalName, diff),
+                                       incoming,
+                                       diff);
     }
 
     public DirectoryCatalog getCatalog() {
@@ -191,7 +204,11 @@ public final class DirectoryService implements MailProcessingExtension, Director
         List<DirectoryImportResult> result = new ArrayList<>();
         for (DirectorySource source : selected) {
             try {
-                DirectoryImportResult imported = catalog.importSource(source);
+                DirectoryImportResult imported = catalog.importSource(checksumExceptions.select(source,
+                                                                                                source.getPath()
+                                                                                                      .getFileName()
+                                                                                                      .toString(),
+                                                                                                false));
                 result.add(imported);
                 if (imported.isChanged()) {
                     logger.info("Imported directory {}: {} records",

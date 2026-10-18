@@ -24,5 +24,10 @@ public interface DirectoryImportService {
 
     LocalDate publicationDate(Path file) throws IOException;
 
-    Result importFile(String id, Path incoming, boolean diff) throws IOException;
+    default Result importFile(String id, Path incoming, boolean diff) throws IOException {
+        return importFile(id, incoming, incoming.getFileName().toString(), diff);
+    }
+
+    Result importFile(String id, Path incoming, String originalName, boolean diff)
+            throws IOException;
 }

@@ -26,6 +26,9 @@ public final class DirectoryUpdate {
                                                 Path incoming,
                                                 boolean diff)
             throws IOException {
+        if (diff) {
+            source = source.withIgnoredChecksum(false);
+        }
         Path base = source.getPath();
         if (base.equals(incoming.toAbsolutePath().normalize())) {
             throw new IllegalArgumentException("Incoming file must be separate from the retained base");
@@ -75,13 +78,7 @@ public final class DirectoryUpdate {
                 Files.copy(decoded, candidate, StandardCopyOption.REPLACE_EXISTING);
             }
             validate(candidate, source, diff || source.isChecksumRequired());
-            catalog.validateSource(new DirectorySource(source.getId(),
-                                                       source.getFormat(),
-                                                       candidate,
-                                                       source.getDefaultZone(),
-                                                       source.getDefaultNet(),
-                                                       source.getCharset(),
-                                                       diff || source.isChecksumRequired()));
+            catalog.validateSource(source.atPath(candidate, diff || source.isChecksumRequired()));
             String value = inputHash + "\n" + fingerprint(candidate);
             publishJournal(journal, value);
             force(candidate);
@@ -100,13 +97,7 @@ public final class DirectoryUpdate {
 
     private static void validate(Path file, DirectorySource source, boolean checksum)
             throws IOException {
-        DirectorySource candidate = new DirectorySource(source.getId(),
-                                                        source.getFormat(),
-                                                        file,
-                                                        source.getDefaultZone(),
-                                                        source.getDefaultNet(),
-                                                        source.getCharset(),
-                                                        checksum);
+        DirectorySource candidate = source.atPath(file, checksum);
         try (InputStream input = Files.newInputStream(file)) {
             DirectoryParser.parse(input, candidate, entry -> {
             });

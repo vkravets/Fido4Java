@@ -97,10 +97,10 @@ public final class DirectoryParser {
         if (line == 0 || records == 0) {
             throw failure("No directory records; refusing an empty replacement", null);
         }
-        if (source.isChecksumRequired() && expected == null) {
+        if (!source.isChecksumIgnored() && source.isChecksumRequired() && expected == null) {
             throw failure("Missing header CRC", null);
         }
-        if (expected != null && expected != crc) {
+        if (!source.isChecksumIgnored() && expected != null && expected != crc) {
             throw failure("CRC mismatch: expected " + expected + ", computed " + crc, null);
         }
         return new Result(records, header, expected);

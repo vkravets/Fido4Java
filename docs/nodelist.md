@@ -18,7 +18,8 @@ DirectoryFeedFolder=points|./fileecho/pnt46
 ```
 
 The retained base paths must be outside the scanned source folders. Keep CRC and
-publication-date validation enabled. Local folders are an explicit trusted source;
+publication-date validation enabled unless an explicit [filename-scoped CRC exception](#scoped-header-crc-exceptions)
+is needed for a known broken publication. Local folders are an explicit trusted source;
 the importer does not infer trusted links from their contents. This scan can catch
 up already completed TIC receipts without replaying the TIC deliveries themselves.
 Point and node sources share the same catalog and UI directory.
@@ -137,7 +138,8 @@ FTSC server is unavailable:
   DOS EOF. Omitted EOF is accepted; data after it is rejected. CRC-16/XMODEM
   uses polynomial `0x1021` and initial zero, matching
   [Husky nltools](https://github.com/huskyproject/nltools/blob/master/src/crc16.c).
-  Present CRCs are always checked; `requireChecksum=true` also rejects absence.
+  Present CRCs are checked by default; `requireChecksum=true` also rejects absence.
+  A configured filename-scoped exception below bypasses only these header checks.
 - [FTS-5002.002](https://defsol.com/files/ftsc/fts-5002.002): `BOSS` and deprecated
   `POSS`; `POINT`/`NODELIST` for combined hierarchical lists; `FAKENET` converts
   Host system-name or `UBOSS:` mappings to real 4D point addresses. It requires
@@ -222,3 +224,42 @@ overwrites existing operator files. Sources disabled through the old
 Periodic local imports additionally need `DirectoryRefreshEnabled=true` and
 one or more `DirectoryLocalSource=id` entries. CLI `importDirectory` explicitly
 imports all declared sources regardless of automatic refresh selection.
+
+## Scoped header CRC exceptions
+
+Automatic header CRC checking remains the default. For a known publisher with
+incorrect full-list CRCs, explicitly configure a source ID and filename glob in
+`conf.d/30-nodelist.conf`:
+
+```ini
+DirectorySource=points|BOSS|./lists/points.lst|0|0|CP866|true
+DirectoryIgnoreCRC=points|PNT46REG.*
+```
+
+`DirectoryIgnoreCRC` is repeatable. It has no global boolean form. Masks match
+the original incoming filename case-insensitively, with `*` and `?`; transport
+storage names and temporary parsing filenames are not used. Each rule is limited
+to its declared source. A rule must contain a literal letter/digit; bare `*`, path
+masks, unknown source IDs and duplicate rules are rejected. Supported mask
+characters are ASCII letters/digits, `_`, `.`, `+`, `-`, `*`, and `?` (1..128 total).
+
+For matching **full publications only**, missing or mismatched header CRCs are
+ignored even when the source normally requires a checksum. Record syntax,
+encoding, address limits, hierarchy, duplicate addresses, archive validation,
+size bounds and publication-date rollback checks remain enforced. TIC password,
+TIC CRC32 and delivery peer validation are unchanged. The original header is not
+rewritten. Each selected exception is logged at WARN with source, original filename
+and mask. Keep masks narrow and use trusted delivery rules/folders.
+
+The same rule works for TIC callbacks, completed inbound files and accepted-folder
+catch-up. For ZIPs it matches the outer delivery name, not archive member names.
+Diffs never use this exception: both the retained base and patched result must
+pass their normal CRC checks. An accepted full base with a wrong CRC therefore
+cannot be used for diff updates; deliver another full list instead.
+
+For explicit local refresh/offline imports, the configured source file's basename
+is matched. A delivery exception for `PNT46REG.*` does not automatically exempt
+the retained `points.lst` when imported as a local file. Rule changes invalidate
+script receipt/backoff identities so previously deferred deliveries can be retried
+after restart. Already imported catalog snapshots remain until replaced or
+explicitly removed; deleting the exception does not delete records or rewrite bases.

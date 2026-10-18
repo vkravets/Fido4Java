@@ -49,25 +49,19 @@ class DirectoryInboundScriptTest {
         Path dupes = Files.createDirectories(folder.resolve("dupes"));
         Files.writeString(dupes.resolve("NODELIST.003"), nodes("Duplicate", 2026, 10, 17));
         Path points = Files.createDirectories(root.resolve("points"));
-        Files.writeString(points.resolve("PNT46REG.289"),
+        Files.writeString(points.resolve("a".repeat(64) + "-PNT46REG.289"),
                           checked("Boss,1:500/101\r\n,1,Point,City,Sysop,-Unpublished-,300\r\n",
-                                  LocalDate.of(2026, 10, 16)));
+                                  LocalDate.of(2026, 10, 16)).replaceFirst(": [0-9]+", ": 0"));
         String prefix = root.toString().replace('\\', '/');
-        JFtnConfig config = config("DirectorySource=archive|NODELIST|"
-                                   + prefix
-                                   + "/base/archive.lst|1|500|US-ASCII|true\n"
-                                   + "DirectoryFeed=archive|nodelist|NODELIST.*||1:500/101\n"
-                                   + "DirectoryFeedFolder=archive|"
-                                   + folder.toString()
-                                           .replace('\\', '/')
-                                   + "\nDirectorySource=archivepoints|BOSS|"
-                                   + prefix
-                                   + "/base/archivepoints.lst|0|0|US-ASCII|true\n"
-                                   + "DirectoryFeed=archivepoints|pnt46|PNT46REG.*||1:500/101\n"
-                                   + "DirectoryFeedFolder=archivepoints|"
-                                   + points.toString()
-                                           .replace('\\', '/')
-                                   + "\n");
+        JFtnConfig config = config("DirectorySource=archive|NODELIST|" + prefix
+                + "/base/archive.lst|1|500|US-ASCII|true\n"
+                + "DirectoryFeed=archive|nodelist|NODELIST.*||1:500/101\n"
+                + "DirectoryFeedFolder=archive|" + folder.toString().replace('\\', '/')
+                + "\nDirectoryIgnoreCRC=archivepoints|PNT46REG.*\nDirectorySource=archivepoints|BOSS|"
+                + prefix + "/base/archivepoints.lst|0|0|US-ASCII|true\n"
+                + "DirectoryFeed=archivepoints|pnt46|PNT46REG.*||1:500/101\n"
+                + "DirectoryFeedFolder=archivepoints|" + points.toString().replace('\\', '/')
+                + "\n");
         MailDatabaseFacade base = database();
         try {
             try (MailRuntime service = new MailRuntime(config, base)) {

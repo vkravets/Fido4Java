@@ -130,7 +130,7 @@ class InboundDirectoryImports {
 
     private void install(DirectoryFeed feed, Map candidate) {
         try {
-            def result = directories.importFile(feed.id, candidate.file.path, candidate.diff)
+            def result = directories.importFile(feed.id, candidate.file.path, candidate.file.name, candidate.diff)
             api.state.put(candidate.receipt, 'done')
             retries.remove(candidate.receipt)
             if (result.changed) {
@@ -217,7 +217,7 @@ def register(api) {
                 throw new IOException('DirectoryFeed full and diff masks overlap for ' + name)
             }
             if (full || diff) {
-                def result = directories.importFile(feed.id, file, diff)
+                def result = directories.importFile(feed.id, file, name, diff)
                 if (result.changed) LoggerFactory.getLogger('jftn.directory-import').info('Imported {}: {} records', result.source, result.records)
             }
         }

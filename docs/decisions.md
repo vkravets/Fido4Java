@@ -436,6 +436,21 @@ Date is the first TIC Path timestamp in UTC, not a guessed payload mtime. Rebuil
 choose the earliest matching copy's first-hop time. Unknown/unrepresentable dates
 stay visibly unknown. Host locale/timezone cannot alter the default columns.
 
+## 26. Directory header CRC exceptions are opt-in and filename-scoped
+
+`DirectoryIgnoreCRC=source-id|filename-mask` in the directory plugin fragment is
+an explicit operator exception for full publications with known broken header
+CRCs. No global disable flag exists. Matching uses original delivery names, not
+hashed receipt paths or temporary filenames; each use emits a WARN. Glob rules
+must retain a literal filename component and cannot escape their source ID.
+
+Only presence/mismatch of the directory header checksum is exempted. Structural
+parsing, address bounds, SQL uniqueness, publication ordering, ZIP integrity and
+TIC authentication/checksums stay enforced. Diffs always require checked bases
+and outputs. Originals are not rewritten. Rule definitions participate in script
+receipt identity, and relaxed/strict parsing have different catalog definitions,
+preventing a previous relaxed import from bypassing a later strict reimport.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

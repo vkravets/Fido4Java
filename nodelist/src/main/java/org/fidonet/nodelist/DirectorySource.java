@@ -19,6 +19,7 @@ public final class DirectorySource {
     private final int net;
     private final Charset charset;
     private final boolean requireChecksum;
+    private final boolean ignoreChecksum;
 
     public DirectorySource(String id,
                            Format format,
@@ -27,6 +28,17 @@ public final class DirectorySource {
                            int net,
                            Charset charset,
                            boolean requireChecksum) {
+        this(id, format, path, zone, net, charset, requireChecksum, false);
+    }
+
+    private DirectorySource(String id,
+                            Format format,
+                            Path path,
+                            int zone,
+                            int net,
+                            Charset charset,
+                            boolean requireChecksum,
+                            boolean ignoreChecksum) {
         if (id == null || !id.matches("[A-Za-z0-9_-]{1,80}")) {
             throw new IllegalArgumentException("Directory source ID must contain 1..80 letters, digits, _ or -");
         }
@@ -40,6 +52,7 @@ public final class DirectorySource {
         this.net = net;
         this.charset = Objects.requireNonNull(charset);
         this.requireChecksum = requireChecksum;
+        this.ignoreChecksum = ignoreChecksum;
     }
 
     /** id|format|file[|zone|net|charset|requireChecksum]. */
@@ -97,6 +110,25 @@ public final class DirectorySource {
         return requireChecksum;
     }
 
+    boolean isChecksumIgnored() {
+        return ignoreChecksum;
+    }
+
+    DirectorySource withIgnoredChecksum(boolean ignored) {
+        return new DirectorySource(id, format, path, zone, net, charset, requireChecksum, ignored);
+    }
+
+    DirectorySource atPath(Path candidate, boolean required) {
+        return new DirectorySource(id,
+                                   format,
+                                   candidate,
+                                   zone,
+                                   net,
+                                   charset,
+                                   required,
+                                   ignoreChecksum);
+    }
+
     String definition() {
         return format
                + "|"
@@ -108,6 +140,7 @@ public final class DirectorySource {
                + "|"
                + charset.name()
                + "|"
-               + requireChecksum;
+               + requireChecksum
+               + (ignoreChecksum ? "|ignored-header-crc" : "");
     }
 }
