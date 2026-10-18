@@ -1,8 +1,8 @@
 package org.fidonet.jftn.poll;
 
+import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
-import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -31,7 +31,7 @@ public class PollService implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollService.class);
     private final JFtnConfig config;
     private final SessionContext template;
-    private final Function<Link, Client> clients;
+    private final Function<Link, ? extends ClientConnector> clients;
     private final Map<String, Job> jobs = new LinkedHashMap<>();
     private final PollHistory history;
     private final int historyLimit;
@@ -48,7 +48,7 @@ public class PollService implements AutoCloseable {
 
     private static final class Job {
         private final PollAttempt info;
-        private volatile Client client;
+        private volatile ClientConnector client;
         private volatile boolean cancelled;
         private boolean running;
         private Future<?> future;
@@ -61,10 +61,12 @@ public class PollService implements AutoCloseable {
     }
 
     public PollService(JFtnConfig config, SessionContext template) {
-        this(config, template, Client::new);
+        this(config, template, new OutboundTransportFactory(config)::create);
     }
 
-    public PollService(JFtnConfig config, SessionContext template, Function<Link, Client> clients) {
+    public PollService(JFtnConfig config,
+                       SessionContext template,
+                       Function<Link, ? extends ClientConnector> clients) {
         this.config = config;
         this.template = template;
         this.clients = clients;
@@ -195,11 +197,11 @@ public class PollService implements AutoCloseable {
         }
         try {
             state(job, "CONNECTING", "");
-            job.journal.record("CONNECT",
-                               new PollDiagnostics(config, context).clean(link.getHostAddress()
-                                       + ":" + (link.getPort() == 0 ? 24554 : link.getPort())),
-                               0);
             job.client = clients.apply(link);
+            job.journal.record("CONNECT",
+                               new PollDiagnostics(config,
+                                                   context).clean(job.client.describe(link)),
+                               0);
             if (job.cancelled) {
                 return;
             }
@@ -235,7 +237,7 @@ public class PollService implements AutoCloseable {
                 : new PollDiagnostics(config, context).clean(reason);
     }
 
-    private void awaitSession(Job job, SessionContext context) throws InterruptedException {
+    private void awaitSession(Job job, SessionContext context) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         while (!job.cancelled) {
             if (finished(job, context)) {
@@ -254,7 +256,7 @@ public class PollService implements AutoCloseable {
         }
     }
 
-    private boolean finished(Job job, SessionContext context) {
+    private boolean finished(Job job, SessionContext context) throws Exception {
         SessionState current = context.getState();
         if (current == SessionState.STATE_BSY) {
             state(job, "BUSY", remoteReason(context, "Remote node is busy"));
@@ -265,6 +267,7 @@ public class PollService implements AutoCloseable {
                 state(job, "FAILED", remoteReason(context, "Authentication or protocol error"));
             }
         } else if (context.isTransferComplete()) {
+            job.client.awaitCompletion();
             state(job, "SUCCEEDED", "Exchange completed");
         } else if (current == SessionState.STATE_END) {
             state(job, "FAILED", "Connection closed before the exchange completed");

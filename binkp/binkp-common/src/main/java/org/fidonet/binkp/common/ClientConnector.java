@@ -28,6 +28,8 @@
 
 package org.fidonet.binkp.common;
 
+import org.fidonet.types.Link;
+
 /**
  * Created by IntelliJ IDEA.
  * Author: Vladimir Kravets
@@ -36,6 +38,13 @@ package org.fidonet.binkp.common;
  * Time: 22:56
  */
 public abstract class ClientConnector extends Connector {
+    public String describe(Link link) {
+        return "TCP "
+               + link.getHostAddress()
+               + ":"
+               + (link.getPort() == 0 ? BINK_PORT : link.getPort());
+    }
+
     /** Wait for transport-specific final writes and process completion before reporting success. */
     public void awaitCompletion() throws Exception {
     }

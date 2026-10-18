@@ -41,3 +41,51 @@ not change password verification. Plain-text password suffixes are not ignored.
 
 These references are retained for comparison. Consult the implementation and
 tests before assuming support for an optional extension.
+
+## Outgoing SSH connections
+
+JFtn can run OpenSSH as a duplex process and start `binkd -i` on the remote host.
+TCP remains the default for links without an SSH mapping. Add mappings to
+`conf.d/50-binkp-transports.conf`, not the UI-managed main configuration:
+
+```text
+BinkpSsh=1:500/101|uplink-ssh|/etc/binkd/binkd.conf|/usr/sbin/binkd
+BinkpSshConfig=conf.d/ssh_config
+BinkpSshExecutable=ssh
+```
+
+The fields are `peer|SSH-host-alias|remote-binkd-config[|remote-binkd-executable]`.
+The executable defaults to `binkd`. A normal `Link` declaration remains required;
+its binkp password is checked independently of SSH authentication. Map multiple
+links with separate entries. SSH mappings are file-managed and validated during
+configuration reload; subsequent polls use the new configuration.
+
+Install OpenSSH client separately on the JFtn host. Without `BinkpSshConfig`, its
+normal per-user configuration is used. An explicit configuration path is relative
+to the main JFtn configuration directory. For example, `conf.d/ssh_config` contains:
+
+```sshconfig
+Host uplink-ssh
+    HostName mail.example.org
+    Port 22
+    User fido
+    IdentityFile ~/.ssh/jftn_ed25519
+    IdentitiesOnly yes
+```
+
+Keep that file without a `.conf` extension so JFtn does not parse it as a fragment.
+Prepare the host key in the SSH user's `known_hosts` through a trusted channel.
+JFtn forces `BatchMode=yes`, `StrictHostKeyChecking=yes` and no terminal (`-T`);
+there are no interactive password or host-key prompts. Remote paths are quoted
+for a POSIX shell. Configure remote shell startup files to keep stdout free of text.
+
+The remote side needs a working binkd configuration and permission to run
+`binkd -i`. No remote TCP binkp listener is needed. This release adds outgoing
+SSH sessions, not an SSH server or a JFtn stdin/stdout command-line server.
+
+The stream uses the common binkp handshake/commands, including NR and batches.
+Writes are bounded, incomplete input frames fail, and a 30-second stream I/O
+inactivity timeout aborts a stalled child. Process stderr is drained separately
+and included in poll diagnostics, with the link password redacted. Successful
+poll completion waits for final stream writes and a zero process exit status.
+Cancellation terminates the child process and retains unacknowledged mail.

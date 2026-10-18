@@ -38,6 +38,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.DatabaseManager;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.fidonet.jftn.poll.OutboundTransportFactory;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
@@ -216,6 +217,7 @@ public class JFtnRunner {
     }
 
     static SessionContext createSessionContext(JFtnConfig config) {
+        new OutboundTransportFactory(config).validate();
         List<Link> links = new ArrayList<>();
         Set<String> addresses = new LinkedHashSet<>();
         for (String value : config.getValuesAsList("Link")) {

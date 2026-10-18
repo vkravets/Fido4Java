@@ -1,0 +1,7 @@
+# Copy to 50-binkp-transports.conf to enable selected outgoing SSH connections.
+# The peer must also be defined by a normal Link entry, with its binkp password.
+# SSH account, port, identity and known_hosts are managed by OpenSSH.
+# BinkpSsh=1:500/101|uplink-ssh|/etc/binkd/binkd.conf|/usr/sbin/binkd
+# BinkpSshExecutable=ssh
+# BinkpSshConfig=conf.d/ssh_config
+# Keep the OpenSSH configuration named ssh_config, not *.conf: it is not JFtn syntax.

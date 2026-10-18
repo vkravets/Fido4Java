@@ -23,6 +23,7 @@ public final class ProcessConnector extends ClientConnector {
     private final Link link;
     private final List<String> command;
     private final Duration timeout;
+    private final String description;
     private volatile Process process;
     private volatile StreamSession session;
     private volatile SessionContext context;
@@ -30,7 +31,12 @@ public final class ProcessConnector extends ClientConnector {
     private volatile boolean stopped;
 
     public ProcessConnector(Link link, List<String> command, Duration timeout) {
+        this(link, command, timeout, "process peer=" + link.getAddr());
+    }
+
+    public ProcessConnector(Link link, List<String> command, Duration timeout, String description) {
         this.link = link;
+        this.description = description;
         this.command = List.copyOf(command);
         if (command.isEmpty() || command.stream().anyMatch(value -> value.indexOf('\0') >= 0)) {
             throw new IllegalArgumentException("Invalid process command");
@@ -39,6 +45,11 @@ public final class ProcessConnector extends ClientConnector {
         if (timeout.toMillis() < 1) {
             throw new IllegalArgumentException("Process timeout must be positive");
         }
+    }
+
+    @Override
+    public String describe(Link link) {
+        return description;
     }
 
     @Override
@@ -56,7 +67,7 @@ public final class ProcessConnector extends ClientConnector {
         session = new StreamSession(process.getInputStream(),
                                     process.getOutputStream(),
                                     context,
-                                    "process peer=" + link.getAddr(),
+                                    description,
                                     timeout,
                                     this::abortProcess);
         errors = daemon(this::readErrors, "binkp-process-stderr");

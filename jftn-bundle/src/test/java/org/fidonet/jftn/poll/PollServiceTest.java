@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,6 +33,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 class PollServiceTest {
     @TempDir
     Path root;
+
+    @Test
+    void transportCompletionFailureCannotBeReportedAsSuccessfulPoll() throws Exception {
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(storage("SysOp=Test\nInbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\n"
+                + "Link=1:500/101,1:500/100,secret,localhost\n").getBytes(StandardCharsets.UTF_8)));
+        SessionContext template = new SessionContext(new StationConfig("Test",
+                                                                       "Sysop",
+                                                                       "",
+                                                                       "",
+                                                                       "1:500/100"),
+                                                     new LinksInfo(new ArrayList<>(config.getConfiguredLinks())));
+        try (PollService polls = new PollService(config, template, link -> new ClientConnector() {
+            @Override
+            public void run(SessionContext context) {
+                context.setSendingIsFinish(true);
+                context.setReceivingIsFinish(true);
+                context.setState(SessionState.STATE_END);
+            }
+
+            @Override
+            public void awaitCompletion() throws Exception {
+                throw new IOException("SSH process failed with exit code 17");
+            }
+
+            @Override
+            public void stop() {
+            }
+        })) {
+            polls.poll("1:500/101");
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (polls.list().get(0).isActive() && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+            assertEquals("FAILED", polls.list().get(0).getState());
+            assertTrue(polls.list().get(0).getDetail().contains("exit code 17"));
+        }
+    }
 
     private String storage(String text) {
         return text.replace("Tmp=tmp\n", "Tmp=" + root.toString().replace('\\', '/') + "\n");
