@@ -1,5 +1,11 @@
 group = 'org.fidonet.binkp'
 description = 'BinkP Common'
+
+tasks.named('test') {
+    doFirst {
+        systemProperty 'binkp.testClasspath', sourceSets.test.runtimeClasspath.asPath
+    }
+}
 dependencies {
   implementation project(':event-bus')
     implementation 'org.slf4j:slf4j-api:2.0.20'

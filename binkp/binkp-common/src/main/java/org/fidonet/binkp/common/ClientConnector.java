@@ -36,4 +36,7 @@ package org.fidonet.binkp.common;
  * Time: 22:56
  */
 public abstract class ClientConnector extends Connector {
+    /** Wait for transport-specific final writes and process completion before reporting success. */
+    public void awaitCompletion() throws Exception {
+    }
 }
