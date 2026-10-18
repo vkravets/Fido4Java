@@ -50,7 +50,7 @@ Docker scenarios remain optional for ordinary `build` and `test` runs.
 | Scheduler/tools | Immediate/deferred and cron execution; cancellation and lifecycle/reload; concurrent date formatting/parsing, cache hash collisions and locale changes; file-resource closure. |
 | RPC/Runner | Real framed TCP and HTTP calls, account/password/passkey verification, roles and moderated AKA claims, mail/draft operations, robot access, poll queue/history/journals, transport lifecycle and startup cleanup. Distribution tests check layout and launch behavior. |
 | Directory and mail scripts | Full/ZIP lists, hierarchy, CRC, endpoint interpretation, transactional catalog replacement, HTTP downloads and diff recovery; AreaFix/FileFix authorization, subscriptions, TIC delivery and directory feeds. |
-| Browser UI | TypeScript checks and unit tests run in the normal build. Opt-in Playwright tests exercise components and real HTTP setup/login/settings flows; VRT checks 64 fixed screenshot cases. CI runs integrations, then functional browser checks, then VRT, using main-build artifacts. |
+| Browser UI | Production assets are type-checked when built. Browser unit, component and VRT suites are explicit locally; CI runs all stages. Playwright covers component workflows and real HTTP setup/login/settings flows. VRT checks the committed Storybook matrix across both themes/languages and desktop/mobile. CI runs integrations, then functional browser checks, then VRT, using main-build artifacts. |
 
 ## Limits and decisions still needed
 
@@ -60,7 +60,7 @@ uncovered source lines and branches is in the generated HTML/XML report.
 | Area | Gap and proposed approach |
 | --- | --- |
 | Legacy JAM facade | `JAMEchoBase.getMessage()` and `delMessage()` still have empty bodies. The newer `JamArea` API and bridge provide the exercised read/write path; do not infer support for those legacy methods from bridge coverage. |
-| Browser mail reader | The RPC mail APIs exist, but browser netmail/echo readers are not implemented. Navigation is reserved. UI screenshots do not prove mailbox reading or composition works. |
+| Browser mail reader | Netmail controller/component workflows and real RPC mailbox isolation/reply/submission are tested separately. A complete browser-to-running-node mail workflow remains an additional E2E test. The echomail reader is not implemented. Screenshots alone do not prove transport delivery. |
 | Runner process lifecycle | Startup collaborators and distribution subprocess probes are tested. These are not exhaustive checks of forced termination, shutdown races or crash recovery at every persistence boundary. |
 | Long protocol timeouts and races | `FilesSender` still uses 300-second GET/acknowledgement waits. Poll deadlines are configurable and have separate tests; that does not cover every sender deadline or packet/thread ordering. Prefer controlled clocks/fault injection to five-minute tests. |
 | OS-level I/O failures | HPT tests exercise a JAM lock held by another process in Linux. Disk full, close/fsync failure, symlink/path races and behavior across Windows/Linux still need targeted fault injection. Permission-only tests are not portable to Windows or root CI. |

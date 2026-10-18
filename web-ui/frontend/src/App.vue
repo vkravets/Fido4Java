@@ -14,6 +14,7 @@ import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
 import LanguageSelector from './components/LanguageSelector.vue';
 import NetmailView from './components/NetmailView.vue';
+import NetmailRoutingView from './components/NetmailRoutingView.vue';
 const state = createState();
 const page = ref('settings');
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
@@ -114,6 +115,10 @@ function logout() {
             @navigate="navigate"
         />
         <main class="content">
+            <NetmailRoutingView
+                v-if="page === 'routing' && state.profile.value.role === 'ADMIN'"
+                :state="state"
+            />
             <NetmailView
                 v-if="page === 'netmail' || page === 'drafts'"
                 :key="page"

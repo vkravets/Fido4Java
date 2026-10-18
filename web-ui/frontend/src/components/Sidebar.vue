@@ -14,6 +14,7 @@ const emit = defineEmits<{
             | 'directory'
             | 'netmail'
             | 'drafts'
+            | 'routing'
     ];
 }>();
 </script>
@@ -57,6 +58,12 @@ const emit = defineEmits<{
             </button>
             <template v-if="profile.role === 'ADMIN'">
                 <span class="nav-label">{{ t('NODE MANAGEMENT') }}</span>
+                <button
+                    :class="{ active: page === 'routing' }"
+                    @click="emit('navigate', 'routing')"
+                >
+                    <span>⇢</span>{{ t('Netmail routing') }}
+                </button>
                 <button
                     :class="{ active: page === 'node' }"
                     @click="emit('navigate', 'node')"

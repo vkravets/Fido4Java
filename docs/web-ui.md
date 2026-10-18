@@ -408,6 +408,22 @@ test fixtures; runtime/build reports remain untracked.
 
 ## Accounts and access
 
+Administrators also have a **Netmail routing** page. It shows ordered rules,
+offers database-rule creation/editing/deletion and changes the default hop and
+transit policy through validated live configuration publication. Rule next hops
+and transit preview senders must be configured links. File-managed rules are
+read-only; changing the source does not copy rules between the file and database.
+The UI confirms a source switch. Empty transit masks allow all configured links
+when transit is enabled; transit itself is disabled by default.
+
+**Check a route** explains local delivery, a matching rule, direct/default routing
+or the rejection reason. It can simulate a configured transit sender or required
+direct delivery. It does not create mail or initiate a connection. Changes affect
+new routing decisions; existing queued mail keeps its selected next hop.
+Local netmail deliveries appear sent once stored locally; remote deliveries appear
+sent after transport acknowledgement. A send without a route returns NO_ROUTE
+and does not create a delivery or reserve a send receipt.
+
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts
 remain disabled until an administrator approves an AKA claim. Users can select
 only approved identities as their default AKA. Personal profile and theme settings
@@ -600,13 +616,14 @@ can reload, through `SettingsService.reload` on HTTP or TCP.
 
 Supported changes include station name/sysop/location, local AKAs, adding links,
 link endpoints and binkp/PKT passwords, received-original retention, processed-file
-removal, echo access/autocreation flags and the tosser interval. Outgoing poll jobs
+removal, echo access/autocreation flags, the tosser interval and netmail routing
+policy (rule source, configured rules, default hop and transit restrictions). Outgoing poll jobs
 already queued keep their selected link and session configuration; future jobs
 and new incoming connections use the new snapshot. Existing connections and RPC
 login sessions are preserved. Changing autocreation does not grant echo rights.
 
-Changes to storage paths, listeners/binds/ports, HTTP/WebAuthn origins, routing
-declarations, subscription-source modes and plugin internals require a controlled
+Changes to storage paths, listeners/binds/ports, HTTP/WebAuthn origins,
+subscription-source modes and plugin internals require a controlled
 restart. Removing links requires reviewing their queues/subscriptions first.
 Such candidates are rejected with the option name; UI saves leave the previous
 file and running configuration intact instead of saving unapplied settings.

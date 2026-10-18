@@ -2,6 +2,41 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('routing rules are read-only in file mode and edit only configured next hops', async ({
+    page
+}) => {
+    await story(page, 'routing-netmailroutespanel--file-managed');
+    await expect(page.getByRole('button', { name: 'Save rule', exact: true })).toHaveCount(0);
+    await story(page, 'routing-netmailroutespanel--database');
+    await page.getByRole('button', { name: 'Edit rule', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Rule ID', exact: true })).toHaveValue(
+        'regional'
+    );
+    await expect(page.getByRole('textbox', { name: 'Rule ID', exact: true })).toHaveAttribute(
+        'readonly',
+        ''
+    );
+    await expect(
+        page.getByRole('combobox', { name: 'Next hop', exact: true }).locator('option')
+    ).toHaveCount(2);
+});
+
+test('routing policy exposes explicit transit controls and prevents edits while saving', async ({
+    page
+}) => {
+    await story(page, 'routing-netmailroutingpolicyform--database');
+    await expect(page.getByLabel('Allow netmail transit', { exact: true })).not.toBeChecked();
+    await page.getByLabel('Allow netmail transit', { exact: true }).check();
+    const masks = page.getByLabel('Transit sender masks (one per line)', { exact: true });
+    await masks.fill('1:500/101\n1:500/102');
+    await masks.press('Tab');
+    await expect(masks).toHaveValue('1:500/101\n1:500/102');
+    await story(page, 'routing-netmailroutingpolicyform--busy');
+    await expect(
+        page.getByRole('button', { name: 'Save routing policy', exact: true })
+    ).toBeDisabled();
+});
+
 test('point netmail workflow opens a letter, replies, saves a draft and sends', async ({
     page
 }) => {

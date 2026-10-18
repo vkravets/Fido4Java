@@ -983,6 +983,23 @@ footer.actions {
     margin: 0;
     min-width: 0;
 }
+.routing-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+.routing-fields .check {
+    flex-direction: row;
+    align-items: center;
+}
+.routing-result {
+    margin-top: 20px;
+    padding: 16px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    overflow-wrap: anywhere;
+}
 .mail-composer textarea {
     resize: vertical;
     font-family: monospace;

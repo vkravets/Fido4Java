@@ -4,6 +4,14 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'routing-policy', story: 'routing-netmailroutingpolicyform--database' },
+    { name: 'routing-transit', story: 'routing-netmailroutingpolicyform--transit' },
+    { name: 'routing-busy', story: 'routing-netmailroutingpolicyform--busy' },
+    { name: 'routing-rules', story: 'routing-netmailroutespanel--database' },
+    { name: 'routing-file-managed', story: 'routing-netmailroutespanel--file-managed' },
+    { name: 'routing-empty', story: 'routing-netmailroutespanel--empty' },
+    { name: 'routing-preview', story: 'routing-netmailroutepreviewform--matching-rule' },
+    { name: 'routing-no-route', story: 'routing-netmailroutepreviewform--no-route' },
     { name: 'mail-workspace', story: 'mail-netmailview--inbox' },
     { name: 'mail-drafts', story: 'mail-netmaildrafts--saved' },
     { name: 'mail-drafts-empty', story: 'mail-netmaildrafts--empty' },

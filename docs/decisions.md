@@ -236,8 +236,9 @@ generated Thrift browser JavaScript and vendor runtime are build outputs.
 
 The UI supports English by default and Ukrainian, with light/dark themes. Russian
 UI translations were intentionally removed. Both themes must receive consistent
-controls, validation, layouts and tests. Preserve planned mail navigation, but do
-not present unfinished netmail/echomail readers as implemented features.
+controls, validation, layouts and tests. Netmail reading/composition and approved
+mailbox scopes are implemented; echomail reading remains planned. Reserved
+navigation alone must not be presented as an implemented feature.
 
 Notifications are fixed to the viewport, not a scrollable page/card. Information
 and warning notifications can be dismissed; error notifications cannot. A close

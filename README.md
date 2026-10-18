@@ -24,7 +24,8 @@ Report bugs and feature requests through the repository's issue tracker.
 - Thrift RPC over framed TCP and HTTP for administration and mail APIs.
 - Node/point directory browsing and FTN address suggestions from imported lists.
 
-The browser mail readers are planned; their navigation is reserved in the UI.
+The browser supports netmail reading, replies and drafts for approved account AKAs,
+plus administrator routing controls. The echomail reader remains planned.
 See [remaining work](TODO) and the limitations in each service guide.
 
 ### INSTALL
