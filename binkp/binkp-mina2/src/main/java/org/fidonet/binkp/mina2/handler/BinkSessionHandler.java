@@ -31,27 +31,13 @@ package org.fidonet.binkp.mina2.handler;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.commands.ADRCommand;
 import org.fidonet.binkp.common.commands.BSYCommand;
-import org.fidonet.binkp.common.commands.CramOPTCommand;
 import org.fidonet.binkp.common.commands.ERRCommand;
-import org.fidonet.binkp.common.commands.LOCCommand;
-import org.fidonet.binkp.common.commands.NDLCommand;
-import org.fidonet.binkp.common.commands.OPTCommand;
-import org.fidonet.binkp.common.commands.SYSCommand;
-import org.fidonet.binkp.common.commands.TIMECommand;
-import org.fidonet.binkp.common.commands.VERCommand;
-import org.fidonet.binkp.common.commands.ZYZCommand;
-import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.Command;
-import org.fidonet.binkp.common.commands.share.CommandFactory;
-import org.fidonet.binkp.common.commands.share.CompositeMessage;
-import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.common.io.ReceiveTransfer;
+import org.fidonet.binkp.common.protocol.BinkpSessionEngine;
 import org.fidonet.binkp.mina2.commons.Mina2Session;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.events.EventBus;
@@ -62,9 +48,6 @@ import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -127,25 +110,7 @@ public class BinkSessionHandler extends IoHandlerAdapter {
             return;
         }
 
-        List<MessageCommand> commands = new ArrayList<MessageCommand>();
-        if (!isClient) {
-            commands.add(new CramOPTCommand());
-        }
-        commands.add(new OPTCommand());
-        commands.add(new SYSCommand());
-        commands.add(new ZYZCommand());
-        commands.add(new LOCCommand());
-        commands.add(new NDLCommand());
-        commands.add(new VERCommand());
-        commands.add(new TIMECommand());
-        commands.add(new ADRCommand());
-
-        CompositeMessage greeting = new CompositeMessage(commands);
-        greeting.send(mina2Session, sessionContext);
-        if (!isClient) {
-            log.debug("Greeting was sent. Waiting password...");
-            sessionContext.setState(SessionState.STATE_WAITPWD);
-        }
+        BinkpSessionEngine.greet(mina2Session, sessionContext);
     }
 
     @Override
@@ -155,34 +120,19 @@ public class BinkSessionHandler extends IoHandlerAdapter {
         if (data.getData().length == 0) {
             return;
         }
-        Command command;
-        BinkData binkData;
         Mina2Session mina2Session = new Mina2Session(session);
         try {
-            binkData = BinkFrame.toBinkData(data);
-            command = new CommandFactory().createCommand(sessionContext, binkData);
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-            sessionContext.setState(SessionState.STATE_ERR);
-            sessionContext.setLastErrorMessage(ex.getMessage());
-            Command error = new ERRCommand();
-            error.send(mina2Session, sessionContext);
+            BinkpSessionEngine.receive(mina2Session, sessionContext, data);
+        } catch (Exception failure) {
+            sessionContext.fail(failure);
+            try {
+                new ERRCommand().send(mina2Session, sessionContext);
+            } catch (Exception writeFailure) {
+                failure.addSuppressed(writeFailure);
+            }
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
             session.closeOnFlush();
-            throw ex;
-        }
-        if (command != null) {
-            log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command payload length: {} bytes", binkData.getData().length);
-            command.handle(mina2Session,
-                           sessionContext,
-                           new String(binkData.getData(), StandardCharsets.UTF_8));
-        } else if (!binkData.isCommand()) {
-            try {
-                ReceiveTransfer.accept(mina2Session, sessionContext, binkData.getData());
-            } catch (Exception e) {
-                exceptionCaught(session, e);
-            }
+            throw failure;
         }
     }
 

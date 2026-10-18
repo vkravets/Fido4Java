@@ -31,27 +31,13 @@ package org.fidonet.binkp.netty.plugin.handler;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.codec.TrafficCrypter;
-import org.fidonet.binkp.common.commands.ADRCommand;
 import org.fidonet.binkp.common.commands.BSYCommand;
-import org.fidonet.binkp.common.commands.CramOPTCommand;
 import org.fidonet.binkp.common.commands.ERRCommand;
-import org.fidonet.binkp.common.commands.LOCCommand;
-import org.fidonet.binkp.common.commands.NDLCommand;
-import org.fidonet.binkp.common.commands.OPTCommand;
-import org.fidonet.binkp.common.commands.SYSCommand;
-import org.fidonet.binkp.common.commands.TIMECommand;
-import org.fidonet.binkp.common.commands.VERCommand;
-import org.fidonet.binkp.common.commands.ZYZCommand;
-import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.Command;
-import org.fidonet.binkp.common.commands.share.CommandFactory;
-import org.fidonet.binkp.common.commands.share.CompositeMessage;
-import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
-import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.common.io.ReceiveTransfer;
+import org.fidonet.binkp.common.protocol.BinkpSessionEngine;
 import org.fidonet.binkp.netty.plugin.commons.NettySession;
 import org.fidonet.binkp.netty.plugin.commons.SessionKeys;
 import org.fidonet.events.EventBus;
@@ -63,11 +49,7 @@ import io.netty.channel.socket.DuplexChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -149,28 +131,7 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
             }
             return;
         }
-        final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        sessionContext.setMessageDigest(messageDigest);
-
-        List<MessageCommand> commands = new ArrayList<MessageCommand>();
-        if (sessionContext.getServerRole().equals(ServerRole.SERVER)) {
-            commands.add(new CramOPTCommand(sessionContext.getMessageDigest()));
-        }
-        commands.add(new OPTCommand());
-        commands.add(new SYSCommand());
-        commands.add(new ZYZCommand());
-        commands.add(new LOCCommand());
-        commands.add(new NDLCommand());
-        commands.add(new VERCommand());
-        commands.add(new TIMECommand());
-        commands.add(new ADRCommand());
-
-        CompositeMessage greeting = new CompositeMessage(commands);
-        greeting.send(nettySession, sessionContext);
-        if (!isClient) {
-            log.debug("Greeting was sent. Waiting password...");
-            sessionContext.setState(SessionState.STATE_WAITPWD);
-        }
+        BinkpSessionEngine.greet(nettySession, sessionContext);
     }
 
     @Override
@@ -180,44 +141,18 @@ public class BinkSessionHandler extends SimpleChannelInboundHandler<BinkFrame> {
                 && sessionContext.getServerRole() == ServerRole.SERVER) {
             return;
         }
-        Command command = null;
-        BinkData binkData = null;
         NettySession nettySession = new NettySession(ctx);
         try {
-            binkData = BinkFrame.toBinkData(data);
-            command = new CommandFactory().createCommand(sessionContext, binkData);
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-            sessionContext.fail(ex);
-            Command error = new ERRCommand();
+            BinkpSessionEngine.receive(nettySession, sessionContext, data);
+        } catch (Exception failure) {
+            sessionContext.fail(failure);
             try {
-                error.send(nettySession, sessionContext);
-            } catch (Exception e) {
-                log.warn(e.getMessage(), e);
-                exceptionCaught(ctx, e);
+                new ERRCommand().send(nettySession, sessionContext);
+            } catch (Exception writeFailure) {
+                failure.addSuppressed(writeFailure);
             }
             sessionContext.sendEvent(new DisconnectedEvent(sessionContext));
-            ctx.close();
-            exceptionCaught(ctx, ex);
-            return;
-        }
-        if (command != null) {
-            log.debug("Get command: {}", BinkCommand.findCommand(binkData.getCommand()));
-            log.debug("Command payload length: {} bytes", binkData.getData().length);
-            try {
-                command.handle(nettySession,
-                               sessionContext,
-                               new String(binkData.getData(), StandardCharsets.UTF_8));
-            } catch (Exception e) {
-                log.warn(e.getMessage(), e);
-                exceptionCaught(ctx, e);
-            }
-        } else if (!binkData.isCommand()) {
-            try {
-                ReceiveTransfer.accept(nettySession, sessionContext, binkData.getData());
-            } catch (Exception e) {
-                exceptionCaught(ctx, e);
-            }
+            exceptionCaught(ctx, failure);
         }
     }
 
