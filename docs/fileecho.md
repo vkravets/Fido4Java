@@ -54,3 +54,6 @@ inbound for inspection/retry. Completed receipts suppress duplicate forwarding.
 The plugin publishes accepted-file callbacks after durable storage; dependent
 directory import scripts continue to receive the same callback. Direct inbound
 directory feeds remain independent of TIC processing.
+
+TIC `Path` entries require a valid address and nonnegative Unix timestamp; optional
+human-readable date comments are retained when forwarding.

@@ -118,6 +118,28 @@ class FileEchoDeliveryTest {
     }
 
     @Test
+    void malformedPathCannotCreateAnAreaOrPublishPayloadAndCanBeRetried() throws Exception {
+        byte[] bytes = "directory contents".getBytes(StandardCharsets.UTF_8);
+        CRC32 crc = new CRC32();
+        crc.update(bytes);
+        String valid = tic("tic-password", String.format("%08X", crc.getValue()));
+        Path payload = inbox.resolve("renamed-list");
+        Files.write(payload, bytes);
+        ReceivedFile.record(payload, "LIST.001");
+        AtomicInteger deliveries = new AtomicInteger();
+        scripts.onFile((area, path, name, peer, receipt) -> deliveries.incrementAndGet());
+        Files.writeString(ticket, valid.replace("Path 1:500/101 1700000000", "Path 1:500/101"));
+        scripts.beforeExport(tosser);
+        assertNull(processor.store().area("lists.nodes"));
+        assertEquals(0, deliveries.get());
+        assertTrue(Files.exists(ticket));
+        assertTrue(Files.exists(payload));
+        Files.writeString(ticket, valid);
+        scripts.beforeExport(tosser);
+        assertEquals(1, deliveries.get());
+    }
+
+    @Test
     void extensionValidatesFieldsAndNeverReturnsStoredPasswords() throws Exception {
         scripts.close();
         config = new JFtnConfig();

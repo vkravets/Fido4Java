@@ -53,6 +53,22 @@ final class TicDocument {
                 throw new IOException("Duplicate TIC keyword: " + key);
             }
         }
+        for (String value : values("path")) {
+            validatePath(value);
+        }
+    }
+
+    private void validatePath(String value) throws IOException {
+        String[] parts = value.trim().split("\\s+", 3);
+        address(parts[0]);
+        if (parts.length < 2 || !parts[1].matches("[0-9]+")) {
+            throw new IOException("TIC Path requires a nonnegative Unix timestamp");
+        }
+        try {
+            Long.parseLong(parts[1]);
+        } catch (NumberFormatException failure) {
+            throw new IOException("Invalid TIC Path timestamp", failure);
+        }
     }
 
     String value(String key) {
@@ -74,7 +90,12 @@ final class TicDocument {
     static FTNAddr address(String value) throws IOException {
         String text = value.trim().split("\\s+")[0];
         text = text.substring(text.lastIndexOf('#') + 1).split("@", 2)[0];
-        FTNAddr address = new FTNAddr(text);
+        FTNAddr address;
+        try {
+            address = new FTNAddr(text);
+        } catch (NumberFormatException failure) {
+            throw new IOException("Invalid TIC address", failure);
+        }
         if (!address.isValid()) {
             throw new IOException("Invalid TIC address");
         }
