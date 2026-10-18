@@ -21,18 +21,18 @@ class FileEchoTools {
     final String indexName
     final FTNAddr local
 
-    FileEchoTools(api) {
+    FileEchoTools(api, boolean offline = false) {
         this.api = api
         root = api.scriptDirectory.toRealPath()
         charset = Charset.forName(api.config.getValue('FileEchoIndexCharset', 'UTF-8'))
         indexEnabled = flag('FileEchoIndexEnabled', 'true')
-        notifyEnabled = flag('FileEchoNotifyEnabled', 'true')
+        notifyEnabled = !offline && flag('FileEchoNotifyEnabled', 'true')
         indexName = api.config.getValue('FileEchoIndexName', 'files.bbs')
         if (!(indexName in ['files.bbs', 'file.bbs'])) {
             throw new IllegalArgumentException('FileEchoIndexName must be files.bbs or file.bbs')
         }
-        local = api.config.localAddresses.iterator().next()
-        if (indexEnabled) template('FileEchoIndexTemplate', 'templates/fileecho-index.txt')
+        local = offline ? null : api.config.localAddresses.iterator().next()
+        if (indexEnabled || offline) template('FileEchoIndexTemplate', 'templates/fileecho-index.txt')
         if (notifyEnabled) template('FileEchoNoticeTemplate', 'templates/fileecho-notice.txt')
     }
 
@@ -99,13 +99,37 @@ class FileEchoTools {
                 }
             }
         }
-        String row = render(template('FileEchoIndexTemplate', 'templates/fileecho-index.txt'),
-                [name: event.name, description: event.descriptions.collect { clean(it) }.join(' | ')])
+        rows[event.name.toLowerCase(Locale.ROOT)] = indexRow(event.name, event.descriptions)
+        writeIndex(index, rows.values())
+    }
+
+    private String indexRow(name, descriptions) {
+        return render(template('FileEchoIndexTemplate', 'templates/fileecho-index.txt'),
+                [name: name, description: descriptions.collect { clean(it) }.join(' | ')])
                 .replaceAll('[\\r\\n]+', ' ').trim()
-        rows[event.name.toLowerCase(Locale.ROOT)] = row
+    }
+
+    Path rebuild(Path directory, records) {
+        Path index = directory.resolve(indexName)
+        if (Files.isSymbolicLink(index)) throw new IOException('Fileecho index cannot be a symbolic link')
+        def rows = records.collect { record -> indexRow(record.name, record.descriptions) }
+        if (Files.exists(index)) {
+            // Backups are hidden so subsequent indexing cannot treat them as payloads.
+            Path backup = Files.createTempFile(directory, '.' + indexName + '-backup-', '.bak')
+            Files.copy(index, backup, StandardCopyOption.REPLACE_EXISTING)
+        }
+        writeIndex(index, rows)
+        return index
+    }
+
+    private void writeIndex(Path index, rows) {
         Path temporary = Files.createTempFile(index.parent, '.file-index-', '.tmp')
         try {
-            Files.writeString(temporary, rows.values().join('\r\n') + '\r\n', charset)
+            String text = rows.isEmpty() ? '' : rows.join('\r\n') + '\r\n'
+            if (text.getBytes(charset).length > 8 * 1024 * 1024) {
+                throw new IOException('Fileecho index exceeds 8 MiB')
+            }
+            Files.writeString(temporary, text, charset)
             Files.move(temporary, index, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } finally {
             Files.deleteIfExists(temporary)
@@ -126,6 +150,10 @@ class FileEchoTools {
         api.tosser.submitNetmail(message, key)
         api.state.put(key, 'done')
     }
+}
+
+def rebuildIndex(api, Path directory, records) {
+    return new FileEchoTools(api, true).rebuild(directory, records)
 }
 
 def register(api) {

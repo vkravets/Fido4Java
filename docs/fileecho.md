@@ -85,3 +85,49 @@ originals remain preserved. Java enforces collision safety even without the scri
 
 TIC `Path` entries require a valid address and nonnegative Unix timestamp; optional
 human-readable date comments are retained when forwarding.
+
+## Rebuilding an index from retained TICs
+
+Stop the station, then run from the installation root:
+
+```powershell
+.\jftn.cmd --rebuild-fileecho-index nodelisz .\fileecho\nodelisz
+.\jftn.cmd --rebuild-fileecho-index r46_node .\fileecho\r46_node
+.\jftn.cmd --rebuild-fileecho-index r46_pnt .\fileecho\r46_pnt
+```
+
+On Unix use `./jftn.sh` with the same arguments. The first argument after the
+command is the TIC **Area tag**, not an arbitrary folder label; the second is
+the existing payload directory. An optional final argument selects a configuration
+file instead of `jftn.conf`. Its adjacent `conf.d` fragments are loaded normally.
+The optional fileecho plugin must be installed and the external
+`fileecho-tools.groovy` must be listed in `MailScript`.
+
+The command holds the same `Tmp/mail-service.lock` as the mail runtime and refuses
+to run while that runtime is active. It starts no listeners, database or mail
+processing. It recursively reads regular `*.tic` files beneath
+`ReceivedArchivePath` (default: `mail/received`, relative to the configured inbound
+parent). Archive subdirectory symlinks are not followed. Originals still in inbound,
+TICs inside compressed bundles, and missing/deleted archives are not reconstructed.
+
+Descriptions are recovered only when Area, case-insensitive File name, CRC and
+optional Size match a current payload. Desc/LDesc use `TicCharset` (IBM437 by
+default). Invalid TICs are skipped with a warning; conflicting descriptions for
+the same matching payload abort before index replacement. This is metadata
+recovery from an operator-controlled archive, not sender authorization or TIC
+reprocessing. Passwords, forwarding, import receipts and duplicate notifications
+are not changed.
+
+The external script renders a fresh index using `FileEchoIndexName`,
+`FileEchoIndexCharset` and `FileEchoIndexTemplate`, even if automatic indexing is
+disabled. Files without matching metadata are included by name only. The command
+prints counts with/without descriptions. It indexes only direct regular payloads,
+excluding hidden files, existing indexes, symlinks and subdirectories such as
+`dupes`. Filename whitespace/control characters and case-insensitive collisions
+are refused. Legacy hash prefixes must be removed separately before recovery.
+
+An existing index is copied to a unique hidden `.files.bbs-backup-*.bak` (or
+`.file.bbs-backup-*.bak`) in the area before atomic replacement. Old rows are not
+merged, so removed or renamed filenames disappear. Payloads and retained TICs
+are never modified. Repeating the command produces the same index and another
+backup.

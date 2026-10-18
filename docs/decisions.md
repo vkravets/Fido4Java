@@ -416,6 +416,20 @@ These internal class/API names replace the earlier ambiguous names directly;
 external Java/Groovy integrations must rebuild/update imports. No binary alias
 layer is provided. Existing runtime databases and operational state are retained.
 
+## 25. Offline fileecho index recovery keeps formatting in scripts
+
+Optional plugin `OfflineCommand` providers run before node startup and must not
+start listeners or mail processing. The fileecho provider takes the existing mail
+runtime file lock, reads retained TICs with the shared bounded parser, and matches
+metadata against current payload CRC/size. It does not replay deliveries, change
+mail journals or grant sender permissions. Conflicting metadata fails before
+publication. The operator selects the area tag and directory explicitly.
+
+The external fileecho tools script owns index formatting/templates for both live
+events and offline recovery. Offline rebuild replaces all rows atomically and
+preserves an existing index as a hidden backup. Unmatched files remain visible
+without descriptions; missing originals are never fabricated.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the
