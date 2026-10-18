@@ -12,7 +12,7 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.mina2.commons.SessionKeys;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
 import org.fidonet.events.HasEventBus;
@@ -62,7 +62,7 @@ public class HandlerFailureTest extends HasEventBus {
         context.setServerRole(ServerRole.CLIENT);
         DummySession session = new DummySession();
         session.setAttribute(SessionKeys.SESSION_CONTEXT_KEY, context);
-        FileInfo info = new FileInfo("receiving.bin", 10, 123);
+        FileTransferInfo info = new FileTransferInfo("receiving.bin", 10, 123);
         context.getRecvFiles().add(new FileData<>(info, new ByteArrayOutputStream()));
         new BinkSessionHandler(getEventBus()).messageReceived(session,
                                                               BinkData.toBinkFrame(new BinkData(true,

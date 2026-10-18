@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.protocol.ProcessConnector;
 
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class ProcessConnectorTest {
         context.setReceivedFileHandler((connection,
                                         file) -> payload.set(((ByteArrayOutputStream) file.getStream()).toString(StandardCharsets.US_ASCII)));
         context.getSendFiles()
-               .add(new FileData<>(new FileInfo("LOCAL.PKT", 3, 123),
+               .add(new FileData<>(new FileTransferInfo("LOCAL.PKT", 3, 123),
                                    new ByteArrayInputStream(new byte[]{1, 2, 3})));
         List<String> log = Collections.synchronizedList(new ArrayList<>());
         context.setProtocolLogListener(log::add);

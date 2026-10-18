@@ -33,7 +33,7 @@ import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.events.FileSendEvent;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.protocol.Session;
 
 import java.io.InputStream;
@@ -57,7 +57,8 @@ public class GOTCommand extends MessageCommand {
         return command.equals(BinkCommand.M_GOT) && args != null && args.length() > 0;
     }
 
-    private FileData<InputStream> findSentFile(SessionContext sessionContext, FileInfo info) {
+    private FileData<InputStream> findSentFile(SessionContext sessionContext,
+                                               FileTransferInfo info) {
         return sessionContext.getPendingFiles().remove(info);
     }
 
@@ -65,11 +66,11 @@ public class GOTCommand extends MessageCommand {
     public void handle(Session session, SessionContext sessionContext, String commandArgs)
             throws Exception {
         sessionContext.validateIncomingCommand(BinkCommand.M_GOT);
-        FileInfo info = FileInfo.parseFileInfo(commandArgs);
+        FileTransferInfo info = FileTransferInfo.parseFileInfo(commandArgs);
         FileData<InputStream> sentFile = findSentFile(sessionContext, info);
         if (sentFile != null) {
             sessionContext.commitSentFile(sentFile);
-            FileInfo fileSentInfo = sentFile.getInfo();
+            FileTransferInfo fileSentInfo = sentFile.getInfo();
             fileSentInfo.setFinished(true);
             sessionContext.getSendFiles().removeIf(file -> file.getInfo().equals(info));
             if (session.getFileSender() != null) {
@@ -86,7 +87,7 @@ public class GOTCommand extends MessageCommand {
     public String getCommandArguments(SessionContext sessionContext) {
         FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
         if (fileData != null) {
-            FileInfo fileInfo = fileData.getInfo();
+            FileTransferInfo fileInfo = fileData.getInfo();
             return fileInfo.arguments();
         }
         return null;

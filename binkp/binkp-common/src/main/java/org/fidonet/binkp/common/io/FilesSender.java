@@ -65,7 +65,7 @@ public class FilesSender<T extends Session> implements Runnable {
     protected static final int FILE_BLOCK_SIZE = 4096;
     protected SessionContext sessionContext;
     protected volatile FileData<InputStream> curFile;
-    private final BlockingQueue<FileInfo> requests = new LinkedBlockingQueue<>();
+    private final BlockingQueue<FileTransferInfo> requests = new LinkedBlockingQueue<>();
     private volatile boolean awaitingOffset;
     private volatile boolean cancelled;
 
@@ -87,7 +87,7 @@ public class FilesSender<T extends Session> implements Runnable {
     private boolean sendFile(FileData<InputStream> data) throws Exception {
         // The caller owns this stream; GET may reset and reuse it for a resend.
         final InputStream reader = data.getStream();
-        FileInfo fileInfo = data.getInfo();
+        FileTransferInfo fileInfo = data.getInfo();
         curFile = data;
         if (data.isRewindBeforeSend()) {
             if (reader instanceof FileInputStream) {
@@ -103,7 +103,7 @@ public class FilesSender<T extends Session> implements Runnable {
         if (fileInfo.getOffset() < 0) {
             awaitingOffset = true;
             sessionContext.setState(SessionState.STATE_WAITGET);
-            FileInfo requested = requests.poll(300, TimeUnit.SECONDS);
+            FileTransferInfo requested = requests.poll(300, TimeUnit.SECONDS);
             awaitingOffset = false;
             if (cancelled || fileInfo.isShouldSkip() || fileInfo.isFinished()) {
                 return false;
@@ -255,7 +255,7 @@ public class FilesSender<T extends Session> implements Runnable {
             sessionContext.wait(100);
         }
     }
-    private FileData<InputStream> findFile(FileInfo info) {
+    private FileData<InputStream> findFile(FileTransferInfo info) {
         for (FileData<InputStream> fileData : files) {
             if (fileData.getInfo().equals(info)) {
                 return fileData;
@@ -264,7 +264,7 @@ public class FilesSender<T extends Session> implements Runnable {
         return null;
     }
 
-    public synchronized void skip(FileInfo fileInfo, boolean isResend) throws IOException {
+    public synchronized void skip(FileTransferInfo fileInfo, boolean isResend) throws IOException {
         FileData<InputStream> data = sessionContext.getPendingFiles().get(fileInfo);
         if (data == null && curFile != null && curFile.getInfo().equals(fileInfo)) {
             data = curFile;
@@ -291,7 +291,7 @@ public class FilesSender<T extends Session> implements Runnable {
         }
     }
 
-    public void resume(FileInfo info) throws IOException {
+    public void resume(FileTransferInfo info) throws IOException {
         if (awaitingOffset && curFile != null && curFile.getInfo().equals(info)) {
             if (info.getOffset() < 0 || info.getOffset() > curFile.getInfo().getSize()) {
                 throw new IOException("Invalid resume offset");
@@ -302,7 +302,7 @@ public class FilesSender<T extends Session> implements Runnable {
         }
     }
 
-    public void acknowledge(FileInfo info) {
+    public void acknowledge(FileTransferInfo info) {
         if (awaitingOffset && curFile != null && curFile.getInfo().equals(info)) {
             requests.offer(info);
         }
@@ -313,7 +313,7 @@ public class FilesSender<T extends Session> implements Runnable {
 
     public void cancel() {
         cancelled = true;
-        requests.offer(new FileInfo("", 0, 0));
+        requests.offer(new FileTransferInfo("", 0, 0));
         synchronized (sessionContext) {
             sessionContext.notifyAll();
         }

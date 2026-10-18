@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
@@ -212,7 +212,8 @@ class FileFixScriptTest {
             PartialFileOutputStream partial = new PartialFileOutputStream(partialPath, 5);
             partial.write("hello".getBytes(StandardCharsets.UTF_8));
             partial.close();
-            context.commitReceivedFile(new FileData<>(new FileInfo("NODELIST.288", 5, 1), partial));
+            context.commitReceivedFile(new FileData<>(new FileTransferInfo("NODELIST.288", 5, 1),
+                                                      partial));
             assertEquals("hello",
                          Files.readString(config.getReceivedArchivePath()
                                                 .resolve(ScriptState.digest("hello"))

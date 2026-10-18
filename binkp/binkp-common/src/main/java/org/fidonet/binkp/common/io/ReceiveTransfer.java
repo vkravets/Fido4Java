@@ -18,7 +18,7 @@ public final class ReceiveTransfer {
     private ReceiveTransfer() {
     }
 
-    public static FileData<OutputStream> open(SessionContext context, FileInfo info)
+    public static FileData<OutputStream> open(SessionContext context, FileTransferInfo info)
             throws IOException {
         context.requireTransfer();
         Path directory = context.getStationConfig().getPartialDirectory();
@@ -65,7 +65,7 @@ public final class ReceiveTransfer {
         if (file == null || file.getInfo().isFinished() || file.isWaitingForHeader()) {
             return;
         }
-        FileInfo info = file.getInfo();
+        FileTransferInfo info = file.getInfo();
         if (bytes.length > info.getSize() - info.getCurSize()) {
             throw new IOException("Data exceeds advertised file size");
         }

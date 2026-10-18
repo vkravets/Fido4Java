@@ -17,7 +17,7 @@ import org.fidonet.binkp.common.events.FileReceivedEventHandler;
 import org.fidonet.binkp.common.events.SessionEventProbe;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.netty.plugin.codec.BinkDataDecoder;
 import org.fidonet.binkp.netty.plugin.codec.BinkDataEncoder;
 import org.fidonet.binkp.netty.plugin.codec.TrafficCrypterCodec;
@@ -116,7 +116,7 @@ public class NettyPeerTransferTest {
     }
 
     private FileData<InputStream> file(String name, byte[] bytes, long time) {
-        return new FileData<>(new FileInfo(name, bytes.length, time),
+        return new FileData<>(new FileTransferInfo(name, bytes.length, time),
                               new ByteArrayInputStream(bytes));
     }
 
@@ -346,9 +346,9 @@ public class NettyPeerTransferTest {
         long firstFileOffset() throws Exception {
             for (BinkFrame frame : frames) {
                 if (frame.getDataInfo() < 0 && frame.getData()[0] == BinkCommand.M_FILE.getCmd()) {
-                    return FileInfo.parseFileInfo(new String(frame.getData(),
-                                                             StandardCharsets.UTF_8).substring(1))
-                                   .getOffset();
+                    return FileTransferInfo.parseFileInfo(new String(frame.getData(),
+                                                                     StandardCharsets.UTF_8).substring(1))
+                                           .getOffset();
                 }
             }
             throw new AssertionError("No M_FILE sent");

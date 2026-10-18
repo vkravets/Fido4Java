@@ -17,7 +17,7 @@ import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.ReceiveTransfer;
 import org.fidonet.types.FTNAddr;
 
@@ -116,7 +116,7 @@ public class Binkp11Test {
             throws Exception {
         SessionContext context = authenticated11();
         RecordingSession session = new RecordingSession();
-        FileData<InputStream> file = new FileData<>(new FileInfo("deferred", 1, 123),
+        FileData<InputStream> file = new FileData<>(new FileTransferInfo("deferred", 1, 123),
                                                     new ByteArrayInputStream(new byte[]{1}));
         context.getPendingFiles().put(file.getInfo(), file);
         context.recordCommand(BinkCommand.M_FILE);
@@ -143,14 +143,15 @@ public class Binkp11Test {
             FileData<?> partial = context.getRecvFiles().peek();
             new EOBCommand().handle(session, context, "");
             assertTrue(context.getRecvFiles().isEmpty());
-            assertSame(partial, context.getNotFinishedFileData(new FileInfo("partial", 4, 123)));
+            assertSame(partial,
+                       context.getNotFinishedFileData(new FileTransferInfo("partial", 4, 123)));
             ReceiveTransfer.accept(session, context, new byte[]{99});
             assertEquals(2, partial.getInfo().getCurSize());
             offer.handle(session, context, "partial 4 123 -1");
             BinkData reply = BinkFrame.toBinkData(session.frames.get(session.frames.size() - 1));
             assertEquals(BinkCommand.M_GET.getCmd(), reply.getCommand());
             String arguments = new String(reply.getData(), StandardCharsets.UTF_8);
-            assertEquals(2, FileInfo.parseFileInfo(arguments).getOffset());
+            assertEquals(2, FileTransferInfo.parseFileInfo(arguments).getOffset());
         } finally {
             context.closeReceiveStreams();
         }

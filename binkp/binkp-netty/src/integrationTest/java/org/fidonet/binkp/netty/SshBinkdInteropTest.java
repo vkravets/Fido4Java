@@ -8,7 +8,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.SessionTestFixtures;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.protocol.ProcessConnector;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class SshBinkdInteropTest {
             context.setReceivedFileHandler((connection,
                                             file) -> received.set(((ByteArrayOutputStream) file.getStream()).toByteArray()));
             context.getSendFiles()
-                   .add(new FileData<>(new FileInfo("LOCAL.PKT", outgoing.length, 123),
+                   .add(new FileData<>(new FileTransferInfo("LOCAL.PKT", outgoing.length, 123),
                                        new ByteArrayInputStream(outgoing)));
             ProcessConnector connector = new ProcessConnector(context.getLinksInfo()
                                                                      .getLinks()

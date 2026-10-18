@@ -1,7 +1,7 @@
 package org.fidonet.binkp.interop;
 
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -16,12 +16,12 @@ public final class ExchangeFiles {
     final byte[] toJftn = randomBytes(17009, 12);
 
     public FileData<InputStream> outgoingFromJftn() {
-        return new FileData<>(new FileInfo(FROM_JFTN, toBinkd.length, 1700000000L),
+        return new FileData<>(new FileTransferInfo(FROM_JFTN, toBinkd.length, 1700000000L),
                               new ByteArrayInputStream(toBinkd));
     }
 
     public FileData<InputStream> outgoingInNextBatch() {
-        return new FileData<>(new FileInfo(SECOND_FROM_JFTN, toBinkd.length, 1700000001L),
+        return new FileData<>(new FileTransferInfo(SECOND_FROM_JFTN, toBinkd.length, 1700000001L),
                               new ByteArrayInputStream(toBinkd));
     }
 

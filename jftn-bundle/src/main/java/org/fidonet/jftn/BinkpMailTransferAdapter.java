@@ -3,7 +3,7 @@ package org.fidonet.jftn;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.script.FileDeliveryQueue;
@@ -131,9 +131,10 @@ final class BinkpMailTransferAdapter {
             return;
         }
         try {
-            FileInfo info = new FileInfo(path.getFileName().toString(),
-                                         Files.size(path),
-                                         Files.getLastModifiedTime(path).toMillis() / 1000);
+            FileTransferInfo info = new FileTransferInfo(path.getFileName().toString(),
+                                                         Files.size(path),
+                                                         Files.getLastModifiedTime(path).toMillis()
+                                                                 / 1000);
             LazyFileInputStream stream = new LazyFileInputStream(path);
             FileData<InputStream> file = new FileData<>(info, stream);
             file.setSendResource(stream::release);

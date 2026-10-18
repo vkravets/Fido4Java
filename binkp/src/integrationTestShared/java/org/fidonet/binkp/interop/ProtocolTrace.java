@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.io.BinkFrame;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -77,9 +77,9 @@ public final class ProtocolTrace {
     private long firstIncomingFileOffset() throws Exception {
         for (BinkFrame frame : incoming) {
             if (frame.getData()[0] == BinkCommand.M_FILE.getCmd()) {
-                return FileInfo.parseFileInfo(new String(frame.getData(),
-                                                         StandardCharsets.UTF_8).substring(1))
-                               .getOffset();
+                return FileTransferInfo.parseFileInfo(new String(frame.getData(),
+                                                                 StandardCharsets.UTF_8).substring(1))
+                                       .getOffset();
             }
         }
         throw new AssertionError("binkd did not send M_FILE");

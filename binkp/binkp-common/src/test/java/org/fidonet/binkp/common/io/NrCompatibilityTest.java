@@ -70,8 +70,8 @@ public class NrCompatibilityTest {
         return context;
     }
 
-    private FileInfo info(long offset) {
-        FileInfo i = new FileInfo("hello world.pkt", 6, 123);
+    private FileTransferInfo info(long offset) {
+        FileTransferInfo i = new FileTransferInfo("hello world.pkt", 6, 123);
         i.setOffset(offset);
         return i;
     }
@@ -140,10 +140,10 @@ public class NrCompatibilityTest {
             SessionContext context = context();
             context.setServerRole(role);
             context.getSendFiles()
-                   .add(new FileData<>(new FileInfo("first.pkt", 1, 11),
+                   .add(new FileData<>(new FileTransferInfo("first.pkt", 1, 11),
                                        new ByteArrayInputStream(new byte[]{1})));
             context.getSendFiles()
-                   .add(new FileData<>(new FileInfo("second.pkt", 1, 12),
+                   .add(new FileData<>(new FileTransferInfo("second.pkt", 1, 12),
                                        new ByteArrayInputStream(new byte[]{2})));
             RecordingSession session = new RecordingSession() {
                 @Override
@@ -343,9 +343,9 @@ public class NrCompatibilityTest {
         file.getStream().write(new byte[]{1, 2, 3});
         file.getStream().close();
         FileData<OutputStream> different = ReceiveTransfer.open(first,
-                                                                new FileInfo("hello world.pkt",
-                                                                             6,
-                                                                             124));
+                                                                new FileTransferInfo("hello world.pkt",
+                                                                                     6,
+                                                                                     124));
         assertEquals(0, different.getInfo().getCurSize());
         different.getStream().close();
         Link remote = new Link(new FTNAddr(1, 500, 102, 0),
@@ -438,10 +438,10 @@ public class NrCompatibilityTest {
 
     @Test
     public void escapesSpaceAndBackslashAndAcceptsLegacyEscapes() throws Exception {
-        FileInfo info = new FileInfo("a b\\c", 3, 123);
+        FileTransferInfo info = new FileTransferInfo("a b\\c", 3, 123);
         assertEquals("a\\x20b\\x5cc 3 123", info.arguments());
-        assertEquals(info, FileInfo.parseFileInfo(info.arguments()));
-        assertEquals("a b", FileInfo.parseFileInfo("a\\20b 3 123").getName());
+        assertEquals(info, FileTransferInfo.parseFileInfo(info.arguments()));
+        assertEquals("a b", FileTransferInfo.parseFileInfo("a\\20b 3 123").getName());
     }
 
     @Test
@@ -485,7 +485,7 @@ public class NrCompatibilityTest {
     public void doesNotAcknowledgeIfClosingReceiveStreamFails() throws Exception {
         SessionContext context = context();
         RecordingSession session = new RecordingSession();
-        FileData<OutputStream> file = new FileData<>(new FileInfo("file.pkt", 1, 123),
+        FileData<OutputStream> file = new FileData<>(new FileTransferInfo("file.pkt", 1, 123),
                                                      new ByteArrayOutputStream() {
                                                          @Override
                                                          public void close() throws IOException {

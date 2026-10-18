@@ -27,7 +27,7 @@ public class DurableCompletionTest {
     @Test
     public void doesNotAcknowledgeWhenDurablePublicationFails() throws Exception {
         SessionContext context = SessionTestFixtures.transferContext();
-        FileInfo info = new FileInfo("mail.pkt", 3, 1);
+        FileTransferInfo info = new FileTransferInfo("mail.pkt", 3, 1);
         info.setCurSize(3);
         FileData<OutputStream> file = new FileData<>(info, new ByteArrayOutputStream());
         context.getRecvFiles().add(file);

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.types.Link;
 
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,8 @@ public class SessionLifecycleTest {
     }
 
     private FileData<InputStream> file(String name) {
-        return new FileData<>(new FileInfo(name, 1, 123), new ByteArrayInputStream(new byte[]{1}));
+        return new FileData<>(new FileTransferInfo(name, 1, 123),
+                              new ByteArrayInputStream(new byte[]{1}));
     }
 
     @Test
@@ -143,7 +144,7 @@ public class SessionLifecycleTest {
                     }
                 }
             };
-            FileData<OutputStream> file = new FileData<>(new FileInfo(name, 1, 1), stream);
+            FileData<OutputStream> file = new FileData<>(new FileTransferInfo(name, 1, 1), stream);
             if (name.equals("first")) {
                 context.getRecvFiles().add(file);
             } else {
@@ -153,7 +154,7 @@ public class SessionLifecycleTest {
         context.closeReceiveStreams();
         assertEquals(Arrays.asList("first", "second"), closed);
         assertTrue(context.getRecvFiles().isEmpty());
-        assertNull(context.getNotFinishedFileData(new FileInfo("second", 1, 1)));
+        assertNull(context.getNotFinishedFileData(new FileTransferInfo("second", 1, 1)));
         context.closeReceiveStreams();
         assertEquals(2, closed.size());
     }
@@ -182,12 +183,14 @@ public class SessionLifecycleTest {
     @Test
     public void lookupIgnoresFinishedAndNonmatchingReceiveFiles() {
         SessionContext context = context();
-        FileInfo info = new FileInfo("wanted", 1, 123);
-        FileData<OutputStream> finished = new FileData<>(new FileInfo("wanted", 1, 123),
+        FileTransferInfo info = new FileTransferInfo("wanted", 1, 123);
+        FileData<OutputStream> finished = new FileData<>(new FileTransferInfo("wanted", 1, 123),
                                                          new ByteArrayOutputStream());
         finished.getInfo().setFinished(true);
         context.setNotFinishedFiles(Arrays.asList(finished,
-                                                  new FileData<>(new FileInfo("other", 1, 123),
+                                                  new FileData<>(new FileTransferInfo("other",
+                                                                                      1,
+                                                                                      123),
                                                                  new ByteArrayOutputStream())));
         context.getRecvFiles().add(finished);
         assertNull(context.getNotFinishedFileData(info));

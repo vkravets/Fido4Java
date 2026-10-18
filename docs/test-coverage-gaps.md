@@ -55,7 +55,7 @@ Exception constructors and unused helpers are included; generated Thrift sources
 | [binkp/binkp-common/binkp/common/commands/ERRCommand.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/commands/ERRCommand.java) | 0 | 1 | 51 |
 | [fido-config/config/BaseConfig.java](../fido-config/src/main/java/org/fidonet/config/BaseConfig.java) | 0 | 1 | 121 |
 | [binkp/binkp-mina2/binkp/mina2/codec/TrafficCrypterCodecFilter.java](../binkp/binkp-mina2/src/main/java/org/fidonet/binkp/mina2/codec/TrafficCrypterCodecFilter.java) | 0 | 1 | 68 |
-| [binkp/binkp-common/binkp/common/io/FileInfo.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/io/FileInfo.java) | 0 | 1 | 156 |
+| [binkp/binkp-common/binkp/common/io/FileTransferInfo.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/io/FileTransferInfo.java) | 0 | 1 | 156 |
 | [binkp/binkp-netty/binkp/netty/plugin/codec/TrafficCrypterCodec.java](../binkp/binkp-netty/src/main/java/org/fidonet/binkp/netty/plugin/codec/TrafficCrypterCodec.java) | 0 | 1 | 62 |
 | [binkp/binkp-common/binkp/common/commands/SKIPCommand.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/commands/SKIPCommand.java) | 0 | 1 | 61 |
 | [binkp/binkp-common/binkp/common/LinksInfo.java](../binkp/binkp-common/src/main/java/org/fidonet/binkp/common/LinksInfo.java) | 0 | 1 | 69 |

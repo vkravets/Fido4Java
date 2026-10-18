@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.protocol.StreamSession;
 
 import org.junit.jupiter.api.Test;
@@ -84,9 +84,9 @@ class StreamSessionTest {
             int batch = loaded.getAndIncrement();
             if (batch == 0 || batches && batch == 1) {
                 connection.getSendFiles()
-                          .add(new FileData<>(new FileInfo(name + batch + ".pkt",
-                                                           payload.length,
-                                                           123),
+                          .add(new FileData<>(new FileTransferInfo(name + batch + ".pkt",
+                                                                   payload.length,
+                                                                   123),
                                               new ByteArrayInputStream(payload)));
             }
         });

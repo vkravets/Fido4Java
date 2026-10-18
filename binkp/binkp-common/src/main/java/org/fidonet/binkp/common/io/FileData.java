@@ -39,7 +39,7 @@ import java.io.IOException;
  */
 public class FileData<T> {
 
-    private FileInfo info;
+    private FileTransferInfo info;
     private T stream;
     private boolean rewindBeforeSend;
     private boolean resumeResponse;
@@ -79,7 +79,7 @@ public class FileData<T> {
         sendResource = resource;
     }
 
-    public FileData<T> resend(FileInfo requested) {
+    public FileData<T> resend(FileTransferInfo requested) {
         FileData<T> resend = new FileData<>(requested, stream);
         resend.sendResource = sendResource;
         resend.setRewindBeforeSend(true);
@@ -113,16 +113,16 @@ public class FileData<T> {
         rewindBeforeSend = value;
     }
 
-    public FileData(FileInfo info) {
+    public FileData(FileTransferInfo info) {
         this.info = info;
     }
 
-    public FileData(FileInfo info, T stream) {
+    public FileData(FileTransferInfo info, T stream) {
         this.info = info;
         this.stream = stream;
     }
 
-    public FileInfo getInfo() {
+    public FileTransferInfo getInfo() {
         return info;
     }
 

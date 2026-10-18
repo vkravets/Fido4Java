@@ -35,7 +35,7 @@ public class FilesSenderBoundaryTest {
     public File temporary;
 
     private FileData<InputStream> file(InputStream input, long size, long offset) {
-        FileInfo info = new FileInfo("file", size, 123);
+        FileTransferInfo info = new FileTransferInfo("file", size, 123);
         info.setOffset(offset);
         return new FileData<>(info, input);
     }
@@ -135,7 +135,7 @@ public class FilesSenderBoundaryTest {
             Future<Boolean> sent = executor.submit(() -> sender.send(data));
             awaitWaitGet(context);
             for (long offset : new long[]{-1, 4}) {
-                FileInfo invalid = new FileInfo("file", 3, 123);
+                FileTransferInfo invalid = new FileTransferInfo("file", 3, 123);
                 invalid.setOffset(offset);
                 try {
                     sender.resume(invalid);
@@ -143,7 +143,7 @@ public class FilesSenderBoundaryTest {
                 } catch (IOException expected) {
                 }
             }
-            FileInfo valid = new FileInfo("file", 3, 123);
+            FileTransferInfo valid = new FileTransferInfo("file", 3, 123);
             valid.setOffset(3);
             sender.resume(valid);
             assertTrue(sent.get(2, TimeUnit.SECONDS));
@@ -161,9 +161,9 @@ public class FilesSenderBoundaryTest {
         FilesSender<Session> sender = new FilesSender<>(session, context.getSendFiles(), context);
         FileData<InputStream> data = file(new ByteArrayInputStream(new byte[]{1, 2, 3}), 3, 0);
         context.getSendFiles().add(data);
-        sender.skip(new FileInfo("unknown", 1, 123), false);
+        sender.skip(new FileTransferInfo("unknown", 1, 123), false);
         assertFalse(data.getInfo().isShouldSkip());
-        FileInfo invalid = new FileInfo("file", 3, 123);
+        FileTransferInfo invalid = new FileTransferInfo("file", 3, 123);
         invalid.setOffset(4);
         try {
             sender.skip(invalid, true);
@@ -171,7 +171,7 @@ public class FilesSenderBoundaryTest {
         } catch (IOException expected) {
             assertFalse(data.getInfo().isShouldSkip());
         }
-        FileInfo valid = new FileInfo("file", 3, 123);
+        FileTransferInfo valid = new FileTransferInfo("file", 3, 123);
         valid.setOffset(1);
         sender.resume(valid);
         FileData<InputStream> retry = context.getSendFiles().peek();

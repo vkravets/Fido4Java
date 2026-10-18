@@ -27,7 +27,7 @@ public class SenderBackpressureTest {
                                                                  new ArrayDeque<>(),
                                                                  new SessionContext(null, null));
         try {
-            sender.send(new FileData<>(new FileInfo("large.bin", 1024 * 1024, 0), input));
+            sender.send(new FileData<>(new FileTransferInfo("large.bin", 1024 * 1024, 0), input));
             fail("Write failure must stop the sender");
         } catch (IOException expected) {
             assertEquals("Peer disconnected", expected.getMessage());
@@ -47,12 +47,12 @@ public class SenderBackpressureTest {
         FilesSender<RecordingSession> sender = new FilesSender<>(session,
                                                                  new ArrayDeque<>(),
                                                                  new SessionContext(null, null));
-        FileData<InputStream> file = new FileData<>(new FileInfo("small.bin", 3, 0),
+        FileData<InputStream> file = new FileData<>(new FileTransferInfo("small.bin", 3, 0),
                                                     new ByteArrayInputStream(new byte[3]));
         int[] releases = {0};
         file.setSendResource(() -> releases[0]++);
         sender.send(file);
-        sender.send(file.resend(new FileInfo("small.bin", 3, 0)));
+        sender.send(file.resend(new FileTransferInfo("small.bin", 3, 0)));
         assertEquals(2, releases[0]);
         assertEquals(2, drains[0]);
     }

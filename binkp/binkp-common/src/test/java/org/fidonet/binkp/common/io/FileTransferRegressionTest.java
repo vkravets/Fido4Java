@@ -44,8 +44,8 @@ public class FileTransferRegressionTest {
         return context;
     }
 
-    private FileInfo info(long offset) {
-        FileInfo info = new FileInfo("file.pkt", 6, 123);
+    private FileTransferInfo info(long offset) {
+        FileTransferInfo info = new FileTransferInfo("file.pkt", 6, 123);
         info.setOffset(offset);
         return info;
     }
@@ -54,7 +54,7 @@ public class FileTransferRegressionTest {
     public void advertisesMinusOneInNrMode() {
         SessionContext context = context();
         context.setNRMode(true);
-        FileInfo info = info(0);
+        FileTransferInfo info = info(0);
         context.getSendFiles().add(new FileData<>(info, new ByteArrayInputStream(new byte[6])));
         assertEquals("file.pkt 6 123 -1", new FILECommand().getCommandArguments(context));
         assertEquals(-1, info.getOffset());
@@ -65,7 +65,7 @@ public class FileTransferRegressionTest {
     public void advertisesEmptyFileBeforeTheNextQueuedFile() {
         SessionContext context = context();
         context.getSendFiles()
-               .add(new FileData<>(new FileInfo("empty.pkt", 0, 123),
+               .add(new FileData<>(new FileTransferInfo("empty.pkt", 0, 123),
                                    new ByteArrayInputStream(new byte[0])));
         context.getSendFiles().add(new FileData<>(info(0), new ByteArrayInputStream(new byte[6])));
         assertEquals("empty.pkt 0 123 0", new FILECommand().getCommandArguments(context));
@@ -150,7 +150,7 @@ public class FileTransferRegressionTest {
         context.setNotFinishedFiles(Collections.singletonList(partial));
         context.getRecvFiles().add(partial);
         assertSame(partial, context.getNotFinishedFileData(info(0)));
-        assertNull(context.getNotFinishedFileData(new FileInfo("other.pkt", 6, 123)));
+        assertNull(context.getNotFinishedFileData(new FileTransferInfo("other.pkt", 6, 123)));
         RecordingSession session = new RecordingSession();
         new FILECommand().handle(session, context, "file.pkt 6 123 -1");
         assertSame(partial, context.getRecvFiles().peek());

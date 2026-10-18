@@ -34,7 +34,7 @@ import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.Command;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.ReceiveTransfer;
 import org.fidonet.binkp.common.protocol.Session;
 
@@ -67,7 +67,7 @@ public class FILECommand extends MessageCommand {
         sessionContext.validateIncomingCommand(BinkCommand.M_FILE);
         Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
         FileData curFile = receivedFiles.peek();
-        FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+        FileTransferInfo fileInfo = FileTransferInfo.parseFileInfo(commandArgs);
         if (fileInfo.getOffset() < -1 || fileInfo.getOffset() > fileInfo.getSize()) {
             throw new IOException("Invalid file offset");
         }
@@ -104,7 +104,7 @@ public class FILECommand extends MessageCommand {
     @Override
     public String getCommandArguments(SessionContext sessionContext) {
         FileData<InputStream> fileData = sessionContext.getSendFiles().peek();
-        FileInfo fileInfo = fileData == null ? null : fileData.getInfo();
+        FileTransferInfo fileInfo = fileData == null ? null : fileData.getInfo();
         if (fileInfo != null) {
             long offset = fileInfo.getOffset();
             if (sessionContext.isNRMode() && offset == 0 && !fileData.isResumeResponse()) {

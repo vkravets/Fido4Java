@@ -2,7 +2,7 @@ package org.fidonet.binkp.common;
 
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.protocol.StreamSession;
 
 import java.io.ByteArrayInputStream;
@@ -32,7 +32,7 @@ public final class ProcessTestPeer {
         context.setServerRole(ServerRole.SERVER);
         byte[] data = "Remote process payload".getBytes(StandardCharsets.US_ASCII);
         context.getSendFiles()
-               .add(new FileData<>(new FileInfo("REMOTE.PKT", data.length, 123),
+               .add(new FileData<>(new FileTransferInfo("REMOTE.PKT", data.length, 123),
                                    new ByteArrayInputStream(data)));
         try (StreamSession session = new StreamSession(System.in,
                                                        System.out,

@@ -40,7 +40,7 @@ import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.common.events.DisconnectedEventHandler;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.events.FileReceivedEventHandler;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.mina2.codec.BinkDataCodecFactory;
 import org.fidonet.binkp.mina2.codec.TrafficCrypterCodecFilter;
 import org.fidonet.binkp.mina2.handler.BinkSessionHandler;
@@ -201,7 +201,9 @@ public class Mina2ClientTest {
             @Override
             public void onEventHandle(FileReceivedEvent event) {
                 fileReceived = true;
-                FileInfo expectedInfo = new FileInfo("0000FF8F.WE5", 766, 1348664500L);
+                FileTransferInfo expectedInfo = new FileTransferInfo("0000FF8F.WE5",
+                                                                     766,
+                                                                     1348664500L);
                 Assertions.assertEquals(expectedInfo, event.getFile().getInfo());
                 Assertions.assertEquals(true, event.getFile().getInfo().isFinished());
                 ByteArrayOutputStream outStream = (ByteArrayOutputStream) event.getFile()

@@ -35,67 +35,61 @@ package org.fidonet.binkp.common.io;
  * Date: 9/20/12
  * Time: 8:26 PM
  */
-public class FileInfo {
+public class FileTransferInfo {
 
-    private String name;
-    private volatile long curSize;
-    private long size;
-    private long timestamp;
-    private volatile boolean finished;
-    private volatile boolean shouldSkip;
+    private final FileMetadata metadata;
+    private final FileTransferState progress = new FileTransferState();
 
-    private volatile long offset;
+    public FileTransferInfo(String name, long size, long timestamp) {
+        metadata = new FileMetadata(name, size, timestamp);
+    }
 
-    public FileInfo(String name, long size, long timestamp) {
-        this.name = name;
-        this.size = size;
-        this.timestamp = timestamp;
-        this.finished = false;
-        this.shouldSkip = false;
+    public FileMetadata getMetadata() {
+        return metadata;
     }
 
     public String getName() {
-        return name;
+        return metadata.getName();
     }
 
     public long getSize() {
-        return size;
+        return metadata.getSize();
     }
 
     public long getTimestamp() {
-        return timestamp;
+        return metadata.getTimestamp();
     }
 
     public long getOffset() {
-        return offset;
+        return progress.offset;
     }
 
     public void setOffset(long offset) {
-        this.offset = offset;
+        progress.offset = offset;
     }
 
     public boolean isFinished() {
-        return finished;
+        return progress.finished;
     }
 
     public void setFinished(boolean finished) {
-        this.finished = finished;
+        progress.finished = finished;
     }
 
     public long getCurSize() {
-        return curSize;
+        return progress.currentSize;
     }
 
     public void setCurSize(long curSize) {
-        this.curSize = curSize;
+        progress.currentSize = curSize;
     }
 
     public synchronized boolean isShouldSkip() {
-        return shouldSkip;
+        return progress.skip;
     }
 
     public synchronized void setSkip(boolean shouldSkip) {
-        this.shouldSkip = shouldSkip;
+        progress.skip = shouldSkip;
     }
 
     @Override
@@ -107,49 +101,36 @@ public class FileInfo {
             return false;
         }
 
-        FileInfo fileInfo = (FileInfo) o;
+        FileTransferInfo fileInfo = (FileTransferInfo) o;
 
-        if (size != fileInfo.size) {
-            return false;
-        }
-        if (timestamp != fileInfo.timestamp) {
-            return false;
-        }
-        if (!name.equals(fileInfo.name)) {
-            return false;
-        }
-
-        return true;
+        return metadata.equals(fileInfo.metadata);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + (int) (size ^ (size >>> 32));
-        result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
-        return result;
+        return metadata.hashCode();
     }
 
     @Override
     public String toString() {
-        return "FileInfo{"
+        return "FileTransferInfo{"
                + "name='"
-               + name
+               + getName()
                + '\''
                + ", curSize="
-               + curSize
+               + progress.currentSize
                + ", size="
-               + size
+               + getSize()
                + ", timestamp="
-               + timestamp
+               + getTimestamp()
                + ", finished="
-               + finished
+               + progress.finished
                + ", offset="
-               + offset
+               + progress.offset
                + '}';
     }
 
-    public static FileInfo parseFileInfo(String commandArgs) throws Exception {
+    public static FileTransferInfo parseFileInfo(String commandArgs) throws Exception {
         String[] tokens = commandArgs.trim().split("\\s+");
         // Parse command args from M_FILE and M_GOT commands
         if (tokens.length == 3 || tokens.length == 4) {
@@ -159,7 +140,7 @@ public class FileInfo {
             if (name.isEmpty() || size < 0 || timestamp < 0) {
                 throw new IllegalArgumentException("Invalid file metadata");
             }
-            FileInfo info = new FileInfo(name, size, timestamp);
+            FileTransferInfo info = new FileTransferInfo(name, size, timestamp);
             // Check if command args get from M_FILE with offset
             if (tokens.length == 4) {
                 long offset = Long.parseLong(tokens[3]);
@@ -173,7 +154,7 @@ public class FileInfo {
     }
 
     public String arguments() {
-        return escapeName(name) + " " + size + " " + timestamp;
+        return escapeName(getName()) + " " + getSize() + " " + getTimestamp();
     }
 
     public static String escapeName(String name) {

@@ -34,7 +34,7 @@ import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.events.DisconnectedEvent;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 import org.fidonet.events.Event;
@@ -113,7 +113,7 @@ public class SessionContext extends HasEventBus {
     // send files number
     // queue send files
     private Deque<FileData<InputStream>> sendFiles;
-    private final ConcurrentMap<FileInfo, FileData<InputStream>> pendingFiles = new ConcurrentHashMap<>();
+    private final ConcurrentMap<FileTransferInfo, FileData<InputStream>> pendingFiles = new ConcurrentHashMap<>();
     private final Deque<FileData<InputStream>> deferredFiles = new LinkedBlockingDeque<>();
 
     public Deque<FileData<InputStream>> getDeferredFiles() {
@@ -479,7 +479,7 @@ public class SessionContext extends HasEventBus {
         return receivingIsFinish;
     }
 
-    public ConcurrentMap<FileInfo, FileData<InputStream>> getPendingFiles() {
+    public ConcurrentMap<FileTransferInfo, FileData<InputStream>> getPendingFiles() {
         return pendingFiles;
     }
 
@@ -618,7 +618,7 @@ public class SessionContext extends HasEventBus {
         notFinishedFiles.addAll(files);
     }
 
-    public FileData<OutputStream> getNotFinishedFileData(FileInfo info) {
+    public FileData<OutputStream> getNotFinishedFileData(FileTransferInfo info) {
         for (FileData<OutputStream> file : notFinishedFiles) {
             if (!file.getInfo().isFinished() && file.getInfo().equals(info)) {
                 return file;

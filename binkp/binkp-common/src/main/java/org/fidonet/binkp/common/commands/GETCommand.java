@@ -32,7 +32,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
@@ -63,7 +63,7 @@ public class GETCommand extends MessageCommand {
         sessionContext.validateIncomingCommand(BinkCommand.M_GET);
         final FilesSender<Session> filesSender = session.getFileSender();
         if (filesSender != null) {
-            final FileInfo fileInfo = FileInfo.parseFileInfo(commandArgs);
+            final FileTransferInfo fileInfo = FileTransferInfo.parseFileInfo(commandArgs);
             filesSender.resume(fileInfo);
         }
     }
@@ -73,7 +73,7 @@ public class GETCommand extends MessageCommand {
         Deque<FileData<OutputStream>> receivedFiles = sessionContext.getRecvFiles();
         FileData curFile = receivedFiles.peek();
         if (curFile != null) {
-            FileInfo info = curFile.getInfo();
+            FileTransferInfo info = curFile.getInfo();
             return info.arguments() + " " + info.getCurSize();
         }
         return null;

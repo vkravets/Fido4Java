@@ -12,7 +12,7 @@ import org.fidonet.binkp.common.SessionTestFixtures;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.events.FileReceivedEventHandler;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.events.HasEventBus;
 
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ public class Mina2TransportTest extends HasEventBus {
             byte[] data = new byte[20003];
             new Random(17).nextBytes(data);
             outgoing.getSendFiles()
-                    .add(new FileData<>(new FileInfo("packet.pkt", data.length, 123),
+                    .add(new FileData<>(new FileTransferInfo("packet.pkt", data.length, 123),
                                         new ByteArrayInputStream(data)));
             client = new Client(outgoing.getLinksInfo().getLinks().get(0), 3000);
             client.run(outgoing);

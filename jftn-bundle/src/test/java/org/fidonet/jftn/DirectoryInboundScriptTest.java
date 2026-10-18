@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
@@ -304,7 +304,9 @@ class DirectoryInboundScriptTest {
                                                                           bytes.length);
             partial.write(bytes);
             partial.close();
-            context.commitReceivedFile(new FileData<>(new FileInfo("NODELIST.289", bytes.length, 1),
+            context.commitReceivedFile(new FileData<>(new FileTransferInfo("NODELIST.289",
+                                                                           bytes.length,
+                                                                           1),
                                                       partial));
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
             while (!"Automatic".equals(system("nodes", "1:500/101.0"))

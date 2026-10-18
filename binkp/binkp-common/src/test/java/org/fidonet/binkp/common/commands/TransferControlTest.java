@@ -13,7 +13,7 @@ import org.fidonet.binkp.common.SessionState;
 import org.fidonet.binkp.common.SessionTestFixtures;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.types.Link;
 
@@ -60,7 +60,7 @@ public class TransferControlTest {
     }
 
     private FileData<InputStream> file(String name) {
-        return new FileData<>(new FileInfo(name, 3, 123),
+        return new FileData<>(new FileTransferInfo(name, 3, 123),
                               new ByteArrayInputStream(new byte[]{1, 2, 3}));
     }
 
@@ -113,7 +113,7 @@ public class TransferControlTest {
         } catch (RuntimeException expected) {
             assertTrue(expected.getCause() instanceof ProtocolException);
         }
-        FileInfo info = new FileInfo("with space", 6, 123);
+        FileTransferInfo info = new FileTransferInfo("with space", 6, 123);
         info.setCurSize(3);
         context.getRecvFiles().add(new FileData<>(info, new ByteArrayOutputStream()));
         assertEquals("with\\x20space 6 123 3", new GETCommand().getCommandArguments(context));

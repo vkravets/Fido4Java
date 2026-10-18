@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.config.ServerRole;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.PartialFileOutputStream;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
@@ -66,7 +66,9 @@ public class MailServiceTest {
                 PartialFileOutputStream partial = new PartialFileOutputStream(path, 1);
                 partial.write(42);
                 partial.close();
-                context.commitReceivedFile(new FileData<>(new FileInfo(names.get(index), 1, 1),
+                context.commitReceivedFile(new FileData<>(new FileTransferInfo(names.get(index),
+                                                                               1,
+                                                                               1),
                                                           partial));
             }
             List<String> received = new ArrayList<>();
@@ -430,7 +432,9 @@ public class MailServiceTest {
                                                                           bytes.length);
             partial.write(bytes);
             partial.close();
-            context.commitReceivedFile(new FileData<>(new FileInfo("forged.pkt", bytes.length, 1),
+            context.commitReceivedFile(new FileData<>(new FileTransferInfo("forged.pkt",
+                                                                           bytes.length,
+                                                                           1),
                                                       partial));
             service.processPending();
             assertTrue(base.getLocalNetmail(new FTNAddr("2:500/102")).isEmpty());
@@ -495,7 +499,8 @@ public class MailServiceTest {
             PartialFileOutputStream partial = new PartialFileOutputStream(partialPath, 3);
             partial.write(new byte[]{1, 2, 3});
             partial.close();
-            FileData<OutputStream> file = new FileData<>(new FileInfo("sample.pkt", 3, 1), partial);
+            FileData<OutputStream> file = new FileData<>(new FileTransferInfo("sample.pkt", 3, 1),
+                                                         partial);
             next.commitReceivedFile(file);
             assertFalse(Files.exists(partialPath));
             assertTrue(Files.exists(partial.getPath()));

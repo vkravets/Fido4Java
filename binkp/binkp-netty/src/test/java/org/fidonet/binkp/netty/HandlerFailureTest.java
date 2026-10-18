@@ -13,7 +13,7 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.common.io.BinkData;
 import org.fidonet.binkp.common.io.BinkFrame;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.netty.plugin.handler.BinkSessionHandler;
 import org.fidonet.events.HasEventBus;
 import org.fidonet.types.Link;
@@ -58,7 +58,7 @@ public class HandlerFailureTest extends HasEventBus {
         EmbeddedChannel channel = new EmbeddedChannel(new BinkSessionHandler(context,
                                                                              getEventBus()));
         try {
-            FileInfo info = new FileInfo("receiving.bin", 10, 123);
+            FileTransferInfo info = new FileTransferInfo("receiving.bin", 10, 123);
             context.getRecvFiles().add(new FileData<>(info, new ByteArrayOutputStream()));
             channel.writeInbound(BinkData.toBinkFrame(new BinkData(true,
                                                                    (byte) 100,

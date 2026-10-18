@@ -25,20 +25,20 @@ public class FileMetadataAndStorageTest {
     @Test
     public void escapedFilenamesRoundTripThroughWireMetadata() throws Exception {
         String name = "file name\\with\tcontrols" + (char) 127 + ".pkt";
-        FileInfo original = new FileInfo(name, 10, 123);
-        FileInfo parsed = FileInfo.parseFileInfo(original.arguments() + " 4");
+        FileTransferInfo original = new FileTransferInfo(name, 10, 123);
+        FileTransferInfo parsed = FileTransferInfo.parseFileInfo(original.arguments() + " 4");
         assertEquals(original, parsed);
         assertEquals(original.hashCode(), parsed.hashCode());
         assertEquals(4, parsed.getOffset());
-        assertEquals("a b", FileInfo.unescapeName("a\\20b"));
-        assertEquals("x", FileInfo.unescapeName("\\78"));
+        assertEquals("a b", FileTransferInfo.unescapeName("a\\20b"));
+        assertEquals("x", FileTransferInfo.unescapeName("\\78"));
         assertEquals(original, original);
         assertFalse(original.equals(null));
         assertFalse(original.equals(name));
-        assertNotEquals(original, new FileInfo(name, 11, 123));
-        assertNotEquals(original, new FileInfo(name, 10, 124));
-        assertNotEquals(original, new FileInfo("other", 10, 123));
-        assertEquals(0, FileInfo.parseFileInfo("file 0 123").getOffset());
+        assertNotEquals(original, new FileTransferInfo(name, 11, 123));
+        assertNotEquals(original, new FileTransferInfo(name, 10, 124));
+        assertNotEquals(original, new FileTransferInfo("other", 10, 123));
+        assertEquals(0, FileTransferInfo.parseFileInfo("file 0 123").getOffset());
     }
 
     @Test
@@ -46,7 +46,7 @@ public class FileMetadataAndStorageTest {
         for (String value : new String[]{"", "name 1", "name 1 2 3 4", "name -1 2", "name no 2",
                 "name 1 no", "name 1 2 no", "\\x00 1 2", "\\ 1 2", "\\x1 1 2", "\\xzz 1 2"}) {
             try {
-                FileInfo.parseFileInfo(value);
+                FileTransferInfo.parseFileInfo(value);
                 fail("Accepted " + value);
             } catch (Exception expected) {
             }

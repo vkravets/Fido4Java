@@ -7,7 +7,7 @@ import org.fidonet.binkp.common.events.FileEvent;
 import org.fidonet.binkp.common.events.FileReceivedEvent;
 import org.fidonet.binkp.common.events.FileSendEvent;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.events.Event;
 import org.fidonet.types.Link;
 
@@ -86,7 +86,7 @@ final class SessionTelemetry {
     }
 
     private void file(String action, FileEvent<?> event) {
-        FileInfo info = event.getFile().getInfo();
+        FileTransferInfo info = event.getFile().getInfo();
         long elapsed = event.getFile().getTransferMillis();
         long transferred = event.getFile().getTransferredBytes();
         long cps = (long) (transferred * 1000.0 / Math.max(1, elapsed));

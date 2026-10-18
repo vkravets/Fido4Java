@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class FileTransferMetricsTest {
     @Test
     void resumeCountsOnlyNewBytesAndDoesNotRestartForRepeatedHeaders() {
-        FileData<Object> file = new FileData<>(new FileInfo("resume.pkt", 100, 1700000000));
+        FileData<Object> file = new FileData<>(new FileTransferInfo("resume.pkt", 100, 1700000000));
         assertTrue(file.startTransfer(40));
         file.getInfo().setCurSize(100);
         assertFalse(file.startTransfer(0));
@@ -19,7 +19,7 @@ class FileTransferMetricsTest {
 
     @Test
     void emptyFileHasZeroTransferredBytesWithoutDivisionByZero() {
-        FileData<Object> file = new FileData<>(new FileInfo("empty.pkt", 0, 1700000000));
+        FileData<Object> file = new FileData<>(new FileTransferInfo("empty.pkt", 0, 1700000000));
         assertEquals(0, file.getTransferMillis());
         file.startTransfer(0);
         assertEquals(0, file.getTransferredBytes());

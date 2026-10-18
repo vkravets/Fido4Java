@@ -32,7 +32,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.commands.share.BinkCommand;
 import org.fidonet.binkp.common.commands.share.MessageCommand;
 import org.fidonet.binkp.common.io.FileData;
-import org.fidonet.binkp.common.io.FileInfo;
+import org.fidonet.binkp.common.io.FileTransferInfo;
 import org.fidonet.binkp.common.io.FilesSender;
 import org.fidonet.binkp.common.protocol.Session;
 
@@ -63,7 +63,7 @@ public class SKIPCommand extends MessageCommand {
             throws Exception {
         sessionContext.validateIncomingCommand(BinkCommand.M_SKIP);
         FilesSender filesSender = session.getFileSender();
-        FileInfo info = FileInfo.parseFileInfo(commandArgs);
+        FileTransferInfo info = FileTransferInfo.parseFileInfo(commandArgs);
         if (filesSender != null) {
             filesSender.skip(info, false);
         }
@@ -78,7 +78,7 @@ public class SKIPCommand extends MessageCommand {
     public String getCommandArguments(SessionContext sessionContext) {
         FileData<OutputStream> fileData = sessionContext.getRecvFiles().peek();
         if (fileData != null) {
-            FileInfo info = fileData.getInfo();
+            FileTransferInfo info = fileData.getInfo();
             return info.arguments();
         }
         throw new RuntimeException(new ProtocolException("Cannot send SKIP command without metadata"));
