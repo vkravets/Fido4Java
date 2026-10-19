@@ -15,6 +15,7 @@ const emit = defineEmits<{
             | 'connections'
             | 'directory'
             | 'netmail'
+            | 'echo'
             | 'drafts'
             | 'routing'
     ];
@@ -35,8 +36,11 @@ const emit = defineEmits<{
             >
                 <span>✉</span>{{ t('Netmail') }}
             </button>
-            <button disabled>
-                <span>◎</span>{{ t('Echomail') }}<small>{{ t('Coming soon') }}</small>
+            <button
+                :class="{ active: page === 'echo' }"
+                @click="emit('navigate', 'echo')"
+            >
+                <span>◎</span>{{ t('Echomail') }}
             </button>
             <button
                 :class="{ active: page === 'drafts' }"

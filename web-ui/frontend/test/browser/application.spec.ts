@@ -26,6 +26,46 @@ test('registration suggests imported points before authentication', async ({ pag
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
+test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: /Echomail/, exact: false }).click();
+    await expect(page.getByRole('treeitem')).toHaveCount(2);
+    await page.getByRole('button', { name: /^Welcome to general/ }).click();
+    await expect(page.locator('.mail-body')).toContainText("<script>alert('mail')</script>");
+    await page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('button', { name: /Bob/ })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Re: Welcome to general', exact: true })
+    ).toBeVisible();
+    await page.getByRole('button', { name: /^In reply to/ }).click();
+    await page.getByRole('button', { name: 'Reply', exact: true }).click();
+    await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('Alice');
+    await expect(page.getByLabel('Message text', { exact: true })).toHaveValue(
+        /^> Hello everyone!/
+    );
+    await page.getByLabel('Subject', { exact: true }).fill('Browser echo reply');
+    await page.getByLabel('Message text', { exact: true }).fill('A reply from the browser.');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await expect(notification(page)).toContainText('Draft saved.');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: /Drafts/, exact: true }).click();
+    await page.getByRole('button', { name: /Browser echo reply/ }).click();
+    await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Browser echo reply');
+    await page.getByRole('button', { name: 'Post message', exact: true }).click();
+    await expect(notification(page)).toContainText('Message posted to the conference.');
+    await page.getByRole('button', { name: /^Browser echo reply/ }).click();
+    await expect(page.locator('.mail-body')).toHaveText('A reply from the browser.');
+    await expect(page.getByRole('button', { name: /^In reply to/ })).toContainText(
+        'Welcome to general'
+    );
+    await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('station address suggestions preserve other AKAs while adding successive addresses', async ({
     page
 }) => {

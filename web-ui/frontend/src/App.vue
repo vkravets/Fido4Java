@@ -17,12 +17,23 @@ import NotificationBanner from './components/NotificationBanner.vue';
 import LanguageSelector from './components/LanguageSelector.vue';
 import NetmailView from './components/NetmailView.vue';
 import NetmailRoutingView from './components/NetmailRoutingView.vue';
+import EchomailView from './components/EchomailView.vue';
+import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
 const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
+const echomail = ref<InstanceType<typeof EchomailView> | null>(null);
+const echoDraft = ref<MailDraft>();
+function canLeave() {
+    return (
+        (!netmail.value || netmail.value.canLeave()) &&
+        (!echomail.value || echomail.value.canLeave())
+    );
+}
 function navigate(next: string) {
-    if (netmail.value && !netmail.value.canLeave()) return;
+    if (!canLeave()) return;
+    echoDraft.value = undefined;
     page.value = next;
     refreshQueue();
 }
@@ -45,9 +56,14 @@ onMounted(() => window.addEventListener('focus', refreshQueue));
 onBeforeUnmount(() => window.removeEventListener('focus', refreshQueue));
 onMounted(state.start);
 function logout() {
-    if (netmail.value && !netmail.value.canLeave()) return;
+    if (!canLeave()) return;
     page.value = 'settings';
     state.run(state.logout);
+}
+function openEchoDraft(draft: MailDraft) {
+    if (!canLeave()) return;
+    echoDraft.value = draft;
+    page.value = 'echo';
 }
 </script>
 
@@ -150,6 +166,13 @@ function logout() {
                 :state="state"
                 :initial-folder="page === 'drafts' ? 'drafts' : 'inbox'"
                 @queue-changed="refreshQueue"
+                @open-echo-draft="openEchoDraft"
+            />
+            <EchomailView
+                v-if="page === 'echo'"
+                ref="echomail"
+                :state="state"
+                :initial-draft="echoDraft"
             />
             <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings

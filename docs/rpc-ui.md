@@ -267,6 +267,11 @@ available to approved points through `profile` and `auth`.
 | `areas` | Accessible echo names, message counts, readability and exact writable sender AKAs; write-only grants do not disclose counts |
 | `echoMessages` | Newest received echo messages first, using an exclusive decreasing row-ID cursor; separate from the existing ascending `messages` cursor |
 | `echoContext` | Area-scoped parent by exact REPLY/MSGID and a bounded, cursor-paged list of direct replies; missing parents remain explicit |
+| `messages` | Cursor page of summaries, without bodies |
+| `message` | Plain message body, attributes and separate MSGID/REPLY identifiers |
+| `markRead` | Persistent per-account reader position for an individual message |
+| `drafts`, `saveDraft`, `deleteDraft` | Persistent draft editing, including incomplete drafts |
+| `send` | Validated local submission through the running Tosser |
 
 Echo bodies returned to readers contain plain message text, not transport control
 lines. `MailItem.replyTo` carries the trimmed FTN REPLY identifier separately.
@@ -274,11 +279,6 @@ No subject-based heuristic merges discussions. The parent lookup uses the existi
 MSGID index; reply pages query serialized REPLY lines in the selected area without
 materializing the entire archive. Very large areas can still require a text scan
 for replies; a persistent derived reply index is a future performance improvement.
-| `messages` | Cursor page of summaries, without bodies |
-| `message` | Full stored message including control lines and attributes |
-| `markRead` | Persistent per-account reader position for an individual message |
-| `drafts`, `saveDraft`, `deleteDraft` | Persistent draft editing, including incomplete drafts |
-| `send` | Validated local submission through the running Tosser |
 
 Mailboxes are ECHO (specify its area), INBOX (local netmail) and OUTBOX (locally
 originated netmail, queued and sent). Netmail uses an empty area string. The
@@ -289,7 +289,8 @@ Netmail `MailItem.body` is human-readable message text without FTN routing/contr
 lines. `messageId` remains available separately for REPLY linkage. Clients quote
 this text instead of replaying incoming CHRS/MSGID/INTL or other kludges.
 
-Start pagination with afterId=0, limit=1..200. Pass nextId to continue while
+For `messages` and direct replies, start pagination with afterId=0, limit=1..200.
+For `echoMessages`, start with beforeId=0. Pass nextId to continue while
 hasMore is true. IDs are SQL row identities within a mailbox, not FTN MSGIDs;
 the full FTN identifier is returned separately. Echo names are case-insensitive.
 Unknown messages return NOT_FOUND, including an ID from another mailbox/area.
@@ -298,8 +299,10 @@ live in the separate H2 `Tmp/ui-state` database and survive RPC restarts.
 
 A draft specifies mailbox, area, names, addresses, subject, body and optional
 replyTo (FTN MSGID). All fields must be present, but saveDraft allows unfinished
-addresses/names/subject. Send requires a configured local author AKA and a valid
-recipient. Names fit 35 UTF-8 bytes and subjects 71; body fits 60000 bytes.
+addresses/names/subject. Send requires a station AKA or the account's currently
+approved hosted AKA and a valid recipient. Echo submission additionally requires
+WRITE/BOTH permission for that exact sender and area (administrators use station
+AKAs). Names fit 35 UTF-8 bytes and subjects 71; body fits 60000 bytes.
 Clients send plain text; the server adds CHRS, MSGID and optional REPLY. Embedded
 NUL/kludge controls and AREA headers are rejected. Request/draft IDs contain
 1..80 letters, digits, `_` or `-`. Up to 200 drafts can be stored.

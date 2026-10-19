@@ -5,6 +5,7 @@ import org.fidonet.jftn.rpc.EchoSubscriptionInfo;
 import org.fidonet.jftn.rpc.LogPage;
 import org.fidonet.jftn.rpc.PollPage;
 import org.fidonet.jftn.rpc.UiService;
+import org.fidonet.jftn.rpc.UiSessions;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -16,9 +17,14 @@ import java.util.TreeSet;
 
 /** Isolated browser interaction state; SQL and tosser semantics have runner RPC tests. */
 final class BrowserEchoAccess {
+    private final BrowserEchoMailbox mailbox;
     private final BrowserQuarantine quarantine = new BrowserQuarantine();
     private final Map<String, EchoSubscriptionInfo> subscriptions = new TreeMap<>();
     private final TreeSet<String> areas = new TreeSet<>();
+
+    BrowserEchoAccess(UiSessions sessions) {
+        mailbox = new BrowserEchoMailbox(sessions);
+    }
 
     UiService.Iface handler() {
         return (UiService.Iface) Proxy.newProxyInstance(UiService.Iface.class.getClassLoader(),
@@ -28,8 +34,19 @@ final class BrowserEchoAccess {
                                                          args) -> dispatch(method.getName(), args));
     }
 
-    private synchronized Object dispatch(String method, Object[] args) {
+    private synchronized Object dispatch(String method, Object[] args) throws Exception {
         switch (method) {
+            case "areas" :
+            case "messages" :
+            case "echoMessages" :
+            case "message" :
+            case "markRead" :
+            case "echoContext" :
+            case "drafts" :
+            case "saveDraft" :
+            case "deleteDraft" :
+            case "send" :
+                return mailbox.dispatch(method, args);
             case "pendingNetmail" :
                 // Every fixture account has its own empty mail queue; no shared mail is exposed.
                 return 0;

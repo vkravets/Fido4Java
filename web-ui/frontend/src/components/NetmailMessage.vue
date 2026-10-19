@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
 import type { MailItem } from '@rpc/bindings.mjs';
-defineProps<{ message: MailItem; busy: boolean; reply?: boolean }>();
+withDefaults(
+    defineProps<{ message: MailItem; busy: boolean; reply?: boolean; removable?: boolean }>(),
+    { removable: true }
+);
 defineEmits<{ reply: []; remove: [] }>();
 </script>
 <template>
@@ -18,6 +21,7 @@ defineEmits<{ reply: []; remove: [] }>();
                     {{ t('Reply') }}
                 </button>
                 <button
+                    v-if="removable"
                     class="danger"
                     :disabled="busy"
                     @click="$emit('remove')"

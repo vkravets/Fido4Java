@@ -5,12 +5,13 @@ import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
 import { api, bindings } from '../api.ts';
 import type { AppState } from '../state.ts';
 import type { MailFolder } from '../netmail.ts';
+import type { MailDraft } from '@rpc/bindings.mjs';
 import NetmailList from './NetmailList.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
 import NetmailMessage from './NetmailMessage.vue';
 import MailComposer from './MailComposer.vue';
 const props = defineProps<{ state: AppState; initialFolder?: MailFolder }>();
-const emit = defineEmits<{ queueChanged: [] }>();
+const emit = defineEmits<{ queueChanged: []; openEchoDraft: [draft: MailDraft] }>();
 const reader = createNetmail(
     props.state,
     inject(netmailClientKey, api.ui),
@@ -29,12 +30,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 function cancel() {
     if (reader.discard()) reader.draft.value = null;
 }
+function editDraft(value: MailDraft) {
+    if (value.mailbox === 1) emit('openEchoDraft', value);
+    else reader.edit(value);
+}
 </script>
 <template>
     <header class="page-heading">
         <div>
             <p class="eyebrow">{{ t('MAIL') }}</p>
-            <h1>{{ t('Netmail') }}</h1>
+            <h1>{{ reader.folder.value === 'drafts' ? t('Drafts') : t('Netmail') }}</h1>
         </div>
         <div class="actions">
             <button
@@ -81,7 +86,7 @@ function cancel() {
         v-else-if="reader.folder.value === 'drafts'"
         :drafts="reader.drafts.value"
         :busy="state.busy.value"
-        @edit="reader.edit"
+        @edit="editDraft"
         @remove="(draft) => state.run(() => reader.remove(draft))"
     />
     <div

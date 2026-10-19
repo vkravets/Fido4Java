@@ -2,6 +2,79 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('echo tree collapses conversations, supports keyboard navigation and switches to a flat list', async ({
+    page
+}) => {
+    await story(page, 'mail-echomailview--tree');
+    await expect(page.getByRole('treeitem')).toHaveCount(4);
+    await page.getByRole('button', { name: 'Collapse conversation' }).first().click();
+    await expect(page.getByRole('treeitem')).toHaveCount(2);
+    await page.getByRole('button', { name: 'Expand conversation' }).click();
+    const root = page.locator('[data-mail-row="9007199254740993"]');
+    await root.focus();
+    await root.press('ArrowRight');
+    await expect(page.locator('[data-mail-row="9007199254740994"]')).toBeFocused();
+    await page.getByRole('combobox', { name: 'Message list', exact: true }).selectOption('flat');
+    await expect(page.getByRole('treeitem')).toHaveCount(0);
+    await expect(page.locator('[data-mail-row]')).toHaveCount(4);
+    await page.getByRole('button', { name: /^Welcome to the conference/ }).click();
+    await expect(
+        page.getByRole('heading', { name: 'Welcome to the conference', exact: true })
+    ).toBeVisible();
+    await expect(page.locator('.mail-body')).toContainText('<script>alert("hello")</script>');
+    await expect(page.getByRole('button', { name: 'Delete message', exact: true })).toHaveCount(0);
+    await page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('button', { name: /Bob Example/ })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
+    ).toBeVisible();
+    await page.getByRole('button', { name: /^In reply to/ }).click();
+    await expect(
+        page.getByRole('heading', { name: 'Welcome to the conference', exact: true })
+    ).toBeVisible();
+});
+
+test('echo composer posts to its conference and read-only areas cannot create or reply', async ({
+    page
+}) => {
+    await story(page, 'mail-echomailview--compose');
+    await expect(page.getByRole('combobox', { name: 'Sender AKA', exact: true })).toHaveValue(
+        '1:500/100.1'
+    );
+    await expect(
+        page.getByRole('combobox', { name: 'Recipient address', exact: true })
+    ).toHaveCount(0);
+    await page.getByLabel('Subject', { exact: true }).fill('A new conference message');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await expect(page.getByLabel('Subject', { exact: true })).toHaveValue(
+        'A new conference message'
+    );
+    await page.getByRole('button', { name: 'Post message', exact: true }).click();
+    await expect(page.getByRole('button', { name: /^A new conference message/ })).toBeVisible();
+    await story(page, 'mail-echomailview--read-only');
+    await expect(page.getByRole('button', { name: 'New echomail', exact: true })).toBeDisabled();
+    await expect(
+        page.getByRole('heading', { name: 'Welcome to the conference', exact: true })
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reply', exact: true })).toHaveCount(0);
+});
+
+test('echo reader remains usable on a narrow screen in both themes', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const theme of ['light', 'dark']) {
+        await story(page, 'mail-echomailview--reading', theme, 'uk');
+        await expect(
+            page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
+        ).toBeVisible();
+        expect(
+            await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+        ).toBe(true);
+        await expect(page.getByRole('button', { name: 'Відповісти', exact: true })).toBeVisible();
+    }
+});
+
 test('routing rules are read-only in file mode and edit only configured next hops', async ({
     page
 }) => {

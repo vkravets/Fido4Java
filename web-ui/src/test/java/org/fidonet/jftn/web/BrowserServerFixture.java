@@ -70,7 +70,7 @@ final class BrowserServerFixture implements AutoCloseable {
                                                       ProfileHandler profile,
                                                       NodeSettingsRpcHandler settings) {
         UiService.Iface echoAccess = AuthenticatedUi.wrap(sessions,
-                                                          new BrowserEchoAccess().handler(),
+                                                          new BrowserEchoAccess(sessions).handler(),
                                                           true);
         return new DefaultRpcServiceProvider() {
             @Override

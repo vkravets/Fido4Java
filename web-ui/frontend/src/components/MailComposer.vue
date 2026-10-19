@@ -11,7 +11,21 @@ defineEmits<{ save: []; send: []; cancel: [] }>();
         class="card mail-composer"
         @submit.prevent="$emit('send')"
     >
-        <h2>{{ draft.replyTo ? t('Reply') : t('New netmail') }}</h2>
+        <h2>
+            {{
+                draft.replyTo
+                    ? t('Reply')
+                    : draft.mailbox === 1
+                      ? t('New echomail')
+                      : t('New netmail')
+            }}
+        </h2>
+        <p
+            v-if="draft.mailbox === 1"
+            class="muted"
+        >
+            {{ t('Conference') }}: {{ draft.area }}
+        </p>
         <p
             v-if="draft.replyTo"
             class="muted"
@@ -49,7 +63,7 @@ defineEmits<{ save: []; send: []; cancel: [] }>();
                         required
                         maxlength="35"
                 /></label>
-                <label
+                <label v-if="draft.mailbox !== 1"
                     >{{ t('Recipient address')
                     }}<AddressInput
                         v-model="draft.toAddress"
@@ -78,7 +92,7 @@ defineEmits<{ save: []; send: []; cancel: [] }>();
                     type="submit"
                     :disabled="!addresses.length"
                 >
-                    {{ t('Add to send queue') }}
+                    {{ draft.mailbox === 1 ? t('Post message') : t('Add to send queue') }}
                 </button>
                 <button
                     class="secondary"

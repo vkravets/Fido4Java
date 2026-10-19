@@ -72,13 +72,40 @@ SPA and `/rpc/` endpoints. Light and dark themes can be changed in appearance
 settings or with the header toggle and are saved in the signed-in profile.
 Session tokens remain in browser memory: reloading the page requires signing in
 again. Public registration submits a point AKA claim for administrator approval.
-The sidebar opens netmail and drafts. Echomail navigation remains reserved for a
-future reader.
+The sidebar opens netmail, echomail and saved drafts from both mail types.
 
 English is the default language; Ukrainian is the other supported language.
 The header selector is available during setup and before sign-in. Its choice is
 stored locally in the browser (`jftn-language`), independently of the account's
 theme preference. Russian is not an interface language.
+
+## Echomail reader
+
+**Echomail** provides a searchable conference list, a message list and a reading
+pane. Switch between **Tree** and **Flat** views. Unread messages are highlighted;
+opening a message saves a read mark for the current account. Other readers' marks
+are independent. Tree rows support arrow-key navigation and branch collapse.
+
+The list loads the newest 50 received messages first. **Load older messages**
+extends the local list; the tree represents only loaded pages. Threads use exact
+FTN MSGID/REPLY links, never subjects. The reading pane can open the parent or
+direct replies beyond the loaded list, with additional reply pages when needed.
+Missing parents remain explicit; malformed cycles do not trap tree navigation.
+
+**New echomail** and **Reply** open an area-specific editor with the permitted
+sender AKAs. Replies quote plain message text and preserve the original MSGID in
+REPLY. Saved echo drafts can be resumed from the conference or global **Drafts**
+screen. Unsaved edits require confirmation before being discarded. **Post message**
+submits through the tosser's normal echo export; it is separate from netmail's
+explicit **Send queued mail** workflow. A successful post is not transport delivery
+confirmation. Echo deletion is not exposed in this reader.
+
+Administrators can read all local conferences and post from station AKAs.
+Approved points can read only areas with READ/BOTH subscriptions for their exact
+approved AKAs; composing requires WRITE/BOTH for the chosen AKA. A write-only grant
+does not disclose stored messages or message counts. These checks run on the
+server for both HTTP and TCP and are refreshed when permissions change. Revoked
+write access hides the affected drafts without deleting them.
 
 ## Station settings groups
 
@@ -366,7 +393,7 @@ retain Playwright's actual/expected/diff diagnostics. A missing baseline still
 fails comparison and is never silently created during an ordinary run. Both
 artifacts are retained for 15 days.
 
-`./gradlew :web-ui:playwrightVisualTest` compares 456 committed PNG test fixtures:
+`./gradlew :web-ui:playwrightVisualTest` compares committed PNG test fixtures for:
 administrator/point navigation, directory results/empty/loading states,
 address suggestions/multiple-AKA/offline states, first-run setup with multiple uplinks,
 station identity and reload controls, six station settings tabs and their busy state,
@@ -377,6 +404,9 @@ queue/details, per-poll protocol output, global binkp logs (populated/empty/rota
 and information/warning/error/configuration-applied notifications.
 Plugin scenarios cover areas, link permissions, automatic creation, FileFix/TIC credentials,
 file-managed settings and unavailable providers. See [plugin settings](plugin-settings.md).
+Mail scenarios include netmail reading, composition and drafts, plus echomail
+tree/flat lists, reading, missing parents, composition/replies, read-only,
+empty and unavailable conference states.
 Each has light/dark and English/Ukrainian
 variants at desktop (1280Г—900) and mobile (375Г—812) sizes.
 
@@ -442,15 +472,16 @@ and does not create a delivery or reserve a send receipt.
 Public point registration is controlled by `RpcRegistrationEnabled`. New accounts
 remain disabled until an administrator approves an AKA claim. Users can select
 only approved identities as their default AKA. Personal profile and theme settings
-are separate from node settings. Node control and echo APIs remain administrator-only.
+are separate from node settings. Node control remains administrator-only; echo
+reader operations use the subscription permissions described above.
 Netmail reads, drafts and sending are scoped to approved account AKAs on both RPC
 transports. The UI offers inbox/outbox pages, full plain-text message details,
 read marks, replies with quoted text and REPLY linkage, draft saving/deletion and
 composition with directory suggestions including points. Outgoing status changes
 from queued to sent after transport acknowledgement; submission alone does not
 mean delivery. Network retries retain the same send request ID. Unsaved edits are
-protected when switching folders, leaving the reader or signing out. Mail search,
-trash and message deletion are not implemented yet.
+protected when switching folders, leaving the reader or signing out. Netmail
+deletion is available as described above; mail search and trash are not implemented.
 
 Passkeys are an additional sign-in method. A new localhost setup enables WebAuthn
 for `localhost`. Remote access requires an HTTPS reverse proxy and matching

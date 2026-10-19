@@ -1,15 +1,12 @@
 JFtn follow-up work
 ===================
 
-Reviewed against the source and tests on 2026-10-19.
+Reviewed against the source and tests on 2026-10-20.
 Implemented behavior and limits are documented under docs/.
 
 Remaining implementation
 ------------------------
 
-- Implement the browser echomail reader and echo-specific composition.
-  Netmail reading, replies, drafts and approved-AKA submission now exist in the UI.
-  Point netmail operations are scoped on the server; echo access remains ADMIN-only.
 - Add safe link removal/renaming, accounting for routes, subscriptions and queues.
   Netmail routing policy/rule administration and preview now exist in RPC/UI.
 - Decide whether to implement or remove the empty legacy JAMEchoBase.getMessage()

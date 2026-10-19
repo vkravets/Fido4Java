@@ -75,7 +75,7 @@ export function createNetmail(
         if (folder.value === 'drafts') {
             const result = await client.drafts(token);
             if (ticket === generation && token === state.session.value) {
-                drafts.value = result.filter((value) => value.mailbox !== 1);
+                drafts.value = result;
             }
             return;
         }
