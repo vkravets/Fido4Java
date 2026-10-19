@@ -69,9 +69,10 @@ def artifacts(directory):
             raise ValueError(f"Invalid or duplicate release artifact: {name}")
         result.append(path)
     zips = [path.name for path in result if path.suffix == ".zip"]
-    if len(zips) != 3 or not all(any(name.endswith(suffix) for name in zips)
-                              for suffix in ("-no-jre.zip", "-linux-x64.zip", "-windows-x64.zip")):
-        raise ValueError("Expected portable, Linux x64 and Windows x64 ZIPs")
+    suffixes = [f"-{profile}-{runtime}.zip" for profile in ("full", "headless", "legacy", "transit")
+                for runtime in ("no-jre", "with-jre")]
+    if len(zips) != 8 or not all(sum(name.endswith(suffix) for name in zips) == 1 for suffix in suffixes):
+        raise ValueError("Expected eight profile ZIPs, each with and without bundled runtimes")
     if {path.name for path in result} != {*zips, "runtime-lock.json"}:
         raise ValueError("Unexpected release assets")
     return [*result, manifest]
@@ -111,7 +112,9 @@ def publish(client, directory, tag, revision):
     if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", tag):
         raise ValueError("Releases require a vMAJOR.MINOR.PATCH tag, with optional prerelease suffix")
     paths = artifacts(directory)
-    expected_names = {f"jftn-{tag[1:]}{suffix}" for suffix in ("-no-jre.zip", "-linux-x64.zip", "-windows-x64.zip")}
+    expected_names = {f"jftn-{tag[1:]}-{profile}-{runtime}.zip"
+                      for profile in ("full", "headless", "legacy", "transit")
+                      for runtime in ("no-jre", "with-jre")}
     if {path.name for path in paths if path.suffix == ".zip"} != expected_names:
         raise ValueError("Artifact versions do not match the release tag")
     if not re.fullmatch(r"[a-f0-9]{40}", revision) or tag_commit(client, tag) != revision:

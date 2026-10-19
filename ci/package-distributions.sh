@@ -10,11 +10,13 @@ bash ./gradlew :jftn-bundle:releaseDistributions \
   "-PdistributionInput=$snapshot/jftn-$version-no-jre.zip" \
   --warning-mode fail --no-daemon --console=plain
 
-bash ci/smoke-distribution.sh "jftn-bundle/build/distributions/jftn-$version-linux-x64.zip"
+bash ci/smoke-distribution.sh "jftn-bundle/build/distributions/jftn-$version-full-with-jre.zip"
 output="$PWD/build/release"
 mkdir -p "$output"
-for suffix in no-jre linux-x64 windows-x64; do
-  cp "jftn-bundle/build/distributions/jftn-$version-$suffix.zip" "$output/"
+for profile in full headless legacy transit; do
+  for runtime in no-jre with-jre; do
+    cp "jftn-bundle/build/distributions/jftn-$version-$profile-$runtime.zip" "$output/"
+  done
 done
 cp gradle/runtime-lock.json "$output/"
 (cd "$output" && sha256sum ./*.zip runtime-lock.json > SHA256SUMS)

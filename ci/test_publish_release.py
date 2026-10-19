@@ -46,8 +46,9 @@ class PublishReleaseTest(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         lines = []
-        for name in ("jftn-1.2.3-no-jre.zip", "jftn-1.2.3-linux-x64.zip",
-                     "jftn-1.2.3-windows-x64.zip", "runtime-lock.json"):
+        for name in [f"jftn-1.2.3-{profile}-{runtime}.zip"
+                     for profile in ("full", "headless", "legacy", "transit")
+                     for runtime in ("no-jre", "with-jre")] + ["runtime-lock.json"]:
             content = name.encode()
             (self.root / name).write_bytes(content)
             lines.append(f"{hashlib.sha256(content).hexdigest()}  {name}\n")
@@ -61,14 +62,22 @@ class PublishReleaseTest(unittest.TestCase):
         self.publish()
         self.assertFalse(self.client.release["draft"])
         methods = [call[0] for call in self.client.calls]
-        self.assertEqual(5, methods.count("UPLOAD"))
+        self.assertEqual(10, methods.count("UPLOAD"))
         self.assertEqual("PATCH", methods[-1])
         self.client.calls.clear()
         self.publish()
         self.assertTrue(all(call[0] == "GET" for call in self.client.calls))
 
     def test_rejected_modified_artifact_before_any_api_call(self):
-        (self.root / "jftn-1.2.3-linux-x64.zip").write_bytes(b"changed")
+        (self.root / "jftn-1.2.3-full-with-jre.zip").write_bytes(b"changed")
+        with self.assertRaises(ValueError):
+            self.publish()
+        self.assertEqual([], self.client.calls)
+
+    def test_rejected_missing_profile_even_with_valid_remaining_checksums(self):
+        lines = (self.root / "SHA256SUMS").read_text().splitlines(keepends=True)
+        (self.root / "SHA256SUMS").write_text("".join(line for line in lines
+                                                     if "transit-with-jre.zip" not in line))
         with self.assertRaises(ValueError):
             self.publish()
         self.assertEqual([], self.client.calls)
@@ -82,14 +91,14 @@ class PublishReleaseTest(unittest.TestCase):
     def test_resumed_an_own_draft_without_overwriting_verified_assets(self):
         self.client.release = {"id": 1, "draft": True, "body": f"JFtn CI revision: {REVISION}",
                                "html_url": "https://github.com/test/repo/releases/tag/v1.2.3"}
-        self.client.upload(1, self.root / "jftn-1.2.3-no-jre.zip")
+        self.client.upload(1, self.root / "jftn-1.2.3-full-no-jre.zip")
         self.client.calls.clear()
         self.publish()
-        self.assertEqual(4, sum(call[0] == "UPLOAD" for call in self.client.calls))
+        self.assertEqual(9, sum(call[0] == "UPLOAD" for call in self.client.calls))
 
     def test_did_not_replace_conflicting_published_assets(self):
         self.publish()
-        self.client.assets["jftn-1.2.3-no-jre.zip"]["digest"] = "sha256:" + "0" * 64
+        self.client.assets["jftn-1.2.3-full-no-jre.zip"]["digest"] = "sha256:" + "0" * 64
         self.client.calls.clear()
         with self.assertRaises(ValueError):
             self.publish()
@@ -106,7 +115,7 @@ class PublishReleaseTest(unittest.TestCase):
     def test_failed_upload_left_a_draft_and_retry_completed_it(self):
         upload = self.client.upload
         def interrupted(release_id, path):
-            if path.name.endswith("linux-x64.zip"):
+            if path.name.endswith("full-with-jre.zip"):
                 raise RuntimeError("simulated upload failure")
             return upload(release_id, path)
         self.client.upload = interrupted

@@ -19,7 +19,7 @@ git rev-parse HEAD > build/ci-integration/revision.txt
   find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 )
 mkdir -p build/ci-release
-cp "jftn-bundle/build/distributions/jftn-$version-no-jre.zip" build/ci-release/
+cp "jftn-bundle/build/distribution-inputs/jftn-$version-no-jre.zip" build/ci-release/
 printf '%s\n' "$version" > build/ci-release/version.txt
 git rev-parse HEAD > build/ci-release/revision.txt
 (

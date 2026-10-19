@@ -19,7 +19,8 @@ mapfile -t roots < <(find "$temporary" -mindepth 1 -maxdepth 1 -type d)
 test "${#roots[@]}" = 1
 cd "${roots[0]}"
 test -x jftn.sh
-test -x jre/bin/java
+test -x jre/linux-x64/bin/java
+test -f jre/windows-x64/bin/java.exe
 ./jftn.sh --version | grep -F 'JFtn '
 rmdir mail/inbound mail/outbound mail/tmp mail/echo database logs lists fileecho
 JAVA_TOOL_OPTIONS=-Djftn.setup.port=0 ./jftn.sh > smoke.log 2>&1 &
