@@ -261,4 +261,53 @@ class FileEchoDeliveryTest {
                      () -> extension.apply("areas", Map.of("name", "missing-fields")));
         assertThrows(IllegalArgumentException.class, () -> extension.apply("unknown", Map.of()));
     }
+
+    @Test
+    void relaysHtickMetadataWithNewPeerCredentialsAndPreservedPayload() throws Exception {
+        scripts.close();
+        config = new JFtnConfig();
+        config.load(new ByteArrayInputStream((configurationText
+                + "Link=1:500/103,1:500/100,other-session,localhost\n"
+                + "TicPeer=1:500/103|outgoing-tic|lists.*\n").getBytes(StandardCharsets.UTF_8)));
+        scripts = new MailAutomationRuntime(config, base, tosser);
+        processor = (FileEchoProcessor) scripts.getFileEcho();
+        processor.store()
+                 .saveArea("lists.nodes", root.resolve("areas/nodes").toString(), "Lists", true);
+        processor.store().saveAccess("lists.nodes", "1:500/101", "WRITE");
+        processor.store().subscribe(new FTNAddr("1:500/103"), "lists.nodes", true);
+        Path payload = inbox.resolve("payload");
+        ReceivedFile.record(payload, "LIST.001");
+        Files.writeString(payload, "payload");
+        String input = tic("TIC-PASSWORD", FileChecksum.read(payload).crc)
+                       + "Date 757382400\r\nSize 000007\r\nTo Test Sysop, 1:500/100\r\n"
+                       + "Desc Original description\r\nX-Extra preserved\r\nSeenby 1:500/99\r\n";
+        Files.writeString(ticket, input);
+        List<FileEchoEvent> events = new ArrayList<>();
+        scripts.onFileEcho(events::add);
+        scripts.beforeExport(tosser);
+        scripts.beforeExport(tosser);
+        assertEquals(1, events.size());
+        assertEquals(Instant.parse("1994-01-01T00:00:00Z"), events.get(0).date);
+        List<Path> queued = scripts.getFileQueue()
+                                   .pending(config.getLink(new FTNAddr("1:500/103")));
+        assertEquals(2, queued.size());
+        assertEquals("LIST.001", queued.get(0).getFileName().toString());
+        assertEquals("payload", Files.readString(queued.get(0)));
+        String outgoing = Files.readString(queued.get(1));
+        assertTrue(outgoing.contains("Origin 1:500/99\r\n"));
+        assertTrue(outgoing.contains("Date 757382400\r\n"));
+        assertTrue(outgoing.contains("From 1:500/100\r\nTo 1:500/103\r\nPw outgoing-tic\r\n"));
+        assertTrue(outgoing.contains("X-Extra preserved\r\n"));
+        assertTrue(outgoing.contains("Path 1:500/101 1700000000\r\nPath 1:500/100 "));
+        assertTrue(outgoing.contains("Seenby 1:500/99\r\nSeenby 1:500/100\r\n"
+                                     + "Seenby 1:500/101\r\nSeenby 1:500/103\r\n"));
+        scripts.getFileQueue().acknowledge(queued.get(0));
+        assertEquals(List.of(queued.get(1)),
+                     scripts.getFileQueue().pending(config.getLink(new FTNAddr("1:500/103"))));
+        scripts.getFileQueue().acknowledge(queued.get(1));
+        scripts.beforeExport(tosser);
+        assertEquals(List.of(),
+                     scripts.getFileQueue().pending(config.getLink(new FTNAddr("1:500/103"))));
+        assertEquals(input, Files.readString(ticket));
+    }
 }

@@ -134,7 +134,8 @@ class FileFixScriptTest {
         assertEquals("payload", Files.readString(files.get(0)));
         String tic = Files.readString(files.get(1));
         assertTrue(tic.contains("File NODELIST.288"));
-        assertTrue(tic.contains("To " + recipient));
+        String to = tic.lines().filter(line -> line.startsWith("To ")).findFirst().orElseThrow();
+        assertEquals(recipient, new FTNAddr(to.substring(3)));
         assertTrue(tic.contains("Pw out-pass"));
         assertTrue(tic.contains("Size 7"));
         for (Path file : files) {

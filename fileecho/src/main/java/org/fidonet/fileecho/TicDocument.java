@@ -45,18 +45,31 @@ final class TicDocument {
                 lines.add(line);
             }
         }
-        for (String key : List.of("area", "file", "origin", "from", "crc", "path", "seenby")) {
+        for (String key : List.of("area", "file", "origin", "from", "crc")) {
             if (!fields.containsKey(key) || fields.get(key).stream().anyMatch(String::isEmpty)) {
                 throw new IOException("Missing TIC keyword: " + key);
             }
         }
-        for (String key : List.of("area", "file", "origin", "from", "crc", "size", "pw", "to")) {
+        for (String key : List.of("area",
+                                  "file",
+                                  "origin",
+                                  "from",
+                                  "crc",
+                                  "size",
+                                  "date",
+                                  "pw",
+                                  "to")) {
             if (values(key).size() > 1) {
                 throw new IOException("Duplicate TIC keyword: " + key);
             }
         }
         for (String value : values("path")) {
             validatePath(value);
+        }
+        for (String key : List.of("size", "date")) {
+            if (!values(key).isEmpty()) {
+                nonnegativeNumber(value(key), key);
+            }
         }
     }
 
@@ -73,10 +86,36 @@ final class TicDocument {
         }
     }
 
-    /** First recorded hop time, not the payload modification time. */
-    Instant indexDate() {
+    private static long nonnegativeNumber(String value, String key) throws IOException {
         try {
-            return Instant.ofEpochSecond(Long.parseLong(value("path").trim().split("\\s+", 3)[1]));
+            if (!value.matches("[0-9]+")) {
+                throw new NumberFormatException("Expected unsigned decimal");
+            }
+            return Long.parseLong(value);
+        } catch (NumberFormatException failure) {
+            throw new IOException("Invalid TIC " + key, failure);
+        }
+    }
+
+    FTNAddr recipient() throws IOException {
+        String value = value("to");
+        return address(value.substring(value.lastIndexOf(',') + 1).trim());
+    }
+
+    boolean matchesSize(long size) {
+        return value("size").isEmpty() || Long.parseLong(value("size")) == size;
+    }
+
+    /** TIC Date is the file date; old senders can fall back to the first recorded hop. */
+    Instant indexDate() {
+        String date = value("date");
+        if (date.isEmpty() && values("path").isEmpty()) {
+            return null;
+        }
+        try {
+            return Instant.ofEpochSecond(Long.parseLong(date.isEmpty()
+                    ? value("path").trim().split("\\s+", 3)[1]
+                    : date));
         } catch (DateTimeException failure) {
             return null;
         }

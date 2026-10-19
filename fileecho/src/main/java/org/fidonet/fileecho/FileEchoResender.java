@@ -11,8 +11,11 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,21 +51,23 @@ final class FileEchoResender {
         String name = source.getFileName().toString();
         FileChecksum checksum = FileChecksum.read(source);
         FTNAddr local = peer.getMyaddr().get(0);
-        String text = String.join("\r\n",
-                                  List.of("Area " + tag,
-                                          "File " + name,
-                                          "Size " + checksum.size,
-                                          "Crc " + checksum.crc,
-                                          "Origin " + local,
-                                          "From " + local,
-                                          "To " + address,
-                                          "Pw " + tic.getDeliveryPassword(),
-                                          "Desc Requested file resend",
-                                          "Created by JFtn FileFix",
-                                          "Path " + local + " " + System.currentTimeMillis() / 1000,
-                                          "Seenby " + local,
-                                          "Seenby " + address))
-                + "\r\n";
+        List<String> lines = new ArrayList<>(List.of("Area " + tag,
+                                                     "File " + name,
+                                                     "Size " + checksum.size,
+                                                     "Crc " + checksum.crc,
+                                                     "Date "
+                                                     + Files.getLastModifiedTime(source)
+                                                            .toInstant()
+                                                            .getEpochSecond(),
+                                                     "Origin " + TicRouting.address(local),
+                                                     "From " + TicRouting.address(local),
+                                                     "To " + TicRouting.address(address),
+                                                     "Pw " + tic.getDeliveryPassword(),
+                                                     "Desc Requested file resend",
+                                                     "Created by JFtn FileFix",
+                                                     TicRouting.path(local, Instant.now())));
+        lines.addAll(TicRouting.seen(Set.of(local, address)));
+        String text = String.join("\r\n", lines) + "\r\n";
         api.getFileQueue()
            .enqueue(peer,
                     "filefix-resend:" + requestId + ":" + tag + ":" + name.toLowerCase(Locale.ROOT),

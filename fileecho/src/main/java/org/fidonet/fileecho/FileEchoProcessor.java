@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -146,8 +147,7 @@ final class FileEchoProcessor implements FileEchoService {
         if (api.getState().get("tic:" + receipt) != null) {
             return;
         }
-        if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || (!tic.value("size").isEmpty()
-                && !tic.value("size").equals(Long.toString(checksum.size)))) {
+        if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || !tic.matchesSize(checksum.size)) {
             throw new IOException("Payload changed after matching TIC");
         }
         FileAreaRecord area = store.createAfterValidation(tag, ticket.getPeer());
@@ -218,8 +218,7 @@ final class FileEchoProcessor implements FileEchoService {
         if (tic.value("pw").isEmpty() || !rule.verifyPassword(tic.value("pw"))) {
             throw new IOException("TIC password is missing or does not match");
         }
-        if (!tic.value("to").isEmpty()
-                && !config.getLocalAddresses().contains(TicDocument.address(tic.value("to")))) {
+        if (!tic.value("to").isEmpty() && !config.getLocalAddresses().contains(tic.recipient())) {
             throw new IOException("TIC is addressed to another station");
         }
     }
@@ -237,8 +236,7 @@ final class FileEchoProcessor implements FileEchoService {
             }
             FileChecksum checksum = FileChecksum.read(candidate.getPath());
             found = true;
-            if (checksum.crc.equalsIgnoreCase(tic.value("crc")) && (tic.value("size").isEmpty()
-                    || tic.value("size").equals(Long.toString(checksum.size)))) {
+            if (checksum.crc.equalsIgnoreCase(tic.value("crc")) && tic.matchesSize(checksum.size)) {
                 return candidate;
             }
         }
@@ -320,13 +318,13 @@ final class FileEchoProcessor implements FileEchoService {
             }
         }
         FTNAddr local = link.getMyaddr().get(0);
-        output.add("From " + local);
-        output.add("To " + link.getAddr());
+        output.add("From " + TicRouting.address(local));
+        output.add("To " + TicRouting.address(link.getAddr()));
         output.add("Pw " + api.getRobotAccess().find("Tic", link.getAddr()).getDeliveryPassword());
         output.add("Created by JFtn fileecho");
         tic.values("path").forEach(value -> output.add("Path " + value));
-        output.add("Path " + local + " " + System.currentTimeMillis() / 1000);
-        seen.forEach(value -> output.add("Seenby " + value));
+        output.add(TicRouting.path(local, Instant.now()));
+        output.addAll(TicRouting.seen(seen));
         api.getFileQueue()
            .enqueue(link,
                     receipt,

@@ -56,6 +56,35 @@ class TicDocumentTest {
         assertEquals(null, document("1:500/101 9223372036854775807").indexDate());
     }
 
+    @Test
+    void readsHtickDateNamedRecipientAndNumericSizeWithoutOptionalRoutingLines() throws Exception {
+        document("1:500/101 1700000000");
+        Path file = root.resolve("TEST.TIC");
+        String text = Files.readString(file)
+                           .replace("Path 1:500/101 1700000000\r\n", "")
+                           .replace("Seenby 1:500/101\r\n", "")
+                      + "Date 757382400\r\nSize 000007\r\nTo Test Sysop, 1:500/100\r\n";
+        Files.writeString(file, text);
+        TicDocument tic = new TicDocument(file, StandardCharsets.US_ASCII);
+        assertEquals(Instant.parse("1994-01-01T00:00:00Z"), tic.indexDate());
+        assertEquals(new FTNAddr("1:500/100"), tic.recipient());
+        assertEquals(true, tic.matchesSize(7));
+        assertEquals(false, tic.matchesSize(8));
+        assertEquals(Set.of(), tic.addresses("path"));
+        assertEquals(Set.of(), tic.addresses("seenby"));
+    }
+
+    @Test
+    void rejectsMalformedAndAmbiguousOptionalDatesAndSizes() throws Exception {
+        for (String field : new String[]{"Date -1", "Date tomorrow", "Size -1", "Size 7x",
+                "Date 9223372036854775808", "Date 1\r\nDate 2"}) {
+            document("1:500/101 1700000000");
+            Path file = root.resolve("TEST.TIC");
+            Files.writeString(file, Files.readString(file) + field + "\r\n");
+            assertThrows(IOException.class, () -> new TicDocument(file, StandardCharsets.US_ASCII));
+        }
+    }
+
     private TicDocument document(String path) throws IOException {
         Path ticket = root.resolve("TEST.TIC");
         Files.writeString(ticket,

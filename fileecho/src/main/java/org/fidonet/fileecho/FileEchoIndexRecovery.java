@@ -114,8 +114,7 @@ public final class FileEchoIndexRecovery {
             checksum = FileChecksum.read(file);
             checksums.put(key, checksum);
         }
-        if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || (!tic.value("size").isEmpty()
-                && !Long.toString(checksum.size).equals(tic.value("size")))) {
+        if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || !tic.matchesSize(checksum.size)) {
             return;
         }
         List<String> text = new ArrayList<>(tic.values("desc"));
