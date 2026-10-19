@@ -11,7 +11,10 @@ RPC and live-configuration tests passed. The old runner startup still applies
 until step 5.
 Step 3 completed: WebUiPlugin depends on RPC; WebUiEnabled controls the browser
 HTTP routes independently of RPC. Configuration lives in 95-web-ui.conf.
-RPC backend tests and the focused Web UI plugin tests passed. Steps 4-7 remain.
+RPC backend tests and the focused Web UI plugin tests passed.
+Step 4 completed: preparation invokes initial setup through WebUiPlugin, skips
+disabled UI, validates HTTP availability and preserves operator fragments.
+Focused setup/configuration tests passed. Steps 5-7 remain.
 
 ## Intent and current checkpoint
 

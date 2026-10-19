@@ -1,6 +1,7 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.ServiceConfiguration;
 import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
 import org.fidonet.jftn.rpc.SettingsService;
@@ -24,7 +25,8 @@ public final class InitialSetup {
         if (Files.exists(configuration)) {
             JFtnConfig config = new JFtnConfig();
             config.load(configuration.toString());
-            if (!Boolean.parseBoolean(config.getValue("RpcEnabled", "false"))) {
+            if (!ServiceConfiguration.flag(config, "RpcEnabled", false)
+                    || !ServiceConfiguration.flag(config, "WebUiEnabled", true)) {
                 return;
             }
             authPath = Path.of(config.getValue("RpcAuthPath",

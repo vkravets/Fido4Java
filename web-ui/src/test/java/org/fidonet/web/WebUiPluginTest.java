@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -34,7 +35,25 @@ class WebUiPluginTest {
                       + "\n"
                       + options;
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        Files.writeString(temporary.resolve("jftn.conf"), text);
         return new ServiceContext(temporary.resolve("jftn.conf")).provide(JFtnConfig.class, config);
+    }
+
+    @Test
+    void skippedBootstrapWhenUiWasDisabledAndPreservedConfiguredFiles() throws Exception {
+        ServiceContext disabled = context("RpcEnabled=true\nWebUiEnabled=false\n");
+        new ServicePlugins(List.of(new WebUiPlugin())).prepare(disabled);
+        assertFalse(Files.exists(temporary.resolve("database")));
+        ServiceContext configured = context("RpcEnabled=true\nRpcHttpEnabled=true\n"
+                                            + "RpcUser=admin\nRpcPassword=test-only-password\n");
+        Path fragment = temporary.resolve("conf.d/operator.conf");
+        Files.createDirectories(fragment.getParent());
+        Files.writeString(fragment, "# Keep this file\n");
+        String original = Files.readString(configured.configuration());
+        new WebUiPlugin().prepare(configured);
+        assertTrue(original.equals(Files.readString(configured.configuration())));
+        assertTrue(Files.readString(fragment).equals("# Keep this file\n"));
+        assertFalse(Files.exists(temporary.resolve("mail")));
     }
 
     @Test

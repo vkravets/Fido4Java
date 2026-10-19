@@ -4,9 +4,10 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.echobase.MailStorage;
+import org.fidonet.jftn.plugins.ServiceContext;
+import org.fidonet.jftn.plugins.ServicePlugins;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.ui.NodeRpc;
-import org.fidonet.jftn.web.InitialSetup;
 
 import java.nio.file.Path;
 
@@ -14,7 +15,7 @@ import java.nio.file.Path;
 public final class FullProfileServices implements ProfileServices {
     @Override
     public void prepare(Path configuration) throws Exception {
-        InitialSetup.prepare(configuration);
+        ServicePlugins.discover().prepare(new ServiceContext(configuration));
     }
 
     @Override

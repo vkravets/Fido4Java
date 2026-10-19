@@ -5,6 +5,7 @@ import org.fidonet.jftn.ServiceConfiguration;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.ServiceContext;
 import org.fidonet.jftn.plugins.ServicePlugin;
+import org.fidonet.jftn.web.InitialSetup;
 
 /** Browser feature; its HTTP routes are contributed to the RPC listener. */
 public final class WebUiPlugin implements ServicePlugin {
@@ -21,12 +22,25 @@ public final class WebUiPlugin implements ServicePlugin {
     }
 
     @Override
+    public void prepare(ServiceContext context) throws Exception {
+        JFtnConfig config = ServiceConfiguration.read(context);
+        if (config != null) {
+            validateHttp(config);
+        }
+        InitialSetup.prepare(context.configuration());
+    }
+
+    @Override
     public AutoCloseable start(ServiceContext context) {
         JFtnConfig config = context.require(JFtnConfig.class);
+        validateHttp(config);
+        return () -> {
+        };
+    }
+
+    private void validateHttp(JFtnConfig config) {
         if (!ServiceConfiguration.flag(config, "RpcHttpEnabled", false)) {
             throw new IllegalArgumentException("Web UI requires RpcHttpEnabled=true; otherwise set WebUiEnabled=false");
         }
-        return () -> {
-        };
     }
 }
