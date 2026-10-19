@@ -15,15 +15,19 @@ import org.fidonet.types.Message;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 class FileMailStoreTest {
     @TempDir
@@ -131,4 +135,46 @@ class FileMailStoreTest {
         FileMailStore reopened = new FileMailStore(config("transit"));
         reopened.close();
     }
+    @Test
+    void refusedToReinitializeAMissingCatalogOverExistingMail() throws Exception {
+        JFtnConfig config = config("transit");
+        FileMailStore store = new FileMailStore(config);
+        store.saveNetmail(message(false), "local", null);
+        store.close();
+        Path catalog = temporary.resolve("tmp/mail-state/catalog.properties");
+        byte[] backup = Files.readAllBytes(catalog);
+        Files.delete(catalog);
+        assertThrows(IllegalStateException.class, () -> new FileMailStore(config));
+        Files.write(catalog, backup);
+        try (FileMailStore restored = new FileMailStore(config)) {
+            assertEquals(1, restored.getLocalNetmail(new FTNAddr("1:500/102")).size());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"body", "identity"})
+    void refusedChangedSnapshotsOrIdentityReceiptsInsteadOfForwardingOrDroppingMail(String field)
+            throws Exception {
+        try (FileMailStore store = new FileMailStore(config("transit"))) {
+            store.saveNetmail(message(false), "delivery", "1:500/102.0");
+            Path path = FileRecords.list(temporary.resolve("tmp/mail-state/netmail")).get(0);
+            Properties original = FileRecords.read(path);
+            Properties changed = new Properties();
+            changed.putAll(original);
+            changed.setProperty(field, "changed");
+            FileRecords.write(path, changed);
+            if (field.equals("body")) {
+                List<Message> delivered = new ArrayList<>();
+                assertThrows(IllegalStateException.class,
+                             () -> store.visitQueuedNetmail(queued -> delivered.add(queued.getMessage())));
+                assertTrue(delivered.isEmpty());
+            } else {
+                assertThrows(IllegalStateException.class,
+                             () -> store.isDuplicateNetmail(message(false), "replay"));
+            }
+            FileRecords.write(path, original);
+            assertEquals(1, store.getQueuedNetmail().size());
+        }
+    }
+
 }

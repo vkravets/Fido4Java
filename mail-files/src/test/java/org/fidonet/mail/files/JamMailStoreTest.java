@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.jam.JamArea;
+import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
@@ -17,10 +19,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.List;
 
 class JamMailStoreTest {
     @TempDir
@@ -173,6 +177,51 @@ class JamMailStoreTest {
         reopened.beforeExport(new Tosser(routed, reopened));
         assertEquals(id, reopened.getQueuedNetmail().get(0).getMessage().getMsgId());
         assertTrue((reopened.mailbox(null).read().get(0).getAttributes() & JamArea.SENT) != 0);
+        reopened.close();
+    }
+
+    @Test
+    void preservedDeletionOfReceivedMailWithoutMsgidAndWithNoncanonicalDate() throws Exception {
+        JFtnConfig config = config();
+        Message original = new Message("Remote",
+                                       "Local",
+                                       new FTNAddr("1:500/101"),
+                                       new FTNAddr("1:500/100"),
+                                       "No MSGID",
+                                       "\1CHRS: UTF-8 4\rReceived without identifier\r",
+                                       new Date(1700000000000L));
+        byte[] bytes = PacketWriter.write(original.getFAddr(),
+                                          original.getTAddr(),
+                                          "",
+                                          List.of(original));
+        bytes[58 + 14] = ' ';
+        FtsPkt packet = new FtsPkt(ByteBuffer.wrap(bytes));
+        Message received = new Message(packet.getMsgs()[0], 1, 1);
+        assertTrue(received.getMsgDate().startsWith(original.getMsgDate().substring(1, 2) + " "));
+        assertTrue(received.getMsgId() == null);
+        received.setUpLink(original.getFAddr());
+        JamMailStore store = new JamMailStore(config);
+        store.saveNetmail(received, "raw-date", null);
+        store.mailbox(null).locked(access -> {
+            access.attributes(1, JamArea.DELETED, 0);
+            return null;
+        });
+        store.close();
+        JamMailStore reopened = new JamMailStore(config);
+        assertTrue(reopened.mailbox(null).read().isEmpty());
+        assertTrue(reopened.getLocalNetmail(new FTNAddr("1:500/100")).isEmpty());
+        reopened.close();
+    }
+
+    @Test
+    void rejectedInvalidBindingsWithoutPublishingAnEmptyArea() throws Exception {
+        JFtnConfig config = config();
+        JamMailStore initial = new JamMailStore(config);
+        initial.close();
+        String invalid = "JamEcho=bad," + temporary.resolve("jam/netmail") + ",1:500/100\n";
+        assertThrows(IOException.class, () -> new JamMailStore(config(invalid)));
+        JamMailStore reopened = new JamMailStore(config);
+        assertTrue(reopened.getAreas().isEmpty());
         reopened.close();
     }
 

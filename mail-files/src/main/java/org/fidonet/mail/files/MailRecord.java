@@ -6,11 +6,22 @@ import org.fidonet.types.Message;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
 /** Lossless UTF-8/Unicode logical message snapshot; no wire normalization is applied to journals. */
 final class MailRecord {
+    private static final List<String> FIELDS = List.of("attributes",
+                                                       "body",
+                                                       "date",
+                                                       "from",
+                                                       "fromAddress",
+                                                       "peer",
+                                                       "subject",
+                                                       "to",
+                                                       "toAddress");
+
     private MailRecord() {
     }
 
@@ -28,6 +39,10 @@ final class MailRecord {
     }
 
     static Message get(Properties source) {
+        String expected = source.getProperty("fingerprint");
+        if (expected != null && !expected.equals(fingerprint(source))) {
+            throw new IllegalStateException("Persistent mail snapshot failed its integrity check");
+        }
         try {
             Date date = new SimpleDateFormat("dd MMM yy  HH:mm:ss",
                                              Locale.US).parse(source.getProperty("date"));
@@ -50,9 +65,16 @@ final class MailRecord {
     static String fingerprint(Message message) {
         Properties values = new Properties();
         put(values, message);
+        return fingerprint(values);
+    }
+
+    private static String fingerprint(Properties values) {
         StringBuilder text = new StringBuilder();
-        values.stringPropertyNames().stream().sorted().forEach(key -> {
+        FIELDS.forEach(key -> {
             String value = values.getProperty(key);
+            if (value == null) {
+                throw new IllegalStateException("Incomplete persistent mail snapshot");
+            }
             text.append(key).append(':').append(value.length()).append(':').append(value);
         });
         return FileRecords.key(text.toString());

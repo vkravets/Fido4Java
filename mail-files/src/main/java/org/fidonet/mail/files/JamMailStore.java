@@ -80,7 +80,6 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                 }
                 String area = areaName(fields[0].trim());
                 bind(area, fields[1].trim(), fields.length == 3 ? fields[2].trim() : null);
-                createArea(area);
             }
         }
         String netmail = config.getValue("JamNetmail");
@@ -115,6 +114,11 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         }
         paths.clear();
         List<String> names = new ArrayList<>(getAreas());
+        for (String key : bindings.keySet()) {
+            if (key.startsWith("echo:") && !names.contains(key.substring(5))) {
+                names.add(key.substring(5));
+            }
+        }
         names.add(null);
         for (String name : names) {
             if (!paths.add(mailbox(name).getPath())) {
@@ -122,6 +126,11 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             }
         }
         FileRecords.write(path, layout);
+        for (String key : bindings.keySet()) {
+            if (key.startsWith("echo:")) {
+                createArea(key.substring(5));
+            }
+        }
     }
 
     private void bind(String area, String path, String address) throws IOException {
@@ -169,7 +178,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                 Properties record = FileRecords.read(path);
                 if (record.containsKey("body")) {
                     Message message = MailRecord.get(record);
-                    appendIfAbsent(message);
+                    appendIfAbsent(message, record.getProperty("identity"));
                     if (message.isEchomail()) {
                         compactEcho(message);
                     }
@@ -203,7 +212,14 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     }
 
     private void appendIfAbsent(Message message) throws IOException {
-        Path publication = publication(message);
+        appendIfAbsent(message, MailIdentity.of(message));
+    }
+
+    private void appendIfAbsent(Message message, String identity) throws IOException {
+        if (identity == null || !identity.matches("[0-9a-f]{64}")) {
+            throw new IOException("Invalid JAM publication identity");
+        }
+        Path publication = publication(message, identity);
         if (Files.exists(publication)) {
             return;
         }
@@ -220,24 +236,28 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                         : attributes & ~JamArea.LOCAL;
                 access.append(message, attributes);
             }
-            recordPublication(message);
+            recordPublication(message, identity);
             return null;
         });
     }
 
-    private Path publication(Message message) {
+    private Path publication(Message message, String identity) {
         return root.resolve("jam-publications")
-                   .resolve(FileRecords.key((message.isEchomail() ? message.getArea() : "netmail")
-                                            + ":"
-                                            + MailIdentity.of(message)) + ".properties");
+                   .resolve(FileRecords.key((message.isEchomail()
+                           ? areaName(message.getArea())
+                           : "netmail") + ":" + identity) + ".properties");
     }
 
     private void recordPublication(Message message) {
+        recordPublication(message, MailIdentity.of(message));
+    }
+
+    private void recordPublication(Message message, String identity) {
         Properties record = new Properties();
         record.setProperty("path",
                            mailbox(message.isEchomail() ? message.getArea() : null).getPath()
                                                                                    .toString());
-        FileRecords.write(publication(message), record);
+        FileRecords.write(publication(message, identity), record);
     }
 
     @Override

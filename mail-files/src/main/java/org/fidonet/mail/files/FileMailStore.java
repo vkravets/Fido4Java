@@ -45,6 +45,9 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         ownership = new FileStateLock(root);
         try {
             catalog = FileRecords.read(root.resolve("catalog.properties"));
+            if (catalog.isEmpty() && hasOperationalState()) {
+                throw new IllegalStateException("Mail state catalog is missing; restore a consistent backup");
+            }
             String owner = RuntimeProfile.read(config).name().toLowerCase(Locale.ROOT);
             String previous = catalog.getProperty("profile", owner);
             if (!previous.equals(owner)) {
@@ -56,6 +59,15 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
             ownership.close();
             throw failure;
         }
+    }
+
+    private boolean hasOperationalState() {
+        if (Files.exists(root.resolve("jam-layout.properties"))) {
+            return true;
+        }
+        return List.of("echo", "netmail", "delivery-keys", "jam-publications", "submissions")
+                   .stream()
+                   .anyMatch(directory -> !FileRecords.list(root.resolve(directory)).isEmpty());
     }
 
     @Override
@@ -213,6 +225,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
             Properties record = new Properties();
             MailRecord.put(record, message);
             record.setProperty("identity", MailIdentity.of(message));
+            record.setProperty("fingerprint", MailRecord.fingerprint(message));
             record.setProperty("area", areaName(area));
             List<String> readers = config.getConfiguredLinks()
                                          .stream()
@@ -232,7 +245,16 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public boolean isDupe(Message message) {
-        return Files.exists(echoRecord(message));
+        requireOpen();
+        Properties record = FileRecords.read(echoRecord(message));
+        if (record.isEmpty()) {
+            return false;
+        }
+        if (!MailIdentity.of(message).equals(record.getProperty("identity"))
+                || !areaName(message.getArea()).equals(record.getProperty("area"))) {
+            throw new IllegalStateException("Invalid echo identity receipt");
+        }
+        return true;
     }
 
     @Override
@@ -296,6 +318,9 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         Properties record = FileRecords.read(root.resolve("netmail")
                                                  .resolve(FileRecords.key(MailIdentity.of(message))
                                                           + ".properties"));
+        if (!record.isEmpty() && !MailIdentity.of(message).equals(record.getProperty("identity"))) {
+            throw new IllegalStateException("Invalid netmail identity receipt");
+        }
         return !record.isEmpty() && !record.getProperty("key").equals(key);
     }
 
