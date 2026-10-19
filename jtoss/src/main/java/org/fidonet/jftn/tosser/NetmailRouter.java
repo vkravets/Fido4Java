@@ -124,9 +124,7 @@ public final class NetmailRouter {
             return decision(NetmailDecision.Reason.LOCAL, null, null);
         }
         Link direct = config.getLink(destination);
-        String flags = " " + configFlags(message) + " ";
-        if (flags.contains(" DIR ") || flags.contains(" CRA ")
-                || (message.getAttributes() & 2) != 0) {
+        if (NetmailPriority.of(message) != NetmailPriority.NORMAL) {
             return decision(direct == null
                     ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
                     : NetmailDecision.Reason.DIRECT, direct, null);

@@ -75,7 +75,8 @@ public class NetmailPolicyTest {
     @Test
     public void directAndCrashNeverFallBackToARoutedLink() throws Exception {
         NetmailRouter router = new NetmailRouter(config("DefaultRoute=1:500/101\n"));
-        for (String flags : new String[]{"\1FLAGS: DIR\r", "\1FLAGS: CRA\r"}) {
+        for (String flags : new String[]{"\1FLAGS: DIR\r", "\1FLAGS: CRA\r", "\1FLAGS: HLD\r",
+                "\1FLAGS: IMM\r"}) {
             assertEquals(NetmailDecision.Reason.DIRECT_UNAVAILABLE,
                          router.explain(message("1:500/999", flags)).getReason());
         }
@@ -84,6 +85,26 @@ public class NetmailPolicyTest {
         assertNull(router.route(crash));
         assertEquals(new FTNAddr("1:500/103"),
                      router.route(message("1:500/103", "\1FLAGS: DIR\r")).getAddr());
+    }
+
+    @Test
+    void huskyPriorityOrderBypassesRoutesAndOnlyPureHoldIsHeld() throws Exception {
+        NetmailRouter router = new NetmailRouter(config("Route=1:500/*,1:500/101\n"));
+        for (String flags : new String[]{"HLD", "CRA HLD", "DIR HLD", "IMM HLD"}) {
+            Message mail = message("1:500/103", "\1FLAGS: " + flags + "\r");
+            assertEquals(new FTNAddr("1:500/103"), router.route(mail).getAddr());
+        }
+        assertEquals(NetmailPriority.HOLD,
+                     NetmailPriority.of(message("1:500/103", "\1FLAGS: HLD\r")));
+        assertEquals(NetmailPriority.DIRECT,
+                     NetmailPriority.of(message("1:500/103", "\1FLAGS: CRA HLD\r")));
+        assertEquals(NetmailPriority.DIRECT,
+                     NetmailPriority.of(message("1:500/103", "\1FLAGS: DIR HLD\r")));
+        assertEquals(NetmailPriority.IMMEDIATE,
+                     NetmailPriority.of(message("1:500/103", "\1FLAGS: IMM DIR HLD\r")));
+        Message hold = message("1:500/999", "");
+        hold.setAttributes(512);
+        assertEquals(NetmailDecision.Reason.DIRECT_UNAVAILABLE, router.explain(hold).getReason());
     }
 
     @Test
@@ -97,6 +118,19 @@ public class NetmailPolicyTest {
                 assertTrue(expected.getMessage().length() > 0);
             }
         }
+    }
+
+    @Test
+    void holdCombinesWithCrashDirectAndImmediateLikeHuskyOutboundFlavours() throws Exception {
+        JFtnConfig config = config("");
+        OutboundSpool spool = new OutboundSpool(config);
+        for (String flags : new String[]{"HLD", "CRA HLD", "DIR HLD", "IMM HLD"}) {
+            spool.enqueue("netmail:" + flags,
+                          config.getLink(new FTNAddr("1:500/103")),
+                          message("1:500/103", "\1FLAGS: " + flags + "\r"));
+        }
+        assertEquals(4, spool.pending(config.getLink(new FTNAddr("1:500/103")), true).size());
+        assertEquals(3, spool.pending(config.getLink(new FTNAddr("1:500/103")), false).size());
     }
 
     @Test

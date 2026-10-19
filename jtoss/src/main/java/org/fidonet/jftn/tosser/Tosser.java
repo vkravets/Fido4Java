@@ -409,7 +409,7 @@ public class Tosser extends HasEventBus {
         if (destination == null) {
             return rejectPacket("Packet destination is not a local AKA.");
         }
-        if (!packet.getPass().equals(config.getPacketPassword(link))) {
+        if (!packet.getPass().equalsIgnoreCase(config.getPacketPassword(link))) {
             logger.error("PKT password mismatch: peer={}, destination={}; packet will be quarantined",
                          origin,
                          destination);
@@ -533,6 +533,11 @@ public class Tosser extends HasEventBus {
         if (!message.hasValidAddressing()) {
             return rejectPacket("Message has invalid FTN addressing.");
         }
+        IncomingMailAttributes.apply(message,
+                                     localNetmailAddress(message.getTAddr())
+                                             || link.getMyaddr() != null
+                                                     && link.getMyaddr()
+                                                            .contains(message.getTAddr()));
         return message.isEchomail()
                 ? importEchoMessage(message, link)
                 : importNetmailMessage(message, link, deliveryKey);

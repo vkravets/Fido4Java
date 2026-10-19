@@ -73,9 +73,7 @@ public final class OutboundSpool {
                 properties.setProperty("packet", PacketNames.allocate(root, directory));
             }
             properties.setProperty("hold",
-                                   Boolean.toString((message.getAttributes() & 512) != 0
-                                           || (" " + NetmailRouter.configFlags(message)
-                                                   + " ").contains(" HLD ")));
+                                   Boolean.toString(NetmailPriority.of(message) == NetmailPriority.HOLD));
             AtomicFiles.publish(metadata, out -> properties.store(out, "JFtn outbound"));
         }
         Properties properties = properties(metadata);

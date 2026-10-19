@@ -157,6 +157,17 @@ public class TosserBundleTest {
         }
     }
 
+    @Test
+    void authenticatesPacketPasswordsWithoutCaseLikeHpt() throws Exception {
+        Path inbound = Files.createDirectory(temporary.toPath().resolve("inbound"));
+        Path bad = Files.createDirectory(temporary.toPath().resolve("bad"));
+        bundle(inbound,
+               "mail.mo0",
+               packet("SeCrEt", "AREA:TEST\r\1MSGID: 1:500/101 aabbccdd\rHello\r"));
+        tosser(bad, 0, true).runFast(inbound.toString());
+        assertEquals(1, base.getMessageSize("test"));
+    }
+
     private byte[] archivedBundle(Path bad) throws IOException {
         try (Stream<Path> files = Files.walk(bad.resolve("received"))) {
             Path archived = files.filter(Files::isRegularFile).findFirst().orElseThrow();

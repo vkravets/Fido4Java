@@ -107,6 +107,13 @@ public class NetmailRoutingTest {
         try {
             Tosser tosser = new Tosser(config, base);
             Message message = message("2:500/102", "\1MSGID: 2:500/102 outgoing\rHello\r");
+            message = new Message(message.getFrom(),
+                                  message.getTo(),
+                                  message.getFAddr(),
+                                  new FTNAddr("2:500/103"),
+                                  message.getSubject(),
+                                  message.getBody().toString(),
+                                  new Date());
             message.setAttributes(512);
             tosser.submitNetmail(message, "outgoing");
             tosser.exportPendingNetmail();
@@ -148,14 +155,19 @@ public class NetmailRoutingTest {
                                                                             + System.nanoTime()));
             assertTrue(base.open());
             try {
+                Message transit = message("1:100/1", "Transit\r");
+                transit.setAttributes(1 | 2 | 8 | 256 | 512);
                 byte[] bytes = PacketWriter.write(new FTNAddr("2:500/101"),
                                                   new FTNAddr("2:500/102"),
                                                   "secret",
-                                                  Collections.singletonList(message("1:100/1",
-                                                                                    "Transit\r")));
+                                                  Collections.singletonList(transit));
                 Files.write(Path.of(config.getInbound(), "transit.pkt"), bytes);
                 new Tosser(config, base).runFast(config.getInbound());
                 assertEquals(allowed ? 1 : 0, base.getQueuedNetmail().size());
+                if (allowed) {
+                    assertEquals(1 | 32,
+                                 base.getQueuedNetmail().get(0).getMessage().getAttributes());
+                }
                 assertEquals(!allowed, Files.exists(Path.of(config.getTmpDir(), "transit.bad")));
             } finally {
                 base.close();
