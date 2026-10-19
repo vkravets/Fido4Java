@@ -116,6 +116,7 @@ public class NetmailRoutingTest {
             assertTrue(spool.pending(nextHop, false).isEmpty());
             assertEquals(1, spool.pending(nextHop, true).size());
             Path file = spool.pending(nextHop, true).get(0);
+            assertTrue(file.getFileName().toString().matches("[0-9a-f]{8}\\.pkt"));
             FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(file)));
             assertEquals(103, packet.getDestNode());
             Message restored = new Message(packet.getMsgs()[0],

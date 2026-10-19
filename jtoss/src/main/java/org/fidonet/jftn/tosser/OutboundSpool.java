@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 /** Persistent packets and acknowledgement receipts; preparing a packet does not mark it sent. */
 public final class OutboundSpool {
+    private static final Object PUBLICATION_LOCK = new Object();
     private final Path root;
     private final JFtnConfig config;
 
@@ -47,32 +48,56 @@ public final class OutboundSpool {
 
     public synchronized void enqueue(String key, Link link, Message message, FTNAddr local)
             throws IOException {
+        synchronized (PUBLICATION_LOCK) {
+            enqueuePacket(key, link, message, local);
+        }
+    }
+
+    private void enqueuePacket(String key, Link link, Message message, FTNAddr local)
+            throws IOException {
         Path directory = directory(link.getAddr());
         Files.createDirectories(directory);
         String name = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
-        Path packet = directory.resolve(name + ".pkt");
         Path metadata = directory.resolve(name + ".properties");
         if (Files.exists(directory.resolve(name + ".sent"))) {
             return;
         }
-        if (!Files.exists(packet)) {
-            if (local == null || link.getMyaddr() == null || !link.getMyaddr().contains(local)) {
-                throw new IOException("Missing local AKA for " + link.getAddr());
-            }
-            byte[] bytes = PacketWriter.write(local,
-                                              link.getAddr(),
-                                              config.getPacketPassword(link),
-                                              Collections.singletonList(message));
-            writeAtomically(packet, bytes);
+        if (local == null || link.getMyaddr() == null || !link.getMyaddr().contains(local)) {
+            throw new IOException("Missing local AKA for " + link.getAddr());
         }
         if (!Files.exists(metadata)) {
             Properties properties = new Properties();
             properties.setProperty("key", key);
+            // Recover a legacy packet whose publication stopped before writing its metadata.
+            if (!message.isEchomail() && !Files.exists(directory.resolve(name + ".pkt"))) {
+                properties.setProperty("packet", PacketNames.allocate(root, directory));
+            }
             properties.setProperty("hold",
                                    Boolean.toString((message.getAttributes() & 512) != 0
                                            || (" " + NetmailRouter.configFlags(message)
                                                    + " ").contains(" HLD ")));
             AtomicFiles.publish(metadata, out -> properties.store(out, "JFtn outbound"));
+        }
+        Properties properties = properties(metadata);
+        if (!key.equals(properties.getProperty("key"))) {
+            throw new IOException("Outbound delivery identity conflict");
+        }
+        Path packet = packet(metadata, properties);
+        if (properties.containsKey("packet")) {
+            Path owner = directory.resolve(packet.getFileName() + ".owner");
+            if (!Files.exists(owner)) {
+                writeAtomically(owner, name.getBytes(StandardCharsets.US_ASCII));
+            }
+            if (!name.equals(Files.readString(owner, StandardCharsets.US_ASCII))) {
+                throw new IOException("Outbound packet name conflict");
+            }
+        }
+        if (!Files.exists(packet)) {
+            byte[] bytes = PacketWriter.write(local,
+                                              link.getAddr(),
+                                              config.getPacketPassword(link),
+                                              Collections.singletonList(message));
+            writeAtomically(packet, bytes);
         }
     }
 
@@ -86,8 +111,8 @@ public final class OutboundSpool {
             for (Path metadata : (Iterable<Path>) files.filter(path -> path.toString()
                                                                            .endsWith(".properties"))::iterator) {
                 Properties properties = properties(metadata);
-                Path packet = Path.of(metadata.toString().replaceFirst("\\.properties$", ".pkt"));
-                if (Files.exists(packet) && !Files.exists(receipt(packet))
+                Path packet = packet(metadata, properties);
+                if (Files.exists(packet) && !Files.exists(receipt(metadata))
                         && (includeHeld || !Boolean.parseBoolean(properties.getProperty("hold")))) {
                     result.add(packet);
                 }
@@ -101,9 +126,15 @@ public final class OutboundSpool {
         if (!expected.startsWith(root.toAbsolutePath().normalize())) {
             throw new IOException("Packet is outside outbound spool");
         }
-        Properties properties = properties(Path.of(packet.toString()
-                                                         .replaceFirst("\\.pkt$", ".properties")));
-        writeAtomically(receipt(packet), new byte[]{1});
+        Path metadata = metadata(packet);
+        Properties properties = properties(metadata);
+        if (!packet(metadata, properties).toAbsolutePath().normalize().equals(expected)) {
+            throw new IOException("Outbound packet metadata mismatch");
+        }
+        Path receipt = receipt(metadata);
+        if (!Files.exists(receipt)) {
+            writeAtomically(receipt, new byte[]{1});
+        }
         Files.deleteIfExists(packet);
         return properties.getProperty("key");
     }
@@ -118,8 +149,31 @@ public final class OutboundSpool {
                             + address.getPnt());
     }
 
-    private static Path receipt(Path packet) {
-        return Path.of(packet.toString().replaceFirst("\\.pkt$", ".sent"));
+    private static Path receipt(Path metadata) {
+        return Path.of(metadata.toString().replaceFirst("\\.properties$", ".sent"));
+    }
+
+    private static Path packet(Path metadata, Properties properties) throws IOException {
+        String name = properties.getProperty("packet");
+        if (name == null) {
+            return Path.of(metadata.toString().replaceFirst("\\.properties$", ".pkt"));
+        }
+        if (!name.matches("[0-9a-f]{8}\\.pkt")) {
+            throw new IOException("Invalid outbound packet name");
+        }
+        return metadata.resolveSibling(name);
+    }
+
+    private static Path metadata(Path packet) throws IOException {
+        Path owner = packet.resolveSibling(packet.getFileName() + ".owner");
+        if (!Files.exists(owner)) {
+            return Path.of(packet.toString().replaceFirst("\\.pkt$", ".properties"));
+        }
+        String name = Files.readString(owner, StandardCharsets.US_ASCII);
+        if (!name.matches("[0-9a-f-]{36}")) {
+            throw new IOException("Invalid outbound packet owner");
+        }
+        return packet.resolveSibling(name + ".properties");
     }
 
     private static Properties properties(Path path) throws IOException {
