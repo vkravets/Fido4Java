@@ -9,4 +9,5 @@ dependencies {
     api project(':node-runtime')
     api project(':fido-database')
     implementation project(':nodelist')
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }

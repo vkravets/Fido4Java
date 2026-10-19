@@ -384,20 +384,6 @@ class NodeSettingsRpcHandlerTest {
     }
 
     @Test
-    void didNotReopenSetupWhenTheStoredAdminHadNoConfigPassword() throws Exception {
-        Path config = directory.resolve("jftn.conf");
-        Path auth = directory.resolve("accounts");
-        new NodeConfigurationService(config).save(initial(), auth);
-        try (RpcAccounts accounts = new RpcAccounts(auth)) {
-            accounts.createUser("admin", "a-long-password");
-        }
-        InitialSetup.prepare(config);
-        try (RpcAccounts accounts = new RpcAccounts(auth)) {
-            assertTrue(accounts.verifyPassword("admin", "a-long-password"));
-        }
-    }
-
-    @Test
     void acceptedSameOriginSetupAndRejectedForeignOriginsOverRealHttp() throws Exception {
         try (RpcAccounts accounts = new RpcAccounts(directory.resolve("accounts"))) {
             NodeSettingsRpcHandler settings = new NodeSettingsRpcHandler(new NodeConfigurationService(directory.resolve("jftn.conf")),

@@ -12,6 +12,10 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
+import org.fidonet.echobase.MailStorage;
+import org.fidonet.jftn.plugins.PluginInformation;
+import org.fidonet.jftn.plugins.ServiceContext;
+import org.fidonet.jftn.plugins.ServicePlugin;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
@@ -25,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RunnerStartupTest {
     @TempDir
     public File temporary;
+    private ServerSocket pluginSocket;
 
     private File config() throws Exception {
         File file = Files.createFile(temporary.toPath().resolve("jftn.conf")).toFile();
@@ -106,20 +112,29 @@ public class RunnerStartupTest {
                                                                             () -> calls.add("unload"),
                                                                             () -> calls.add("wait")));
             assertEquals(Arrays.asList("load",
+                                       "start service",
                                        "bind",
                                        "start scheduler",
                                        "poll first",
                                        "poll second",
                                        "wait",
+                                       "close service",
                                        "close extension",
                                        "unload"),
                          calls);
+            assertTrue(pluginSocket.isClosed());
+            try (ServerSocket reused = new ServerSocket(pluginSocket.getLocalPort())) {
+                assertTrue(reused.isBound());
+            }
             assertEquals("Configured Station", bound.get().getStationConfig().getName());
             assertEquals("Configured Sysop", bound.get().getStationConfig().getSysopName());
             assertEquals("Test Location", bound.get().getStationConfig().getLocation());
             assertEquals("TCP,BINKP", bound.get().getStationConfig().getNDL());
             assertEquals("1:500/100.0", bound.get().getStationConfig().getAddress());
         } finally {
+            if (pluginSocket != null) {
+                pluginSocket.close();
+            }
             runner.shutdown();
             database.close();
         }
@@ -130,6 +145,31 @@ public class RunnerStartupTest {
                                                MailDatabaseFacade database,
                                                List<String> calls) {
         return new JFtnRunner.PluginContexts() {
+            @Override
+            public List<ServicePlugin> services() {
+                return List.of(new ServicePlugin() {
+                    @Override
+                    public PluginInformation getPluginInfo() {
+                        return new PluginInformation("test-service", 1, 0, "Lifecycle test");
+                    }
+
+                    @Override
+                    public AutoCloseable start(ServiceContext context) throws Exception {
+                        assertTrue(context.require(MailStorage.class) == database);
+                        assertEquals("Configured Station",
+                                     context.require(SessionContext.class)
+                                            .getStationConfig()
+                                            .getName());
+                        pluginSocket = new ServerSocket(0);
+                        calls.add("start service");
+                        return () -> {
+                            pluginSocket.close();
+                            calls.add("close service");
+                        };
+                    }
+                });
+            }
+
             @Override
             public WeakReference<?> getContext(String id) {
                 if (id.equals(NettyPlugin.BINKP_PLUGIN_ID)) {

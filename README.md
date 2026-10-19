@@ -22,6 +22,7 @@ Report bugs and feature requests through the repository's issue tracker.
 - Scripted AreaFix, FileFix, TIC distribution and node/point directory imports.
 - Embedded Vue/TypeScript UI with English/Ukrainian, light/dark themes, password
   and passkey login, point registration, node settings and outgoing connection logs.
+- Optional RPC/Web UI service plugins, controlled by installed JARs and conf.d.
 - Thrift RPC over framed TCP and HTTP for administration and mail APIs.
 - Node/point directory browsing and FTN address suggestions from imported lists.
 

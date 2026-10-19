@@ -1,14 +1,14 @@
 # UI and RPC plugin refactoring plan
 
 Recorded: 2026-10-19.
-Status: implementation resumed by the user on 2026-10-19.
+Status: all seven implementation steps completed and locally verified on 2026-10-19.
 Step 1 completed: explicit service context, preparation/start/close lifecycle,
 dependency ordering and failure cleanup. Plugin-manager tests passed.
 Step 2 completed: node-runtime contains shared node services; rpc-node owns the
 RPC plugin, handlers, transports and server configuration previously located in
 web-ui. RPC-plugin tests passed without browser classes; existing authenticated
-RPC and live-configuration tests passed. The old runner startup still applies
-until step 5.
+RPC and live-configuration tests passed. At this intermediate step, the old
+runner startup remained until step 5.
 Step 3 completed: WebUiPlugin depends on RPC; WebUiEnabled controls the browser
 HTTP routes independently of RPC. Configuration lives in 95-web-ui.conf.
 RPC backend tests and the focused Web UI plugin tests passed.
@@ -23,7 +23,17 @@ RPC capability and runner startup tests passed.
 Step 6 completed: RPC/Web UI are shipped under plugins/, with no compile-time
 RPC/UI implementation dependency in the runner. All eight ZIPs passed CRC and
 layout inspection; reduced-profile PKT/TIC/startup tests and the fresh-JVM
-packaged-plugin probe passed. Step 7 remains.
+packaged-plugin probe passed.
+Step 7 completed: server-side tests moved into rpc-node and pass with no browser
+implementation/setup on the classpath. Installed JVMs verify eight service/package
+combinations, PKT import with optional services removed, framed TCP and HTTP/JSON
+authentication/authorization, missing dependencies, manual configuration without
+UI, first-run setup ordering, rejection without SQL, and rollback/restart after
+an occupied HTTP port. Runner shutdown closes a plugin-owned real socket.
+The full focused backend/node regression, formatting checks and all eight ZIP
+builds passed (build/plugins-final-verification.log; ignored local evidence).
+No Playwright/VRT run was needed: browser application/layout code was unchanged.
+HTTP asset safety and generated-client RPC checks ran as backend checks.
 
 ## Intent and current checkpoint
 
@@ -116,5 +126,7 @@ current step and concrete progress in chat while continuing authorized work.
 
 Read `AGENTS.md`, `docs/decisions.md`, this plan and
 `docs/development-environment.md`; check Git status and recent commits. Reconcile
-the checkpoint with actual source before editing. Start with step 1; none of the
-seven implementation steps was completed when this plan was saved.
+the checkpoint with actual source before editing. All seven steps are complete;
+do not restart this implementation from step 1. Follow decision 36 and the current
+plugin/distribution runbooks. Storage-provider plugins remain a separate proposal.
+No deployment to the installed test node or push to the remote was performed.

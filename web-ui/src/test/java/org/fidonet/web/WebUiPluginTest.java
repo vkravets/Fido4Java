@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.plugins.ServiceContext;
 import org.fidonet.jftn.plugins.ServicePlugins;
+import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,6 +21,21 @@ import java.util.List;
 class WebUiPluginTest {
     @TempDir
     Path temporary;
+
+    @Test
+    void didNotReopenSetupWhenTheStoredAdminHadNoConfigPassword() throws Exception {
+        Path auth = temporary.resolve("accounts");
+        ServiceContext context = context("RpcEnabled=true\nRpcHttpEnabled=true\nRpcAuthPath="
+                                         + auth
+                                         + "\n");
+        try (RpcAccounts accounts = new RpcAccounts(auth)) {
+            accounts.createUser("admin", "test-only-password");
+        }
+        new WebUiPlugin().prepare(context);
+        try (RpcAccounts accounts = new RpcAccounts(auth)) {
+            assertTrue(accounts.verifyPassword("admin", "test-only-password"));
+        }
+    }
 
     private ServiceContext context(String options) throws Exception {
         JFtnConfig config = new JFtnConfig();

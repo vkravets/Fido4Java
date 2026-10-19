@@ -215,7 +215,7 @@ class UiRpcIntegrationTest {
     }
 
     private void connect(String password) throws Exception {
-        template = JFtnRunner.createSessionContext(config);
+        template = NodeSessions.create(config);
         rpc = NodeRpc.open(config, base, mail, template);
         transport = new TFramedTransport(new TSocket("127.0.0.1", rpc.getPort(), 5000));
         transport.open();
@@ -339,7 +339,7 @@ class UiRpcIntegrationTest {
         transport.close();
         rpc.close();
         PollService shared = new PollService(config,
-                                             JFtnRunner.createSessionContext(config),
+                                             NodeSessions.create(config),
                                              link -> new Client(link) {
                                                  @Override
                                                  public void run(SessionContext context) {
@@ -354,7 +354,7 @@ class UiRpcIntegrationTest {
                                                  }
                                              });
         try (shared) {
-            rpc = NodeRpc.open(config, base, mail, JFtnRunner.createSessionContext(config), shared);
+            rpc = NodeRpc.open(config, base, mail, NodeSessions.create(config), shared);
             transport = new TFramedTransport(new TSocket("127.0.0.1", rpc.getPort(), 5000));
             transport.open();
             LoginService.Client login = new LoginService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),

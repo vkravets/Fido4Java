@@ -66,7 +66,7 @@ class LiveConfigurationTest {
         base = new MailDatabaseFacade(orm);
         assertTrue(base.open());
         mail = new MailRuntime(config, base, List.of());
-        SessionContext template = JFtnRunner.createSessionContext(config);
+        SessionContext template = NodeSessions.create(config);
         mail.attach(template);
         polls = new PollService(config, template);
         accounts = new RpcAccounts(root.resolve("accounts"));

@@ -17,6 +17,10 @@ and link values before using a manual configuration.
 
 Working folders are created automatically on every startup if missing.
 Libraries are in lib/, Groovy runtime JARs in lib/groovy/, plugin modules in plugins/.
+Full includes rpc-node and web-ui plugins. Removing web-ui keeps RPC; removing
+both keeps mail processing. Disable installed plugins through conf.d/90-rpc.conf
+and conf.d/95-web-ui.conf. Web UI depends on RPC/HTTP; RPC requires SQL storage.
+Without the setup UI plugin, prepare jftn.conf and account credentials manually.
 Editable Groovy mail robots are in scripts/mail-scripts/ (on the launch classpath).
 File-only plugin settings are in conf.d/. The ZIP supplies *.conf.example;
 startup creates missing active *.conf files without replacing existing files.

@@ -607,7 +607,7 @@ The subsequent runtime profiles implementation is described in decision 35 and
 
 ## 35. Storage profiles select capabilities and separate installation artifacts
 
-Full/Headless retain authoritative SQL storage; Full alone includes UI/RPC.
+Full/Headless retain authoritative SQL storage; Full alone includes UI/RPC by default.
 Legacy uses primary JAM echoes and selectable JAM/FTS1 MSG netmail with a separate
 durable delivery journal. JAM netmail remains the default; the selected storage
 format/path/encoding is pinned in operational state, with no implicit conversion.
@@ -629,6 +629,36 @@ each with/without runtimes. With-JRE ZIPs contain both pinned Windows x64 and
 Linux x64 JREs. Reduced archives exclude UI/RPC; Legacy/Transit additionally omit
 SQL/ORM/database and directory-catalog JARs. No storage migration or pruning is
 implied by changing a profile marker; journals and mail are operational state.
+
+## 36. Optional service plugins own RPC, Web UI and first-run preparation
+
+Profiles define storage policy and default ZIP composition. They do not directly
+launch optional UI/RPC classes. The host discovers plugins once, runs enabled
+service preparation before opening mail storage, then initializes the selected
+plugins and starts their service contexts after constructing mail/poll services.
+Service dependencies are validated before preparation or listener acquisition.
+Disabled services are filtered out before normal plugin dependency loading.
+Startup and shutdown preserve reverse resource ownership and cleanup failures.
+
+`rpc-node` owns authenticated TCP/HTTP handlers, account/session lifetime and
+server-side settings. Web UI is separately optional and depends on RPC. It owns
+browser resources and initial setup. `RpcEnabled=false` disables the dependent
+UI as well; `WebUiEnabled=false` disables only browser routes/setup. A missing
+enabled dependency is a configuration error. No setup plugin means manual node
+configuration. Existing accounts, main configuration and conf.d files survive
+plugin removal/disabling; there is no hot replacement of running JARs.
+
+The runner imports the shared node runtime and plugin API, not concrete RPC/UI
+implementations. Shared node services live in node-runtime; RPC server settings
+previously in web-ui now live in rpc-node. SQL-free storage remains selected by
+the host for now; storage-provider plugins are a separate task. RPC currently
+requires SQL storage and can be installed on Full/Headless with matching shared
+dependencies. It never silently creates a dummy SQL mailbox for Legacy/Transit.
+
+All eight distribution variants retain separate libraries/plugins/Groovy/scripts
+and sealed CI packaging. Optional service JARs live in plugins/. Backend RPC tests
+execute without the Web UI JAR, and installed-artifact tests exercise removed,
+disabled and missing-dependency combinations, first setup and partial failure.
 
 ## Changing these decisions
 

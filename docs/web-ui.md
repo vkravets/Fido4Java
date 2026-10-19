@@ -65,7 +65,8 @@ GitHub Actions sets up Java 17 and Node.js 24, caches npm downloads by lockfile,
 and saves Java and TypeScript test reports. The integration jobs continue to use the
 compiled runtimes produced by the main build.
 
-For an already configured node, enable `RpcEnabled` and `RpcHttpEnabled`, then open
+For an already configured node with `rpc-node` and `web-ui` plugins installed,
+enable `RpcEnabled`, `RpcHttpEnabled` and `WebUiEnabled`, then open
 `http://localhost:9091/` (or the configured HTTP port/origin). HTTP serves both the
 SPA and `/rpc/` endpoints. Light and dark themes can be changed in appearance
 settings or with the header toggle and are saved in the signed-in profile.

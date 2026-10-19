@@ -22,7 +22,8 @@ TCP and HTTP/JSON. Keep the UI-state database with mail backups so deleted/read
 state remains consistent. Removing a letter is not secure erasure of retained
 SQL contents or received-original archives.
 
-The application can start a real sysop RPC service alongside MailRuntime:
+The optional `rpc-node` plugin starts a sysop RPC service alongside MailRuntime.
+Configure it in `conf.d/90-rpc.conf`:
 
 ```ini
 RpcEnabled=true
@@ -44,10 +45,18 @@ set RpcUser/RpcPassword explicitly. These credentials create an account only whe
 the authentication database is empty; restarts never reset its password. Remove
 RpcPassword after successful provisioning.
 
-Runner owns the listeners and authentication sessions. The node-owned poll service
+The RPC plugin owns listeners and authentication sessions; the runner coordinates
+its lifecycle through the common service-plugin API. The node-owned poll service
 also works without RPC. These services stop before MailRuntime/database shutdown;
 startup failure releases resources. The standalone default RPC handler rejects
 unconfigured authentication.
+
+Web UI is a separate optional plugin depending on RPC. Remove its JAR or set
+`WebUiEnabled=false` in `conf.d/95-web-ui.conf` to retain RPC without browser routes
+or the setup wizard. Remove both plugin JARs to run mail processing without them.
+Profiles select their default package composition rather than directly launching
+services. RPC requires SQL storage; Full/Headless can host it, while Legacy/Transit
+cannot use this plugin with their file/JAM stores. See [plugin installation](distributions.md).
 
 ## Transport and authentication
 

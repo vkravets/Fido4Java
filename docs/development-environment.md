@@ -224,6 +224,8 @@ These commands are examples for a developer checkout, not the installed node.
 
 # Focused examples; choose checks relevant to your change.
 .\gradlew.bat :jtoss:test
+.\gradlew.bat :plugin-manager:test :node-runtime:test :rpc-node:test
+.\gradlew.bat :jftn-bundle:test --tests '*ServicePluginDistributionTest'
 .\gradlew.bat :nodelist:test :jftn-bundle:test --tests '*Directory*'
 .\gradlew.bat :web-ui:test :web-ui:frontendTest :web-ui:typecheckFrontend :web-ui:typecheckStorybook
 

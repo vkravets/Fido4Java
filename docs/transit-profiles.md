@@ -8,7 +8,7 @@ JFtn provides four installation profiles. Select the matching ZIP; its
 | Profile | Mail storage | Administration | Optional JAM bridge |
 | --- | --- | --- | --- |
 | Full | SQL | UI/RPC, files and robots | Yes |
-| Headless | SQL | Files and robots; no UI/RPC libraries/listeners | Yes |
+| Headless | SQL | Files and robots; UI/RPC plugins omitted by default | Yes |
 | Legacy | JAM echoes, JAM or MSG netmail, filesystem delivery state | Files, robots and an external editor | Not needed |
 | Transit | Filesystem delivery state; no reader mailboxes | Files and robots | No |
 

@@ -5,6 +5,9 @@ import org.fidonet.jftn.rpc.RpcServiceProvider;
 import org.fidonet.jftn.rpc.RpcTransport;
 import org.fidonet.jftn.ui.RpcResources;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +16,7 @@ import java.util.Set;
 
 /** Starts configured transports and closes all acquired listeners in reverse order. */
 public final class RpcTransports implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(RpcTransports.class);
     private final Map<String, RpcTransport> listeners = new LinkedHashMap<>();
     private final RpcResources resources = new RpcResources();
 
@@ -69,6 +73,9 @@ public final class RpcTransports implements AutoCloseable {
         resources.add(listener);
         listeners.put(factory.name(), listener);
         listener.run();
+        logger.info("RPC service listening: transport={}, port={}",
+                    factory.name(),
+                    listener.getLocalPort());
     }
 
     public synchronized int getPort(String name) {

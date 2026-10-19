@@ -72,9 +72,9 @@ separator and works on Windows and Unix. Pass `--version` for a version-only che
 The plain application JAR is not self-contained; use a launcher.
 
 Plugins use `ServiceLoader` on this shared classpath; restart to load changed JARs.
-There is no hot reload or dependency isolation. Database, scheduler and Netty are
-required by the current runner in SQL profiles (SQL-free profiles replace the
-database with filesystem storage). Nodelist is used by setup/settings lookup. The JAM
+There is no hot reload or dependency isolation. Scheduler and Netty are required
+by the current runner. SQL profiles also require the database plugin; SQL-free
+profiles use filesystem storage instead. Nodelist is used by setup/settings lookup. The JAM
 bridge can be disabled through its configuration. Do not remove a required module
 or its shared dependencies just because its JAR is under `plugins/`.
 
@@ -94,6 +94,15 @@ embed those dependencies. RPC currently requires SQL-backed mail storage and can
 be enabled on Full/Headless. Legacy/Transit cannot run it against JAM/file journals.
 The `rpc` library in `lib/` provides contracts/transport primitives; its presence
 alone does not start an RPC service. See [plugin configuration](plugin-configuration.md).
+
+When upgrading from the older library-based UI layout, replace the managed
+application binaries as a consistent set: obsolete `lib/web-ui-*.jar` and
+`lib/rpc-node-*.jar` must not coexist with the new plugin copies. The launchers
+include both directories, so stale JARs can still supply classes/routes after a
+plugin is removed. Prefer a clean binary installation with backed-up operational
+state/configuration restored, or explicitly reconcile old managed JARs. Preserve
+custom plugins, editable scripts, active conf.d files, accounts and mail; merely
+overlaying ZIPs does not remove obsolete files.
 
 Mail script resources are excluded from the application JAR and supplied externally.
 Default `MailScript` entries load the external files from
