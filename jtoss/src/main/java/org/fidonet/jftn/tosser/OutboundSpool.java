@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -30,13 +31,22 @@ public final class OutboundSpool {
         root = Path.of(config.getOutbound(), "jftn-mail");
     }
 
-    public boolean isAcknowledged(String key, Link link) {
+    public boolean isAcknowledged(String key, Link link) throws IOException {
         return isAcknowledged(key, link.getAddr());
     }
 
-    public boolean isAcknowledged(String key, FTNAddr address) {
+    public boolean isAcknowledged(String key, FTNAddr address) throws IOException {
         String name = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
-        return Files.exists(directory(address).resolve(name + ".sent"));
+        if (Files.exists(directory(address).resolve(name + ".sent"))) {
+            return true;
+        }
+        BsoOutbound bso = new BsoOutbound(config);
+        if (bso.acknowledged("packet:" + key, address)) {
+            Path metadata = directory(address).resolve(name + ".properties");
+            acknowledge(packet(metadata, properties(metadata)));
+            return true;
+        }
+        return false;
     }
 
     public synchronized void enqueue(String key, Link link, Message message) throws IOException {
@@ -100,6 +110,15 @@ public final class OutboundSpool {
                                               Collections.singletonList(message));
             writeAtomically(packet, bytes);
         }
+        BsoOutbound bso = new BsoOutbound(config);
+        if (BsoOutbound.enabled(config)) {
+            bso.enqueue("packet:" + key,
+                        link,
+                        List.of(packet),
+                        NetmailPriority.of(message).name().toLowerCase(Locale.ROOT));
+        } else if (bso.owns("packet:" + key, link.getAddr())) {
+            throw new IOException("Delivery remains owned by external BSO; drain it before changing modes");
+        }
     }
 
     public synchronized List<Path> pending(Link link, boolean includeHeld) throws IOException {
@@ -113,6 +132,10 @@ public final class OutboundSpool {
                                                                            .endsWith(".properties"))::iterator) {
                 Properties properties = properties(metadata);
                 String key = properties.getProperty("key", "");
+                if (BsoOutbound.enabled(config)
+                        || new BsoOutbound(config).owns("packet:" + key, link.getAddr())) {
+                    continue;
+                }
                 if (!key.startsWith("netmail:")
                         && new RobotDelivery(config).isPaused("AreaFix", link.getAddr())) {
                     continue;

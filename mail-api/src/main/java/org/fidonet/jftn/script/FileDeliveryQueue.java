@@ -1,6 +1,7 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.tosser.BsoOutbound;
 import org.fidonet.jftn.tosser.RobotDelivery;
 import org.fidonet.types.Link;
 
@@ -21,9 +22,11 @@ import java.util.stream.Stream;
 public final class FileDeliveryQueue {
     public static final long MAX_FILE_BYTES = 128L * 1024 * 1024;
     private final Path root;
+    private final JFtnConfig config;
     private final RobotDelivery delivery;
 
     public FileDeliveryQueue(JFtnConfig config) {
+        this.config = config;
         root = Path.of(config.getOutbound(), "file-delivery").toAbsolutePath().normalize();
         delivery = new RobotDelivery(config);
     }
@@ -46,6 +49,9 @@ public final class FileDeliveryQueue {
         String id = ScriptState.digest(key);
         Path destination = parent.resolve(id);
         if (Files.exists(destination)) {
+            if (BsoOutbound.enabled(config)) {
+                pending(peer);
+            }
             return;
         }
         Files.createDirectories(parent);
@@ -56,6 +62,9 @@ public final class FileDeliveryQueue {
             Files.move(staging, destination, StandardCopyOption.ATOMIC_MOVE);
         } finally {
             deleteStaging(staging);
+        }
+        if (BsoOutbound.enabled(config)) {
+            pending(peer);
         }
     }
 
@@ -108,6 +117,20 @@ public final class FileDeliveryQueue {
         }
         for (Path job : jobs) {
             List<Path> result = pendingJob(job);
+            BsoOutbound bso = new BsoOutbound(config);
+            String key = "file:" + job.getFileName();
+            if (bso.acknowledged(key, peer.getAddr())) {
+                for (Path file : result) {
+                    acknowledge(file);
+                }
+                continue;
+            }
+            if (BsoOutbound.enabled(config) || bso.owns(key, peer.getAddr())) {
+                if (!result.isEmpty() && BsoOutbound.enabled(config)) {
+                    bso.enqueue(key, peer, result, "normal");
+                }
+                continue;
+            }
             if (!result.isEmpty()) {
                 return result;
             }

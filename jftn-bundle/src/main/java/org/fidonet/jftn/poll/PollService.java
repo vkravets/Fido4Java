@@ -4,6 +4,7 @@ import org.fidonet.binkp.common.ClientConnector;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.tosser.BsoOutbound;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -112,6 +113,9 @@ public class PollService implements AutoCloseable {
     }
 
     private synchronized PollAttempt enqueue(String address, String source) {
+        if (BsoOutbound.enabled(config)) {
+            throw new IllegalArgumentException("External BSO mode uses the external mailer's polling controls");
+        }
         if (closed || worker.isShutdown()) {
             throw new IllegalArgumentException("Poll service is stopped");
         }
@@ -144,6 +148,9 @@ public class PollService implements AutoCloseable {
     }
 
     public void pollAll() {
+        if (BsoOutbound.enabled(config)) {
+            return;
+        }
         config.getConfiguredLinks().forEach(this::enqueueScheduled);
     }
 

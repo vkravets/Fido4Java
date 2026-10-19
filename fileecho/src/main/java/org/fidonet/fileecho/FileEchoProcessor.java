@@ -84,6 +84,9 @@ final class FileEchoProcessor implements FileEchoService {
     }
 
     void scan() throws IOException {
+        for (Link link : config.getConfiguredLinks()) {
+            api.getFileQueue().pending(link);
+        }
         List<ReceivedFile> inbox = api.getReceivedFiles();
         for (ReceivedFile ticket : inbox) {
             if (ticket.getName().toLowerCase(Locale.ROOT).endsWith(".tic")) {
