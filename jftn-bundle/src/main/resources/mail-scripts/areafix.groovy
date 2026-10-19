@@ -74,7 +74,7 @@ class AreaFixRobot {
         if (command in ['%list', '%query', '%linked', '%unlinked']) {
             RobotRequest.selects(fields, '')
             def names = available(request, '*').findAll { area ->
-                boolean linked = api.database.canReadEcho(peer, area)
+                boolean linked = api.storage.canReadEcho(peer, area)
                 RobotRequest.selects(fields, area) &&
                         (command == '%list' || (command == '%unlinked' ? !linked : linked))
             }
@@ -96,11 +96,11 @@ class AreaFixRobot {
         areas.each { area ->
             if (remove) {
                 api.tosser.removeEchoSubscription(peer.addr, area)
-            } else if (!api.database.canReadEcho(peer, area)) {
+            } else if (!api.storage.canReadEcho(peer, area)) {
                 api.tosser.configureEchoSubscription(peer.addr, area,
                         AccessLevel.valueOf(request.policy[1]), EchoHistory.NEW_ONLY)
             }
-            if (count != null && api.database.canReadEcho(peer, area)) {
+            if (count != null && api.storage.canReadEcho(peer, area)) {
                 api.tosser.rescanRecentEcho(area, peer.addr, count, request.id)
             }
         }
@@ -122,7 +122,7 @@ class AreaFixRobot {
     }
 
     List available(request, String mask) {
-        api.database.areas.findAll { area ->
+        api.storage.areas.findAll { area ->
             request.allows(area) && RobotRequest.matches(mask, area)
         }.sort()
     }
@@ -138,7 +138,7 @@ class AreaFixRobot {
         }
         def areas = available(request, fields[1])
         areas.each { area ->
-            if (api.database.canReadEcho(peer, area)) {
+            if (api.storage.canReadEcho(peer, area)) {
                 api.tosser.rescanRecentEcho(area, peer.addr, count, request.id)
             }
         }

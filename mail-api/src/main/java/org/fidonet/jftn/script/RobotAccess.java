@@ -1,11 +1,11 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotRules;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.types.FTNAddr;
 
 /** Explicit source selection; missing/disabled database rules never fall back to file credentials. */
@@ -14,7 +14,7 @@ public final class RobotAccess {
     private final RobotRules rules;
     private final String source;
 
-    public RobotAccess(JFtnConfig config, MailDatabaseFacade database) {
+    public RobotAccess(JFtnConfig config, MailStorage database) {
         this.config = config;
         source = source(config);
         switch (source) {

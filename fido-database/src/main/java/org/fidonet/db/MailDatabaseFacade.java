@@ -46,6 +46,7 @@ import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.EchoRoutingStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.IncrementalEchoStore;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.echobase.NetmailRoutingStore;
@@ -86,7 +87,7 @@ import java.util.concurrent.Callable;
  */
 public class MailDatabaseFacade
         implements
-            IBase,
+            MailStorage,
             NetmailStore,
             ArchiveStore,
             IncrementalEchoStore,

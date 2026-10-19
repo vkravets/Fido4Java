@@ -2,6 +2,7 @@ package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.share.CommandCollection;
@@ -54,7 +55,7 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
     }
 
     private final Tosser tosser;
-    private final MailDatabaseFacade database;
+    private final MailStorage database;
     private final ScriptState state;
     private final List<NetmailHandler> handlers = new ArrayList<>();
     private final List<ScanHandler> scans = new ArrayList<>();
@@ -81,13 +82,13 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
         settingsExtensions.add(extension);
     }
 
-    public MailAutomationRuntime(JFtnConfig config, MailDatabaseFacade database, Tosser tosser)
+    public MailAutomationRuntime(JFtnConfig config, MailStorage database, Tosser tosser)
             throws IOException {
         this(config, database, tosser, ServiceLoader.load(MailScriptExtension.class));
     }
 
     public MailAutomationRuntime(JFtnConfig config,
-                                 MailDatabaseFacade database,
+                                 MailStorage database,
                                  Tosser tosser,
                                  Iterable<MailScriptExtension> extensions)
             throws IOException {
@@ -95,7 +96,7 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
     }
 
     public MailAutomationRuntime(JFtnConfig config,
-                                 MailDatabaseFacade database,
+                                 MailStorage database,
                                  Tosser tosser,
                                  Iterable<MailScriptExtension> extensions,
                                  DirectoryImportService directoryImports)
@@ -155,8 +156,12 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
         fileEcho = service;
     }
 
-    public MailDatabaseFacade getDatabase() {
+    public MailStorage getStorage() {
         return database;
+    }
+
+    public MailDatabaseFacade getDatabase() {
+        return (MailDatabaseFacade) database;
     }
 
     public ScriptState getState() {

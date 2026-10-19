@@ -1,8 +1,8 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.tosser.EchoRouter;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -15,7 +15,7 @@ final class MailDatabaseConfiguration {
     private MailDatabaseConfiguration() {
     }
 
-    static void apply(JFtnConfig config, MailDatabaseFacade base) {
+    static void apply(JFtnConfig config, MailStorage base) {
         boolean managed = EchoRouter.databaseSubscriptions(config);
         for (Link link : config.getConfiguredLinks()) {
             base.configureLink(link, config.getPacketPassword(link));

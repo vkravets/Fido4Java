@@ -2,7 +2,7 @@ package org.fidonet.jftn;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.script.DirectoryImportService;
 import org.fidonet.jftn.script.MailAutomationRuntime;
@@ -74,19 +74,19 @@ public final class MailRuntime implements AutoCloseable {
         };
     }
 
-    public MailRuntime(JFtnConfig config, MailDatabaseFacade base) throws IOException {
+    public MailRuntime(JFtnConfig config, MailStorage base) throws IOException {
         this(config, base, MailRuntime::createWorker);
     }
 
     MailRuntime(JFtnConfig config,
-                MailDatabaseFacade base,
+                MailStorage base,
                 Supplier<ScheduledExecutorService> workerFactory)
             throws IOException {
         this(config, base, ServiceLoader.load(MailExtensionFactory.class), workerFactory);
     }
 
     public MailRuntime(JFtnConfig config,
-                       MailDatabaseFacade base,
+                       MailStorage base,
                        Iterable<MailExtensionFactory> factories)
             throws IOException {
         this(config, base, factories, MailRuntime::createWorker);
@@ -97,7 +97,7 @@ public final class MailRuntime implements AutoCloseable {
     }
 
     MailRuntime(JFtnConfig config,
-                MailDatabaseFacade base,
+                MailStorage base,
                 Iterable<MailExtensionFactory> factories,
                 Supplier<ScheduledExecutorService> workerFactory)
             throws IOException {
@@ -249,7 +249,7 @@ public final class MailRuntime implements AutoCloseable {
         }
     }
 
-    public static void runOnce(JFtnConfig config, MailDatabaseFacade base) throws Exception {
+    public static void runOnce(JFtnConfig config, MailStorage base) throws Exception {
         MailRuntime active = ACTIVE.get(Path.of(config.getTmpDir()).toAbsolutePath().normalize());
         if (active != null) {
             active.processPending();
