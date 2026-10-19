@@ -30,6 +30,7 @@ import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.TosserConfiguration;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
+import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.jftn.ui.NodeRpc;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -481,6 +482,64 @@ class UiRpcIntegrationTest {
                              "Hello from UI");
     }
 
+    @Test
+    void deletedWaitingMailCannotBeSentAndPreparedPacketsSurviveMailboxDeletion() throws Exception {
+        ui.send(token, draft(Mailbox.OUTBOX).setSubject("Cancel before send"), "cancel-waiting");
+        long cancelled = ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().get(0).getId();
+        ui.deleteMessage(token, Mailbox.OUTBOX, cancelled);
+        ui.deleteMessage(token, Mailbox.OUTBOX, cancelled);
+        assertEquals(0, ui.pendingNetmail(token));
+        assertEquals(0, ui.sendPendingNetmail(token));
+        assertTrue(ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().isEmpty());
+        assertTrue(ui.outbound(token, "1:500/101", 10).isEmpty());
+        ui.send(token, draft(Mailbox.OUTBOX).setSubject("Already prepared"), "keep-packet");
+        assertEquals(1, ui.sendPendingNetmail(token));
+        var link = config.getLink(new FTNAddr("1:500/101"));
+        OutboundSpool spool = new OutboundSpool(config);
+        Path packet = spool.pending(link, true).get(0);
+        byte[] bytes = Files.readAllBytes(packet);
+        long sent = ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().get(0).getId();
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            browser.deleteMessage(token, Mailbox.OUTBOX, sent);
+            assertEquals(0, browser.pendingNetmail(token));
+            assertEquals("NOT_FOUND",
+                         assertThrows(UiError.class,
+                                      () -> browser.message(token, Mailbox.OUTBOX, "", sent))
+                                                                                             .getCode());
+        }
+        ui.processMail(token);
+        assertArrayEquals(bytes, Files.readAllBytes(packet));
+        assertEquals(List.of(packet), spool.pending(link, true));
+        mail.operate(tosser -> {
+            tosser.acknowledgeOutbound(spool.acknowledge(packet));
+            return null;
+        });
+        assertTrue(spool.pending(link, true).isEmpty());
+    }
+
+    @Test
+    void mailboxDeletionIsScopedAndDoesNotRemoveTheLocalRecipientsCopy() throws Exception {
+        ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                            "profile"));
+        String point = approvedPoint(profiles, "delete-point", "1:500/100.1");
+        ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.1"), "local-copy");
+        long id = ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().get(0).getId();
+        assertEquals("NOT_FOUND",
+                     assertThrows(UiError.class,
+                                  () -> ui.deleteMessage(point, Mailbox.OUTBOX, id)).getCode());
+        assertEquals(1, ui.sendPendingNetmail(token));
+        ui.deleteMessage(token, Mailbox.OUTBOX, id);
+        assertEquals(1, ui.messages(point, Mailbox.INBOX, "", 0, 10).getItemsSize());
+        ui.deleteMessage(point, Mailbox.INBOX, id);
+        assertTrue(ui.messages(point, Mailbox.INBOX, "", 0, 10).getItems().isEmpty());
+        transport.close();
+        rpc.close();
+        connect();
+        assertTrue(ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().isEmpty());
+    }
+
     private String approvedPoint(ProfileService.Client profiles, String login, String address)
             throws Exception {
         profiles.register(login, "point-password-123", address);
@@ -591,6 +650,8 @@ class UiRpcIntegrationTest {
                                   () -> ui.send(token,
                                                 draft(Mailbox.OUTBOX).setToAddress("2:500/100"),
                                                 "no-route-send")).getCode());
+        assertEquals(1, ui.pendingNetmail(token));
+        ui.sendPendingNetmail(token);
         assertEquals(1, base.getQueuedNetmail().size());
         assertEquals("1:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
     }
@@ -602,6 +663,8 @@ class UiRpcIntegrationTest {
         String second = approvedPoint(profiles, "point-two", "1:500/100.2");
         ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.1"), "to-first");
         ui.send(token, draft(Mailbox.OUTBOX).setToAddress("1:500/100.2"), "to-second");
+        assertTrue(ui.messages(first, Mailbox.INBOX, "", 0, 10).getItems().isEmpty());
+        assertEquals(2, ui.sendPendingNetmail(token));
         assertTrue(ui.messages(token, Mailbox.OUTBOX, "", 0, 10)
                      .getItems()
                      .stream()
@@ -642,6 +705,11 @@ class UiRpcIntegrationTest {
                                                                .setFromAddress("1:500/100"))).getCode());
         String msgid = ui.send(first, pointDraft, "point-send");
         assertEquals(msgid, ui.send(first, pointDraft, "point-send"));
+        assertEquals(1, ui.pendingNetmail(first));
+        assertEquals(0, ui.pendingNetmail(second));
+        assertEquals(0, ui.sendPendingNetmail(second));
+        assertTrue(base.getQueuedNetmail().isEmpty());
+        assertEquals(1, ui.sendPendingNetmail(first));
         assertEquals(received.getMessageId(),
                      base.getQueuedNetmail()
                          .get(0)
@@ -674,6 +742,11 @@ class UiRpcIntegrationTest {
         assertEquals(draft, ui.drafts(token).get(0));
         String id = ui.send(token, draft, "request-1");
         assertEquals(id, ui.send(token, draft, "request-1"));
+        assertEquals(1, ui.pendingNetmail(token));
+        ui.processMail(token);
+        assertTrue(ui.outbound(token, "1:500/101", 10).isEmpty());
+        assertTrue(base.getQueuedNetmail().isEmpty());
+        assertEquals(1, ui.sendPendingNetmail(token));
         assertEquals(1, base.getQueuedNetmail().size());
         assertTrue(ui.drafts(token).isEmpty());
         assertEquals("INVALID_ARGUMENT",

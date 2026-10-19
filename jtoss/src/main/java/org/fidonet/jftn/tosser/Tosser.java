@@ -659,6 +659,15 @@ public class Tosser extends HasEventBus {
     }
 
     public synchronized void submitNetmail(Message message, String deliveryKey) throws IOException {
+        submitNetmail(message, deliveryKey, false);
+    }
+
+    public synchronized void stageNetmail(Message message, String deliveryKey) throws IOException {
+        submitNetmail(message, deliveryKey, true);
+    }
+
+    private void submitNetmail(Message message, String deliveryKey, boolean waiting)
+            throws IOException {
         if ((message.getAttributes() & 0x8810) != 0) {
             throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
         }
@@ -668,14 +677,25 @@ public class Tosser extends HasEventBus {
         }
         MessageIds.ensure(message, Path.of(config.getTmpDir()));
         if (localNetmailAddress(message.getTAddr())) {
-            netmailStore.saveNetmail(message, deliveryKey, null);
+            storeSubmittedNetmail(message, deliveryKey, null, waiting);
             return;
         }
         Link route = netmailRouter.route(message);
         if (route == null) {
             throw new IllegalStateException("No route for " + message.getTAddr());
         }
-        netmailStore.saveNetmail(message, deliveryKey, route.getAddr().toString());
+        storeSubmittedNetmail(message, deliveryKey, route.getAddr().toString(), waiting);
+    }
+
+    private void storeSubmittedNetmail(Message message,
+                                       String key,
+                                       String nextHop,
+                                       boolean waiting) {
+        if (waiting) {
+            netmailStore.stageNetmail(message, key, nextHop);
+        } else {
+            netmailStore.saveNetmail(message, key, nextHop);
+        }
     }
 
     public synchronized void exportPendingNetmail() throws IOException {

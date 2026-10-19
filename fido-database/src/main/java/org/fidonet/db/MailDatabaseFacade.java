@@ -295,12 +295,16 @@ public class MailDatabaseFacade
                                                 .and()
                                                 .in(sent ? "from_addr" : "to_addr", addresses);
             if (!sent) {
-                where.and().isNull("route_via");
+                where.and()
+                     .isNull("route_via")
+                     .and()
+                     .notIn("id", netmailRepository.unreleasedIds());
             }
             List<StoredMail> result = new ArrayList<>();
             for (Netmail row : query.query()) {
                 Message message = row.toMessage();
-                if (Boolean.TRUE.equals(row.getSend()) || sent && row.getRoute() == null) {
+                if (Boolean.TRUE.equals(row.getSend()) || sent && row.getRoute() == null
+                        && !netmailRepository.awaiting(row.getId())) {
                     message.setAttributes(message.getAttributes() | 8);
                 }
                 result.add(new StoredMail(row.getId(), message));
@@ -315,6 +319,19 @@ public class MailDatabaseFacade
         if (after < 0 || limit < 1 || limit > 201) {
             throw new IllegalArgumentException("Invalid page cursor or size");
         }
+    }
+
+    public synchronized int waitingNetmail(Collection<FTNAddr> addresses) throws SQLException {
+        return netmailRepository.waiting(addresses);
+    }
+
+    public synchronized int releaseNetmail(Collection<FTNAddr> addresses) throws SQLException {
+        return netmailRepository.release(addresses);
+    }
+
+    public synchronized void cancelWaitingNetmail(long id, Collection<FTNAddr> addresses)
+            throws SQLException {
+        netmailRepository.cancel(id, addresses);
     }
 
     public MailDatabaseFacade(OrmManager manager) {
@@ -462,6 +479,18 @@ public class MailDatabaseFacade
 
     @Override
     public synchronized void saveNetmail(Message message, String deliveryKey, String nextHop) {
+        storeNetmail(message, deliveryKey, nextHop, false);
+    }
+
+    @Override
+    public synchronized void stageNetmail(Message message, String deliveryKey, String nextHop) {
+        storeNetmail(message, deliveryKey, nextHop, true);
+    }
+
+    private void storeNetmail(Message message,
+                              String deliveryKey,
+                              String nextHop,
+                              boolean waiting) {
         Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
         try {
             dbManager.inTransaction(() -> {
@@ -473,7 +502,11 @@ public class MailDatabaseFacade
                     stored.setRoute(nextHop);
                     dbManager.getDao(Netmail.class).create(stored);
                     netmailRepository.index(stored);
-                    deliveries.create(new NetmailDelivery(deliveryKey, stored, nextHop));
+                    NetmailDelivery delivery = new NetmailDelivery(deliveryKey, stored, nextHop);
+                    if (waiting) {
+                        delivery.setState("WAITING");
+                    }
+                    deliveries.create(delivery);
                     receipts.create(new MessageReceipt(identity));
                 }
                 return null;

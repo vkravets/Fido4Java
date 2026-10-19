@@ -31,6 +31,7 @@ final class UserMailStateStore {
         try (Connection connection = open(); Statement sql = connection.createStatement()) {
             sql.execute("CREATE TABLE IF NOT EXISTS drafts (owner VARCHAR(100), id VARCHAR(80), payload BLOB NOT NULL, PRIMARY KEY(owner,id))");
             sql.execute("CREATE TABLE IF NOT EXISTS read_marks (owner VARCHAR(100), mailbox VARCHAR(10), area VARCHAR(255), id BIGINT, PRIMARY KEY(owner,mailbox,area,id))");
+            sql.execute("CREATE TABLE IF NOT EXISTS deleted_mail (owner VARCHAR(100), mailbox VARCHAR(10), area VARCHAR(255), id BIGINT, PRIMARY KEY(owner,mailbox,area,id))");
             sql.execute("CREATE TABLE IF NOT EXISTS submissions (id VARCHAR(64) PRIMARY KEY, fingerprint VARCHAR(64) NOT NULL, message_id VARCHAR(255) NOT NULL)");
         }
     }
@@ -53,14 +54,35 @@ final class UserMailStateStore {
     }
 
     Set<Long> readIds(String owner, String box, String area, List<Long> ids) throws Exception {
+        return markedIds("read_marks", owner, box, area, ids);
+    }
+
+    Set<Long> deletedIds(String owner, String box, List<Long> ids) throws Exception {
+        return markedIds("deleted_mail", owner, box, "", ids);
+    }
+
+    void deleteMessage(String owner, String box, long id) throws Exception {
+        try (Connection connection = open();
+                PreparedStatement sql = connection.prepareStatement("MERGE INTO deleted_mail(owner,mailbox,area,id) KEY(owner,mailbox,area,id) VALUES(?,?,?,?)")) {
+            sql.setString(1, owner);
+            sql.setString(2, box);
+            sql.setString(3, "");
+            sql.setLong(4, id);
+            sql.executeUpdate();
+        }
+    }
+
+    private Set<Long> markedIds(String table, String owner, String box, String area, List<Long> ids)
+            throws Exception {
         Set<Long> result = new HashSet<>();
         if (ids.isEmpty()) {
             return result;
         }
         String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
         try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("SELECT id FROM read_marks WHERE owner=? AND mailbox=? AND area=? AND id IN ("
-                        + placeholders + ")")) {
+                PreparedStatement sql = connection.prepareStatement("SELECT id FROM " + table
+                        + " WHERE owner=? AND mailbox=? AND area=? AND id IN (" + placeholders
+                        + ")")) {
             sql.setString(1, owner);
             sql.setString(2, box);
             sql.setString(3, area);

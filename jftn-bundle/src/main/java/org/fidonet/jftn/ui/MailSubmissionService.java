@@ -54,7 +54,7 @@ final class MailSubmissionService {
                 tosser.submitEchomail(message);
             } else {
                 message.setAttributes(1);
-                tosser.submitNetmail(message, "ui:" + key);
+                tosser.stageNetmail(message, "ui:" + key);
             }
             state.delete(owner, draft.getId());
             return msgid;

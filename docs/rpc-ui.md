@@ -1,5 +1,27 @@
 # UI RPC API
 
+## Netmail staging, release and deletion
+
+`UiService.send` validates and stores netmail as `WAITING`; it does not prepare a
+PKT or expose a local recipient's incoming copy yet. `pendingNetmail` counts only
+waiting mail authored by the current account's approved AKAs. `sendPendingNetmail`
+releases that scope and prepares outgoing packets under the normal mail lock;
+local messages become deliverable without a PKT. It returns the number released.
+The timer/manual processing and JAM export do not release waiting UI messages.
+Robot replies, transit and existing automatic submission APIs retain their normal
+automatic queue behavior. Existing prepared packets are not rebuilt or recalled.
+
+`deleteMessage(session, INBOX|OUTBOX, id)` removes a message from that account's
+selected mailbox through durable UI-state tombstones. Other accounts/folders,
+SQL duplicate history, delivery records and already prepared packets remain.
+Deleting from OUTBOX also cancels a matching `WAITING` delivery before hiding it;
+deleting released mail does not recall it. Deletion can be retried safely. Detail
+reads and pagination exclude deleted entries; guessed foreign IDs return NOT_FOUND.
+All three methods support POINT accounts with server-side AKA scoping and both
+TCP and HTTP/JSON. Keep the UI-state database with mail backups so deleted/read
+state remains consistent. Removing a letter is not secure erasure of retained
+SQL contents or received-original archives.
+
 The application can start a real sysop RPC service alongside MailRuntime:
 
 ```ini

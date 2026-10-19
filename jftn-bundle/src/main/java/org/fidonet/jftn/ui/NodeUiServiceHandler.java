@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Sysop UI adapter. Authentication is supplied by AuthenticatedUi at the RPC boundary. */
 public final class NodeUiServiceHandler implements UiService.Iface {
@@ -245,12 +246,30 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     private List<StoredMail> rows(String owner, Mailbox box, String area, long after, int limit)
             throws Exception {
         access.mailbox(owner, box);
-        return box == Mailbox.ECHO
-                ? base.readEchoPage(area, after, limit)
-                : base.readNetmailPage(access.addresses(owner),
-                                       box == Mailbox.OUTBOX,
-                                       after,
-                                       limit);
+        if (box == Mailbox.ECHO) {
+            return base.readEchoPage(area, after, limit);
+        }
+        List<FTNAddr> addresses = access.addresses(owner);
+        List<StoredMail> result = new ArrayList<>();
+        long cursor = after;
+        while (result.size() < limit) {
+            List<StoredMail> page = base.readNetmailPage(addresses,
+                                                         box == Mailbox.OUTBOX,
+                                                         cursor,
+                                                         201);
+            List<Long> ids = new ArrayList<>();
+            page.forEach(row -> ids.add(row.getId()));
+            Set<Long> deleted = state.deletedIds(owner, box.name(), ids);
+            result.addAll(page.stream()
+                              .filter(row -> !deleted.contains(row.getId()))
+                              .limit(limit - result.size())
+                              .collect(Collectors.toList()));
+            if (page.size() < 201) {
+                break;
+            }
+            cursor = page.get(page.size() - 1).getId();
+        }
+        return result;
     }
 
     private MailItem item(StoredMail stored, boolean body, boolean read) throws Exception {
@@ -322,6 +341,42 @@ public final class NodeUiServiceHandler implements UiService.Iface {
             state.mark(owner, box.name(), area(box, area), id, read);
             return null;
         });
+    }
+
+    @Override
+    public void deleteMessage(String owner, Mailbox box, long id) throws UiError {
+        if (box != Mailbox.INBOX && box != Mailbox.OUTBOX || id < 1) {
+            throw new IllegalArgumentException("Select a netmail message to delete");
+        }
+        call(() -> mail.operate(tosser -> {
+            List<FTNAddr> addresses = access.addresses(owner);
+            List<StoredMail> rows = base.readNetmailPage(addresses,
+                                                         box == Mailbox.OUTBOX,
+                                                         id - 1,
+                                                         1);
+            if (rows.isEmpty() || rows.get(0).getId() != id) {
+                throw new UiError("NOT_FOUND", "Message not found in this mailbox");
+            }
+            if (box == Mailbox.OUTBOX) {
+                base.cancelWaitingNetmail(id, addresses);
+            }
+            state.deleteMessage(owner, box.name(), id);
+            return null;
+        }));
+    }
+
+    @Override
+    public int pendingNetmail(String owner) throws UiError {
+        return call(() -> mail.operate(tosser -> base.waitingNetmail(access.addresses(owner))));
+    }
+
+    @Override
+    public int sendPendingNetmail(String owner) throws UiError {
+        return call(() -> mail.operate(tosser -> {
+            int released = base.releaseNetmail(access.addresses(owner));
+            tosser.exportPendingNetmail();
+            return released;
+        }));
     }
 
     @Override

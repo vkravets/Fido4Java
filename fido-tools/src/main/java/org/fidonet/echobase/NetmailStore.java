@@ -10,6 +10,8 @@ import java.util.List;
 public interface NetmailStore {
     void saveNetmail(Message message, String deliveryKey, String nextHop);
 
+    void stageNetmail(Message message, String deliveryKey, String nextHop);
+
     /** A different delivery of stored mail is a dupe; resuming its original delivery is not. */
     boolean isDuplicateNetmail(Message message, String deliveryKey);
 
