@@ -24,7 +24,8 @@ final class PluginConfigurationFiles {
                                               "42-filefix.conf",
                                               "43-directory-feed.conf",
                                               "44-fileecho-tools.conf",
-                                              "90-rpc.conf");
+                                              "90-rpc.conf",
+                                              "95-web-ui.conf");
 
     private PluginConfigurationFiles() {
     }

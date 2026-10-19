@@ -1,5 +1,7 @@
 package org.fidonet.web;
 
+import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.ServiceConfiguration;
 import org.fidonet.jftn.rpc.HttpRouteProvider;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -11,6 +13,10 @@ import java.util.Map;
 
 /** Serves packaged Vue assets and SPA routes; never exposes server filesystem paths. */
 public final class StaticUi implements HttpRouteProvider {
+    @Override
+    public Map<String, HttpHandler> routes(JFtnConfig config) {
+        return ServiceConfiguration.flag(config, "WebUiEnabled", true) ? routes() : Map.of();
+    }
     @Override
     public Map<String, HttpHandler> routes() {
         return Map.of("/", this::serve);

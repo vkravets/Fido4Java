@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 
 dependencies {
+    api project(':fido-config')
     implementation project(':fido-fts')
     api 'org.apache.thrift:libthrift:0.25.0'
     api 'org.slf4j:slf4j-api:2.0.20'

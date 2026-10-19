@@ -8,7 +8,10 @@ Step 2 completed: node-runtime contains shared node services; rpc-node owns the
 RPC plugin, handlers, transports and server configuration previously located in
 web-ui. RPC-plugin tests passed without browser classes; existing authenticated
 RPC and live-configuration tests passed. The old runner startup still applies
-until step 5. Steps 3-7 remain.
+until step 5.
+Step 3 completed: WebUiPlugin depends on RPC; WebUiEnabled controls the browser
+HTTP routes independently of RPC. Configuration lives in 95-web-ui.conf.
+RPC backend tests and the focused Web UI plugin tests passed. Steps 4-7 remain.
 
 ## Intent and current checkpoint
 

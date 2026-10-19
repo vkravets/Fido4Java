@@ -23,6 +23,7 @@ public final class HttpRpcTransportFactory implements RpcTransportFactory {
         return new HttpRpcServer(Integer.parseInt(config.getValue("RpcHttpPort", "9091")),
                                  config.getValue("RpcHttpBind", "127.0.0.1"),
                                  handlers,
-                                 RpcConfiguration.origins(config, "RpcHttpOrigin"));
+                                 RpcConfiguration.origins(config, "RpcHttpOrigin"),
+                                 config);
     }
 }

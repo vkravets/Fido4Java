@@ -1,5 +1,7 @@
 package org.fidonet.jftn.rpc;
 
+import org.fidonet.config.JFtnConfig;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -36,12 +38,21 @@ public final class HttpRpcServer implements RpcTransport {
 
     public HttpRpcServer(int port, String bind, RpcServiceProvider handlers, Set<String> origins)
             throws IOException {
+        this(port, bind, handlers, origins, new JFtnConfig());
+    }
+
+    public HttpRpcServer(int port,
+                         String bind,
+                         RpcServiceProvider handlers,
+                         Set<String> origins,
+                         JFtnConfig config)
+            throws IOException {
         this.origins = Set.copyOf(origins);
         this.origins.forEach(HttpRpcServer::validateOrigin);
         services = RpcProcessors.services(handlers);
         Map<String, HttpHandler> routes = new LinkedHashMap<>();
         for (HttpRouteProvider provider : ServiceLoader.load(HttpRouteProvider.class)) {
-            provider.routes().forEach((route, handler) -> {
+            provider.routes(config).forEach((route, handler) -> {
                 if (!route.startsWith("/") || route.startsWith("/rpc") || handler == null
                         || routes.putIfAbsent(route, handler) != null) {
                     throw new IllegalArgumentException("Invalid or duplicate HTTP route: " + route);
