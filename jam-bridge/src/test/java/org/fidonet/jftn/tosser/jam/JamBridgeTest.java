@@ -138,11 +138,7 @@ public class JamBridgeTest {
         new JamBridge(config, base, base).importOutgoing(tosser);
         assertEquals(1, base.getMessageSize("test"));
         assertEquals(1, base.getQueuedNetmail().size());
-        assertTrue(echo.read()
-                       .get(0)
-                       .getMessage()
-                       .getMsgId()
-                       .startsWith(new FTNAddr("2:500/102") + " "));
+        assertTrue(echo.read().get(0).getMessage().getMsgId().matches("2:500/102 [0-9a-f]{8}"));
         assertTrue((echo.read().get(0).getAttributes() & JamArea.LOCKED) != 0);
         assertFalse((echo.read().get(0).getAttributes() & JamArea.SENT) != 0);
     }
