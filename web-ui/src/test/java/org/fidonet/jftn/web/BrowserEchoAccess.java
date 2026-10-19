@@ -30,6 +30,9 @@ final class BrowserEchoAccess {
 
     private synchronized Object dispatch(String method, Object[] args) {
         switch (method) {
+            case "pendingNetmail" :
+                // Every fixture account has its own empty mail queue; no shared mail is exposed.
+                return 0;
             case "pollQueue" :
             case "links" :
                 return List.of();

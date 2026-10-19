@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+function notification(page: Page) {
+    return page.getByRole('region', { name: 'Notifications' }).getByRole('status');
+}
+
 async function signIn(page: Page, username: string, password: string) {
     await page.getByRole('textbox', { name: 'Username', exact: true }).fill(username);
     await page.getByLabel('Password', { exact: true }).fill(password);
@@ -122,7 +126,7 @@ test('administrator grants, edits and revokes echo access through the station sc
         .locator('.rows > li')
         .filter({ has: page.getByText('new.echo', { exact: true }) });
     await expect(row).toContainText('WRITE');
-    await expect(page.getByRole('status')).toContainText('No restart required.');
+    await expect(notification(page)).toContainText('No restart required.');
     await row.getByRole('button', { name: 'Edit', exact: true }).click();
     await expect(panel.getByLabel('Echo area', { exact: true })).toHaveAttribute('readonly');
     await panel.getByLabel('Echo access rights').selectOption('BOTH');
@@ -161,7 +165,7 @@ test('administrator releases a legacy quarantine packet through HTTP RPC after c
     await panel.locator('form').getByLabel('Expected source link').selectOption('1:500/101.0');
     await panel.getByRole('button', { name: 'Confirm', exact: true }).click();
     await expect(panel.getByText('No quarantined packets.')).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('Original retained');
+    await expect(notification(page)).toContainText('Original retained');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -179,7 +183,7 @@ test('administrator persists separate PKT passwords and tosser options through r
         .selectOption('WRITE');
     await page.getByLabel('Separate PKT password').fill('pktpass');
     await page.getByRole('button', { name: 'Save links', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('Configuration applied.');
+    await expect(notification(page)).toContainText('Configuration applied.');
     await expect(page.getByLabel('Separate PKT password')).toHaveValue('');
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
     await page.getByRole('tab', { name: 'Tosser settings', exact: true }).click();
@@ -203,7 +207,7 @@ test('administrator persists separate PKT passwords and tosser options through r
     await expect(page.getByLabel('Processing interval (seconds)')).toHaveValue('25');
     await expect(page.getByLabel('Create unknown echo areas automatically')).toBeChecked();
     await page.getByRole('button', { name: 'Reload configuration files' }).click();
-    await expect(page.getByRole('status')).toContainText('Configuration applied.');
+    await expect(notification(page)).toContainText('Configuration applied.');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -222,9 +226,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
         await link.getByLabel('binkp session password').fill('linkpass');
     }
     await page.getByRole('button', { name: 'Save links', exact: true }).click();
-    await expect(
-        page.getByRole('region', { name: 'Notifications' }).getByRole('status')
-    ).toContainText('Configuration applied.');
+    await expect(notification(page)).toContainText('Configuration applied.');
     await expect(page.locator('fieldset.mail-link-settings')).toHaveCount(3);
     await expect(page.getByLabel('Link address', { exact: true }).last()).toHaveAttribute(
         'readonly'
@@ -232,9 +234,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await page.getByRole('tab', { name: 'General', exact: true }).click();
     await page.getByLabel('Station name', { exact: true }).fill('Station with three uplinks');
     await page.getByRole('button', { name: 'Save configuration', exact: true }).click();
-    await expect(
-        page.getByRole('region', { name: 'Notifications' }).getByRole('status')
-    ).toContainText('Configuration applied.');
+    await expect(notification(page)).toContainText('Configuration applied.');
     await page.reload();
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
@@ -262,9 +262,9 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     await page.getByRole('button', { name: 'Appearance', exact: true }).click();
     await page.getByRole('button', { name: 'Dark · Night shift' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(page.getByRole('status')).toContainText('Settings saved.');
+    await expect(notification(page)).toContainText('Settings saved.');
     await page.getByRole('button', { name: 'Dismiss notification' }).click();
-    await expect(page.getByRole('status')).toHaveCount(0);
+    await expect(notification(page)).toHaveCount(0);
 
     const pointContext = await browser.newContext({ baseURL: process.env.UI_BASE_URL });
     try {
@@ -292,7 +292,7 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
         await expect(point.getByRole('button', { name: /Station/ })).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Connections/ })).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Accounts and requests/ })).toHaveCount(0);
-        await expect(point.getByRole('button', { name: /Netmail/ })).toBeDisabled();
+        await expect(point.getByRole('button', { name: /Netmail/ })).toBeEnabled();
         await point.getByRole('button', { name: /Node directory/ }).click();
         await point.getByRole('searchbox', { name: 'Search the directory' }).fill('POINT OWNER');
         await expect(point.getByRole('cell', { name: /First Point/ })).toBeVisible();
