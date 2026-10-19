@@ -1,10 +1,13 @@
 package org.fidonet.jftn.script;
 
+import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.jftn.tosser.MessageIds;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -64,7 +67,8 @@ public final class RobotRequest {
             throw new IllegalArgumentException("Request exceeds 200 lines or 64000 characters.");
         }
         String[] lines = body.split("\\r\\n|\\r|\\n", -1);
-        if (lines.length > 201) {
+        int count = lines.length - (lines[lines.length - 1].isEmpty() ? 1 : 0);
+        if (count > 200) {
             throw new IllegalArgumentException("Request exceeds 200 lines or 64000 characters.");
         }
         List<String> result = new ArrayList<>();
@@ -128,7 +132,13 @@ public final class RobotRequest {
                                     text,
                                     new Date());
         reply.setAttributes(1);
-        reply.setMsgId(message.getTAddr() + " " + id);
+        String messageId = api.getState().get("response-msgid:" + id);
+        if (messageId == null) {
+            MessageIds.ensure(reply, Path.of(((JFtnConfig) api.getConfig()).getTmpDir()));
+            api.getState().put("response-msgid:" + id, reply.getMsgId());
+        } else {
+            reply.setMsgId(messageId);
+        }
         if (message.getMsgId() != null) {
             reply.getBody().getKludges().put("REPLY", message.getMsgId());
         }

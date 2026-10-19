@@ -150,6 +150,11 @@ class AreaFixScriptTest {
         assertFalse(base.canWriteEcho(peer, "test.one"));
         assertFalse(base.canReadEcho(peer, "private"));
         assertTrue(reply().contains("test.one"));
+        assertTrue(base.getQueuedNetmail()
+                       .get(0)
+                       .getMessage()
+                       .getMsgId()
+                       .matches(".* [0-9a-f]{8}"));
         assertFalse(reply().contains("private"));
         toss(request("1:500/101", "robot-password", "-test.one\r", "two"));
         assertFalse(base.canReadEcho(peer, "test.one"));

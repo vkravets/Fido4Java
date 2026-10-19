@@ -136,6 +136,10 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
         return new RobotDelivery((JFtnConfig) getConfig());
     }
 
+    public RemoteRobotRequests getRemoteRobots() {
+        return new RemoteRobotRequests((JFtnConfig) getConfig(), tosser, state);
+    }
+
     public RobotAccess getRobotAccess() {
         return robotAccess;
     }

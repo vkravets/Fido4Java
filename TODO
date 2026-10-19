@@ -44,8 +44,13 @@ Optional future scope (not committed features)
 - Consider a lightweight distribution without UI/RPC. The no-JRE ZIP is already
   available, but still contains the full application and is not a lightweight build.
 - Consider an RSS posting robot.
+- Consider further Husky robot commands and a dedicated uplink-request UI only
+  with matching backend support: upstream %AVAIL catalogs, date-based/unlimited
+  rescan, compression/size policy, rules delivery and remote credential changes.
+  Current command support, safe limits and CLI/script requests: docs/mail-robots.md.
 
 Current scope and test limits:
+- docs/mail-robots.md
 - docs/tosser.md
 - docs/rpc-ui.md
 - docs/web-ui.md

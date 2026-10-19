@@ -499,6 +499,26 @@ a newly delivered duplicate must not invoke robots again. Failed duplicate
 archiving must not complete the packet progress journal. Duplicate archives have
 no automatic re-export or release action.
 
+## 30. Mail robots use Husky-compatible envelopes with explicit capability limits
+
+AreaFix/FileFix policy remains in external Groovy scripts; Java owns reusable
+validation, durable pause state, queueing and exact-file resends. Requests are
+authenticated direct-peer netmail with a separate robot password in the subject.
+Local command support and deliberate differences from HPT/HTick are documented
+in [mail robots](mail-robots.md); unsupported operations never report success.
+
+Per-peer AreaFix/FileFix pauses are independent, preserve subscriptions/backlog
+and apply when queues are loaded. They do not recall files already offered by an
+active transport. File resends require an enabled subscribed area, FileFix policy
+and outgoing TIC access; they create a fresh local TIC and durable file/TIC job.
+
+Trusted automation and an offline locked CLI can submit commands to configured
+uplink robots through ordinary private netmail. Remote passwords are explicit
+inputs and are never borrowed from inbound password verifiers. Stable request
+IDs bind content to one delivery; remote replies remain untrusted mail, not an
+automatic configuration/catalog import. The existing netmail composer supports
+manual requests without a new browser form.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

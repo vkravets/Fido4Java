@@ -86,7 +86,7 @@ public class JFtnRunner {
                 return;
             }
         }
-        if (RobotAccessCommand.handle(args)) {
+        if (RobotRequestCommand.handle(args) || RobotAccessCommand.handle(args)) {
             return;
         }
         if (args.length > 0 && args[0].startsWith("--")) {
