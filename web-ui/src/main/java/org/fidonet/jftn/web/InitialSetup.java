@@ -21,16 +21,23 @@ public final class InitialSetup {
     }
 
     public static void prepare(Path configuration) throws Exception {
-        Path authPath = configuration.toAbsolutePath().getParent().resolve("database/rpc-auth");
-        if (Files.exists(configuration)) {
-            JFtnConfig config = new JFtnConfig();
+        boolean configured = Files.exists(configuration);
+        JFtnConfig config;
+        if (configured) {
+            config = new JFtnConfig();
             config.load(configuration.toString());
-            if (!ServiceConfiguration.flag(config, "RpcEnabled", false)
-                    || !ServiceConfiguration.flag(config, "WebUiEnabled", true)) {
-                return;
-            }
-            authPath = Path.of(config.getValue("RpcAuthPath",
-                                               Path.of(config.getTmpDir(), "rpc-auth").toString()));
+        } else {
+            config = JFtnConfig.bootstrap(configuration);
+        }
+        if (!ServiceConfiguration.flag(config, "RpcEnabled", !configured)
+                || !ServiceConfiguration.flag(config, "WebUiEnabled", true)) {
+            return;
+        }
+        Path fallback = configured
+                ? Path.of(config.getTmpDir(), "rpc-auth")
+                : configuration.toAbsolutePath().getParent().resolve("database/rpc-auth");
+        Path authPath = Path.of(config.getValue("RpcAuthPath", fallback.toString()));
+        if (configured) {
             try (RpcAccounts accounts = new RpcAccounts(authPath)) {
                 if (accounts.hasUsers() || !config.getValue("RpcPassword", "").isEmpty()) {
                     return;

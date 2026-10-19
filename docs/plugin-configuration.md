@@ -61,6 +61,14 @@ can be moved to `90-rpc.conf`; the UI never writes that file. Keep the UI-manage
 `RpcHttpOrigin` in `jftn.conf`, and update file-only WebAuthn settings explicitly
 if the public browser address changes.
 
+Before `jftn.conf` exists, startup reads the ordered plugin fragments as a
+bootstrap snapshot. `RpcEnabled=false` or `WebUiEnabled=false` prevents the setup
+wizard; prepare the main configuration manually in that case. An explicit
+`RpcAuthPath` is also honored by the wizard, so its administrator account is
+created in the configured account database. Bootstrap does not invent station
+identity, links or mail storage, and the same restrictions on UI-managed fields
+in fragments still apply.
+
 For upgrades, preserve `jftn.conf`, `conf.d/`, scripts and all data, then replace
 application binaries. ZIPs contain examples, not active plugin configuration,
 so extracting an upgrade does not overwrite your active `*.conf` files.

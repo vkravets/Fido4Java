@@ -17,14 +17,16 @@ public final class WebUiPlugin implements ServicePlugin {
     @Override
     public boolean enabled(ServiceContext context) throws Exception {
         JFtnConfig config = ServiceConfiguration.read(context);
-        return config == null || ServiceConfiguration.flag(config, "WebUiEnabled", true)
-                && ServiceConfiguration.flag(config, "RpcEnabled", false);
+        return ServiceConfiguration.flag(config, "WebUiEnabled", true)
+                && ServiceConfiguration.flag(config,
+                                             "RpcEnabled",
+                                             !ServiceConfiguration.configured(context));
     }
 
     @Override
     public void prepare(ServiceContext context) throws Exception {
         JFtnConfig config = ServiceConfiguration.read(context);
-        if (config != null) {
+        if (ServiceConfiguration.configured(context) || config.getValue("RpcHttpEnabled") != null) {
             validateHttp(config);
         }
         InitialSetup.prepare(context.configuration());

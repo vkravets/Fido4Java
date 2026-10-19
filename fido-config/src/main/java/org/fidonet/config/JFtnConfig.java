@@ -62,6 +62,14 @@ public class JFtnConfig extends BaseConfig {
     private Path sourcePath;
     private volatile JFtnConfig active;
 
+    /** Reads only file-only plugin settings before a main configuration exists; not runnable. */
+    public static JFtnConfig bootstrap(Path source) throws Exception {
+        JFtnConfig result = new JFtnConfig();
+        result.sourcePath = source.toAbsolutePath().normalize();
+        ConfigurationFragments.loadInto(result, result.sourcePath);
+        return result;
+    }
+
     /** Parses a candidate and its fragments without changing the live configuration. */
     public static JFtnConfig candidate(Path source, byte[] bytes) throws Exception {
         JFtnConfig result = new JFtnConfig();

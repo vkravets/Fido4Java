@@ -123,6 +123,28 @@ class ServicePluginDistributionTest {
     }
 
     @Test
+    void respectedDisabledPluginFragmentsBeforeTheMainConfigurationExisted() throws Exception {
+        Path home = InstalledNodeFixture.unpack(temporary, "full");
+        Path fragment = home.resolve("conf.d/95-web-ui.conf");
+        Files.writeString(fragment, "WebUiEnabled=false\n");
+        try (InstalledNodeFixture.NodeProcess node = InstalledNodeFixture.start(home)) {
+            assertNotEquals(0, node.awaitExit());
+            assertTrue(node.output().contains("Create jftn.conf from jftn.conf.example"));
+            assertFalse(node.output().contains("Configure JFtn:"));
+            assertFalse(Files.exists(home.resolve("database/rpc-auth.mv.db")));
+            assertEquals("WebUiEnabled=false\n", Files.readString(fragment));
+        }
+        Files.writeString(fragment, "WebUiEnabled=true\n");
+        Files.writeString(home.resolve("conf.d/90-rpc.conf"), "RpcEnabled=false\n");
+        try (InstalledNodeFixture.NodeProcess node = InstalledNodeFixture.start(home)) {
+            assertNotEquals(0, node.awaitExit());
+            assertTrue(node.output().contains("Create jftn.conf from jftn.conf.example"));
+            assertFalse(node.output().contains("Configure JFtn:"));
+            assertFalse(Files.exists(home.resolve("database/rpc-auth.mv.db")));
+        }
+    }
+
+    @Test
     void requiredManualConfigurationWhenSetupPluginWasAbsent() throws Exception {
         Path home = InstalledNodeFixture.unpack(temporary, "full");
         removePlugin(home, "web-ui-");
@@ -139,6 +161,8 @@ class ServicePluginDistributionTest {
         Path home = InstalledNodeFixture.unpack(temporary, "full");
         Path custom = home.resolve("conf.d/operator.conf");
         Files.writeString(custom, "# Operator-owned settings\n");
+        Files.writeString(home.resolve("conf.d/90-rpc.conf"),
+                          "RpcAuthPath=./database/custom-setup-auth\n");
         try (InstalledNodeFixture.NodeProcess node = InstalledNodeFixture.start(home)) {
             int port = node.port(InstalledNodeFixture.SETUP);
             assertEquals(200, get(port).statusCode());
@@ -148,6 +172,8 @@ class ServicePluginDistributionTest {
                                                                                     .isRequired());
             }
             assertFalse(Files.exists(home.resolve("database/jftn10.mv.db")));
+            assertTrue(Files.exists(home.resolve("database/custom-setup-auth.mv.db")));
+            assertFalse(Files.exists(home.resolve("database/rpc-auth.mv.db")));
             assertFalse(node.output().contains("binkp server listening:"));
             assertEquals("# Operator-owned settings\n", Files.readString(custom));
         }

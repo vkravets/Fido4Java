@@ -16,11 +16,16 @@ public final class ServiceConfiguration {
             return active;
         }
         if (!Files.isRegularFile(context.configuration())) {
-            return null;
+            return JFtnConfig.bootstrap(context.configuration());
         }
         JFtnConfig config = new JFtnConfig();
         config.load(context.configuration().toString());
         return config;
+    }
+
+    public static boolean configured(ServiceContext context) {
+        return context.find(JFtnConfig.class).isPresent()
+                || Files.isRegularFile(context.configuration());
     }
 
     public static boolean flag(JFtnConfig config, String name, boolean fallback) {

@@ -22,9 +22,10 @@ public final class RpcPlugin implements ServicePlugin {
     @Override
     public boolean enabled(ServiceContext context) throws Exception {
         JFtnConfig config = ServiceConfiguration.read(context);
-        boolean enabled = config == null || ServiceConfiguration.flag(config, "RpcEnabled", false);
-        RuntimeProfile profile = config == null
-                ? context.find(RuntimeProfile.class).orElse(RuntimeProfile.FULL)
+        boolean configured = ServiceConfiguration.configured(context);
+        boolean enabled = ServiceConfiguration.flag(config, "RpcEnabled", !configured);
+        RuntimeProfile profile = !configured
+                ? context.find(RuntimeProfile.class).orElse(RuntimeProfile.read(config))
                 : RuntimeProfile.read(config);
         if (enabled && !profile.usesSql()) {
             throw new IllegalArgumentException("RPC plugin requires SQL mail storage; select a SQL-backed installation or disable RpcEnabled");

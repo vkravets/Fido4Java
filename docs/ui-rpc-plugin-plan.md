@@ -35,6 +35,12 @@ builds passed (build/plugins-final-verification.log; ignored local evidence).
 No Playwright/VRT run was needed: browser application/layout code was unchanged.
 HTTP asset safety and generated-client RPC checks ran as backend checks.
 
+Final bootstrap review also fixed missing-main startup: ordered conf.d flags
+disable the wizard before station configuration exists, and RpcAuthPath selects
+the wizard's account database. Focused configuration and installed-process tests
+cover both disabled service flags and preservation of a custom account path.
+See build/plugin-bootstrap-final.log for the additional local verification.
+
 ## Intent and current checkpoint
 
 Restore the original extension model: a JAR in `plugins/` makes a capability
@@ -48,7 +54,7 @@ At checkpoint `51964ef5` (MSG netmail storage), UI/RPC are still libraries in
 `NodeRpc` directly. `RuntimeProfile.hasUi()` permits only Full, and profile
 validation rejects enabled RPC elsewhere. `RpcEnabled=false` disables listeners,
 but removing UI/RPC JARs from Full is not a supported optional-plugin operation.
-These are current limitations, not the target architecture.
+These were baseline limitations; all seven steps below have replaced that path.
 
 ## Implementation sequence
 
