@@ -58,13 +58,7 @@ final class SshBinkdTestPeer implements AutoCloseable {
                                      "-f",
                                      root.resolve("identity").toString()),
                              Duration.ofSeconds(10));
-        copyIn(root.resolve("identity.pub"), "/root/.ssh/authorized_keys");
-        cli(Duration.ofSeconds(10),
-            "exec",
-            container,
-            "chmod",
-            "600",
-            "/root/.ssh/authorized_keys");
+        installAuthorizedKeys(root.resolve("identity.pub"));
         Path data = root.resolve("REMOTE.PKT");
         Files.write(data, outbound);
         copyIn(data, "/data/outbox/REMOTE.PKT");
@@ -146,13 +140,14 @@ final class SshBinkdTestPeer implements AutoCloseable {
     void denyAuthentication() throws Exception {
         Path empty = root.resolve("empty-authorized-keys");
         Files.writeString(empty, "");
-        copyIn(empty, "/root/.ssh/authorized_keys");
-        cli(Duration.ofSeconds(10),
-            "exec",
-            container,
-            "chmod",
-            "600",
-            "/root/.ssh/authorized_keys");
+        installAuthorizedKeys(empty);
+    }
+
+    private void installAuthorizedKeys(Path source) throws Exception {
+        String destination = "/root/.ssh/authorized_keys";
+        copyIn(source, destination);
+        cli(Duration.ofSeconds(10), "exec", container, "chown", "0:0", destination);
+        cli(Duration.ofSeconds(10), "exec", container, "chmod", "600", destination);
     }
 
     byte[] received() throws Exception {

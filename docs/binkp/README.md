@@ -99,6 +99,8 @@ runs these scenarios too, using the sealed compiled integration runtime.
 The fixture waits up to 30 seconds for per-container host key generation and
 the sshd process before reading the trusted key. A startup failure includes the
 container log; an allocated container port alone does not indicate SSH readiness.
+Copied authorized_keys files are explicitly owned by root with mode 600 so
+OpenSSH StrictModes accepts them independently of host/container copy semantics.
 
 To run only SSH scenarios with the Podman CLI on a Windows development host:
 
