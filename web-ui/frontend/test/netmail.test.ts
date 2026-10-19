@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ref } from 'vue';
-import { createNetmail, mailId, quotedReply } from '../src/netmail.ts';
+import { createNetmail, createMailQueue, mailId, quotedReply } from '../src/netmail.ts';
 import type {
     MailDraft,
     MailItem,
@@ -48,6 +48,7 @@ function fixture() {
         drafts: async () => [],
         saveDraft: async () => {},
         deleteDraft: async () => {},
+        deleteMessage: async () => {},
         send: async (_token: string, value: MailDraft, request: string) => {
             calls.push({ id: value.id, request });
             throw new Error('response lost');
@@ -98,4 +99,55 @@ test('does not accept a list response after logout', async () => {
     finish({ items: [message()], nextId: message().id, hasMore: false });
     await request;
     assert.deepEqual(reader.items.value, []);
+});
+
+test('deletes only after confirmation and keeps the selected letter on failure', async () => {
+    const { reader, client } = fixture();
+    const previous = globalThis.window;
+    globalThis.window = { confirm: () => true } as unknown as Window & typeof globalThis;
+    try {
+        await reader.open(message());
+        client.deleteMessage = async () => {
+            throw new Error('delete failed');
+        };
+        await assert.rejects(reader.removeMessage, /delete failed/);
+        assert.equal(reader.selected.value?.id, message().id);
+        client.deleteMessage = async () => {};
+        await reader.removeMessage();
+        assert.equal(reader.selected.value, null);
+    } finally {
+        globalThis.window = previous;
+    }
+});
+
+test('queue count clears after explicit send and ignores a response from the old session', async () => {
+    const state = { session: ref('token'), notice: ref('') };
+    let pending = 3;
+    let sends = 0;
+    const client = {
+        pendingNetmail: async () => pending,
+        sendPendingNetmail: async () => {
+            sends++;
+            pending = 0;
+            return 3;
+        }
+    };
+    const queue = createMailQueue(state, client);
+    await queue.refresh();
+    assert.equal(queue.count.value, 3);
+    assert.equal(sends, 0);
+    await queue.send();
+    assert.equal(sends, 1);
+    assert.equal(queue.count.value, 0);
+    let finish!: (value: number) => void;
+    client.pendingNetmail = () =>
+        new Promise<number>((resolve) => {
+            finish = resolve;
+        });
+    const request = queue.refresh();
+    state.session.value = '';
+    await queue.refresh();
+    finish(50);
+    await request;
+    assert.equal(queue.count.value, 0);
 });

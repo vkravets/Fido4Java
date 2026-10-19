@@ -9,6 +9,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Reading: Story = {};
+export const Deleting: Story = { args: { busy: true } };
 export const LongText: Story = {
     args: {
         message: {

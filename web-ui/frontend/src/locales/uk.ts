@@ -1,4 +1,13 @@
 export const ukrainian = {
+    'Outgoing mail queue': 'Черга вихідної пошти',
+    'Awaiting send: {count}': 'Очікують надсилання: {count}',
+    'Send queued mail': 'Надіслати пошту з черги',
+    'Add to send queue': 'Додати до черги надсилання',
+    'Queued mail released for delivery.': 'Пошту з черги передано для доставлення.',
+    'Delete message': 'Видалити лист',
+    'Delete this message? Waiting mail is cancelled; existing packets remain.':
+        'Видалити лист? Очікування надсилання буде скасовано; наявні пакети залишаться.',
+    'Message deleted.': 'Лист видалено.',
     'Save policy changes before editing rules or checking routes.':
         'Збережіть зміни політики перед редагуванням правил або перевіркою маршрутів.',
     Yes: 'Так',

@@ -12,3 +12,5 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Administrator: Story = {};
 export const Point: Story = { args: { profile: profile('POINT') } };
+export const AwaitingSend: Story = { args: { pendingCount: 12, page: 'netmail' } };
+export const PreparingMail: Story = { args: { pendingCount: 12, busy: true, page: 'netmail' } };

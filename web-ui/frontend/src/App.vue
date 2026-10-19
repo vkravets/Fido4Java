@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { t } from './i18n.ts';
-import { onMounted, ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { api } from './api.ts';
+import { createMailQueue } from './netmail.ts';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
 import SetupWizard from './components/SetupWizard.vue';
@@ -16,12 +18,31 @@ import LanguageSelector from './components/LanguageSelector.vue';
 import NetmailView from './components/NetmailView.vue';
 import NetmailRoutingView from './components/NetmailRoutingView.vue';
 const state = createState();
+const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
 function navigate(next: string) {
     if (netmail.value && !netmail.value.canLeave()) return;
     page.value = next;
+    refreshQueue();
 }
+async function refreshQueue() {
+    const token = state.session.value;
+    try {
+        await queue.refresh();
+    } catch (failure) {
+        if (token !== state.session.value) return;
+        state.error.value =
+            (failure as { message?: string }).message || t('The request failed. Please try again.');
+    }
+}
+async function sendQueue() {
+    await queue.send();
+    await netmail.value?.refresh();
+}
+watch(state.session, refreshQueue);
+onMounted(() => window.addEventListener('focus', refreshQueue));
+onBeforeUnmount(() => window.removeEventListener('focus', refreshQueue));
 onMounted(state.start);
 function logout() {
     if (netmail.value && !netmail.value.canLeave()) return;
@@ -112,7 +133,10 @@ function logout() {
         <Sidebar
             :profile="state.profile.value"
             :page="page"
+            :pending-count="queue.count.value"
+            :busy="state.busy.value"
             @navigate="navigate"
+            @send-mail="state.run(sendQueue)"
         />
         <main class="content">
             <NetmailRoutingView
@@ -125,6 +149,7 @@ function logout() {
                 ref="netmail"
                 :state="state"
                 :initial-folder="page === 'drafts' ? 'drafts' : 'inbox'"
+                @queue-changed="refreshQueue"
             />
             <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings

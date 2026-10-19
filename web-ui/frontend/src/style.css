@@ -930,6 +930,29 @@ footer.actions {
         grid-template-columns: 100px 1fr;
     }
 }
+.mail-queue-control {
+    width: 100%;
+    box-sizing: border-box;
+    flex-basis: 100%;
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+.mail-queue-control p {
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+.sidebar nav .mail-queue-control button {
+    width: 100%;
+    padding: 0.5rem;
+    text-align: center;
+    border: 1px solid var(--line);
+    justify-content: center;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
 .mail-workspace {
     display: grid;
     grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.7fr);

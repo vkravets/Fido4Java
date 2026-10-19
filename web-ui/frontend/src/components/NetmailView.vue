@@ -10,12 +10,14 @@ import NetmailDrafts from './NetmailDrafts.vue';
 import NetmailMessage from './NetmailMessage.vue';
 import MailComposer from './MailComposer.vue';
 const props = defineProps<{ state: AppState; initialFolder?: MailFolder }>();
+const emit = defineEmits<{ queueChanged: [] }>();
 const reader = createNetmail(
     props.state,
     inject(netmailClientKey, api.ui),
-    (value) => new bindings.MailDraft(value)
+    (value) => new bindings.MailDraft(value),
+    () => emit('queueChanged')
 );
-defineExpose({ canLeave: reader.discard });
+defineExpose({ canLeave: reader.discard, refresh: reader.load });
 const folders = ['inbox', 'outbox', 'drafts'] as const;
 const labels = { inbox: 'Inbox', outbox: 'Outbox', drafts: 'Drafts' } as const;
 onMounted(() => props.state.run(() => reader.navigate(props.initialFolder || 'inbox')));
@@ -101,6 +103,7 @@ function cancel() {
             :busy="state.busy.value"
             :reply="reader.folder.value === 'inbox'"
             @reply="reader.edit(undefined, reader.selected.value!)"
+            @remove="state.run(reader.removeMessage)"
         />
         <section
             v-else

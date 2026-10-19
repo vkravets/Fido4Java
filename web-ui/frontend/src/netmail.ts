@@ -5,7 +5,14 @@ import type { AppState } from './state.ts';
 import type { MailDraft, MailItem, Mailbox } from '@rpc/bindings.mjs';
 type NetmailClient = Pick<
     typeof import('./api.ts').api.ui,
-    'drafts' | 'messages' | 'message' | 'markRead' | 'saveDraft' | 'send' | 'deleteDraft'
+    | 'drafts'
+    | 'messages'
+    | 'message'
+    | 'markRead'
+    | 'saveDraft'
+    | 'send'
+    | 'deleteDraft'
+    | 'deleteMessage'
 >;
 export const netmailClientKey: InjectionKey<NetmailClient> = Symbol('netmail-client');
 
@@ -36,7 +43,8 @@ export function quotedReply(item: MailItem): string {
 export function createNetmail(
     state: Pick<AppState, 'session' | 'profile' | 'notice'>,
     client: NetmailClient,
-    createDraft: (value: MailDraft) => MailDraft
+    createDraft: (value: MailDraft) => MailDraft,
+    queueChanged: () => void = () => {}
 ) {
     const folder = ref<MailFolder>('inbox');
     const items = ref<MailItem[]>([]);
@@ -147,6 +155,25 @@ export function createNetmail(
         selected.value = null;
         state.notice.value = t('Message queued for delivery.');
         await navigate('outbox');
+        queueChanged();
+    }
+
+    async function removeMessage() {
+        const item = selected.value;
+        if (
+            !item ||
+            !window.confirm(
+                t('Delete this message? Waiting mail is cancelled; existing packets remain.')
+            )
+        )
+            return;
+        const token = state.session.value;
+        await client.deleteMessage(token, mailbox(), item.id);
+        if (token !== state.session.value) return;
+        selected.value = null;
+        state.notice.value = t('Message deleted.');
+        await load();
+        queueChanged();
     }
 
     async function remove(value: MailDraft) {
@@ -170,6 +197,33 @@ export function createNetmail(
         save,
         send,
         remove,
+        removeMessage,
         discard
     };
+}
+
+export function createMailQueue(
+    state: Pick<AppState, 'session' | 'notice'>,
+    client: Pick<typeof import('./api.ts').api.ui, 'pendingNetmail' | 'sendPendingNetmail'>
+) {
+    const count = ref(0);
+    let generation = 0;
+    async function refresh() {
+        const token = state.session.value;
+        const ticket = ++generation;
+        if (!token) {
+            count.value = 0;
+            return;
+        }
+        const pending = await client.pendingNetmail(token);
+        if (ticket === generation && token === state.session.value) count.value = pending;
+    }
+    async function send() {
+        const token = state.session.value;
+        await client.sendPendingNetmail(token);
+        if (token !== state.session.value) return;
+        state.notice.value = t('Queued mail released for delivery.');
+        await refresh();
+    }
+    return { count, refresh, send };
 }

@@ -3,6 +3,20 @@
 The node hosts its browser interface and Thrift HTTP endpoints in the same JVM.
 TCP RPC remains available. No Node.js process is needed when running the node.
 
+Netmail composition uses **Add to send queue**. The MAIL navigation panel shows
+the current account's **Awaiting send** count and a separate **Send queued mail**
+button. Waiting messages survive restart but are not packed by the background
+tosser, a poll or manual mail processing. Releasing the queue prepares PKTs; normal
+poll scheduling/manual connection controls perform network delivery. Local mail
+becomes available to its recipient when released, without a PKT.
+
+**Delete message** removes the selected incoming/outgoing copy from this user's
+mailbox after confirmation. Waiting outgoing mail is cancelled. Prepared PKTs
+and delivery/duplicate receipts remain, so this action cannot recall mail already
+released for delivery. Another local recipient's copy is independent. Deleted
+state survives restart; the underlying mail/received-original retention policy
+is separate from removing an entry in the browser.
+
 Address suggestions share the node/point directory. `AddressInput` defaults to
 including points; use `<AddressInput :include-points="false" />` for a node-only
 field. The component passes the flag through Thrift `searchDirectory` to the
@@ -420,7 +434,7 @@ when transit is enabled; transit itself is disabled by default.
 or the rejection reason. It can simulate a configured transit sender or required
 direct delivery. It does not create mail or initiate a connection. Changes affect
 new routing decisions; existing queued mail keeps its selected next hop.
-Local netmail deliveries appear sent once stored locally; remote deliveries appear
+Local netmail deliveries appear sent once released locally; remote deliveries appear
 sent after transport acknowledgement. A send without a route returns NO_ROUTE
 and does not create a delivery or reserve a send receipt.
 

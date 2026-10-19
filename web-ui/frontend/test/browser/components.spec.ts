@@ -57,7 +57,7 @@ test('point netmail workflow opens a letter, replies, saves a draft and sends', 
         .getByRole('button', { name: /Re: Welcome to FidoNet/ })
         .last()
         .click();
-    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await page.getByRole('button', { name: 'Add to send queue', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Outbox', exact: true })).toHaveAttribute(
         'aria-current',
         'page'
@@ -69,6 +69,31 @@ test('netmail displays received HTML as literal text and offers reply', async ({
     await expect(page.locator('.mail-body')).toContainText('<script>alert("example")</script>');
     await expect(page.locator('.mail-body script')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reply', exact: true })).toBeEnabled();
+});
+
+test('netmail deletes a selected letter after confirmation', async ({ page }) => {
+    await story(page, 'mail-netmailview--inbox');
+    await page.getByRole('button', { name: /Welcome to FidoNet/ }).click();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Delete message', exact: true }).click();
+    await expect(page.getByText('No messages in this folder.', { exact: true })).toBeVisible();
+    await expect(page.locator('.mail-body')).toHaveCount(0);
+});
+
+test('mail queue waits for an explicit send and disables empty or busy queues', async ({
+    page
+}) => {
+    await story(page, 'mail-mailqueuecontrol--waiting');
+    await expect(page.getByRole('status')).toContainText('Awaiting send: 7');
+    await page.getByRole('button', { name: 'Send queued mail', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Awaiting send: 0');
+    await expect(
+        page.getByRole('button', { name: 'Send queued mail', exact: true })
+    ).toBeDisabled();
+    await story(page, 'mail-mailqueuecontrol--busy');
+    await expect(
+        page.getByRole('button', { name: 'Send queued mail', exact: true })
+    ).toBeDisabled();
 });
 
 test('netmail composer restricts sender AKA and disables controls during send', async ({
@@ -83,7 +108,9 @@ test('netmail composer restricts sender AKA and disables controls during send', 
         .getByRole('textbox', { name: 'Message text', exact: true })
         .fill('Plain text message');
     await story(page, 'mail-mailcomposer--sending');
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(
+        page.getByRole('button', { name: 'Add to send queue', exact: true })
+    ).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
 });
 

@@ -519,6 +519,24 @@ IDs bind content to one delivery; remote replies remain untrusted mail, not an
 automatic configuration/catalog import. The existing netmail composer supports
 manual requests without a new browser form.
 
+## 31. Browser netmail waits for explicit release and deletion is mailbox-scoped
+
+UI submission stages netmail as WAITING. Background processing, polling and JAM
+export cannot release it. An explicit authenticated action releases only messages
+authored by that account's currently approved AKAs, then prepares packets under
+the mail runtime lock. Local mail becomes visible to its recipient at release.
+Existing automatic robot/transit/script submissions retain automatic delivery.
+Queued next hops remain fixed; changing routing does not rewrite staged mail.
+
+The MAIL navigation group displays the waiting count and send action. This count
+excludes already released transport deliveries; release prepares packets without
+forcing a network connection. Normal polling remains responsible for transfer.
+
+Deletion records durable per-account/per-folder tombstones in UI state. Deleting
+waiting outgoing mail cancels that delivery, but does not erase SQL duplicate
+history, another recipient's copy or prepared packets. Released delivery records
+and ACKs remain valid. Keep mail and UI-state databases together in backups.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -16,6 +16,7 @@ const meta = {
         components: { NetmailView },
         setup() {
             const saved: MailDraft[] = [{ ...netmailDraft }];
+            let deleted = false;
             const state = {
                 profile: ref(profile('POINT')),
                 session: ref('storybook-session'),
@@ -32,12 +33,15 @@ const meta = {
             } as AppState;
             provide(netmailClientKey, {
                 messages: async () => ({
-                    items: [{ ...netmailMessage, toAddress: '1:500/100.1' }],
+                    items: deleted ? [] : [{ ...netmailMessage, toAddress: '1:500/100.1' }],
                     nextId: netmailMessage.id,
                     hasMore: false
                 }),
                 message: async () => ({ ...netmailMessage, toAddress: '1:500/100.1' }),
                 markRead: async () => {},
+                deleteMessage: async () => {
+                    deleted = true;
+                },
                 drafts: async () => [...saved],
                 saveDraft: async (_token, draft) => {
                     saved.push({ ...draft });

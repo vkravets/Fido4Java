@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
 import type { UserProfile } from '@rpc/bindings.mjs';
+import MailQueueControl from './MailQueueControl.vue';
 
-defineProps<{ profile: UserProfile; page: string }>();
+defineProps<{ profile: UserProfile; page: string; pendingCount?: number; busy?: boolean }>();
 const emit = defineEmits<{
+    sendMail: [];
     navigate: [
         page:
             | 'settings'
@@ -42,6 +44,11 @@ const emit = defineEmits<{
             >
                 <span>▤</span>{{ t('Drafts') }}
             </button>
+            <MailQueueControl
+                :count="pendingCount || 0"
+                :busy="busy || false"
+                @send="emit('sendMail')"
+            />
             <span class="nav-label">{{ t('DIRECTORY') }}</span>
             <button
                 :class="{ active: page === 'directory' }"

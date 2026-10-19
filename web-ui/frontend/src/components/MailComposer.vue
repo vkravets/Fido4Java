@@ -78,7 +78,7 @@ defineEmits<{ save: []; send: []; cancel: [] }>();
                     type="submit"
                     :disabled="!addresses.length"
                 >
-                    {{ t('Send') }}
+                    {{ t('Add to send queue') }}
                 </button>
                 <button
                     class="secondary"
