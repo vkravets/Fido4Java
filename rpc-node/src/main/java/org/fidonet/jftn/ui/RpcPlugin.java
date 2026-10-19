@@ -2,6 +2,7 @@ package org.fidonet.jftn.ui;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.MailRuntime;
@@ -21,7 +22,14 @@ public final class RpcPlugin implements ServicePlugin {
     @Override
     public boolean enabled(ServiceContext context) throws Exception {
         JFtnConfig config = ServiceConfiguration.read(context);
-        return config == null || ServiceConfiguration.flag(config, "RpcEnabled", false);
+        boolean enabled = config == null || ServiceConfiguration.flag(config, "RpcEnabled", false);
+        RuntimeProfile profile = config == null
+                ? context.find(RuntimeProfile.class).orElse(RuntimeProfile.FULL)
+                : RuntimeProfile.read(config);
+        if (enabled && !profile.usesSql()) {
+            throw new IllegalArgumentException("RPC plugin requires SQL mail storage; select a SQL-backed installation or disable RpcEnabled");
+        }
+        return enabled;
     }
 
     @Override

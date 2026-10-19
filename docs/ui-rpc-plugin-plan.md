@@ -14,7 +14,12 @@ HTTP routes independently of RPC. Configuration lives in 95-web-ui.conf.
 RPC backend tests and the focused Web UI plugin tests passed.
 Step 4 completed: preparation invokes initial setup through WebUiPlugin, skips
 disabled UI, validates HTTP availability and preserves operator fragments.
-Focused setup/configuration tests passed. Steps 5-7 remain.
+Focused setup/configuration tests passed.
+Step 5 completed: the runner discovers plugins once, prepares them before
+storage, filters disabled services, and starts/closes loaded service contexts.
+FullProfileServices/ProfileServices were removed. UI is no longer hardcoded to
+Full; RPC validates its SQL capability requirement. Node bootstrap, config,
+RPC capability and runner startup tests passed. Steps 6-7 remain.
 
 ## Intent and current checkpoint
 

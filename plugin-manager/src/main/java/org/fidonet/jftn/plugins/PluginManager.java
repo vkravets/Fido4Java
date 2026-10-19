@@ -86,7 +86,7 @@ public class PluginManager extends HasEventBus {
         loadPlugins(selected);
     }
 
-    void loadPlugins(Iterable<? extends Plugin> plugins) {
+    public void loadPlugins(Iterable<? extends Plugin> plugins) {
         // Validate dependencies before exposing a partially registered plugin set.
         Collection<? extends Plugin> sortedPlugins = sortDependencies(plugins);
 

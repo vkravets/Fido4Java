@@ -34,7 +34,9 @@ final class FileEchoAreaService {
         this.config = config;
         this.state = state;
         String source = config.getValue("FileEchoSource",
-                                        RuntimeProfile.read(config).hasUi() ? "database" : "files");
+                                        RuntimeProfile.read(config).includesUiByDefault()
+                                                ? "database"
+                                                : "files");
         if (!source.equals("files") && !source.equals("database")) {
             throw new IllegalArgumentException("FileEchoSource must be database or files");
         }

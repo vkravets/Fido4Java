@@ -29,9 +29,7 @@
 package org.fidonet.jftn;
 
 import org.fidonet.binkp.common.Connector;
-import org.fidonet.binkp.common.LinksInfo;
 import org.fidonet.binkp.common.SessionContext;
-import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
@@ -39,16 +37,17 @@ import org.fidonet.config.ParseConfigException;
 import org.fidonet.config.RuntimeProfile;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.plugins.OfflineCommand;
+import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.plugins.PluginManager;
-import org.fidonet.jftn.poll.OutboundTransportFactory;
+import org.fidonet.jftn.plugins.ServiceContext;
+import org.fidonet.jftn.plugins.ServicePlugin;
+import org.fidonet.jftn.plugins.ServicePlugins;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.mail.files.FileMailStore;
 import org.fidonet.mail.files.LegacyMailStore;
-import org.fidonet.types.FTNAddr;
-import org.fidonet.types.Link;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,12 +57,9 @@ import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 public class JFtnRunner {
@@ -101,16 +97,12 @@ public class JFtnRunner {
         }
         NodeDirectories.defaults(Path.of("."), profile);
         logger.info("Starting JFtnNode...");
-        ProfileServices.forProfile(profile).prepare(Path.of("jftn.conf"));
+        List<Plugin<?>> selectedPlugins = NodePlugins.prepare(Path.of("jftn.conf"), profile);
         final long starttime = System.currentTimeMillis();
         final PluginManager pluginManager = PluginManager.getInstance();
         try {
             withShutdownHook(waiter -> runApplication("jftn.conf",
-                                                      () -> pluginManager.loadPlugins(id -> profile.usesSql()
-                                                              || !Set.of("database",
-                                                                         "jam-bridge",
-                                                                         "nodelist")
-                                                                     .contains(id)),
+                                                      () -> pluginManager.loadPlugins(selectedPlugins),
                                                       pluginContexts(pluginManager),
                                                       pluginManager::unloadPlugins,
                                                       waiter));
@@ -126,6 +118,10 @@ public class JFtnRunner {
         WeakReference<?> getContext(String name) throws Exception;
 
         default Iterable<MailExtensionFactory> mailExtensions() {
+            return Collections.emptyList();
+        }
+
+        default List<ServicePlugin> services() {
             return Collections.emptyList();
         }
 
@@ -145,6 +141,11 @@ public class JFtnRunner {
             public Iterable<MailExtensionFactory> mailExtensions() {
                 return manager.findContexts(MailExtensionFactory.class);
             }
+
+            @Override
+            public List<ServicePlugin> services() {
+                return manager.findContexts(ServicePlugin.class);
+            }
         };
     }
 
@@ -163,7 +164,7 @@ public class JFtnRunner {
         Scheduler scheduler;
         SessionContext context;
         MailRuntime mail = null;
-        AutoCloseable rpc = null;
+        ServicePlugins services = null;
         MailStorage storage = null;
         PollService polls = null;
         try {
@@ -183,29 +184,34 @@ public class JFtnRunner {
             mail.attach(context);
             mail.start();
             polls = plugins.polling(config, context);
-            rpc = ProfileServices.forProfile(profile).open(config, storage, mail, context, polls);
+            services = new ServicePlugins(plugins.services());
+            ServiceContext node = new ServiceContext(Path.of(configFile)).provide(JFtnConfig.class,
+                                                                                  config)
+                                                                         .provide(RuntimeProfile.class,
+                                                                                  profile)
+                                                                         .provide(MailStorage.class,
+                                                                                  storage)
+                                                                         .provide(MailRuntime.class,
+                                                                                  mail)
+                                                                         .provide(SessionContext.class,
+                                                                                  context)
+                                                                         .provide(PollService.class,
+                                                                                  polls);
+            services.start(node);
         } catch (Exception failure) {
-            if (polls != null) {
-                polls.close();
+            closeAfterFailure(failure, services, polls, mail);
+            if (!profile.usesSql() && storage != null) {
+                closeAfterFailure(failure, storage::close);
             }
-            if (rpc != null) {
-                rpc.close();
+            try {
+                unloadPlugins.run();
+            } catch (RuntimeException cleanup) {
+                failure.addSuppressed(cleanup);
             }
-            if (mail != null) {
-                try {
-                    mail.close();
-                } catch (IOException closeFailure) {
-                    failure.addSuppressed(closeFailure);
-                }
-            }
-            if (storage != null && !profile.usesSql()) {
-                storage.close();
-            }
-            unloadPlugins.run();
             throw failure;
         }
         MailRuntime activeMail = mail;
-        AutoCloseable activeRpc = rpc;
+        AutoCloseable activeServices = services;
         MailStorage activeStorage = storage;
         PollService activePolls = polls;
         runNode(runner,
@@ -215,24 +221,46 @@ public class JFtnRunner {
                 Integer.parseInt(config.getValue("BinkpPort",
                                                  Integer.toString(Connector.BINK_PORT))),
                 waiter,
-                () -> stopServices(scheduler, runner, activeMail, activeRpc, activePolls, () -> {
-                    if (!profile.usesSql()) {
-                        activeStorage.close();
-                    }
-                    unloadPlugins.run();
-                }));
+                () -> stopServices(scheduler,
+                                   runner,
+                                   activeMail,
+                                   activeServices,
+                                   activePolls,
+                                   () -> {
+                                       if (!profile.usesSql()) {
+                                           activeStorage.close();
+                                       }
+                                       unloadPlugins.run();
+                                   }));
+    }
+
+    private static void closeAfterFailure(Exception failure, AutoCloseable... resources) {
+        for (AutoCloseable resource : resources) {
+            closeAfterFailure(failure, resource);
+        }
+    }
+
+    private static void closeAfterFailure(Exception failure, AutoCloseable resource) {
+        if (resource == null) {
+            return;
+        }
+        try {
+            resource.close();
+        } catch (Exception cleanup) {
+            failure.addSuppressed(cleanup);
+        }
     }
 
     private static void stopServices(Scheduler scheduler,
                                      Runner runner,
                                      MailRuntime mail,
-                                     AutoCloseable rpc,
+                                     AutoCloseable services,
                                      PollService polls,
                                      Runnable unloadPlugins) {
         try (mail; polls) {
             try {
-                if (rpc != null) {
-                    rpc.close();
+                if (services != null) {
+                    services.close();
                 }
             } finally {
                 try {

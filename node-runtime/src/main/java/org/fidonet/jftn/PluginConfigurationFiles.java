@@ -52,7 +52,7 @@ final class PluginConfigurationFiles {
                 throw new IOException("Missing bundled plugin configuration: " + name);
             }
             String text = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            if (!profile.hasUi()) {
+            if (!profile.includesUiByDefault()) {
                 text = text.replace("RpcEnabled=true", "RpcEnabled=false");
                 text = text.replace("EchoSubscriptions=database", "EchoSubscriptions=config");
                 text = text.replace("RobotAccessSource=database", "RobotAccessSource=files");

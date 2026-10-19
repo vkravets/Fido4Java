@@ -3,7 +3,6 @@ package org.fidonet.jftn.plugins;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,13 +21,31 @@ public final class ServicePlugins implements AutoCloseable {
     }
 
     public static ServicePlugins discover() {
-        List<ServicePlugin> result = new ArrayList<>();
+        List<Plugin<?>> plugins = new ArrayList<>();
         for (Plugin<?> plugin : ServiceLoader.load(Plugin.class)) {
+            plugins.add(plugin);
+        }
+        return fromPlugins(plugins);
+    }
+
+    public static ServicePlugins fromPlugins(Iterable<? extends Plugin<?>> plugins) {
+        List<ServicePlugin> result = new ArrayList<>();
+        for (Plugin<?> plugin : plugins) {
             if (plugin instanceof ServicePlugin) {
                 result.add((ServicePlugin) plugin);
             }
         }
         return new ServicePlugins(result);
+    }
+
+    public Set<String> disabledIds(ServiceContext context) throws Exception {
+        Set<String> result = new HashSet<>();
+        for (ServicePlugin plugin : plugins) {
+            if (!plugin.enabled(context)) {
+                result.add(plugin.getPluginInfo().getId());
+            }
+        }
+        return result;
     }
 
     public void prepare(ServiceContext context) throws Exception {
@@ -44,7 +61,7 @@ public final class ServicePlugins implements AutoCloseable {
         started = true;
         try {
             for (ServicePlugin plugin : ordered(context)) {
-                AutoCloseable resource = plugin.start(context);
+                AutoCloseable resource = start(plugin, context);
                 if (resource != null) {
                     resources.add(resource);
                 }
@@ -56,6 +73,16 @@ public final class ServicePlugins implements AutoCloseable {
                 failure.addSuppressed(cleanup);
             }
             throw failure;
+        }
+    }
+
+    private AutoCloseable start(ServicePlugin plugin, ServiceContext context) throws Exception {
+        try {
+            return plugin.start(context);
+        } catch (LinkageError missingLibrary) {
+            throw new IllegalStateException("Unable to start service plugin "
+                    + plugin.getPluginInfo().getId()
+                    + ": a required library is missing or incompatible", missingLibrary);
         }
     }
 

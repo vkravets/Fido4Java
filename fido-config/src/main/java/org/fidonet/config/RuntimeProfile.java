@@ -2,7 +2,7 @@ package org.fidonet.config;
 
 import java.util.Locale;
 
-/** Storage and service capabilities; delivery transport is selected independently. */
+/** Storage requirements and default package composition; optional services are discovered separately. */
 public enum RuntimeProfile {
     FULL, HEADLESS, LEGACY, TRANSIT;
 
@@ -22,14 +22,11 @@ public enum RuntimeProfile {
         return this == FULL || this == HEADLESS;
     }
 
-    public boolean hasUi() {
+    public boolean includesUiByDefault() {
         return this == FULL;
     }
 
     public void validate(JFtnConfig config) {
-        if (this != FULL && Boolean.parseBoolean(config.getValue("RpcEnabled", "false"))) {
-            throw new IllegalArgumentException("RPC/UI require RuntimeProfile=full");
-        }
         if (usesSql()) {
             return;
         }
