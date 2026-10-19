@@ -89,6 +89,7 @@ public class Tosser extends HasEventBus {
     private volatile EchoRouter echoRouter;
     private volatile Map<String, String> echoCreationRules;
     private final PacketQuarantine quarantine;
+    private final DuplicateMailArchive duplicateArchive;
     private String packetRejection = "Packet import was rejected; inspect the node log.";
     private final List<NetmailHandler> netmailHandlers = new ArrayList<>();
     private LocalMailboxes hostedMailboxes = Set::of;
@@ -128,6 +129,7 @@ public class Tosser extends HasEventBus {
         this.echoRouter = new EchoRouter(config, base);
         this.echoCreationRules = EchoAutoCreatePolicy.read(config);
         this.quarantine = new PacketQuarantine(Path.of(config.getTmpDir()));
+        this.duplicateArchive = new DuplicateMailArchive(config);
         if (EchoRouter.databaseSubscriptions(config) && !(base instanceof EchoRoutingStore)) {
             throw new IllegalArgumentException("Database echo subscriptions require an EchoRoutingStore");
         }
@@ -548,7 +550,7 @@ public class Tosser extends HasEventBus {
             return rejectPacket(rejection);
         }
         if (areamgr.isDupe(message)) {
-            return true;
+            return retainDuplicate(message, link);
         }
         getEventBus().publish(new TossEchoMailEvent(message, areamgr));
         if (!message.isValid()) {
@@ -602,6 +604,9 @@ public class Tosser extends HasEventBus {
 
     private boolean importNetmailMessage(Message message, Link link, String deliveryKey)
             throws IOException {
+        if (netmailStore != null && netmailStore.isDuplicateNetmail(message, deliveryKey)) {
+            return retainDuplicate(message, link);
+        }
         getEventBus().publish(new TossNetmailEvent(message));
         if (netmailStore == null || !message.isValid()) {
             return rejectPacket("Netmail storage is unavailable or a processing hook rejected the message.");
@@ -614,10 +619,25 @@ public class Tosser extends HasEventBus {
             logger.warn("Netmail transit refused ({}); quarantining packet", decision.getReason());
             return rejectPacket("Netmail transit refused: " + decision.getReason());
         }
+        if (netmailStore.isDuplicateNetmail(message, deliveryKey)) {
+            return retainDuplicate(message, link);
+        }
         netmailStore.saveNetmail(message, deliveryKey, local ? null : route.getAddr().toString());
         if (local) {
             dispatchLocalNetmail(message, link, deliveryKey);
         }
+        return true;
+    }
+
+    private boolean retainDuplicate(Message message, Link link) throws IOException {
+        Path retained = duplicateArchive.retain(message, link);
+        logger.info("Duplicate {} from {}: area={}, MSGID={}, action={}, archive={}",
+                    message.isEchomail() ? "echomail" : "netmail",
+                    link.getAddr(),
+                    message.getArea(),
+                    message.getMsgId(),
+                    retained == null ? "discard" : "move",
+                    retained);
         return true;
     }
 

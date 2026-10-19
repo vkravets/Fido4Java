@@ -447,6 +447,20 @@ public class MailDatabaseFacade
     }
 
     @Override
+    public synchronized boolean isDuplicateNetmail(Message message, String deliveryKey) {
+        try {
+            if (dbManager.getDao(NetmailDelivery.class).queryForId(deliveryKey) != null) {
+                return false;
+            }
+            return dbManager.getDao(MessageReceipt.class)
+                            .queryForId("netmail:" + MailIdentity.of(message)) != null
+                    || netmailRepository.contains(message);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to check netmail duplicates", e);
+        }
+    }
+
+    @Override
     public synchronized void saveNetmail(Message message, String deliveryKey, String nextHop) {
         Dao<NetmailDelivery, String> deliveries = dbManager.getDao(NetmailDelivery.class);
         try {

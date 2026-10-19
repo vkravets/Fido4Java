@@ -252,6 +252,37 @@ MSGIDs. Keep `Tmp`, the SQL database and `Outbound/jftn-mail` together when
 backing up or restoring a node. Do not reuse an old progress journal with a
 new, empty database. Receipt/journal retention is currently manual.
 
+### Duplicate mail and packet-name collisions
+
+Like HPT's move/discard policies, duplicate handling keeps repeated messages out
+of regular mailboxes and forwarding. `DupeAction=move` is the default; it writes
+separate, reconstructed single-message PKTs under `Tmp/dupes`. `DupePath` overrides
+this location. `DupeAction=discard` omits those copies while retaining SQL duplicate
+protection. There is deliberately no switch that disables SQL duplicate receipts.
+These file-only options require a restart. They can be placed in `conf.d/*.conf`.
+
+Duplicate detection uses MSGID within the echo area, or within netmail endpoints.
+Legacy mail without MSGID uses headers and content, excluding mutable routing
+lines. Netmail received in a different packet does not invoke local robots again.
+Retry of the original delivery after a robot fails remains possible; a committed
+SQL message alone does not prove that its processing/journal update completed.
+
+The duplicate archive is not a delivery queue or an automatically exported echo.
+It retains different duplicate bodies and peers separately, while an identical
+repeated copy reuses its archive entry. Archive PKTs have short hexadecimal names,
+an empty packet password and accompanying `.dupe` indexes for provenance/recovery.
+Packet encoding normalizes transport fields; these are inspection copies, not
+byte-for-byte originals. `PreserveReceivedFiles` separately controls retention of
+the unchanged received originals. An archive write failure leaves processing
+unfinished so the received packet can be retried after storage is repaired.
+
+Short outbound names are allocated independently of duplicate-message hashes.
+Existing packet names and retained owner records are skipped rather than
+overwritten. Invalid sequence/owner metadata stops publication/acknowledgement;
+it never marks a different delivery sent. Keep the sequence, ownership metadata
+and full delivery receipts together when backing up the spool. Do not reset the
+sequence or remove owner records as a routine cleanup operation.
+
 The current SQL schema is the baseline. New databases are created directly in
 this format. Opening an existing database does not migrate old tables, alter
 indexes or columns, or rebuild delivery records and netmail search keys.

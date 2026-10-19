@@ -22,9 +22,14 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 class OutboundPacketNameTest {
     @TempDir
@@ -167,5 +172,62 @@ class OutboundPacketNameTest {
         Files.writeString(directory().resolve(identity("netmail:first") + ".properties"),
                           "key=netmail:first\npacket=../outside.pkt\n");
         assertThrows(IOException.class, () -> spool.pending(link, true));
+    }
+
+    @Test
+    void skipsOccupiedPacketNamesAndRetainedOwnerReservations() throws Exception {
+        Files.createDirectories(directory());
+        long serial = System.currentTimeMillis() / 1000 + 3600;
+        Path sequence = temporary.resolve("jftn-mail/packet.sequence");
+        Files.writeString(sequence, Long.toString(serial - 1));
+        Path occupied = directory().resolve(String.format(Locale.ROOT, "%08x.pkt", serial));
+        Files.write(occupied, new byte[]{1, 2, 3});
+        Files.writeString(directory().resolve(String.format(Locale.ROOT,
+                                                            "%08x.pkt.owner",
+                                                            serial + 1)),
+                          "reserved");
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.enqueue("netmail:collision", link, message());
+        assertEquals(String.format(Locale.ROOT, "%08x.pkt", serial + 2),
+                     spool.pending(link, true).get(0).getFileName().toString());
+        assertArrayEquals(new byte[]{1, 2, 3}, Files.readAllBytes(occupied));
+    }
+
+    @Test
+    void multipleSpoolInstancesPublishOnlyOnePacketPerDelivery() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<?>> work = new ArrayList<>();
+            for (int index = 0; index < 16; index++) {
+                String key = "netmail:parallel:" + index % 4;
+                work.add(executor.submit(() -> {
+                    new OutboundSpool(config).enqueue(key, link, message());
+                    return null;
+                }));
+            }
+            for (Future<?> result : work) {
+                result.get();
+            }
+            List<Path> packets = new OutboundSpool(config).pending(link, true);
+            assertEquals(4, packets.size());
+            assertEquals(4, packets.stream().map(Path::getFileName).distinct().count());
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void ownerConflictsCannotAcknowledgeOrRepublishAnotherDelivery() throws Exception {
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.enqueue("netmail:first", link, message());
+        Path packet = spool.pending(link, true).get(0);
+        byte[] original = Files.readAllBytes(packet);
+        Files.writeString(packet.resolveSibling(packet.getFileName() + ".owner"),
+                          identity("netmail:other"));
+        assertThrows(IOException.class, () -> spool.acknowledge(packet));
+        assertThrows(IOException.class, () -> spool.enqueue("netmail:first", link, message()));
+        assertThrows(IOException.class, () -> spool.pending(link, true));
+        assertFalse(spool.isAcknowledged("netmail:first", link));
+        assertArrayEquals(original, Files.readAllBytes(packet));
     }
 }

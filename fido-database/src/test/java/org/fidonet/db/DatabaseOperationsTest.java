@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.fidonet.db.objects.ConfigurationLink;
 import org.fidonet.db.objects.Echoarea;
 import org.fidonet.db.objects.Echomail;
+import org.fidonet.db.objects.Netmail;
+import org.fidonet.db.objects.NetmailDelivery;
+import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -216,5 +219,32 @@ public class DatabaseOperationsTest {
                            subject,
                            "AREA:" + area + "\r\1MSGID: 1:500/100 " + id + "\rBody\r",
                            new Date(1700000000000L));
+    }
+
+    @Test
+    public void netmailDuplicatesPreserveEndpointScopeAndHistoryButAllowOriginalDeliveryRetry()
+            throws Exception {
+        Message original = new Message("Author",
+                                       "Reader",
+                                       new FTNAddr("1:500/101"),
+                                       new FTNAddr("1:500/100"),
+                                       "Subject",
+                                       "\1MSGID: 1:500/101 shared\rBody\r",
+                                       new Date(1700000000000L));
+        manager.saveNetmail(original, "first-delivery", null);
+        assertFalse(manager.isDuplicateNetmail(original, "first-delivery"));
+        assertTrue(manager.isDuplicateNetmail(original, "another-delivery"));
+        Message otherRecipient = new Message(original.getFrom(),
+                                             original.getTo(),
+                                             original.getFAddr(),
+                                             new FTNAddr("1:500/100.1"),
+                                             original.getSubject(),
+                                             original.getBody().toString(),
+                                             new Date(1700000000000L));
+        assertFalse(manager.isDuplicateNetmail(otherRecipient, "third-delivery"));
+        database.getDao(NetmailDelivery.class).deleteBuilder().delete();
+        database.getDao(NetmailIndex.class).deleteBuilder().delete();
+        database.getDao(Netmail.class).deleteBuilder().delete();
+        assertTrue(manager.isDuplicateNetmail(original, "another-delivery"));
     }
 }

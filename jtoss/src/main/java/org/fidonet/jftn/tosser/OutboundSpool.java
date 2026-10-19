@@ -86,6 +86,9 @@ public final class OutboundSpool {
         if (properties.containsKey("packet")) {
             Path owner = directory.resolve(packet.getFileName() + ".owner");
             if (!Files.exists(owner)) {
+                if (Files.exists(packet)) {
+                    throw new IOException("Outbound packet has no owner; refusing to reuse it");
+                }
                 writeAtomically(owner, name.getBytes(StandardCharsets.US_ASCII));
             }
             if (!name.equals(Files.readString(owner, StandardCharsets.US_ASCII))) {
@@ -114,6 +117,9 @@ public final class OutboundSpool {
                 Path packet = packet(metadata, properties);
                 if (Files.exists(packet) && !Files.exists(receipt(metadata))
                         && (includeHeld || !Boolean.parseBoolean(properties.getProperty("hold")))) {
+                    if (properties.containsKey("packet") && !metadata(packet).equals(metadata)) {
+                        throw new IOException("Outbound packet owner mismatch");
+                    }
                     result.add(packet);
                 }
             }
@@ -122,12 +128,26 @@ public final class OutboundSpool {
     }
 
     public synchronized String acknowledge(Path packet) throws IOException {
+        synchronized (PUBLICATION_LOCK) {
+            return acknowledgePacket(packet);
+        }
+    }
+
+    private String acknowledgePacket(Path packet) throws IOException {
         Path expected = packet.toAbsolutePath().normalize();
         if (!expected.startsWith(root.toAbsolutePath().normalize())) {
             throw new IOException("Packet is outside outbound spool");
         }
         Path metadata = metadata(packet);
         Properties properties = properties(metadata);
+        String key = properties.getProperty("key");
+        if (key == null
+                || !metadata.getFileName()
+                            .toString()
+                            .equals(UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8))
+                                    + ".properties")) {
+            throw new IOException("Outbound delivery identity mismatch");
+        }
         if (!packet(metadata, properties).toAbsolutePath().normalize().equals(expected)) {
             throw new IOException("Outbound packet metadata mismatch");
         }
@@ -136,7 +156,7 @@ public final class OutboundSpool {
             writeAtomically(receipt, new byte[]{1});
         }
         Files.deleteIfExists(packet);
-        return properties.getProperty("key");
+        return key;
     }
 
     private Path directory(FTNAddr address) {

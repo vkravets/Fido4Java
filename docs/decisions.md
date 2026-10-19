@@ -476,6 +476,29 @@ next hops or masks preserve the active policy and file. Source switches require
 explicit UI confirmation and never silently migrate rules. File rules stay
 read-only. Queued deliveries retain their previously selected next hop.
 
+## 29. Packet names and duplicate mail have separate identities
+
+New outgoing netmail, echo and rescan packets use eight hexadecimal digits and
+`.pkt`, following HPT's transferred-packet convention. A durable 32-bit sequence
+allocates names; full delivery keys, recipient-scoped acknowledgement receipts
+and explicit owner records remain independent. Old queued UUID filenames are
+drained unchanged. Filename collisions never overwrite or acknowledge another
+delivery. Sequence and ownership files are operational state, not caches.
+
+SQL duplicate history remains authoritative and survives deletion of message
+contents. Repeated incoming mail defaults to `DupeAction=move`: reconstructed
+single-message PKTs are retained outside mailboxes/outbound in `Tmp/dupes` (or
+`DupePath`). Explicit `discard` keeps SQL duplicate protection but omits those
+inspection copies. Exact repeated copies reuse an archive entry; distinct bodies
+or peers are retained separately. Original received bytes are governed separately
+by PreserveReceivedFiles. These file-only policy settings require a restart.
+
+Netmail duplicate checks distinguish a different delivery from retry of the
+original delivery key. A robot failure after SQL insertion must remain retryable;
+a newly delivered duplicate must not invoke robots again. Failed duplicate
+archiving must not complete the packet progress journal. Duplicate archives have
+no automatic re-export or release action.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

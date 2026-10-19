@@ -39,6 +39,13 @@ SysOp=Your Name
 
 deletetossed=1
 
+# Duplicate messages are retained separately, never forwarded or sent to robots again.
+# File-only policy; restart after changing these settings.
+DupeAction=move
+# DupePath defaults to the dupes subdirectory of Tmp.
+# DupePath=./mail/tmp/dupes
+# DupeAction=discard suppresses duplicates without keeping a separate message copy.
+
 # Unknown echoes are rejected unless both the master switch and a sender rule allow creation.
 # Requires EchoSubscriptions=database (the default AreaFix plugin configuration).
 AutoCreateEcho=false
