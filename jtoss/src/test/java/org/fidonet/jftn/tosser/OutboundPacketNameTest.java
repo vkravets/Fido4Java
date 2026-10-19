@@ -74,6 +74,43 @@ class OutboundPacketNameTest {
     }
 
     @Test
+    void echoFanOutAndRescansHaveIndependentShortPacketNames() throws Exception {
+        Link other = new Link(new FTNAddr("1:500/102"),
+                              link.getMyaddr(),
+                              "secret",
+                              "localhost",
+                              24554);
+        Message echo = new Message("Author",
+                                   "All",
+                                   new FTNAddr("1:500/100"),
+                                   link.getAddr(),
+                                   "Subject",
+                                   "AREA:TEST\rHello\r",
+                                   new Date());
+        OutboundSpool spool = new OutboundSpool(config);
+        spool.enqueue("echo:first", link, echo);
+        spool.enqueue("echo:first", other, echo);
+        Path first = spool.pending(link, true).get(0);
+        Path second = spool.pending(other, true).get(0);
+        assertTrue(first.getFileName().toString().matches("[0-9a-f]{8}\\.pkt"));
+        assertTrue(second.getFileName().toString().matches("[0-9a-f]{8}\\.pkt"));
+        assertFalse(first.getFileName().equals(second.getFileName()));
+        spool.acknowledge(first);
+        spool = new OutboundSpool(config);
+        spool.enqueue("echo:first", link, echo);
+        assertTrue(spool.pending(link, true).isEmpty());
+        assertEquals(List.of(second), spool.pending(other, true));
+        spool.enqueue("rescan:requested:echo:first", link, echo);
+        Path rescan = spool.pending(link, true).get(0);
+        assertFalse(first.getFileName().equals(rescan.getFileName()));
+        FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(rescan)));
+        Message restored = new Message(packet.getMsgs()[0],
+                                       packet.getOrigZone(),
+                                       packet.getDestZone());
+        assertEquals("TEST", restored.getArea());
+    }
+
+    @Test
     void netmailUsesShortStableNamesAndAcknowledgesAfterRestart() throws Exception {
         OutboundSpool spool = new OutboundSpool(config);
         spool.enqueue("netmail:first", link, message());

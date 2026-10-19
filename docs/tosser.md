@@ -266,7 +266,8 @@ reinterpret their net/node numbers in the receiving zone. Local Origin lines
 are generated only for locally submitted messages without an Origin.
 
 An outbound packet and its metadata are persisted before queue publication.
-New netmail packets use HPT-style `hhhhhhhh.pkt` names (eight lowercase hex
+New netmail, echomail and explicit rescan packets use HPT-style `hhhhhhhh.pkt`
+names (eight lowercase hex
 digits), allocated from the persisted `Outbound/jftn-mail/packet.sequence`.
 The packet name is independent of its full delivery identity: internal metadata,
 owner records and acknowledgement receipts must be backed up with the queue.
@@ -275,6 +276,8 @@ packets are drained under their original names, without renaming an active queue
 FTS-0001 describes legacy 8.3 transport filenames; it does not require the HPT
 sequence algorithm. HPT's BSO `.out`/`.hut`/`.cut` names are local mailer queue
 files, not the naming scheme for our binkp-transmitted `.pkt` files.
+Each fan-out delivery and explicit rescan gets its own name; acknowledgements
+remain scoped to the message/request and recipient, not the short filename.
 Preparing or writing a packet does not mark it sent. `M_GOT` persists a receipt,
 then updates SQL. If the process stops between those actions, the next pass
 reconciles SQL from the receipt. Disconnect releases session claims so packets

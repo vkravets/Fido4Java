@@ -69,7 +69,7 @@ public final class OutboundSpool {
             Properties properties = new Properties();
             properties.setProperty("key", key);
             // Recover a legacy packet whose publication stopped before writing its metadata.
-            if (!message.isEchomail() && !Files.exists(directory.resolve(name + ".pkt"))) {
+            if (!Files.exists(directory.resolve(name + ".pkt"))) {
                 properties.setProperty("packet", PacketNames.allocate(root, directory));
             }
             properties.setProperty("hold",

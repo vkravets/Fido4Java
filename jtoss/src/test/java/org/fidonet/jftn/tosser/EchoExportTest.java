@@ -93,6 +93,11 @@ public class EchoExportTest {
             assertTrue(spool.pending(config.getLink(new FTNAddr("2:500/104")), true).isEmpty());
             Link target = config.getLink(new FTNAddr("2:500/103"));
             assertEquals(1, spool.pending(target, true).size());
+            assertTrue(spool.pending(target, true)
+                            .get(0)
+                            .getFileName()
+                            .toString()
+                            .matches("[0-9a-f]{8}\\.pkt"));
             FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(spool.pending(target,
                                                                                         true)
                                                                                .get(0))));

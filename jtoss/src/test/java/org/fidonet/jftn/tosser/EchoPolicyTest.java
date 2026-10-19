@@ -203,6 +203,8 @@ public class EchoPolicyTest {
         tosser.rescanEcho("test", peer("101"), 2, 2, "history-1");
         assertEquals(1, pending("101").size());
         FtsPkt packet = new FtsPkt(ByteBuffer.wrap(Files.readAllBytes(pending("101").get(0))));
+        Path firstRescan = pending("101").get(0);
+        assertTrue(firstRescan.getFileName().toString().matches("[0-9a-f]{8}\\.pkt"));
         Message copy = new Message(packet.getMsgs()[0], packet.getOrigZone(), packet.getDestZone());
         assertEquals(message(1).getMsgId(), copy.getMsgId());
         acknowledge("101");
@@ -212,6 +214,7 @@ public class EchoPolicyTest {
         assertTrue(pending("101").isEmpty());
         tosser.rescanEcho("test", peer("101"), 2, 2, "history-2");
         assertEquals(1, pending("101").size());
+        assertFalse(firstRescan.equals(pending("101").get(0)));
         try {
             tosser.rescanEcho("test", peer("104"), 0, 10, "denied");
             fail("Unreadable rescan accepted");
