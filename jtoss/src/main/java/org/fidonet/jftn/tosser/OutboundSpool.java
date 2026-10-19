@@ -68,6 +68,9 @@ public final class OutboundSpool {
 
     private void enqueuePacket(String key, Link link, Message message, FTNAddr local)
             throws IOException {
+        if ((message.getAttributes() & 0x0810) != 0 && !BsoOutbound.enabled(config)) {
+            throw new IOException("FILE and FRQ netmail require external BSO delivery");
+        }
         Path directory = directory(link.getAddr());
         Files.createDirectories(directory);
         String name = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
@@ -120,7 +123,8 @@ public final class OutboundSpool {
             bso.enqueueNamed("packet:" + key,
                              link,
                              sources,
-                             NetmailPriority.of(message).name().toLowerCase(Locale.ROOT));
+                             NetmailPriority.of(message).name().toLowerCase(Locale.ROOT),
+                             (message.getAttributes() & 0x0800) != 0 ? message.getSubject() : null);
         } else if (bso.owns("packet:" + key, link.getAddr())) {
             throw new IOException("Delivery remains owned by external BSO; drain it before changing modes");
         }

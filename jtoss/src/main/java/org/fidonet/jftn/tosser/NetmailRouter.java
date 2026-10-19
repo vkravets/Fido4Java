@@ -146,7 +146,8 @@ public final class NetmailRouter {
             return decision(NetmailDecision.Reason.LOCAL, null, null);
         }
         Link direct = OutgoingLinks.find(config, destination);
-        if (NetmailPriority.of(message) != NetmailPriority.NORMAL) {
+        if (NetmailPriority.of(message) != NetmailPriority.NORMAL
+                || (message.getAttributes() & 0x0800) != 0) {
             return decision(direct == null
                     ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
                     : NetmailDecision.Reason.DIRECT, direct, null);

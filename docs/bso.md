@@ -56,3 +56,24 @@ warning. `BsoKeepTransitFiles=true` is the default; setting it to `false` applie
 KFS-style cleanup to transit attachments without an explicit flag. Ordinary local
 attachments remain intact. Post-send actions and SQL acknowledgement survive a
 restart and repeated queue processing.
+
+## File requests
+
+FRQ netmail goes directly to its destination, bypassing normal and file routes,
+as in HPT. BSO creates a normal-flavour node/point/zone `.req` control file and
+also packs the netmail. Space/tab-separated subject tokens become CRLF lines;
+filename masks are permitted, local paths and control characters are refused.
+The update-request header bit is preserved in PKT; JFtn does not expand masks or
+serve requests itself. The external mailer and remote request processor own those
+operations. Native binkp does not send `.req` requests.
+
+Requests are appended under the same peer busy lock as FLO publication. Repeated
+publication does not duplicate existing lines. SQL delivery waits until both the
+packet copy and the request file have been consumed. When requests share a
+control file, their acknowledgement waits for the whole batch. Consumption is
+journaled before publishing a new batch, so a new request cannot mask completion
+of the preceding batch. Do not edit/delete `.req` manually as a way to cancel it;
+file disappearance is the external-mailer acknowledgement.
+
+Reference attach/request processing:
+[HPT scan.c](https://github.com/huskyproject/hpt/blob/c2a91d64cee0e6cd357376d30c9285ee3f9c624f/src/scan.c).

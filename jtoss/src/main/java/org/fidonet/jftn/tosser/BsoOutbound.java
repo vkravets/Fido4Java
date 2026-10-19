@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -119,6 +120,9 @@ public final class BsoOutbound {
         if (!"PUBLISHED".equals(properties.getProperty("state"))) {
             return false;
         }
+        if (properties.containsKey("request") && !requestConsumed(job, peer, properties)) {
+            return false;
+        }
         for (String name : names(properties)) {
             if (Files.exists(job.resolve("files").resolve(name), LinkOption.NOFOLLOW_LINKS)) {
                 return false;
@@ -138,12 +142,25 @@ public final class BsoOutbound {
 
     public void enqueueNamed(String key, Link peer, List<File> sources, String flavour)
             throws IOException {
+        enqueueNamed(key, peer, sources, flavour, null);
+    }
+
+    public void enqueueNamed(String key,
+                             Link peer,
+                             List<File> sources,
+                             String flavour,
+                             String request)
+            throws IOException {
         synchronized (LOCK) {
             Path job = job(key, peer.getAddr());
+            String normalized = request == null ? null : BsoRequests.normalize(request);
             if (!owns(key, peer.getAddr())) {
-                prepare(job, key, peer, sources, flavour);
+                prepare(job, key, peer, sources, flavour, normalized);
             }
             Properties properties = read(job, key, peer.getAddr());
+            if (!Objects.equals(normalized, properties.getProperty("request"))) {
+                throw new IOException("BSO request identity conflict");
+            }
             if ("PUBLISHED".equals(properties.getProperty("state"))) {
                 return;
             }
@@ -153,7 +170,12 @@ public final class BsoOutbound {
         }
     }
 
-    private void prepare(Path job, String key, Link peer, List<File> sources, String flavour)
+    private void prepare(Path job,
+                         String key,
+                         Link peer,
+                         List<File> sources,
+                         String flavour,
+                         String request)
             throws IOException {
         extension(flavour);
         if (sources.isEmpty() || sources.size() > 1024) {
@@ -168,6 +190,9 @@ public final class BsoOutbound {
             properties.setProperty("peer", peer.getAddr().toString());
             properties.setProperty("flavour", flavour);
             properties.setProperty("state", "PREPARED");
+            if (request != null) {
+                properties.setProperty("request", request);
+            }
             properties.setProperty("count", Integer.toString(sources.size()));
             Set<String> filenames = new HashSet<>();
             for (int index = 0; index < sources.size(); index++) {
@@ -288,6 +313,7 @@ public final class BsoOutbound {
                                                         StandardOpenOption.CREATE_NEW,
                                                         StandardOpenOption.WRITE)) {
                 acquired = true;
+                publishRequest(peer.getAddr(), properties);
                 appendFlo(job, flo, properties);
                 properties.setProperty("state", "PUBLISHED");
                 write(job, properties);
@@ -296,6 +322,54 @@ public final class BsoOutbound {
             if (acquired) {
                 Files.delete(busy);
             }
+        }
+    }
+
+    private boolean requestConsumed(Path job, FTNAddr peer, Properties properties)
+            throws IOException {
+        if (properties.containsKey("request-consumed")) {
+            return true;
+        }
+        if (Files.exists(control(peer, "req"), LinkOption.NOFOLLOW_LINKS)) {
+            return false;
+        }
+        properties.setProperty("request-consumed", "true");
+        write(job, properties);
+        return true;
+    }
+
+    private void publishRequest(FTNAddr peer, Properties properties) throws IOException {
+        if (!properties.containsKey("request")) {
+            return;
+        }
+        Path request = control(peer, "req");
+        if (!Files.exists(request, LinkOption.NOFOLLOW_LINKS)) {
+            recordConsumedRequests(peer);
+        }
+        BsoRequests.append(request, properties.getProperty("request"));
+    }
+
+    private void recordConsumedRequests(FTNAddr peer) throws IOException {
+        for (Path candidate : stagingFiles(journal)) {
+            Path metadata = candidate.resolve("delivery.properties");
+            if (!Files.isRegularFile(metadata, LinkOption.NOFOLLOW_LINKS)) {
+                continue;
+            }
+            recordConsumedRequest(candidate, peer);
+        }
+    }
+
+    private void recordConsumedRequest(Path candidate, FTNAddr peer) throws IOException {
+        Properties properties = new Properties();
+        try (var input = Files.newInputStream(candidate.resolve("delivery.properties"))) {
+            properties.load(input);
+        }
+        if (peer.toString().equals(properties.getProperty("peer"))
+                && "PUBLISHED".equals(properties.getProperty("state"))
+                && properties.containsKey("request")
+                && !properties.containsKey("request-consumed")) {
+            properties.setProperty("request-consumed", "true");
+            write(candidate, properties);
         }
     }
 

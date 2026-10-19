@@ -722,7 +722,7 @@ public class Tosser extends HasEventBus {
 
     private boolean unsupportedFileOperation(Message message) {
         int attributes = message.getAttributes();
-        return (attributes & 0x8800) != 0 || (attributes & 16) != 0 && !BsoOutbound.enabled(config);
+        return (attributes & 0x0810) != 0 && !BsoOutbound.enabled(config);
     }
 
     public synchronized void exportPendingNetmail() throws IOException {
