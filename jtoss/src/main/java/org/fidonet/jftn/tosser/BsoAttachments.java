@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /** Local attaches are confined to an explicit root; transit attaches use only their receiving peer. */
 final class BsoAttachments {
@@ -85,9 +86,12 @@ final class BsoAttachments {
     }
 
     private static BsoOutbound.Action action(JFtnConfig config, Message message) {
+        String keep = config.getValue("BsoKeepTransitFiles", "true");
+        if (!Set.of("true", "false").contains(keep)) {
+            throw new IllegalArgumentException("BsoKeepTransitFiles must be true or false");
+        }
         String flags = " " + NetmailRouter.configFlags(message) + " ";
-        if (flags.contains(" KFS ") || message.getUpLink() != null
-                && !Boolean.parseBoolean(config.getValue("BsoKeepTransitFiles", "true"))) {
+        if (flags.contains(" KFS ") || message.getUpLink() != null && !Boolean.parseBoolean(keep)) {
             return BsoOutbound.Action.DELETE;
         }
         return flags.contains(" TFS ") ? BsoOutbound.Action.TRUNCATE : BsoOutbound.Action.KEEP;

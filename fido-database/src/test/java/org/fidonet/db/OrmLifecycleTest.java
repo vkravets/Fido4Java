@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.fidonet.db.objects.Echoarea;
+import org.fidonet.db.objects.NetmailSource;
 import org.fidonet.db.objects.Version;
 import org.fidonet.db.robots.RobotRuleRecord;
 
@@ -30,7 +31,8 @@ public class OrmLifecycleTest {
             manager.connect();
             manager.createTables();
             assertTrue(manager.isConnect());
-            assertEquals(13, manager.getAllDaos().size());
+            assertEquals(14, manager.getAllDaos().size());
+            assertTrue(manager.getDao(NetmailSource.class).isTableExists());
             assertTrue(manager.getDao(RobotRuleRecord.class).isTableExists());
             assertEquals(Long.valueOf(Version.UNKNOWN_VERSION), manager.getCurrentVersion());
             Version version = new Version();

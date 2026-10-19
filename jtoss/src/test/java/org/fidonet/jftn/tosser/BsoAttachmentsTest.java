@@ -64,6 +64,19 @@ class BsoAttachmentsTest {
     }
 
     @Test
+    void rejectsMistypedRetentionPolicyAndLegacyTransitWithoutASource() throws Exception {
+        JFtnConfig config = config();
+        Files.writeString(root.resolve("attachments/ONE.ZIP"), "payload");
+        Message transit = message("ONE.ZIP");
+        transit.setAttributes(49);
+        assertThrows(IOException.class, () -> BsoAttachments.sources(config, transit));
+        config.load(new ByteArrayInputStream("BsoKeepTransitFiles=tru\n".getBytes(StandardCharsets.UTF_8)));
+        assertThrows(IllegalArgumentException.class,
+                     () -> BsoAttachments.sources(config, message("ONE.ZIP")));
+        assertEquals("payload", Files.readString(root.resolve("attachments/ONE.ZIP")));
+    }
+
+    @Test
     void preservesTransitPeerAcrossSqlRoundTripAndNeverFallsBackToLocalFiles() throws Exception {
         JFtnConfig config = config();
         Files.writeString(root.resolve("attachments/ONE.ZIP"), "local secret");
