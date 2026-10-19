@@ -20,6 +20,20 @@ class UserMailStateStoreTest {
     Path root;
 
     @Test
+    void submissionRetriesReuseTheReservedMessageIdAfterReopen() throws Exception {
+        Path path = root.resolve("ui");
+        UserMailStateStore state = new UserMailStateStore(path);
+        assertEquals("1:500/100 1234abcd",
+                     state.reserve("request", "body", () -> "1:500/100 1234abcd"));
+        UserMailStateStore reopened = new UserMailStateStore(path);
+        assertEquals("1:500/100 1234abcd", reopened.reserve("request", "body", () -> {
+            throw new AssertionError("A retry must not allocate another MSGID");
+        }));
+        assertThrows(IllegalArgumentException.class,
+                     () -> reopened.reserve("request", "changed", () -> "1:500/100 1234abcf"));
+    }
+
+    @Test
     void draftQuotaAllowsReplacingAnExistingDraftAndDoesNotAffectOtherOwners() throws Exception {
         Path path = root.resolve("ui");
         UserMailStateStore state = new UserMailStateStore(path);

@@ -675,7 +675,7 @@ public class Tosser extends HasEventBus {
                 || !localNetmailAddress(message.getFAddr())) {
             throw new IllegalArgumentException("Outgoing netmail must originate from a local AKA");
         }
-        MessageIds.ensure(message, Path.of(config.getTmpDir()));
+        assignMessageId(message);
         if (localNetmailAddress(message.getTAddr())) {
             storeSubmittedNetmail(message, deliveryKey, null, waiting);
             return;
@@ -726,6 +726,12 @@ public class Tosser extends HasEventBus {
         });
     }
 
+    /** Assigns a persistent local MSGID without submitting or releasing the message. */
+    public String assignMessageId(Message message) throws IOException {
+        MessageIds.ensure(message, Path.of(config.getTmpDir()));
+        return message.getMsgId();
+    }
+
     public void acknowledgeOutbound(String key) {
         if (key.startsWith("netmail:") && netmailStore != null) {
             netmailStore.markNetmailSent(key.substring("netmail:".length()));
@@ -741,7 +747,7 @@ public class Tosser extends HasEventBus {
                 || !base.isAreaExists(message.getArea().toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException("Local echomail requires a local AKA and an existing area");
         }
-        MessageIds.ensure(message, Path.of(config.getTmpDir()));
+        assignMessageId(message);
         base.addMessage(message, message.getArea().toLowerCase(Locale.ROOT));
     }
 

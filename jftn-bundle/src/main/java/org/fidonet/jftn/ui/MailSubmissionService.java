@@ -26,7 +26,6 @@ final class MailSubmissionService {
     String sendValidated(String owner, MailDraft draft, String requestId) throws Exception {
         return mail.operate(tosser -> {
             String key = ScriptState.digest(owner + ":" + requestId);
-            String msgid = draft.getFromAddress() + " ui-" + key;
             String hash = ScriptState.digest(Base64.getEncoder()
                                                    .encodeToString(new TSerializer().serialize(draft)));
             String text = draft.getBody().replace("\r\n", "\r").replace('\n', '\r');
@@ -39,7 +38,6 @@ final class MailSubmissionService {
                                                   ? "AREA:" + draft.getArea() + "\r"
                                                   : "") + "\1CHRS: UTF-8 4\r" + text,
                                           new Date());
-            message.setMsgId(msgid);
             if (draft.isSetReplyTo()) {
                 message.getBody().getKludges().put("REPLY", draft.getReplyTo());
             }
@@ -49,7 +47,8 @@ final class MailSubmissionService {
                                   "No route to recipient; contact the station administrator.");
             }
             tosser.submissionTargets(message);
-            state.reserve(key, hash, msgid);
+            String msgid = state.reserve(key, hash, () -> tosser.assignMessageId(message));
+            message.setMsgId(msgid);
             if (draft.getMailbox() == Mailbox.ECHO) {
                 tosser.submitEchomail(message);
             } else {

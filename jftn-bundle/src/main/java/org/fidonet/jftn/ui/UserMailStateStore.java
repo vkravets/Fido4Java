@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /** UI-owned draft/read/submission state, separate from the mail database. */
 final class UserMailStateStore {
@@ -166,22 +167,28 @@ final class UserMailStateStore {
         }
     }
 
-    void reserve(String id, String fingerprint, String messageId) throws Exception {
+    String reserve(String id, String fingerprint, Callable<String> allocateId) throws Exception {
         try (Connection connection = open()) {
-            String existing = submissionFingerprint(connection, id);
+            String existing = reservedMessageId(connection, id, fingerprint);
             if (existing != null) {
-                requireSameFingerprint(existing, fingerprint);
-                return;
+                return existing;
             }
+            String messageId = allocateId.call();
             insertSubmission(connection, id, fingerprint, messageId);
+            return messageId;
         }
     }
 
-    private String submissionFingerprint(Connection connection, String id) throws Exception {
-        try (PreparedStatement sql = connection.prepareStatement("SELECT fingerprint FROM submissions WHERE id=?")) {
+    private String reservedMessageId(Connection connection, String id, String fingerprint)
+            throws Exception {
+        try (PreparedStatement sql = connection.prepareStatement("SELECT fingerprint,message_id FROM submissions WHERE id=?")) {
             sql.setString(1, id);
             try (ResultSet result = sql.executeQuery()) {
-                return result.next() ? result.getString(1) : null;
+                if (!result.next()) {
+                    return null;
+                }
+                requireSameFingerprint(result.getString(1), fingerprint);
+                return result.getString(2);
             }
         }
     }

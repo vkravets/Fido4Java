@@ -1,5 +1,6 @@
 package org.fidonet.jftn.tosser;
 
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
@@ -39,8 +40,15 @@ public final class MessageIds {
                 channel.write(buffer);
             }
             channel.force(true);
-            message.setMsgId(message.getFAddr() + " " + String.format(Locale.ROOT, "%08x", serial));
+            message.setMsgId(address(message.getFAddr())
+                             + " "
+                             + String.format(Locale.ROOT, "%08x", serial));
         }
+    }
+
+    static String address(FTNAddr address) {
+        String node = address.getZone() + ":" + address.getNet() + "/" + address.getNode();
+        return address.getPnt() == 0 ? node : node + "." + address.getPnt();
     }
 
     private static long readPrevious(FileChannel channel, ByteBuffer buffer) throws IOException {

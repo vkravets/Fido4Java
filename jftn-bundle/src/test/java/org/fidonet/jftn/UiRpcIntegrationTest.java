@@ -741,6 +741,10 @@ class UiRpcIntegrationTest {
         connect();
         assertEquals(draft, ui.drafts(token).get(0));
         String id = ui.send(token, draft, "request-1");
+        assertTrue(id.matches("1:500/100 [0-9a-f]{8}"));
+        transport.close();
+        rpc.close();
+        connect();
         assertEquals(id, ui.send(token, draft, "request-1"));
         assertEquals(1, ui.pendingNetmail(token));
         ui.processMail(token);
