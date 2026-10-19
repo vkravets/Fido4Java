@@ -79,7 +79,23 @@ import { Buffer } from '../../frontend/node_modules/buffer/index.js';
 globalThis.Buffer ??= Buffer;
 const JSONInt64 = { parse };
 ''' + rootProject.file(thriftRuntime.get()).getText('UTF-8') +
-                '\nexport { Thrift, Int64 };\n', 'UTF-8')
+                '''
+// The JSON reader returns large i64 values as decimal strings. The official writer
+// expects an Int64 object, so normalize strings before delegating to it.
+const writeI64 = Thrift.TJSONProtocol.prototype.writeI64;
+Thrift.TJSONProtocol.prototype.writeI64 = function(value) {
+    if (typeof value === 'string') {
+        if (!/^-?(0|[1-9][0-9]*)$/.test(value)) throw new RangeError('Invalid i64');
+        const integer = BigInt(value);
+        if (integer < -(1n << 63n) || integer > (1n << 63n) - 1n) throw new RangeError('Invalid i64');
+        value = Int64Util.fromDecimalString(value);
+    } else if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+        throw new RangeError('Unsafe numeric i64; use a decimal string');
+    }
+    return writeI64.call(this, value);
+};
+export { Thrift, Int64 };
+''', 'UTF-8')
         new File(directory, 'runtime.d.mts').setText('export const Thrift: unknown;\nexport const Int64: unknown;\n', 'UTF-8')
         new File(directory, 'client.d.mts').setText('export declare function createRpcClient<T>(runtime: unknown, client: { prototype: T }, endpoint: string, timeoutMillis?: number): T;\n', 'UTF-8')
     }
