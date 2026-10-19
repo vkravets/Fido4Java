@@ -115,10 +115,12 @@ public final class OutboundSpool {
         }
         BsoOutbound bso = new BsoOutbound(config);
         if (BsoOutbound.enabled(config)) {
-            bso.enqueue("packet:" + key,
-                        link,
-                        List.of(packet),
-                        NetmailPriority.of(message).name().toLowerCase(Locale.ROOT));
+            List<BsoOutbound.File> sources = BsoAttachments.sources(config, message);
+            sources.add(new BsoOutbound.File(packet, packet.getFileName().toString()));
+            bso.enqueueNamed("packet:" + key,
+                             link,
+                             sources,
+                             NetmailPriority.of(message).name().toLowerCase(Locale.ROOT));
         } else if (bso.owns("packet:" + key, link.getAddr())) {
             throw new IOException("Delivery remains owned by external BSO; drain it before changing modes");
         }

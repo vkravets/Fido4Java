@@ -33,3 +33,26 @@ verify the owner is gone, then remove the stale lock before retrying.
 
 Reference naming/locking:
 [Husky NCreateOutboundFileNameAka](https://github.com/huskyproject/fidoconf/blob/62c963a6f078905660f2c0b3a6929383823190c5/src/common.c).
+
+## Netmail file attachments
+
+FILE netmail uses `RouteFile=pattern,next-hop` rules; ordinary `Route`/`RouteMail`
+rules do not route attachments. SQL route IDs beginning with `file-` identify
+file-only rules. Priority mail still goes directly to its destination. The native
+binkp queue does not support FILE attaches; enable BSO for external delivery.
+
+Local attachment subjects contain exact filenames beneath `FileAttachRoot`
+(default `Outbound/attachments`). Tokens are separated by spaces, tabs or commas.
+Directories are stripped from the PKT subject as in HPT. Traversal, wildcards,
+symlinks escaping the root, and files larger than 128 MiB are refused. Received
+transit attaches resolve only against completed receipts from the authenticated
+source peer, persisted separately from the outgoing route in SQL. Missing or
+conflicting same-name payloads defer export; local files are never substituted.
+
+`FLAGS KFS` deletes the active source after every handoff copy is consumed;
+`FLAGS TFS` truncates it. A durable original is retained in the handoff's
+`originals/` directory before either action. Changed sources are retained with a
+warning. `BsoKeepTransitFiles=true` is the default; setting it to `false` applies
+KFS-style cleanup to transit attachments without an explicit flag. Ordinary local
+attachments remain intact. Post-send actions and SQL acknowledgement survive a
+restart and repeated queue processing.

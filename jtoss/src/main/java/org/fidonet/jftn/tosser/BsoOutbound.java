@@ -2,8 +2,12 @@ package org.fidonet.jftn.tosser;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.misc.AtomicFiles;
+import org.fidonet.misc.FileDigests;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,15 +19,38 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Durable Binkley FLO handoff. External mailers delete copies, never the authoritative queue. */
 public final class BsoOutbound {
+    public enum Action {
+        KEEP, DELETE, TRUNCATE
+    }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BsoOutbound.class);
+    public static final class File {
+        private final Path path;
+        private final String name;
+        private final Action action;
+
+        public File(Path path, String name) {
+            this(path, name, Action.KEEP);
+        }
+
+        public File(Path path, String name, Action action) {
+            this.path = path;
+            this.name = name;
+            this.action = action;
+        }
+    }
     private static final Object LOCK = new Object();
     private final Path root;
     private final Path journal;
@@ -78,6 +105,12 @@ public final class BsoOutbound {
     }
 
     public boolean acknowledged(String key, FTNAddr peer) throws IOException {
+        synchronized (LOCK) {
+            return complete(key, peer);
+        }
+    }
+
+    private boolean complete(String key, FTNAddr peer) throws IOException {
         Path job = job(key, peer);
         if (!owns(key, peer)) {
             return false;
@@ -91,10 +124,19 @@ public final class BsoOutbound {
                 return false;
             }
         }
+        applySourceActions(job, properties);
         return true;
     }
 
     public void enqueue(String key, Link peer, List<Path> sources, String flavour)
+            throws IOException {
+        List<File> files = sources.stream()
+                                  .map(path -> new File(path, path.getFileName().toString()))
+                                  .collect(Collectors.toList());
+        enqueueNamed(key, peer, files, flavour);
+    }
+
+    public void enqueueNamed(String key, Link peer, List<File> sources, String flavour)
             throws IOException {
         synchronized (LOCK) {
             Path job = job(key, peer.getAddr());
@@ -111,7 +153,7 @@ public final class BsoOutbound {
         }
     }
 
-    private void prepare(Path job, String key, Link peer, List<Path> sources, String flavour)
+    private void prepare(Path job, String key, Link peer, List<File> sources, String flavour)
             throws IOException {
         extension(flavour);
         if (sources.isEmpty() || sources.size() > 1024) {
@@ -127,16 +169,95 @@ public final class BsoOutbound {
             properties.setProperty("flavour", flavour);
             properties.setProperty("state", "PREPARED");
             properties.setProperty("count", Integer.toString(sources.size()));
+            Set<String> filenames = new HashSet<>();
             for (int index = 0; index < sources.size(); index++) {
-                Path source = sources.get(index);
-                String name = safeName(source.getFileName().toString());
+                Path source = sources.get(index).path;
+                String name = safeName(sources.get(index).name);
+                if (!filenames.add(name.toLowerCase(Locale.ROOT))) {
+                    throw new IOException("Conflicting BSO payload filenames");
+                }
                 properties.setProperty("file." + index, name);
                 copySource(source, staging.resolve("files").resolve(name));
+                recordSourceAction(staging, index, sources.get(index), properties);
             }
             write(staging, properties);
             Files.move(staging, job, StandardCopyOption.ATOMIC_MOVE);
         } finally {
             removeStaging(staging);
+        }
+    }
+
+    private static void recordSourceAction(Path staging,
+                                           int index,
+                                           File source,
+                                           Properties properties)
+            throws IOException {
+        properties.setProperty("action." + index, source.action.name());
+        if (source.action == Action.KEEP) {
+            return;
+        }
+        properties.setProperty("source." + index, source.path.toRealPath().toString());
+        String digest = fingerprint(staging.resolve("files").resolve(source.name));
+        if (!digest.equals(fingerprint(source.path))) {
+            throw new IOException("Attachment changed during BSO handoff");
+        }
+        properties.setProperty("sha256." + index, digest);
+    }
+
+    private static String fingerprint(Path path) throws IOException {
+        return Base64.getEncoder().encodeToString(FileDigests.sha256(path, 128L * 1024 * 1024));
+    }
+
+    private void applySourceActions(Path job, Properties properties) throws IOException {
+        List<String> files = names(properties);
+        boolean changed = false;
+        for (int index = 0; index < files.size(); index++) {
+            Action action = Action.valueOf(properties.getProperty("action." + index, "KEEP"));
+            if (action == Action.KEEP || properties.containsKey("action-done." + index)) {
+                continue;
+            }
+            applySourceAction(job, properties, index, files.get(index), action);
+            properties.setProperty("action-done." + index, "true");
+            changed = true;
+        }
+        if (changed) {
+            write(job, properties);
+        }
+    }
+
+    private void applySourceAction(Path job,
+                                   Properties properties,
+                                   int index,
+                                   String name,
+                                   Action action)
+            throws IOException {
+        Path source = Path.of(properties.getProperty("source." + index));
+        if (!Files.exists(source, LinkOption.NOFOLLOW_LINKS)
+                || action == Action.TRUNCATE && Files.size(source) == 0) {
+            return;
+        }
+        String expected = properties.getProperty("sha256." + index);
+        if (!expected.equals(fingerprint(source))) {
+            LOGGER.warn("Attachment changed after BSO handoff; retaining the updated source: {}",
+                        source);
+            return;
+        }
+        Path originals = job.resolve("originals");
+        ensureDirectory(originals);
+        Path backup = originals.resolve(name);
+        if (!Files.exists(backup)) {
+            copySource(source, backup);
+        }
+        if (!expected.equals(fingerprint(backup)) || !expected.equals(fingerprint(source))) {
+            throw new IOException("Attachment changed before its post-send action");
+        }
+        if (action == Action.DELETE) {
+            Files.delete(source);
+            return;
+        }
+        try (FileChannel channel = FileChannel.open(source, StandardOpenOption.WRITE)) {
+            channel.truncate(0);
+            channel.force(true);
         }
     }
 

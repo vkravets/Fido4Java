@@ -50,4 +50,8 @@ public final class NetmailRoute {
     public boolean isEnabled() {
         return enabled;
     }
+
+    public boolean isFileOnly() {
+        return id.startsWith("file-");
+    }
 }

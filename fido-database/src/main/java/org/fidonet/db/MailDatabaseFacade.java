@@ -37,6 +37,7 @@ import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
 import org.fidonet.db.objects.NetmailRouteRecord;
+import org.fidonet.db.objects.NetmailSource;
 import org.fidonet.db.objects.Subscription;
 import org.fidonet.db.robots.DatabaseRobotRules;
 import org.fidonet.echobase.AccessLevel;
@@ -507,6 +508,11 @@ public class MailDatabaseFacade
                         delivery.setState("WAITING");
                     }
                     deliveries.create(delivery);
+                    if (message.getUpLink() != null) {
+                        dbManager.getDao(NetmailSource.class)
+                                 .create(new NetmailSource(deliveryKey,
+                                                           message.getUpLink().toString()));
+                    }
                     receipts.create(new MessageReceipt(identity));
                 }
                 return null;
@@ -559,9 +565,7 @@ public class MailDatabaseFacade
             List<QueuedNetmail> result = new ArrayList<>();
             for (NetmailDelivery delivery : dbManager.<NetmailDelivery, String>getDao(NetmailDelivery.class)
                                                      .queryForEq("state", "QUEUED")) {
-                result.add(new QueuedNetmail(delivery.getKey(),
-                                             delivery.getNextHop(),
-                                             delivery.getMessage().toMessage()));
+                result.add(netmailRepository.queued(delivery));
             }
             return result;
         } catch (SQLException e) {

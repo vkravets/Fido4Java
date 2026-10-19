@@ -55,6 +55,58 @@ class BsoOutboundTest {
     }
 
     @Test
+    void appliesPostSendActionsOnlyAfterAllCopiesDisappearAndRetainsOriginals() throws Exception {
+        JFtnConfig config = config();
+        Link peer = config.getConfiguredLinks().get(0);
+        BsoOutbound bso = new BsoOutbound(config);
+        Path delete = Files.writeString(root.resolve("DELETE.ZIP"), "delete original");
+        Path truncate = Files.writeString(root.resolve("TRUNCATE.LOG"), "truncate original");
+        bso.enqueueNamed("actions",
+                         peer,
+                         List.of(new BsoOutbound.File(delete,
+                                                      "DELETE.ZIP",
+                                                      BsoOutbound.Action.DELETE),
+                                 new BsoOutbound.File(truncate,
+                                                      "TRUNCATE.LOG",
+                                                      BsoOutbound.Action.TRUNCATE)),
+                         "normal");
+        List<String> lines = Files.readAllLines(bso.control(peer.getAddr(), "flo"));
+        Path copy = Path.of(lines.get(0).substring(1));
+        Files.delete(copy);
+        assertFalse(bso.acknowledged("actions", peer.getAddr()));
+        assertEquals("delete original", Files.readString(delete));
+        Files.delete(Path.of(lines.get(1).substring(1)));
+        assertTrue(new BsoOutbound(config).acknowledged("actions", peer.getAddr()));
+        assertTrue(bso.acknowledged("actions", peer.getAddr()));
+        assertFalse(Files.exists(delete));
+        assertEquals(0, Files.size(truncate));
+        Path backups = copy.getParent().getParent().resolve("originals");
+        assertEquals("delete original", Files.readString(backups.resolve("DELETE.ZIP")));
+        assertEquals("truncate original", Files.readString(backups.resolve("TRUNCATE.LOG")));
+    }
+
+    @Test
+    void retainsANewSourceVersionWrittenAfterHandoff() throws Exception {
+        JFtnConfig config = config();
+        Link peer = config.getConfiguredLinks().get(0);
+        BsoOutbound bso = new BsoOutbound(config);
+        Path source = Files.writeString(root.resolve("CHANGE.ZIP"), "original");
+        bso.enqueueNamed("changed",
+                         peer,
+                         List.of(new BsoOutbound.File(source,
+                                                      "CHANGE.ZIP",
+                                                      BsoOutbound.Action.DELETE)),
+                         "normal");
+        Path copy = Path.of(Files.readAllLines(bso.control(peer.getAddr(), "flo"))
+                                 .get(0)
+                                 .substring(1));
+        Files.writeString(source, "updated");
+        Files.delete(copy);
+        assertTrue(bso.acknowledged("changed", peer.getAddr()));
+        assertEquals("updated", Files.readString(source));
+    }
+
+    @Test
     void publishesPairsOnceAndRequiresBothExternalCopiesToBeConsumed() throws Exception {
         JFtnConfig config = config();
         Link peer = config.getConfiguredLinks().get(0);

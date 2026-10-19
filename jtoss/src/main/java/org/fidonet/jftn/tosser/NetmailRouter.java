@@ -50,7 +50,13 @@ public final class NetmailRouter {
     }
 
     private void readConfiguredRules() {
-        List<String> values = config.getValuesAsList("Route");
+        readConfiguredRules("Route", "config:");
+        readConfiguredRules("RouteMail", "config-mail:");
+        readConfiguredRules("RouteFile", "file-config:");
+    }
+
+    private void readConfiguredRules(String key, String prefix) {
+        List<String> values = config.getValuesAsList(key);
         if (values == null) {
             return;
         }
@@ -60,8 +66,11 @@ public final class NetmailRouter {
                 throw new IllegalArgumentException("Expected Route pattern,next-hop");
             }
             int index = configured.size();
-            configured.add(new NetmailRoute("config:"
-                    + index, index, fields[0].trim(), fields[1].trim(), true));
+            configured.add(new NetmailRoute(prefix + index,
+                                            index,
+                                            fields[0].trim(),
+                                            fields[1].trim(),
+                                            true));
         }
     }
 
@@ -143,9 +152,13 @@ public final class NetmailRouter {
                     : NetmailDecision.Reason.DIRECT, direct, null);
         }
         for (NetmailRoute rule : rules()) {
-            if (rule.isEnabled() && new AddressPattern(rule.getPattern()).matches(destination)) {
+            if (rule.isEnabled() && rule.isFileOnly() == ((message.getAttributes() & 16) != 0)
+                    && new AddressPattern(rule.getPattern()).matches(destination)) {
                 return matchedRule(rule, destination);
             }
+        }
+        if ((message.getAttributes() & 16) != 0) {
+            return decision(NetmailDecision.Reason.NO_ROUTE, null, null);
         }
         if (direct != null) {
             return decision(NetmailDecision.Reason.DIRECT, direct, null);

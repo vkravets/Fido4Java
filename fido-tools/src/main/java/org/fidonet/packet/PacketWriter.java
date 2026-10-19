@@ -100,7 +100,12 @@ public final class PacketWriter {
         Charset charset = CharsetTools.charsetDetect(source.getMessageCharset());
         field(packet, source.getTo(), charset, 35);
         field(packet, source.getFrom(), charset, 35);
-        field(packet, source.getSubject(), charset, 71);
+        field(packet,
+              (source.getAttributes() & 16) == 0
+                      ? source.getSubject()
+                      : AttachmentNames.wireSubject(source.getSubject()),
+              charset,
+              71);
         field(packet, message.getBody().toString(), charset, 64 * 1024 * 1024);
     }
 

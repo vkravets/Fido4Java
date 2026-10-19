@@ -437,6 +437,12 @@ public class Message {
         return copy;
     }
 
+    public Message withSubject(String value) {
+        Message copy = copy();
+        copy.subject = value;
+        return copy;
+    }
+
     public void setValid(boolean isValid) {
         this.isValid = isValid;
     }

@@ -47,6 +47,7 @@ import org.fidonet.misc.MailBundleUnpacker;
 import org.fidonet.misc.PacketArchive;
 import org.fidonet.misc.PacketBuffer;
 import org.fidonet.misc.ReceivedFileArchive;
+import org.fidonet.packet.AttachmentNames;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -514,6 +515,9 @@ public class Tosser extends HasEventBus {
                 continue;
             }
             Message message = new Message(messages[index], origin.getZone(), destination.getZone());
+            if ((message.getAttributes() & 16) != 0) {
+                message = message.withSubject(AttachmentNames.wireSubject(message.getSubject()));
+            }
             message.setUpLink(origin);
             if (!importPacketMessage(message, link, journal.key(index))) {
                 return false;
@@ -618,7 +622,7 @@ public class Tosser extends HasEventBus {
                 || link.getMyaddr() != null && link.getMyaddr().contains(message.getTAddr());
         NetmailDecision decision = netmailRouter.explainTransit(message, link.getAddr());
         Link route = decision.getNextHop();
-        if (!local && (!decision.isPermitted() || (message.getAttributes() & 0x8810) != 0)) {
+        if (!local && (!decision.isPermitted() || unsupportedFileOperation(message))) {
             logger.warn("Netmail transit refused ({}); quarantining packet", decision.getReason());
             return rejectPacket("Netmail transit refused: " + decision.getReason());
         }
@@ -681,7 +685,7 @@ public class Tosser extends HasEventBus {
 
     private void submitNetmail(Message message, String deliveryKey, boolean waiting)
             throws IOException {
-        if ((message.getAttributes() & 0x8810) != 0) {
+        if (unsupportedFileOperation(message)) {
             throw new UnsupportedOperationException("File attaches and file requests require a configured file processor");
         }
         if (message.isEchomail() || netmailStore == null
@@ -714,6 +718,11 @@ public class Tosser extends HasEventBus {
         } else {
             netmailStore.saveNetmail(message, key, nextHop);
         }
+    }
+
+    private boolean unsupportedFileOperation(Message message) {
+        int attributes = message.getAttributes();
+        return (attributes & 0x8800) != 0 || (attributes & 16) != 0 && !BsoOutbound.enabled(config);
     }
 
     public synchronized void exportPendingNetmail() throws IOException {

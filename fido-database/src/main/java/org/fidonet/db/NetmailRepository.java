@@ -3,6 +3,7 @@ package org.fidonet.db;
 import org.fidonet.db.objects.Netmail;
 import org.fidonet.db.objects.NetmailDelivery;
 import org.fidonet.db.objects.NetmailIndex;
+import org.fidonet.db.objects.NetmailSource;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
@@ -173,9 +174,21 @@ final class NetmailRepository {
             throws IOException {
         while (rows.hasNext()) {
             NetmailDelivery row = rows.next();
-            visitor.accept(new QueuedNetmail(row.getKey(),
-                                             row.getNextHop(),
-                                             row.getMessage().toMessage()));
+            try {
+                visitor.accept(queued(row));
+            } catch (SQLException failure) {
+                throw new IOException("Unable to restore the authenticated mail source", failure);
+            }
         }
+    }
+
+    QueuedNetmail queued(NetmailDelivery row) throws SQLException {
+        Message message = row.getMessage().toMessage();
+        NetmailSource source = orm.<NetmailSource, String>getDao(NetmailSource.class)
+                                  .queryForId(row.getKey());
+        if (source != null) {
+            message.setUpLink(new FTNAddr(source.getPeer()));
+        }
+        return new QueuedNetmail(row.getKey(), row.getNextHop(), message);
     }
 }
