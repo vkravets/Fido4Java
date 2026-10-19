@@ -7,6 +7,9 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Refactor UI/RPC into independently discovered optional plugins; use profiles
+  as default distribution compositions. Agreed seven-step plan (implementation
+  in progress): docs/ui-rpc-plugin-plan.md. See the plan for the current checkpoint.
 - Implement the browser echomail reader and echo-specific composition.
   Netmail reading, replies, drafts and approved-AKA submission now exist in the UI.
   Point netmail operations are scoped on the server; echo access remains ADMIN-only.
