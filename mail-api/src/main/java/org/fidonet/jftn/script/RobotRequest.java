@@ -5,6 +5,7 @@ import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -55,6 +56,42 @@ public final class RobotRequest {
 
     public String getId() {
         return id;
+    }
+
+    /** Parse transport line endings and stop at the tear line before executing any commands. */
+    public static List<String> commands(String body) {
+        if (body.length() > 64000) {
+            throw new IllegalArgumentException("Request exceeds 200 lines or 64000 characters.");
+        }
+        String[] lines = body.split("\\r\\n|\\r|\\n", -1);
+        if (lines.length > 201) {
+            throw new IllegalArgumentException("Request exceeds 200 lines or 64000 characters.");
+        }
+        List<String> result = new ArrayList<>();
+        for (String value : lines) {
+            String line = value.trim();
+            if (line.equals("---") || line.startsWith("--- ")) {
+                break;
+            }
+            if (!line.isEmpty() && !value.stripLeading().startsWith("\u0001")) {
+                result.add(line);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    /** A query accepts one mask, optionally preceded by a separate exclusion marker. */
+    public static boolean selects(String[] fields, String area) {
+        if (fields.length == 1) {
+            return true;
+        }
+        if (fields.length == 2 && !fields[1].equals("!")) {
+            return matches(fields[1], area);
+        }
+        if (fields.length == 3 && fields[1].equals("!")) {
+            return !matches(fields[2], area);
+        }
+        throw new IllegalArgumentException("Usage: command [! mask | mask]");
     }
 
     public List<String> getPolicy() {

@@ -1,5 +1,8 @@
 # Mail robot access: files or database
 
+For request envelopes, command support and Husky interoperability, see
+[mail robots](mail-robots.md).
+
 AreaFix, FileFix and TIC authorization share one Java API and two interchangeable
 providers. This is independent of whether the UI/RPC listeners run. The node still
 uses its normal mail database, subscription state and durable delivery queues.

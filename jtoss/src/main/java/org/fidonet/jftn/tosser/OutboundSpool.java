@@ -114,6 +114,11 @@ public final class OutboundSpool {
             for (Path metadata : (Iterable<Path>) files.filter(path -> path.toString()
                                                                            .endsWith(".properties"))::iterator) {
                 Properties properties = properties(metadata);
+                String key = properties.getProperty("key", "");
+                if (!key.startsWith("netmail:")
+                        && new RobotDelivery(config).isPaused("AreaFix", link.getAddr())) {
+                    continue;
+                }
                 Path packet = packet(metadata, properties);
                 if (Files.exists(packet) && !Files.exists(receipt(metadata))
                         && (includeHeld || !Boolean.parseBoolean(properties.getProperty("hold")))) {

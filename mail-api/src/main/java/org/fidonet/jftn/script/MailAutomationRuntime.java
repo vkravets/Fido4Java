@@ -9,6 +9,7 @@ import org.fidonet.jftn.share.CommandRegistry;
 import org.fidonet.jftn.share.ScriptHookRegistry;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.NetmailHandler;
+import org.fidonet.jftn.tosser.RobotDelivery;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
@@ -129,6 +130,10 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
 
     public Tosser getTosser() {
         return tosser;
+    }
+
+    public RobotDelivery getRobotDelivery() {
+        return new RobotDelivery((JFtnConfig) getConfig());
     }
 
     public RobotAccess getRobotAccess() {

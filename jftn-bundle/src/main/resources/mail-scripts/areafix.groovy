@@ -1,7 +1,6 @@
 import org.fidonet.echobase.AccessLevel
 import org.fidonet.echobase.EchoHistory
 import org.fidonet.jftn.script.RobotRequest
-import org.fidonet.types.FTNAddr
 
 import java.util.Locale
 
@@ -29,46 +28,66 @@ class AreaFixRobot {
             request.reply(cached)
             return true
         }
-        def lines = message.body.body.split('[\\r\\n]+')
-        if (message.body.body.length() > 64000 || lines.length > 200) {
-            request.reply('Request exceeds 200 lines or 64000 characters.\r')
+        List<String> lines
+        try {
+            lines = RobotRequest.commands(message.body.body)
+        } catch (IllegalArgumentException invalid) {
+            request.reply(invalid.message + '\r')
             return true
         }
         def output = new StringBuilder()
+        boolean rescanFollowing = false
         for (String line : lines) {
-            line = line.trim()
-            if (line == '---' || line.startsWith('--- ')) {
-                break
+            if (line.equalsIgnoreCase('%RESCAN')) {
+                rescanFollowing = true
+                output.append('Rescan enabled for subsequent subscription commands.\r')
+                continue
             }
-            if (!line.isEmpty() && !line.startsWith('\u0001')) {
-                output.append(command(request, peer, line)).append('\r')
+            try {
+                output.append(command(request, peer, line, rescanFollowing)).append('\r')
+            } catch (IllegalArgumentException invalid) {
+                output.append('Invalid command: ').append(invalid.message).append('\r')
             }
         }
         request.reply(output.toString())
         return true
     }
 
-    String command(request, peer, String line) {
+    String command(request, peer, String line, boolean rescanFollowing) {
         def fields = line.toLowerCase(Locale.ROOT).split('\\s+')
         def command = fields[0]
         if (command == '%help') {
-            return '%HELP, %LIST [mask], %QUERY, %LINKED, %UNLINKED, +area, -area, %RESCAN area [count]'
+            return '%HELP, %INFO, %LIST [! mask | mask], %QUERY, %LINKED, %UNLINKED, ' +
+                    '+area [/r[=count]], -area, %RESCAN [area [count]], %PAUSE, %RESUME\r' +
+                    'Rescans default to 100 messages; maximum 10000. Days-based rescans are unsupported.'
+        }
+        if (command == '%info' && fields.length == 1) {
+            return 'AreaFix for ' + peer.addr + '\rDelivery: ' +
+                    (api.robotDelivery.isPaused('AreaFix', peer.addr) ? 'paused' : 'active') +
+                    '\rAvailable local areas: ' + available(request, '*').size()
+        }
+        if (command in ['%pause', '%resume'] && fields.length == 1) {
+            api.robotDelivery.pause('AreaFix', peer.addr, command == '%pause')
+            return command == '%pause' ? 'Echomail delivery paused; subscriptions retained.' :
+                    'Echomail delivery resumed.'
         }
         if (command in ['%list', '%query', '%linked', '%unlinked']) {
-            def mask = fields.length > 1 ? fields[1] : '*'
-            def names = available(request, mask).findAll { area ->
+            RobotRequest.selects(fields, '')
+            def names = available(request, '*').findAll { area ->
                 boolean linked = api.database.canReadEcho(peer, area)
-                command == '%list' || (command == '%unlinked' ? !linked : linked)
+                RobotRequest.selects(fields, area) &&
+                        (command == '%list' || (command == '%unlinked' ? !linked : linked))
             }
             return names.join('\r') ?: 'No matching areas.'
         }
         if (command == '%rescan') {
             return rescan(request, peer, fields)
         }
-        if (command.startsWith('%') || fields.length != 1) {
-            return 'Unsupported command: ' + line
+        if (command.startsWith('%') || command.startsWith('~')) {
+            return 'Unsupported command: ' + command
         }
         boolean remove = command.startsWith('-')
+        Integer count = subscriptionRescan(fields, remove, rescanFollowing)
         String mask = command.startsWith('+') || remove ? command.substring(1) : command
         def areas = available(request, mask)
         if (areas.isEmpty()) {
@@ -81,8 +100,25 @@ class AreaFixRobot {
                 api.tosser.configureEchoSubscription(peer.addr, area,
                         AccessLevel.valueOf(request.policy[1]), EchoHistory.NEW_ONLY)
             }
+            if (count != null && api.database.canReadEcho(peer, area)) {
+                api.tosser.rescanRecentEcho(area, peer.addr, count, request.id)
+            }
         }
         return (remove ? 'Unlinked: ' : 'Linked: ') + areas.join(', ')
+    }
+
+    Integer subscriptionRescan(String[] fields, boolean remove, boolean following) {
+        if (fields.length == 1) {
+            return !remove && following ? 100 : null
+        }
+        if (remove || fields.length != 2 || !(fields[1] ==~ '/r(=[1-9][0-9]{0,4})?')) {
+            throw new IllegalArgumentException('Usage: +area [/r[=count]], -area')
+        }
+        int count = fields[1] == '/r' ? 100 : Integer.parseInt(fields[1].substring(3))
+        if (count > 10000) {
+            throw new IllegalArgumentException('Rescan count exceeds 10000.')
+        }
+        return count
     }
 
     List available(request, String mask) {

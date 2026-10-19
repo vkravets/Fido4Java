@@ -192,4 +192,67 @@ class AreaFixScriptTest {
         assertTrue(reply().contains("Rescan requested"));
         assertEquals(1, new OutboundSpool(config).pending(peer, false).size());
     }
+
+    @Test
+    void huskyQueriesSupportExclusionAndNeverEchoPasswordArguments() throws Exception {
+        base.createArea("test.two");
+        toss(request("1:500/101", "robot-password", "%LIST ! test.one\r", "exclude"));
+        assertTrue(reply().contains("test.two"));
+        assertFalse(reply().contains("test.one"));
+        assertFalse(reply().contains("private"));
+        toss(request("1:500/101", "robot-password", "%PKTPWD sensitive-value\r", "unsupported"));
+        assertTrue(reply().contains("Unsupported command: %pktpwd"));
+        assertFalse(reply().contains("sensitive-value"));
+    }
+
+    @Test
+    void pausePersistsWithoutDeletingSubscriptionsOrPreparedEcho() throws Exception {
+        tosser.configureEchoSubscription(peer.getAddr(),
+                                         "test.one",
+                                         AccessLevel.READ,
+                                         EchoHistory.NEW_ONLY);
+        Message echo = new Message("Writer",
+                                   "All",
+                                   new FTNAddr("1:500/100"),
+                                   peer.getAddr(),
+                                   "Subject",
+                                   "AREA:TEST.ONE\rHello\r",
+                                   new Date());
+        tosser.submitEchomail(echo);
+        tosser.exportEchomail();
+        OutboundSpool spool = new OutboundSpool(config);
+        Path packet = spool.pending(peer, false).get(0);
+        toss(request("1:500/101", "robot-password", "%PAUSE\r%INFO\r", "pause"));
+        assertTrue(reply().contains("paused"));
+        assertTrue(base.canReadEcho(peer, "test.one"));
+        assertTrue(Files.exists(packet));
+        assertTrue(spool.pending(peer, false).isEmpty());
+        scripts.close();
+        scripts = new MailAutomationRuntime(config, base, tosser);
+        assertTrue(spool.pending(peer, false).isEmpty());
+        tosser.exportPendingNetmail();
+        assertFalse(spool.pending(peer, false).isEmpty(),
+                    "Robot netmail replies remain deliverable");
+        assertFalse(spool.pending(peer, false).contains(packet));
+        toss(request("1:500/101", "robot-password", "%RESUME\r", "resume"));
+        assertTrue(spool.pending(peer, false).contains(packet));
+    }
+
+    @Test
+    void huskySubscribeAndRescanSuffixWorksAndMalformedSuffixCannotSubscribe() throws Exception {
+        for (int index = 0; index < 3; index++) {
+            tosser.submitEchomail(new Message("Writer",
+                                              "All",
+                                              new FTNAddr("1:500/100"),
+                                              peer.getAddr(),
+                                              "Subject " + index,
+                                              "AREA:TEST.ONE\rHello\r",
+                                              new Date()));
+        }
+        toss(request("1:500/101", "robot-password", "+test.one /r=10001\r", "invalid-count"));
+        assertFalse(base.canReadEcho(peer, "test.one"));
+        toss(request("1:500/101", "robot-password", "+test.one /r=1\r", "subscribe-rescan"));
+        assertTrue(base.canReadEcho(peer, "test.one"));
+        assertEquals(1, new OutboundSpool(config).pending(peer, false).size());
+    }
 }
