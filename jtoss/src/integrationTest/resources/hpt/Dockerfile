@@ -16,7 +16,7 @@ RUN set -eu; while read -r project revision; do \
     done < /src/revisions.txt
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless binkd=1.1a-115-1 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /data /opt/jftn/lib && chown -R 10001:10001 /data /opt/jftn
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
