@@ -69,9 +69,11 @@ final class NodeNetmailRouting {
             throw new IllegalArgumentException("A complete routing rule is required");
         }
         MailDraftValidator.id(rule.getId());
-        String next = AccountDirectory.address(rule.getNextHop(), false);
-        if (config.getLink(new FTNAddr(next)) == null
-                || config.getLocalAddresses().contains(new FTNAddr(next))) {
+        String next = NetmailRoute.specialTarget(rule.getNextHop())
+                ? rule.getNextHop().toLowerCase(Locale.ROOT)
+                : AccountDirectory.address(rule.getNextHop(), false);
+        if (!NetmailRoute.specialTarget(next) && (config.getLink(new FTNAddr(next)) == null
+                || config.getLocalAddresses().contains(new FTNAddr(next)))) {
             throw new IllegalArgumentException("Next hop must be a configured remote link");
         }
         tosser.getNetmailRouter()

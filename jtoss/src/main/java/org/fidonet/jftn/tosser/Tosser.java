@@ -625,11 +625,21 @@ public class Tosser extends HasEventBus {
         if (netmailStore.isDuplicateNetmail(message, deliveryKey)) {
             return retainDuplicate(message, link);
         }
-        netmailStore.saveNetmail(message, deliveryKey, local ? null : route.getAddr().toString());
+        netmailStore.saveNetmail(message, deliveryKey, acceptedNextHop(decision, local, link));
         if (local) {
             dispatchLocalNetmail(message, link, deliveryKey);
         }
         return true;
+    }
+
+    private String acceptedNextHop(NetmailDecision decision, boolean local, Link source) {
+        if (local) {
+            return null;
+        }
+        if (decision.getReason() == NetmailDecision.Reason.NO_PACK) {
+            return NetmailStore.UNPACKED + ":" + source.getAddr();
+        }
+        return decision.getNextHop().getAddr().toString();
     }
 
     private boolean retainDuplicate(Message message, Link link) throws IOException {
@@ -683,7 +693,12 @@ public class Tosser extends HasEventBus {
             storeSubmittedNetmail(message, deliveryKey, null, waiting);
             return;
         }
-        Link route = netmailRouter.route(message);
+        NetmailDecision decision = netmailRouter.explain(message);
+        if (decision.getReason() == NetmailDecision.Reason.NO_PACK) {
+            storeSubmittedNetmail(message, deliveryKey, NetmailStore.UNPACKED, waiting);
+            return;
+        }
+        Link route = decision.getNextHop();
         if (route == null) {
             throw new IllegalStateException("No route for " + message.getTAddr());
         }
@@ -707,7 +722,16 @@ public class Tosser extends HasEventBus {
         }
         OutboundSpool spool = new OutboundSpool(config);
         netmailStore.visitQueuedNetmail(queued -> {
-            Link route = config.getLink(new FTNAddr(queued.getNextHop()));
+            String nextHop = queued.getNextHop();
+            if (NetmailStore.unpacked(nextHop)) {
+                NetmailDecision decision = unpackedDecision(queued.getMessage(), nextHop);
+                if (decision.getNextHop() == null) {
+                    return;
+                }
+                nextHop = decision.getNextHop().getAddr().toString();
+                netmailStore.routeUnpackedNetmail(queued.getKey(), nextHop);
+            }
+            Link route = config.getLink(new FTNAddr(nextHop));
             if (route == null || route.getMyaddr() == null || route.getMyaddr().isEmpty()) {
                 throw new IOException("Missing configured route " + queued.getNextHop());
             }
@@ -719,6 +743,14 @@ public class Tosser extends HasEventBus {
             copy.getBody().addVia(NetmailVia.format(route.getMyaddr().get(0), Instant.now()));
             spool.enqueue("netmail:" + queued.getKey(), route, copy);
         });
+    }
+
+    private NetmailDecision unpackedDecision(Message message, String nextHop) {
+        if (NetmailStore.UNPACKED.equals(nextHop)) {
+            return netmailRouter.explain(message);
+        }
+        FTNAddr source = new FTNAddr(nextHop.substring(NetmailStore.UNPACKED.length() + 1));
+        return netmailRouter.explainTransit(message, source);
     }
 
     /** Assigns a persistent local MSGID without submitting or releasing the message. */
@@ -758,7 +790,11 @@ public class Tosser extends HasEventBus {
                 throw new IllegalStateException("No configured recipients for local echomail");
             }
         } else if (!localNetmailAddress(message.getTAddr())) {
-            Link route = netmailRouter.route(message);
+            NetmailDecision decision = netmailRouter.explain(message);
+            if (decision.getReason() == NetmailDecision.Reason.NO_PACK) {
+                return result;
+            }
+            Link route = decision.getNextHop();
             if (route == null) {
                 throw new IllegalStateException("No route for " + message.getTAddr());
             }

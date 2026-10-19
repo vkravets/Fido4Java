@@ -97,7 +97,7 @@ public final class NetmailRouter {
 
     private void validate(NetmailRoute rule) {
         new AddressPattern(rule.getPattern());
-        if (rule.isEnabled()) {
+        if (rule.isEnabled() && !NetmailRoute.specialTarget(rule.getNextHop())) {
             requireLink(rule.getNextHop());
         }
     }
@@ -131,9 +131,7 @@ public final class NetmailRouter {
         }
         for (NetmailRoute rule : rules()) {
             if (rule.isEnabled() && new AddressPattern(rule.getPattern()).matches(destination)) {
-                return decision(NetmailDecision.Reason.RULE,
-                                requireLink(rule.getNextHop()),
-                                rule.getId());
+                return matchedRule(rule, destination);
             }
         }
         if (direct != null) {
@@ -158,6 +156,12 @@ public final class NetmailRouter {
         if (!result.isPermitted()) {
             return result;
         }
+        if (hasLocalVia(message)) {
+            return decision(NetmailDecision.Reason.VIA_LOOP, null, result.getRuleId());
+        }
+        if (result.getReason() == NetmailDecision.Reason.NO_PACK) {
+            return result;
+        }
         FTNAddr nextHop = result.getNextHop().getAddr();
         if (nextHop.equals(source)) {
             return decision(NetmailDecision.Reason.RETURN_TO_SOURCE, null, result.getRuleId());
@@ -165,13 +169,43 @@ public final class NetmailRouter {
         if (!permitted(transitTo, nextHop)) {
             return decision(NetmailDecision.Reason.TARGET_DENIED, null, result.getRuleId());
         }
+        return result;
+    }
+
+    private boolean hasLocalVia(Message message) {
         for (String via : message.getBody().getViaLines()) {
             String[] fields = via.trim().split("\\s+");
             if (fields.length > 1 && config.getLocalAddresses().contains(new FTNAddr(fields[1]))) {
-                return decision(NetmailDecision.Reason.VIA_LOOP, null, result.getRuleId());
+                return true;
             }
         }
-        return result;
+        return false;
+    }
+
+    private NetmailDecision matchedRule(NetmailRoute rule, FTNAddr destination) {
+        String target = rule.getNextHop();
+        if (target.equals("nopack")) {
+            return decision(NetmailDecision.Reason.NO_PACK, null, rule.getId());
+        }
+        if (!NetmailRoute.specialTarget(target)) {
+            return decision(NetmailDecision.Reason.RULE, requireLink(target), rule.getId());
+        }
+        int node = destination.getNode();
+        int point = destination.getPnt();
+        if (target.equals("host")) {
+            node = 0;
+            point = 0;
+        } else if (target.equals("boss")) {
+            point = 0;
+        } else if (target.equals("hub")) {
+            node -= node % 100;
+            point = 0;
+        }
+        FTNAddr address = new FTNAddr(destination.getZone(), destination.getNet(), node, point);
+        Link link = config.getLink(address);
+        return decision(link == null
+                ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
+                : NetmailDecision.Reason.RULE, link, rule.getId());
     }
 
     private List<AddressPattern> masks(String key) {

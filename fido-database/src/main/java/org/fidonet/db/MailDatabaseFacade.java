@@ -570,6 +570,26 @@ public class MailDatabaseFacade
     }
 
     @Override
+    public synchronized void routeUnpackedNetmail(String deliveryKey, String nextHop) {
+        FTNAddr address = new FTNAddr(nextHop);
+        if (!address.isValid()) {
+            throw new IllegalArgumentException("Invalid next hop");
+        }
+        try {
+            Dao<NetmailDelivery, String> dao = dbManager.getDao(NetmailDelivery.class);
+            NetmailDelivery delivery = dao.queryForId(deliveryKey);
+            if (delivery == null || !NetmailStore.unpacked(delivery.getNextHop())
+                    || !"QUEUED".equals(delivery.getState())) {
+                throw new IllegalStateException("Only queued nopack mail can acquire a new next hop");
+            }
+            delivery.setNextHop(address.toString());
+            dao.update(delivery);
+        } catch (SQLException failure) {
+            throw new IllegalStateException("Unable to route unpacked netmail", failure);
+        }
+    }
+
+    @Override
     public synchronized void markNetmailSent(String deliveryKey) {
         try {
             dbManager.inTransaction(() -> {

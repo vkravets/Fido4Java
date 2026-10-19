@@ -5,7 +5,7 @@ import org.fidonet.types.Link;
 /** A side-effect-free explanation; LOCAL succeeds without a next-hop connection. */
 public final class NetmailDecision {
     public enum Reason {
-        LOCAL, RULE, DIRECT, DEFAULT, NO_ROUTE, DIRECT_UNAVAILABLE, INVALID_DESTINATION, TRANSIT_DISABLED, SOURCE_DENIED, TARGET_DENIED, RETURN_TO_SOURCE, VIA_LOOP
+        LOCAL, RULE, DIRECT, DEFAULT, NO_ROUTE, NO_PACK, DIRECT_UNAVAILABLE, INVALID_DESTINATION, TRANSIT_DISABLED, SOURCE_DENIED, TARGET_DENIED, RETURN_TO_SOURCE, VIA_LOOP
     }
 
     private final Reason reason;
@@ -28,6 +28,6 @@ public final class NetmailDecision {
         return ruleId;
     }
     public boolean isPermitted() {
-        return reason == Reason.LOCAL || nextHop != null;
+        return reason == Reason.LOCAL || reason == Reason.NO_PACK || nextHop != null;
     }
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
+import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.fts.FtsPkt;
 import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
@@ -31,6 +32,10 @@ public class NetmailRoutingTest {
     public File temporary;
 
     JFtnConfig config(boolean transit) throws Exception {
+        return config(transit, "");
+    }
+
+    private JFtnConfig config(boolean transit, String extra) throws Exception {
         String root = Files.createTempDirectory(temporary.toPath(), "test-")
                            .toFile()
                            .getAbsolutePath()
@@ -48,7 +53,8 @@ public class NetmailRoutingTest {
                       + transit
                       + "\n"
                       + "Link=2:500/101,2:500/102,secret,localhost\n"
-                      + "Link=2:500/103,2:500/102,secret,localhost\nDefaultRoute=2:500/103\n";
+                      + "Link=2:500/103,2:500/102,secret,localhost\nDefaultRoute=2:500/103\n"
+                      + extra;
         Files.createDirectories(Path.of(root, "inbound"));
         JFtnConfig config = new JFtnConfig();
         config.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
@@ -172,6 +178,34 @@ public class NetmailRoutingTest {
             } finally {
                 base.close();
             }
+        }
+    }
+
+    @Test
+    void nopackTransitRetainsItsSourceChecksWhenAnOperatorReleasesTheRoute() throws Exception {
+        JFtnConfig config = config(true, "NetmailRoutes=database\n");
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:nopackTransit"
+                                                                        + System.nanoTime()));
+        assertTrue(base.open());
+        try {
+            Tosser tosser = new Tosser(config, base);
+            tosser.getNetmailRouter().saveRule(new NetmailRoute("hold", 0, "*", "nopack", true));
+            Files.write(Path.of(config.getInbound(), "transit.pkt"),
+                        PacketWriter.write(new FTNAddr("2:500/101"),
+                                           new FTNAddr("2:500/102"),
+                                           "secret",
+                                           Collections.singletonList(message("1:100/1",
+                                                                             "Transit held\r"))));
+            tosser.runFast(config.getInbound());
+            assertEquals("nopack:2:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
+            tosser.getNetmailRouter().saveRule(new NetmailRoute("hold", 0, "*", "2:500/101", true));
+            tosser.exportPendingNetmail();
+            assertEquals("nopack:2:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
+            tosser.getNetmailRouter().saveRule(new NetmailRoute("hold", 0, "*", "2:500/103", true));
+            tosser.exportPendingNetmail();
+            assertEquals("2:500/103.0", base.getQueuedNetmail().get(0).getNextHop());
+        } finally {
+            base.close();
         }
     }
 }

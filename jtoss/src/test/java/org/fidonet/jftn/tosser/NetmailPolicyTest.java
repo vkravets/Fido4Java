@@ -108,6 +108,50 @@ public class NetmailPolicyTest {
     }
 
     @Test
+    void resolvesHostBossHubAndNorouteTargetsLikeHpt() throws Exception {
+        String links = "Link=1:500/0,1:500/102,secret,localhost\n"
+                       + "Link=1:500/300,1:500/102,secret,localhost\n";
+        NetmailRouter host = new NetmailRouter(config(links + "Route=1:500/*,host\n"));
+        assertEquals(new FTNAddr("1:500/0"), host.route(message("1:500/999.4", "")).getAddr());
+        NetmailRouter boss = new NetmailRouter(config("Route=1:500/*,boss\n"));
+        assertEquals(new FTNAddr("1:500/101"), boss.route(message("1:500/101.4", "")).getAddr());
+        NetmailRouter hub = new NetmailRouter(config(links + "Route=1:500/*,hub\n"));
+        assertEquals(new FTNAddr("1:500/300"), hub.route(message("1:500/399.4", "")).getAddr());
+        NetmailRouter direct = new NetmailRouter(config("Route=1:500/*,noroute\n"));
+        assertEquals(new FTNAddr("1:500/103"), direct.route(message("1:500/103", "")).getAddr());
+    }
+
+    @Test
+    void nopackSurvivesRestartAndFreezesNextHopOnlyWhenReleasedByRouting() throws Exception {
+        JFtnConfig config = config("NetmailRoutes=database\n");
+        MailDatabaseFacade base = new MailDatabaseFacade(new OrmManager("jdbc:h2:mem:nopack"
+                                                                        + System.nanoTime()));
+        assertTrue(base.open());
+        try {
+            Tosser tosser = new Tosser(config, base);
+            tosser.getNetmailRouter()
+                  .saveRule(new NetmailRoute("hold", 0, "1:500/*", "nopack", true));
+            tosser.submitNetmail(message("1:500/999", ""), "unpacked");
+            tosser = new Tosser(config, base);
+            tosser.exportPendingNetmail();
+            assertEquals("nopack", base.getQueuedNetmail().get(0).getNextHop());
+            tosser.getNetmailRouter()
+                  .saveRule(new NetmailRoute("hold", 0, "1:500/*", "1:500/101", true));
+            tosser.exportPendingNetmail();
+            assertEquals("1:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
+            tosser.getNetmailRouter()
+                  .saveRule(new NetmailRoute("hold", 0, "1:500/*", "1:500/103", true));
+            tosser.exportPendingNetmail();
+            assertEquals("1:500/101.0", base.getQueuedNetmail().get(0).getNextHop());
+            OutboundSpool spool = new OutboundSpool(config);
+            assertEquals(1, spool.pending(config.getLink(new FTNAddr("1:500/101")), true).size());
+            assertEquals(0, spool.pending(config.getLink(new FTNAddr("1:500/103")), true).size());
+        } finally {
+            base.close();
+        }
+    }
+
+    @Test
     public void rejectsInvalidRulesBeforeProcessingAnyMail() throws Exception {
         for (String settings : new String[]{"Route=bad,1:500/101\n", "Route=1:500/*,1:500/999\n",
                 "Route=1:500/*,\n", "DefaultRoute=1:500/999\n", "TransitFrom=bad\n"}) {

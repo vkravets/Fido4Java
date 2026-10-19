@@ -46,4 +46,8 @@ public class NetmailDelivery {
     public String getNextHop() {
         return nextHop;
     }
+
+    public void setNextHop(String nextHop) {
+        this.nextHop = nextHop;
+    }
 }

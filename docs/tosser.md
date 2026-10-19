@@ -89,7 +89,9 @@ AllowTransit=true
 
 The first matching `Route` wins. Otherwise an explicitly configured final
 destination is used, then `DefaultRoute`. Every next hop must be a configured
-link. `DIR`, `CRA` and the Crash attribute require a configured direct link.
+link. `DIR`, `CRA`, `HLD`, `IMM` and the Crash/Hold attributes bypass ordinary
+route rules and require a configured direct link. Immediate outranks Direct;
+Crash+Hold is Direct, while Hold alone is held for an incoming connection.
 Transit requires `AllowTransit=true`; returning a message to its input link or
 through a local address already present in its Via trail is refused.
 Missing/forbidden routes retain the packet in quarantine rather than discard it.
@@ -310,6 +312,16 @@ this format. Opening an existing database does not migrate old tables, alter
 indexes or columns, or rebuild delivery records and netmail search keys.
 Databases from older schemas must be converted separately before use.
 
+Husky route targets can be used in the existing `Route=pattern,target` file
+syntax or the RPC rule's `nextHop` field: `host` selects `Z:N/0`, `boss` removes
+the point, `hub` selects the start of the destination's 100-node block, and
+`noroute` selects the final destination. These derived targets currently require
+a configured remote link. `nopack` stores mail without producing a PKT. It is
+re-evaluated when processing runs after the rule changes; the first real next hop
+is then persisted. Transit mail retains its transport source so release cannot
+bypass source/target authorization or return-to-sender checks. Once a real next
+hop is assigned, later rule edits do not reroute the prepared delivery.
+
 Outgoing Type-2+ packets contain next-hop envelope addresses and independent
 final message addresses. Netmail exports INTL/FMPT/TOPT and appends a UTC Via
 line. Echomail exports independent subscriber copies, preserves existing Origin
@@ -317,6 +329,16 @@ and tear lines, updates SEEN-BY/PATH, and omits point addresses from those 2D
 lists. Cross-zone copies omit routing entries from other zones rather than
 reinterpret their net/node numbers in the receiving zone. Local Origin lines
 are generated only for locally submitted messages without an Origin.
+
+Packet serialization clears only Husky's local/transit/kill-after-send bits from
+the wire attributes and leaves the SQL source unchanged. Packet password checking
+is case-insensitive like HPT; binkp/UI passwords keep their own authentication
+rules. Received mail clears the sender's Crash/Hold/Sent/Local delivery state
+before route selection. Local netmail is private and unread; transit is marked
+as forwarded. This prevents a received Hold/Crash bit from overriding our routes.
+
+Reference: [HPT scan.c](https://github.com/huskyproject/hpt/blob/c2a91d64cee0e6cd357376d30c9285ee3f9c624f/src/scan.c)
+and [Husky createXMSG](https://github.com/huskyproject/fidoconf/blob/62c963a6f078905660f2c0b3a6929383823190c5/src/afixcmn.c).
 
 An outbound packet and its metadata are persisted before queue publication.
 New netmail, echomail and explicit rescan packets use HPT-style `hhhhhhhh.pkt`

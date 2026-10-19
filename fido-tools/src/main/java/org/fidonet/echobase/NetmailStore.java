@@ -8,6 +8,11 @@ import java.util.List;
 
 /** Durable netmail delivery, separate from conference message areas. */
 public interface NetmailStore {
+    String UNPACKED = "nopack";
+
+    static boolean unpacked(String nextHop) {
+        return UNPACKED.equals(nextHop) || nextHop != null && nextHop.startsWith(UNPACKED + ":");
+    }
     void saveNetmail(Message message, String deliveryKey, String nextHop);
 
     void stageNetmail(Message message, String deliveryKey, String nextHop);
@@ -41,4 +46,7 @@ public interface NetmailStore {
     }
 
     void markNetmailSent(String deliveryKey);
+
+    /** Freezes the first real next hop when a nopack rule stops matching. */
+    void routeUnpackedNetmail(String deliveryKey, String nextHop);
 }
