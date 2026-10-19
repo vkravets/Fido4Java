@@ -18,9 +18,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /** Primary JAM mailboxes with a separate durable delivery journal, never a SQL mirror. */
 public final class JamMailStore extends FileMailStore implements MailProcessingExtension {
@@ -28,6 +32,8 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     private final Path editorRoot;
     private final FTNAddr aka;
     private final Charset charset;
+    private final Map<String, JamArea> bindings = new LinkedHashMap<>();
+    private final Map<String, FTNAddr> bindingAkas = new LinkedHashMap<>();
     private boolean scanning;
 
     public JamMailStore(JFtnConfig config) throws IOException {
@@ -44,6 +50,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             editorRoot = Path.of(config.getValue("EditorConfigPath", "editor"))
                              .toAbsolutePath()
                              .normalize();
+            configureBindings();
             recoverMailboxes();
             generateEditorFiles();
         } catch (IOException | RuntimeException failure) {
@@ -53,18 +60,119 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     }
 
     public JamArea mailbox(String area) {
+        JamArea configured = bindings.get(area == null ? "netmail" : "echo:" + areaName(area));
+        if (configured != null) {
+            return configured;
+        }
         return new JamArea(jamRoot.resolve(area == null ? "netmail" : "echo-" + areaName(area)),
                            area,
                            aka,
                            charset);
     }
 
+    private void configureBindings() throws IOException {
+        List<String> echoes = config.getValuesAsList("JamEcho");
+        if (echoes != null) {
+            for (String value : echoes) {
+                String[] fields = value.split(",", -1);
+                if (fields.length < 2 || fields.length > 3) {
+                    throw new IllegalArgumentException("Expected JamEcho area,path[,AKA]");
+                }
+                String area = areaName(fields[0].trim());
+                bind(area, fields[1].trim(), fields.length == 3 ? fields[2].trim() : null);
+                createArea(area);
+            }
+        }
+        String netmail = config.getValue("JamNetmail");
+        if (netmail != null) {
+            String[] fields = netmail.split(",", -1);
+            if (fields.length < 1 || fields.length > 2) {
+                throw new IllegalArgumentException("Expected JamNetmail path[,AKA]");
+            }
+            bind(null, fields[0].trim(), fields.length == 2 ? fields[1].trim() : null);
+        }
+        Set<Path> paths = new HashSet<>();
+        Properties layout = new Properties();
+        layout.setProperty("root", jamRoot.toString());
+        layout.setProperty("charset", charset.name());
+        layout.setProperty("aka", aka.toString());
+        for (Map.Entry<String, JamArea> entry : bindings.entrySet()) {
+            if (!paths.add(entry.getValue().getPath())) {
+                throw new IOException("Different JAM bindings cannot share a base path");
+            }
+            layout.setProperty(entry.getKey(),
+                               entry.getValue().getPath() + "|" + bindingAkas.get(entry.getKey()));
+        }
+        Path path = root.resolve("jam-layout.properties");
+        Properties previous = FileRecords.read(path);
+        previous.remove("format");
+        if (!previous.isEmpty()
+                && previous.stringPropertyNames()
+                           .stream()
+                           .anyMatch(key -> !previous.getProperty(key)
+                                                     .equals(layout.getProperty(key)))) {
+            throw new IOException("JAM layout changed; migrate existing mail before changing paths or encoding");
+        }
+        paths.clear();
+        List<String> names = new ArrayList<>(getAreas());
+        names.add(null);
+        for (String name : names) {
+            if (!paths.add(mailbox(name).getPath())) {
+                throw new IOException("Different JAM areas cannot share a base path");
+            }
+        }
+        FileRecords.write(path, layout);
+    }
+
+    private void bind(String area, String path, String address) throws IOException {
+        FTNAddr selected = address == null ? aka : new FTNAddr(address);
+        if (path.isBlank() || !config.getLocalAddresses().contains(selected)) {
+            throw new IllegalArgumentException("JAM binding requires a path and a local AKA");
+        }
+        String key = area == null ? "netmail" : "echo:" + area;
+        Path selectedPath = Path.of(path).toAbsolutePath().normalize();
+        Path original = jamRoot.resolve(area == null ? "netmail" : "echo-" + area);
+        if (!selectedPath.equals(original) && Files.exists(Path.of(original + ".jhr"))) {
+            String recorded = FileRecords.read(root.resolve("jam-layout.properties"))
+                                         .getProperty(key);
+            if (!(selectedPath + "|" + selected).equals(recorded)) {
+                throw new IOException("Existing JAM area requires migration before changing its path: "
+                        + area);
+            }
+        }
+        bindingAkas.put(key, selected);
+        if (bindings.putIfAbsent(key, new JamArea(selectedPath, area, selected, charset)) != null) {
+            throw new IllegalArgumentException("Duplicate JAM area binding");
+        }
+    }
+
+    private void ensureArea(JamArea area) throws IOException {
+        Files.createDirectories(area.getPath().getParent());
+        area.ensureExists();
+    }
+
     private void recoverMailboxes() throws IOException {
+        for (Path path : FileRecords.list(root.resolve("jam-publications"))) {
+            String base = FileRecords.read(path).getProperty("path");
+            if (base == null) {
+                throw new IOException("Invalid JAM publication receipt");
+            }
+            for (String suffix : List.of(".jhr", ".jdt", ".jdx")) {
+                if (!Files.isRegularFile(Path.of(base + suffix))) {
+                    throw new IOException("Primary JAM files are missing; restore the mailbox backup: "
+                            + base);
+                }
+            }
+        }
         for (String kind : List.of("echo", "netmail")) {
             for (Path path : FileRecords.list(root.resolve(kind))) {
                 Properties record = FileRecords.read(path);
                 if (record.containsKey("body")) {
-                    appendIfAbsent(MailRecord.get(record));
+                    Message message = MailRecord.get(record);
+                    appendIfAbsent(message);
+                    if (message.isEchomail()) {
+                        compactEcho(message);
+                    }
                 }
             }
         }
@@ -74,6 +182,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     public synchronized void addMessage(Message message, String area) {
         super.addMessage(message, area);
         mirrorAccepted(message);
+        compactEcho(message);
     }
 
     @Override
@@ -99,7 +208,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             return;
         }
         JamArea area = mailbox(message.isEchomail() ? message.getArea() : null);
-        area.ensureExists();
+        ensureArea(area);
         area.locked(access -> {
             boolean[] found = {false};
             access.forEach(entry -> found[0] |= MailIdentity.of(entry.getMessage())
@@ -111,7 +220,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                         : attributes & ~JamArea.LOCAL;
                 access.append(message, attributes);
             }
-            FileRecords.write(publication, new Properties());
+            recordPublication(message);
             return null;
         });
     }
@@ -123,8 +232,22 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                                             + MailIdentity.of(message)) + ".properties");
     }
 
+    private void recordPublication(Message message) {
+        Properties record = new Properties();
+        record.setProperty("path",
+                           mailbox(message.isEchomail() ? message.getArea() : null).getPath()
+                                                                                   .toString());
+        FileRecords.write(publication(message), record);
+    }
+
+    @Override
+    protected boolean needsJamPublication() {
+        return true;
+    }
+
     @Override
     public synchronized void beforeExport(Tosser tosser) throws IOException {
+        requireOpen();
         scan(mailbox(null), tosser);
         for (String area : getAreas()) {
             scan(mailbox(area), tosser);
@@ -138,7 +261,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     }
 
     private void scan(JamArea area, Tosser tosser) throws IOException {
-        area.ensureExists();
+        ensureArea(area);
         area.locked(access -> {
             access.forEach(attributes -> (attributes & (JamArea.LOCAL | JamArea.SENT
                     | JamArea.TYPE_LOCAL | JamArea.LOCKED | JamArea.DELETED)) == JamArea.LOCAL,
@@ -162,7 +285,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             message = access.get(entry.getNumber()).getMessage();
         }
         String identity = MailIdentity.of(message);
-        FileRecords.write(publication(message), new Properties());
+        recordPublication(message);
         Path path = root.resolve("submissions").resolve(FileRecords.key(identity) + ".properties");
         Properties receipt = FileRecords.read(path);
         String fingerprint = FileRecords.key(message.getFrom()
@@ -206,7 +329,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     public Iterator<Message> getMessages(String area) {
         try {
             List<Message> result = new ArrayList<>();
-            mailbox(area).ensureExists();
+            ensureArea(mailbox(area));
             mailbox(area).visitReadOnly(entry -> result.add(entry.getMessage()));
             return result.iterator();
         } catch (IOException failure) {
@@ -263,7 +386,9 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         Files.createDirectories(editorRoot);
         StringBuilder golded = new StringBuilder("; Generated by JFtn. Edit golded.cfg instead.\n");
         StringBuilder husky = new StringBuilder("# Generated editor area catalog; not a complete HPT configuration.\n");
-        husky.append("Address ").append(aka).append('\n');
+        for (FTNAddr local : config.getLocalAddresses()) {
+            husky.append("Address ").append(local).append('\n');
+        }
         editorArea(golded, husky, null);
         for (String area : getAreas()) {
             editorArea(golded, husky, area);
@@ -277,7 +402,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         Path example = editorRoot.resolve("golded.cfg.example");
         if (!Files.exists(example)) {
             String text = "; Copy to golded.cfg and customize. Generated areas use AREADEF syntax.\n"
-                    + "Address " + aka + "\nInclude "
+                    + "Username " + config.getValue("SysOp") + "\nAddress " + aka + "\nInclude "
                     + quoted(editorRoot.resolve("areas.lst").toString()) + "\n";
             AtomicFiles.publish(example,
                                 output -> output.write(text.getBytes(StandardCharsets.UTF_8)));
@@ -287,9 +412,10 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     private void editorArea(StringBuilder golded, StringBuilder husky, String area)
             throws IOException {
         JamArea mailbox = mailbox(area);
-        mailbox.ensureExists();
+        ensureArea(mailbox);
         String name = area == null ? "NETMAIL" : area;
         String path = quoted(mailbox.getPath().toString());
+        FTNAddr selected = bindingAkas.getOrDefault(area == null ? "netmail" : "echo:" + area, aka);
         golded.append("AREADEF ")
               .append(name)
               .append(" \"")
@@ -299,14 +425,14 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
               .append(" JAM ")
               .append(path)
               .append(' ')
-              .append(aka)
+              .append(selected)
               .append(area == null ? " (Loc Pvt)\n" : " (Loc)\n");
         husky.append(area == null ? "NetmailArea " : "EchoArea ")
              .append(name)
              .append(' ')
              .append(path)
              .append(" -b Jam -a ")
-             .append(aka)
+             .append(selected)
              .append('\n');
     }
 

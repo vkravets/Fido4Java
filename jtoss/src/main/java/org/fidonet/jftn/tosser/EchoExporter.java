@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** Fan-out produces independent copies and never alters the stored original. */
-final class EchoExporter {
+public final class EchoExporter {
     private final JFtnConfig config;
     private final IBase base;
     private final OutboundSpool spool;
@@ -34,6 +34,12 @@ final class EchoExporter {
         for (String area : base.getAreas()) {
             exportArea(area);
         }
+    }
+
+    /** File stores freeze fan-out in the durable spool before accepting the incoming message. */
+    public static void prepare(JFtnConfig config, IBase base, Message message) throws IOException {
+        EchoExporter exporter = new EchoExporter(config, base, new OutboundSpool(config));
+        exporter.export(message, exporter.readers(message.getArea()));
     }
 
     private void exportArea(String area) throws IOException {

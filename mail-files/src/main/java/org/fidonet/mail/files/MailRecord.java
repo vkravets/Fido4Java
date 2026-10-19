@@ -46,4 +46,15 @@ final class MailRecord {
             throw new IllegalStateException("Invalid persistent mail record", failure);
         }
     }
+
+    static String fingerprint(Message message) {
+        Properties values = new Properties();
+        put(values, message);
+        StringBuilder text = new StringBuilder();
+        values.stringPropertyNames().stream().sorted().forEach(key -> {
+            String value = values.getProperty(key);
+            text.append(key).append(':').append(value.length()).append(':').append(value);
+        });
+        return FileRecords.key(text.toString());
+    }
 }

@@ -2,6 +2,7 @@ package org.fidonet.mail.files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +27,10 @@ class JamMailStoreTest {
     Path temporary;
 
     private JFtnConfig config() throws Exception {
+        return config("");
+    }
+
+    private JFtnConfig config(String options) throws Exception {
         JFtnConfig result = new JFtnConfig();
         String text = "SysOp=Test\nRuntimeProfile=legacy\nLink=1:500/101,1:500/100,-\n"
                       + "Inbound="
@@ -38,7 +44,7 @@ class JamMailStoreTest {
                       + "\nEditorConfigPath="
                       + temporary.resolve("editor")
                       + "\n";
-        result.load(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
+        result.load(new ByteArrayInputStream((text + options).getBytes(StandardCharsets.UTF_8)));
         return result;
     }
 
@@ -117,5 +123,57 @@ class JamMailStoreTest {
         assertTrue(Files.readString(temporary.resolve("editor/fidoconfig.areas"))
                         .contains(" -b Jam -a 1:500/100"));
         reopened.close();
+        assertThrows(IOException.class,
+                     () -> new JamMailStore(config("JamEcho=test,"
+                                                   + temporary.resolve("moved/test")
+                                                   + ",1:500/100\n")));
     }
+    @Test
+    void honoredCustomBindingsAndRejectedMissingPrimaryFiles() throws Exception {
+        Path custom = temporary.resolve("custom-jam/test");
+        JFtnConfig config = config("JamEcho=test," + custom + ",1:500/100\n");
+        JamMailStore store = new JamMailStore(config);
+        store.addMessage(outgoing(true, true), "test");
+        assertEquals(custom.toAbsolutePath(), store.mailbox("test").getPath());
+        store.close();
+        Path text = Path.of(custom + ".jdt");
+        byte[] backup = Files.readAllBytes(text);
+        Files.delete(text);
+        assertThrows(IOException.class, () -> new JamMailStore(config));
+        Files.write(text, backup);
+        JamMailStore reopened = new JamMailStore(config);
+        assertEquals(1, reopened.getMessageSize("test"));
+        reopened.close();
+        assertThrows(IOException.class,
+                     () -> new JamMailStore(config("JamRoot="
+                                                   + temporary.resolve("different")
+                                                   + "\n")));
+    }
+
+    @Test
+    void leftSntClearUntilRoutingSucceededAndRecoveredPreparedSubmission() throws Exception {
+        JFtnConfig config = config();
+        JamMailStore store = new JamMailStore(config);
+        Message message = new Message("Local",
+                                      "Remote",
+                                      new FTNAddr("1:500/100"),
+                                      new FTNAddr("1:500/999"),
+                                      "Deferred",
+                                      "\1CHRS: UTF-8 4\rNeeds route\r",
+                                      new Date(1700000000000L));
+        store.mailbox(null).append(message, JamArea.LOCAL | JamArea.NET);
+        assertThrows(IllegalStateException.class,
+                     () -> store.beforeExport(new Tosser(config, store)));
+        assertTrue(store.getQueuedNetmail().isEmpty());
+        assertFalse((store.mailbox(null).read().get(0).getAttributes() & JamArea.SENT) != 0);
+        String id = store.mailbox(null).read().get(0).getMessage().getMsgId();
+        store.close();
+        JFtnConfig routed = config("DefaultRoute=1:500/101\n");
+        JamMailStore reopened = new JamMailStore(routed);
+        reopened.beforeExport(new Tosser(routed, reopened));
+        assertEquals(id, reopened.getQueuedNetmail().get(0).getMessage().getMsgId());
+        assertTrue((reopened.mailbox(null).read().get(0).getAttributes() & JamArea.SENT) != 0);
+        reopened.close();
+    }
+
 }

@@ -1,6 +1,7 @@
 package org.fidonet.mail.files;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotRules;
 import org.fidonet.echobase.AccessLevel;
@@ -9,6 +10,7 @@ import org.fidonet.echobase.MailStorage;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
+import org.fidonet.jftn.tosser.EchoExporter;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.MailIdentity;
@@ -17,6 +19,7 @@ import org.fidonet.types.Link;
 import org.fidonet.types.Message;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,6 +36,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
     protected final Path root;
     private final Properties catalog;
     private final FileStateLock ownership;
+    private volatile boolean closed;
 
     public FileMailStore(JFtnConfig config) {
         this.config = config;
@@ -41,7 +45,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         ownership = new FileStateLock(root);
         try {
             catalog = FileRecords.read(root.resolve("catalog.properties"));
-            String owner = config.getValue("RuntimeProfile", "transit").toLowerCase(Locale.ROOT);
+            String owner = RuntimeProfile.read(config).name().toLowerCase(Locale.ROOT);
             String previous = catalog.getProperty("profile", owner);
             if (!previous.equals(owner)) {
                 throw new IllegalStateException("MailStatePath belongs to another profile; migrate explicitly before switching");
@@ -56,7 +60,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public boolean open() {
-        return true;
+        return !closed;
     }
 
     protected Path echoRecord(Message message) {
@@ -68,7 +72,33 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
     }
 
     private Path netmailRecord(String key) {
-        return root.resolve("netmail").resolve(FileRecords.key(key) + ".properties");
+        Properties index = FileRecords.read(deliveryIndex(key));
+        String name = index.getProperty("record", "");
+        if (!name.matches("[0-9a-f]{64}\\.properties")) {
+            throw new IllegalArgumentException("Unknown or invalid delivery key");
+        }
+        return root.resolve("netmail").resolve(name);
+    }
+
+    private Path deliveryIndex(String key) {
+        return root.resolve("delivery-keys").resolve(FileRecords.key(key) + ".properties");
+    }
+
+    private Path pendingIndex(String key) {
+        return root.resolve("pending-netmail").resolve(FileRecords.key(key) + ".properties");
+    }
+
+    protected void compactEcho(Message message) {
+        Path path = echoRecord(message);
+        Properties record = FileRecords.read(path);
+        if (record.containsKey("body")) {
+            record.remove("body");
+            FileRecords.write(path, record);
+        }
+    }
+
+    protected boolean needsJamPublication() {
+        return false;
     }
 
     @Override
@@ -108,7 +138,19 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
     }
 
     private void saveCatalog() {
-        FileRecords.write(root.resolve("catalog.properties"), catalog);
+        requireOpen();
+        try {
+            FileRecords.write(root.resolve("catalog.properties"), catalog);
+        } catch (RuntimeException failure) {
+            close();
+            throw failure;
+        }
+    }
+
+    protected final void requireOpen() {
+        if (closed) {
+            throw new IllegalStateException("Mail store is closed");
+        }
     }
 
     @Override
@@ -157,11 +199,17 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public synchronized void addMessage(Message message, String area) {
+        requireOpen();
         if (!isAreaExists(area) || !area.equalsIgnoreCase(message.getArea())) {
             throw new IllegalArgumentException("Message requires its declared echo area");
         }
         Path path = echoRecord(message);
         if (!Files.exists(path)) {
+            try {
+                EchoExporter.prepare(config, this, message);
+            } catch (IOException failure) {
+                throw new UncheckedIOException(failure);
+            }
             Properties record = new Properties();
             MailRecord.put(record, message);
             record.setProperty("identity", MailIdentity.of(message));
@@ -172,6 +220,12 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
                                          .map(link -> "outbound:" + link.getAddr())
                                          .collect(Collectors.toList());
             record.setProperty("consumers", String.join(",", readers));
+            for (String consumer : readers) {
+                record.setProperty("done." + consumer, "true");
+            }
+            if (!needsJamPublication()) {
+                record.remove("body");
+            }
             FileRecords.write(path, record);
         }
     }
@@ -182,35 +236,14 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
     }
 
     @Override
-    public synchronized void visitNewEcho(String area,
-                                          String consumer,
-                                          MessageIteration.Handler handler)
-            throws IOException {
-        for (Path path : FileRecords.list(root.resolve("echo"))) {
-            Properties record = FileRecords.read(path);
-            if (!area.equals(record.getProperty("area")) || !record.containsKey("body")
-                    || !List.of(record.getProperty("consumers").split(",")).contains(consumer)
-                    || record.containsKey("done." + consumer)) {
-                continue;
-            }
-            handler.accept(MailRecord.get(record));
-            record.setProperty("done." + consumer, "true");
-            if (discardEchoPayload() && List.of(record.getProperty("consumers").split(","))
-                                            .stream()
-                                            .allMatch(item -> record.containsKey("done." + item))) {
-                record.remove("body");
-            }
-            FileRecords.write(path, record);
-        }
-    }
-
-    protected boolean discardEchoPayload() {
-        return true;
+    public void visitNewEcho(String area, String consumer, MessageIteration.Handler handler) {
+        requireOpen();
+        // Fan-out was durably prepared before acceptance. Do not rescan duplicate history.
     }
 
     @Override
     public synchronized void saveNetmail(Message message, String key, String nextHop) {
-        saveNetmail(message, key, nextHop, false);
+        storeNetmail(message, key, nextHop);
     }
 
     @Override
@@ -218,19 +251,40 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         throw new UnsupportedOperationException("SQL-free submissions use the durable queue directly");
     }
 
-    private void saveNetmail(Message message, String key, String nextHop, boolean waiting) {
-        Path path = netmailRecord(key);
-        if (Files.exists(path)) {
-            Properties existing = FileRecords.read(path);
-            if (!existing.getProperty("identity").equals(MailIdentity.of(message))) {
+    private void storeNetmail(Message message, String key, String nextHop) {
+        requireOpen();
+        String identity = MailIdentity.of(message);
+        String name = FileRecords.key(identity) + ".properties";
+        Path path = root.resolve("netmail").resolve(name);
+        String fingerprint = MailRecord.fingerprint(message);
+        Properties existing = FileRecords.read(path);
+        if (!existing.isEmpty()) {
+            if (!existing.getProperty("key").equals(key)) {
+                return;
+            }
+            if (!existing.getProperty("fingerprint").equals(fingerprint)) {
                 throw new IllegalStateException("Delivery identity was reused for different mail");
             }
             return;
         }
+        Properties index = FileRecords.read(deliveryIndex(key));
+        if (!index.isEmpty() && (!name.equals(index.getProperty("record"))
+                || !fingerprint.equals(index.getProperty("fingerprint")))) {
+            throw new IllegalStateException("Delivery key was reused for different mail");
+        }
+        index.setProperty("record", name);
+        index.setProperty("fingerprint", fingerprint);
+        index.setProperty("key", key);
+        // Publish lookup/active pointers before the primary receipt. A failed publication is retryable.
+        FileRecords.write(deliveryIndex(key), index);
+        if (nextHop != null) {
+            FileRecords.write(pendingIndex(key), index);
+        }
         Properties record = new Properties();
         MailRecord.put(record, message);
         record.setProperty("key", key);
-        record.setProperty("identity", MailIdentity.of(message));
+        record.setProperty("identity", identity);
+        record.setProperty("fingerprint", fingerprint);
         record.setProperty("nextHop", nextHop == null ? "" : nextHop);
         record.setProperty("state", nextHop == null ? "LOCAL" : "QUEUED");
         FileRecords.write(path, record);
@@ -238,17 +292,16 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public synchronized boolean isDuplicateNetmail(Message message, String key) {
-        for (Path path : FileRecords.list(root.resolve("netmail"))) {
-            Properties record = FileRecords.read(path);
-            if (record.getProperty("identity").equals(MailIdentity.of(message))) {
-                return !record.getProperty("key").equals(key);
-            }
-        }
-        return false;
+        requireOpen();
+        Properties record = FileRecords.read(root.resolve("netmail")
+                                                 .resolve(FileRecords.key(MailIdentity.of(message))
+                                                          + ".properties"));
+        return !record.isEmpty() && !record.getProperty("key").equals(key);
     }
 
     @Override
     public List<Message> getLocalNetmail(FTNAddr address) {
+        requireOpen();
         List<Message> result = new ArrayList<>();
         for (Path path : FileRecords.list(root.resolve("netmail"))) {
             Properties record = FileRecords.read(path);
@@ -263,25 +316,29 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
     @Override
     public List<QueuedNetmail> getQueuedNetmail() {
         List<QueuedNetmail> result = new ArrayList<>();
-        for (Path path : FileRecords.list(root.resolve("netmail"))) {
-            Properties record = FileRecords.read(path);
-            if ("QUEUED".equals(record.getProperty("state"))) {
-                result.add(new QueuedNetmail(record.getProperty("key"),
-                                             record.getProperty("nextHop"),
-                                             MailRecord.get(record)));
-            }
+        try {
+            visitQueuedNetmail(result::add);
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
         }
         return result;
     }
 
     @Override
     public void visitQueuedNetmail(NetmailStore.QueuedHandler visitor) throws IOException {
-        for (Path path : FileRecords.list(root.resolve("netmail"))) {
-            Properties record = FileRecords.read(path);
+        requireOpen();
+        for (Path pointer : FileRecords.list(root.resolve("pending-netmail"))) {
+            Properties index = FileRecords.read(pointer);
+            Properties record = FileRecords.read(netmailRecord(index.getProperty("key")));
+            if (record.isEmpty()) {
+                continue;
+            }
             if ("QUEUED".equals(record.getProperty("state"))) {
                 visitor.accept(new QueuedNetmail(record.getProperty("key"),
                                                  record.getProperty("nextHop"),
                                                  MailRecord.get(record)));
+            } else {
+                Files.deleteIfExists(pointer);
             }
         }
     }
@@ -292,22 +349,12 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public void afterExport() {
-        for (Path path : FileRecords.list(root.resolve("echo"))) {
-            Properties record = FileRecords.read(path);
-            String consumers = record.getProperty("consumers", "");
-            boolean complete = consumers.isEmpty()
-                    || List.of(consumers.split(","))
-                           .stream()
-                           .allMatch(item -> record.containsKey("done." + item));
-            if (complete && record.containsKey("body")) {
-                record.remove("body");
-                FileRecords.write(path, record);
-            }
-        }
+        requireOpen();
     }
 
     @Override
     public synchronized void markNetmailSent(String key) {
+        requireOpen();
         Path path = netmailRecord(key);
         Properties record = FileRecords.read(path);
         if (record.isEmpty()) {
@@ -316,10 +363,16 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         record.setProperty("state", "SENT");
         record.remove("body");
         FileRecords.write(path, record);
+        try {
+            Files.deleteIfExists(pendingIndex(key));
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
+        }
     }
 
     @Override
     public synchronized void routeUnpackedNetmail(String key, String nextHop) {
+        requireOpen();
         Path path = netmailRecord(key);
         Properties record = FileRecords.read(path);
         if (!NetmailStore.unpacked(record.getProperty("nextHop"))) {
@@ -331,6 +384,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public List<String> getAreas() {
+        requireOpen();
         return catalog.stringPropertyNames()
                       .stream()
                       .filter(key -> key.startsWith("area."))
@@ -341,6 +395,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public boolean isAreaExists(String name) {
+        requireOpen();
         return catalog.containsKey("area." + areaName(name));
     }
 
@@ -435,6 +490,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
 
     @Override
     public void close() {
+        closed = true;
         ownership.close();
     }
 }

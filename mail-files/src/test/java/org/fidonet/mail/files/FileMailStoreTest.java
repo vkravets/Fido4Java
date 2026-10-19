@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.jftn.tosser.OutboundSpool;
 import org.fidonet.packet.MailIdentity;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -82,25 +84,23 @@ class FileMailStoreTest {
     }
 
     @Test
-    void retriedOnlyFailedEchoConsumerWithoutBackfillingNewSubscribers() throws Exception {
+    void frozeEchoFanoutBeforeAcceptanceAndDidNotBackfillNewSubscribers() throws Exception {
         JFtnConfig config = config("transit");
         FileMailStore store = new FileMailStore(config);
-        Link first = config.getLink(new FTNAddr("1:500/101"));
-        Link second = config.getLink(new FTNAddr("1:500/102"));
+        Link first = config.getLink(new FTNAddr("1:500/102"));
+        Link second = config.getLink(new FTNAddr("1:500/101"));
         store.configureSubscription(first, "test", AccessLevel.BOTH);
         store.addMessage(message(true), "test");
+        store.removeEchoSubscription(first, "test");
         store.configureSubscription(second, "test", AccessLevel.BOTH);
-        String consumer = "outbound:" + first.getAddr();
-        assertThrows(IOException.class, () -> store.visitNewEcho("test", consumer, message -> {
-            throw new IOException("simulated handoff failure");
-        }));
+        store.afterExport();
         store.close();
         FileMailStore reopened = new FileMailStore(config);
-        List<Message> delivered = new ArrayList<>();
-        reopened.visitNewEcho("test", consumer, delivered::add);
-        reopened.visitNewEcho("test", consumer, delivered::add);
-        reopened.visitNewEcho("test", "outbound:" + second.getAddr(), delivered::add);
-        assertEquals(1, delivered.size());
+        OutboundSpool spool = new OutboundSpool(config);
+        assertEquals(1, spool.pending(first, true).size());
+        assertTrue(spool.pending(second, true).isEmpty());
+        reopened.addMessage(message(true), "test");
+        assertEquals(1, spool.pending(first, true).size());
         assertTrue(reopened.isDupe(message(true)));
         assertEquals(0, reopened.getMessageSize("test"));
         reopened.close();
@@ -122,9 +122,11 @@ class FileMailStoreTest {
     @Test
     void rejectedConcurrentWritersAndReleasedLockAfterFailedOpen() throws Exception {
         FileMailStore store = new FileMailStore(config("transit"));
-        assertThrows(java.io.UncheckedIOException.class,
-                     () -> new FileMailStore(config("transit")));
+        assertThrows(UncheckedIOException.class, () -> new FileMailStore(config("transit")));
         store.close();
+        assertFalse(store.open());
+        assertThrows(IllegalStateException.class,
+                     () -> store.saveNetmail(message(false), "late", null));
         assertThrows(IllegalStateException.class, () -> new FileMailStore(config("legacy")));
         FileMailStore reopened = new FileMailStore(config("transit"));
         reopened.close();
