@@ -96,6 +96,9 @@ generate temporary client keys, pin the container's host key, exchange files in
 both directions with NR on/off, and reject unknown host/unaccepted client keys.
 No private keys are copied to test report artifacts. The normal binkd CI stage
 runs these scenarios too, using the sealed compiled integration runtime.
+The fixture waits up to 30 seconds for per-container host key generation and
+the sshd process before reading the trusted key. A startup failure includes the
+container log; an allocated container port alone does not indicate SSH readiness.
 
 To run only SSH scenarios with the Podman CLI on a Windows development host:
 

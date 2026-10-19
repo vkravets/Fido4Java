@@ -1,5 +1,6 @@
 package org.fidonet.binkp.netty;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +48,7 @@ final class SshBinkdTestPeer implements AutoCloseable {
                                        .findFirst()
                                        .orElseThrow();
         port = Integer.parseInt(endpoint.substring(endpoint.lastIndexOf(':') + 1));
+        awaitSshServer();
         ContainerCommand.run(List.of(System.getProperty("ssh.keygen", "ssh-keygen"),
                                      "-q",
                                      "-t",
@@ -85,6 +87,34 @@ final class SshBinkdTestPeer implements AutoCloseable {
 
     private String path(String name) {
         return root.resolve(name).toAbsolutePath().toString().replace('\\', '/');
+    }
+
+    private void awaitSshServer() throws Exception {
+        try {
+            cli(Duration.ofSeconds(35),
+                "exec",
+                container,
+                "sh",
+                "-c",
+                "for attempt in $(seq 1 30); do "
+                + "if test -s /etc/ssh/ssh_host_ed25519_key.pub "
+                + "&& grep -qx sshd /proc/1/comm; then exit 0; fi; "
+                + "sleep 1; done; echo 'SSH server did not become ready' >&2; exit 1");
+        } catch (Exception failure) {
+            throw startupFailure(failure);
+        }
+    }
+
+    private IOException startupFailure(Exception failure) {
+        IOException diagnostic = new IOException("SSH fixture failed before host key discovery",
+                                                 failure);
+        try {
+            diagnostic = new IOException("SSH fixture failed before host key discovery. Container log:\n"
+                    + cli(Duration.ofSeconds(10), "logs", container), failure);
+        } catch (Exception logFailure) {
+            diagnostic.addSuppressed(logFailure);
+        }
+        return diagnostic;
     }
 
     void trustHost() throws Exception {
