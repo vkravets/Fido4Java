@@ -4,6 +4,15 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'echo-tree', story: 'mail-echomailview--tree' },
+    { name: 'echo-flat', story: 'mail-echomailview--flat' },
+    { name: 'echo-reading', story: 'mail-echomailview--reading' },
+    { name: 'echo-missing-parent', story: 'mail-echomailview--missing-parent' },
+    { name: 'echo-compose', story: 'mail-echomailview--compose' },
+    { name: 'echo-reply', story: 'mail-echomailview--reply' },
+    { name: 'echo-read-only', story: 'mail-echomailview--read-only' },
+    { name: 'echo-empty', story: 'mail-echomailview--empty' },
+    { name: 'echo-no-access', story: 'mail-echomailview--no-access' },
     { name: 'routing-policy', story: 'routing-netmailroutingpolicyform--database' },
     { name: 'routing-transit', story: 'routing-netmailroutingpolicyform--transit' },
     { name: 'routing-busy', story: 'routing-netmailroutingpolicyform--busy' },
