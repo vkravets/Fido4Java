@@ -49,6 +49,8 @@ example and disable RPC explicitly; see the same guide.
 - [Browser setup, settings and UI testing](docs/web-ui.md)
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [External BSO delivery, attachments and file requests](docs/bso.md)
+- [Real BSO/HTick container integration tests](docs/husky-integration.md)
+- [Proposed headless and SQL-free transit profiles](docs/transit-profiles.md)
 - [RPC contracts, transports and authentication](docs/rpc-ui.md)
 - [Plugin configuration and upgrade rules](docs/plugin-configuration.md)
 - [AreaFix, FileFix, TIC and directory feed scripts](docs/mail-scripts.md)

@@ -70,11 +70,12 @@
   failure/restart and authorization tests. Formatting-only changes do not require
   application or container suites. Broaden tests when unresolved risk/failures
   justify it, not to repeatedly rerun already passing checks without changes.
-- Container suites are explicit: binkd for Netty/MINA2, HPT for the tosser, and
+- Container suites are explicit: binkd for Netty/MINA2, HPT for the tosser,
+  `:jtoss:bsoInteropTest` / `:jtoss:htickInteropTest` for BSO/SRIF/HTick exchange, and
   pinned Linux Playwright for VRT. Verify the engine/API first; do not replace Linux
   baselines with native Windows screenshots. See the environment guide for tasks.
 - Bootstrap unit tests: `python -m unittest discover -s tools/tests -p 'test_*.py'`.
-- CI is GitHub Actions: build -> binkd/HPT -> UI -> VRT -> tagged release packaging
+- CI is GitHub Actions: build -> binkd/HPT/BSO/HTick -> UI -> VRT -> tagged release packaging
   and publishing. Preserve sealed revision/checksum verification across jobs.
 
 ## Collaboration and handoff

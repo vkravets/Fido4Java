@@ -132,7 +132,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [binkd, hpt]
+        suite: [binkd, hpt, bso, htick]
     steps:
       - uses: actions/checkout@v7
         with:

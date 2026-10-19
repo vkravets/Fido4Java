@@ -575,9 +575,34 @@ replacement tests cover these paths. Real pinned HPT successfully tossed a JFtn
 packet with point addressing, mixed-case packet password, MSGID/REPLY/Via and a
 repeated toss without duplicate mail. Windows Testcontainers could not discover
 the Podman Docker API; that case was verified through ordinary Podman CLI
-container operations instead. Real HTick exchange and an external BSO mailer's
-end-to-end consumption have not been verified locally; unit fixtures are not
-presented as that evidence.
+container operations instead. The real BSO/HTick suites now verify binkd FLO/REQ
+consumption, network transfers, post-ACK actions, HTick toss/hatch and retained
+Replaces across worker restarts. See [the integration runbook](husky-integration.md)
+for the exact fixture boundary and local/CI commands.
+
+## 34. BSO and HTick integration exercises real processes from a compiled snapshot
+
+The new suites use ordinary Docker/Podman CLI commands, isolated networks and
+unprivileged Linux container processes. Java and the consuming binkd share Linux
+paths inside a sender container; a second binkd is the remote peer. No host engine
+socket or installed-node state is mounted. Existing HPT/JAM and transport suites
+retain their Testcontainers setup.
+
+Fixture helpers own lifecycle and diagnostics; short-lived workers invoke the
+production SQL/spool and fileecho code. Receiver binkd receipt metadata is adapted
+by a test fixture before entering the production plugin. The SRIF responder is a
+minimal test service, not a production request processor. FRQ delivery success is
+distinct from receiving a matching file; both positive and no-match exchanges
+are tested, including a subsequent connection without repeating the request.
+
+GitHub Actions has separate BSO and HTick matrix jobs after build. These use the
+same sealed/revision-checked integration runtime as HPT, without compiling the
+application again. Reports retain command output and per-peer filesystem state.
+Local evidence uses Podman Linux/amd64; actual execution of the updated GHA
+workflow remains a remote CI result, not something implied by a local test.
+
+Headless/SQL-free transit profiles remain a [proposal](transit-profiles.md).
+This integration work does not change the current SQL storage invariant.
 
 ## Changing these decisions
 

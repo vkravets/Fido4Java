@@ -17,5 +17,11 @@ case "${1:-}" in
     bash ./gradlew :jtoss:hptInteropTest -Dhpt.image=jftn-hpt-interop:ci \
       -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
     ;;
-  *) echo 'Expected binkd or hpt integration suite' >&2; exit 1 ;;
+  bso|htick)
+    docker build -t jftn-hpt-interop:ci jtoss/src/integrationTest/resources/hpt
+    bash ./gradlew ":jtoss:${1}InteropTest" -DmailInterop.engine=docker \
+      -DmailInterop.image=jftn-hpt-interop:ci \
+      -PciIntegrationSnapshot --warning-mode fail --no-daemon --console=plain
+    ;;
+  *) echo 'Expected binkd, hpt, bso or htick integration suite' >&2; exit 1 ;;
 esac

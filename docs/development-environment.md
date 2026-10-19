@@ -313,6 +313,11 @@ docker build -t jftn-hpt-interop:local jtoss/src/integrationTest/resources/hpt
 .\gradlew.bat :web-ui:playwrightVisualTest
 ```
 
+BSO/HTick process-level tests also support direct Docker/Podman CLI orchestration,
+without relying on Testcontainers API discovery on Windows. See the separate
+[BSO/HTick runbook](husky-integration.md) for image building, PowerShell quoting,
+diagnostics and the sealed CI runtime.
+
 VRT defaults to Podman on Windows and Docker on Unix; override with
 `VRT_CONTAINER_ENGINE` if needed. It explicitly runs Linux/amd64, including on ARM
 hosts where emulation must work. It needs the static catalogue. Update snapshots

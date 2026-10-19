@@ -97,8 +97,8 @@ viewing instructions. `vrt-baselines` contains every committed expected PNG in
 its desktop/mobile directories, independently of whether VRT finds a mismatch.
 See [viewing UI artifacts](web-ui.md#component-catalogue).
 
-Both binkd and HPT integrations run after the build on every supported event.
-After both integration suites pass, the `ui` job runs functional component and
+The binkd, HPT, BSO and HTick integrations run after the build on every supported event.
+After all integration suites pass, the `ui` job runs functional component and
 real HTTP browser tests. Only after UI tests succeed does the separate `vrt` job
 compare visual baselines against the build's compiled Storybook artifact in the
 pinned container; see [UI tests](web-ui.md#browser-tests).
@@ -111,8 +111,12 @@ flowchart LR
     event[Push branch / PR / version tag] --> build[Build and test]
     build --> binkd[binkd integration]
     build --> hpt[HPT integration]
+    build --> bso[BSO mailer integration]
+    build --> htick[HTick integration]
     binkd --> ui[UI browser tests]
     hpt --> ui
+    bso --> ui
+    htick --> ui
     ui --> vrt[Visual regression tests]
     vrt --> package[Package and smoke test ZIPs: tags only]
     package --> publish[Publish GitHub Release: tags only]
@@ -149,14 +153,14 @@ version validation before any build or publication. Re-running a failed workflow
 uses the same tag; concurrency serializes runs for that tag. New branch/PR runs
 cancel older runs for the same event/reference; release runs are not cancelled.
 
-Publication requires successful packaging, binkd/HPT integration, VRT and UI checks. The
+Publication requires successful packaging, all four integration suites, VRT and UI checks. The
 publisher verifies hashes, ZIP names and that the remote GitHub tag resolves to
 the compiled revision, including annotated tags. It creates a draft first,
 uploads and verifies every asset, then publishes it with generated release notes.
 An interrupted upload can resume its own draft. Conflicting assets are never
 overwritten; a conflicting release requires manual resolution.
 
-Configure branch protection to require the GitHub Actions `build`, both
+Configure branch protection to require the GitHub Actions `build`, all four
 `integration` matrix checks, `vrt` and `ui`. Repository/organization settings are not
 changed automatically by committing workflow files. The workflow does not publish
 a release until a matching tag is pushed.

@@ -26,10 +26,13 @@ Remaining implementation
 - Expand fault-injection tests for sender deadlines, disk-full/close/fsync failures
   and crash boundaries across supported platforms. Restart/recovery, malformed
   input, connection failure and cross-process JAM locking already have tests.
-- Verify real HTick two-way TIC exchange and external BSO mailer consumption.
-  PKT import/repeated toss passed against pinned HPT. BSO busy locks, restart,
-  request batches, attachment source isolation, KFS/TFS and Replaces currently
-  have Java behavior tests; those do not replace real mailer/TIC interoperability.
+- Extend real BSO/HTick coverage to interrupted large transfers and additional
+  request processors. Real binkd FLO/REQ consumption, SRIF responses, post-ACK
+  KFS/TFS, hold/busy recovery and two-way HTick toss/hatch/Replaces now have
+  container tests. Runbook and fixture boundaries: docs/husky-integration.md.
+- Design runtime/storage separation before implementing SQL-free transit.
+  Proposed profiles, receive/toss/assembly flow and unresolved local-mail policy:
+  docs/transit-profiles.md. Current headless operation still uses the mail DB.
 
 Optional future scope (not committed features)
 ---------------------------------------------
