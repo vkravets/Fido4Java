@@ -47,17 +47,17 @@ def baseFiles = copySpec {
 }
 
 def zipWithoutJre = tasks.register('distZip', Zip) {
-    group = 'distribution'
-    description = 'Builds the portable ZIP; requires an installed Java 17+ runtime.'
+    group = 'build'
+    description = 'Seals the compiled distribution superset used to derive installation profiles.'
     if (!distributionInput.isPresent()) { dependsOn applicationJar, prepareLayout }
     archiveFileName = "${distributionRoot}-no-jre.zip"
-    destinationDirectory = layout.buildDirectory.dir('distributions')
+    destinationDirectory = layout.buildDirectory.dir('distribution-inputs')
     with baseFiles
 }
 
 def runtimeLockFile = rootProject.file('gradle/runtime-lock.json')
 def runtimeLock = new JsonSlurper().parse(runtimeLockFile)
-def bundledZips = ['linux-x64', 'windows-x64'].collect { platform ->
+['linux-x64', 'windows-x64'].each { platform ->
     def entry = runtimeLock[platform]
     def suffix = platform == 'linux-x64' ? 'LinuxX64' : 'WindowsX64'
     def download = tasks.register("downloadJre${suffix}", DownloadRuntime) {
@@ -66,7 +66,7 @@ def bundledZips = ['linux-x64', 'windows-x64'].collect { platform ->
         archive = layout.buildDirectory.file("runtime-downloads/${entry.archive}")
     }
     def unpacked = layout.buildDirectory.dir("runtime-images/${platform}")
-    def unpack = tasks.register("unpackJre${suffix}", Sync) {
+    tasks.register("unpackJre${suffix}", Sync) {
         dependsOn download
         from(providers.provider {
             def archiveFile = download.get().archive.get().asFile
@@ -77,22 +77,7 @@ def bundledZips = ['linux-x64', 'windows-x64'].collect { platform ->
         }
         into unpacked
     }
-    tasks.register("distZip${suffix}", Zip) {
-        group = 'distribution'
-        description = "Builds the ${platform} ZIP with the locked Temurin OpenJDK JRE."
-        dependsOn unpack
-        if (!distributionInput.isPresent()) { dependsOn applicationJar, prepareLayout }
-        archiveFileName = "${distributionRoot}-${platform}.zip"
-        destinationDirectory = layout.buildDirectory.dir('distributions')
-        with baseFiles
-        into("${distributionRoot}/jre") {
-            from unpacked
-            filesMatching(['**/bin/**', '**/lib/jspawnhelper', '**/lib/jexec']) {
-                permissions { unix('rwxr-xr-x') }
-            }
-        }
-        into(distributionRoot) { from runtimeLockFile }
-    }
+
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
@@ -108,7 +93,7 @@ tasks.withType(Zip).matching { it.name.startsWith('distZip') }.configureEach {
 tasks.register('releaseDistributions') {
     group = 'distribution'
     description = 'Builds all ZIP distributions with separate libraries, plugins and scripts.'
-    dependsOn zipWithoutJre, bundledZips
+
 }
 
 tasks.named('assemble') { dependsOn zipWithoutJre }

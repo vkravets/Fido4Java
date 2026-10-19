@@ -2,7 +2,9 @@
 set -eu
 APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$APP_HOME"
-if [ -x "$APP_HOME/jre/bin/java" ]; then
+if [ -x "$APP_HOME/jre/linux-x64/bin/java" ] && [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ]; then
+    JAVA="$APP_HOME/jre/linux-x64/bin/java"
+elif [ -x "$APP_HOME/jre/bin/java" ]; then
     JAVA="$APP_HOME/jre/bin/java"
 elif [ -n "${JAVA_HOME:-}" ]; then
     JAVA="$JAVA_HOME/bin/java"

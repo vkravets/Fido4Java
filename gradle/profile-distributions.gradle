@@ -1,0 +1,144 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+// The build seals one superset ZIP. Packaging derives every profile from that same compiled input.
+def applicationVersion = project.version.toString()
+def profiles = ['full', 'headless', 'legacy', 'transit']
+def profileInputs = [:]
+profiles.findAll { it != 'full' }.each { profile ->
+    def runtime = configurations.create("${profile}DistributionRuntime") {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+    def modules = [':fido-config', ':fido-tools', ':event-bus', ':script-api', ':plugin-manager',
+                   ':scheduler', ':jtoss', ':mail-api', ':mail-files', ':fileecho', ':binkp-root:binkp-netty']
+    if (profile == 'headless') {
+        modules += [':fido-database', ':jam-bridge', ':nodelist']
+        dependencies.add(runtime.name, 'com.h2database:h2:2.5.252')
+    }
+    modules.each { dependencies.add(runtime.name, dependencies.project(path: it)) }
+    dependencies.add(runtime.name, 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1')
+    profileInputs[profile] = runtime
+}
+
+def manifestDirectory = layout.buildDirectory.dir('profile-manifest')
+def manifest = tasks.register('prepareProfileManifest') {
+    inputs.files(configurations.runtimeClasspath)
+    profileInputs.values().each { inputs.files(it) }
+    outputs.dir(manifestDirectory)
+    doLast {
+        def names = profiles.collectEntries { profile ->
+            def runtime = profile == 'full' ? configurations.runtimeClasspath : profileInputs[profile]
+            [(profile): (runtime.files.collect { it.name } + tasks.named('jar').get().archiveFile.get().asFile.name).unique().sort()]
+        }
+        def output = manifestDirectory.get().file('profile-libraries.json').asFile
+        output.parentFile.mkdirs()
+        output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(names)), 'UTF-8')
+    }
+}
+
+if (!providers.gradleProperty('distributionInput').isPresent()) {
+    tasks.named('distZip', Zip) {
+        dependsOn manifest
+        into("jftn-${applicationVersion}") { from manifestDirectory }
+    }
+}
+
+def sourceZip = providers.gradleProperty('distributionInput').map { rootProject.file(it) }
+        .orElse(tasks.named('distZip', Zip).flatMap { it.archiveFile }.map { it.asFile })
+def profileLayouts = layout.buildDirectory.dir('profile-layouts')
+def prepareProfiles = tasks.register('prepareProfileLayouts') {
+    if (!providers.gradleProperty('distributionInput').isPresent()) { dependsOn tasks.named('distZip') }
+    inputs.file(sourceZip)
+    inputs.file(rootProject.file('gradle/profile-distributions.gradle'))
+    outputs.dir(profileLayouts)
+    doLast {
+        def source = zipTree(sourceZip.get())
+        def metadata = source.matching { include '**/profile-libraries.json' }.singleFile
+        def libraries = new JsonSlurper().parse(metadata)
+        profiles.each { profile ->
+            def destination = profileLayouts.get().dir(profile).asFile
+            delete destination
+            copy {
+                from source
+                into destination
+                exclude '**/profile-libraries.json'
+                eachFile { entry ->
+                    if (entry.name.endsWith('.jar') && !libraries[profile].contains(entry.name)) {
+                        entry.exclude()
+                    }
+                }
+            }
+            def root = new File(destination, "jftn-${applicationVersion}")
+            new File(root, 'runtime-profile').setText(profile + '\n', 'UTF-8')
+            def example = new File(root, 'jftn.conf.example')
+            example.append("\nRuntimeProfile=${profile}\n", 'UTF-8')
+            if (profile != 'full') {
+                example.append('RpcEnabled=false\n', 'UTF-8')
+                new File(root, 'conf.d').eachFile { fragment ->
+                    if (fragment.name.endsWith('.conf.example')) {
+                        def text = fragment.getText('UTF-8')
+                                .replace('RpcEnabled=true', 'RpcEnabled=false')
+                                .replace('EchoSubscriptions=database', 'EchoSubscriptions=config')
+                                .replace('RobotAccessSource=database', 'RobotAccessSource=files')
+                                .replace('FileEchoSource=database', 'FileEchoSource=files')
+                        if (profile in ['legacy', 'transit']) {
+                            text = text.replace('EchoSubscriptions=database', 'EchoSubscriptions=config')
+                                    .replace('NodeDirectoryEnabled=true', 'NodeDirectoryEnabled=false')
+                                    .replace('JamBridgeEnabled=true', 'JamBridgeEnabled=false')
+                        }
+                        fragment.setText(text, 'UTF-8')
+                    }
+                }
+            }
+            if (profile in ['legacy', 'transit']) {
+                example.append('EchoSubscriptions=config\nNetmailRoutes=config\nRobotAccessSource=files\nFileEchoSource=files\nNodeDirectoryEnabled=false\nJamBridgeEnabled=false\n', 'UTF-8')
+                delete new File(root, 'database')
+            }
+        }
+    }
+}
+
+def profileArchives = []
+profiles.each { profile ->
+    def suffix = profile.capitalize()
+    def portable = tasks.register("distZip${suffix}NoJre", Zip) {
+        group = 'distribution'
+        description = "Builds the ${profile} profile without a bundled runtime."
+        dependsOn prepareProfiles
+        archiveFileName = "jftn-${applicationVersion}-${profile}-no-jre.zip"
+        destinationDirectory = layout.buildDirectory.dir('distributions')
+        from profileLayouts.map { it.dir(profile) }
+        filesMatching('**/jftn.sh') { permissions { unix('rwxr-xr-x') } }
+    }
+    def bundled = tasks.register("distZip${suffix}WithJre", Zip) {
+        group = 'distribution'
+        description = "Builds the ${profile} profile with locked Linux x64 and Windows x64 runtimes."
+        dependsOn prepareProfiles, tasks.named('unpackJreLinuxX64'), tasks.named('unpackJreWindowsX64')
+        archiveFileName = "jftn-${applicationVersion}-${profile}-with-jre.zip"
+        destinationDirectory = layout.buildDirectory.dir('distributions')
+        from profileLayouts.map { it.dir(profile) }
+        ['linux-x64', 'windows-x64'].each { platform ->
+            into("jftn-${applicationVersion}/jre/${platform}") {
+                from layout.buildDirectory.dir("runtime-images/${platform}")
+                filesMatching(['**/bin/**', '**/lib/jspawnhelper', '**/lib/jexec']) {
+                    permissions { unix('rwxr-xr-x') }
+                }
+            }
+        }
+        into("jftn-${applicationVersion}") { from rootProject.file('gradle/runtime-lock.json') }
+        filesMatching('**/jftn.sh') { permissions { unix('rwxr-xr-x') } }
+    }
+    profileArchives.addAll([portable, bundled])
+    tasks.named('assemble') { dependsOn portable }
+    tasks.named('test', Test) {
+        dependsOn portable
+        inputs.file(portable.flatMap { it.archiveFile })
+        systemProperty "profile.distribution.${profile}", portable.get().archiveFile.get().asFile.absolutePath
+    }
+}
+
+tasks.named('releaseDistributions') {
+    setDependsOn(profileArchives)
+    description = 'Builds eight profile ZIPs: Full, Headless, Legacy and Transit, with and without JREs.'
+}

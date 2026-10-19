@@ -1,6 +1,10 @@
 $ErrorActionPreference = 'Stop'
 $javaName = if ([Environment]::OSVersion.Platform -eq 'Win32NT') { 'java.exe' } else { 'java' }
 $bundledJava = Join-Path $PSScriptRoot "jre/bin/$javaName"
+$platformJava = Join-Path $PSScriptRoot "jre/$(if ($javaName -eq 'java.exe') { 'windows-x64' } else { 'linux-x64' })/bin/$javaName"
+if (Test-Path -LiteralPath $platformJava -PathType Leaf) {
+    $bundledJava = $platformJava
+}
 if (Test-Path -LiteralPath $bundledJava -PathType Leaf) {
     $jftnJava = $bundledJava
 } elseif ($env:JAVA_HOME) {

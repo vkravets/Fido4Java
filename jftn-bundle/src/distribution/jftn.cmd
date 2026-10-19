@@ -1,7 +1,9 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if exist "%~dp0jre\bin\java.exe" (
+if exist "%~dp0jre\windows-x64\bin\java.exe" (
+    set "JFTN_JAVA=%~dp0jre\windows-x64\bin\java.exe"
+) else if exist "%~dp0jre\bin\java.exe" (
     set "JFTN_JAVA=%~dp0jre\bin\java.exe"
 ) else if defined JAVA_HOME (
     set "JFTN_JAVA=%JAVA_HOME%\bin\java.exe"

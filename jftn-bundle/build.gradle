@@ -10,6 +10,7 @@ tasks.named('jar') {
 }
 
 apply from: rootProject.file('gradle/distributions.gradle')
+apply from: rootProject.file('gradle/profile-distributions.gradle')
 
 tasks.register('importJamArchive', JavaExec) {
     group = 'application'
