@@ -11,6 +11,8 @@ import java.util.List;
 final class PluginConfigurationFiles {
     static final List<String> NAMES = List.of("10-binkp.conf",
                                               "20-jam-bridge.conf",
+                                              "26-bso.conf",
+                                              "27-virtual-outbound.conf",
                                               "30-nodelist.conf",
                                               "32-fileecho.conf",
                                               "40-mail-scripts.conf",
