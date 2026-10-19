@@ -1,0 +1,10 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'SQL-free mail journals and primary JAM mail storage'
+
+dependencies {
+    api project(':jtoss')
+    api project(':jambase')
+}
