@@ -75,5 +75,10 @@ journaled before publishing a new batch, so a new request cannot mask completion
 of the preceding batch. Do not edit/delete `.req` manually as a way to cancel it;
 file disappearance is the external-mailer acknowledgement.
 
+A sent FRQ means the request and its accompanying netmail were delivered. It
+does not assert that the remote request processor found every requested file.
+The real SRIF integration tests cover both a returned payload and no matches;
+see [container tests](husky-integration.md).
+
 Reference attach/request processing:
 [HPT scan.c](https://github.com/huskyproject/hpt/blob/c2a91d64cee0e6cd357376d30c9285ee3f9c624f/src/scan.c).

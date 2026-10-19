@@ -68,6 +68,9 @@ configureCiIntegration('hptInteropTest', workerFiles)
         systemProperty 'mailInterop.image', providers.systemProperty('mailInterop.image').getOrElse('jftn-hpt-interop:local')
         systemProperty 'mailInterop.artifactsDir', layout.buildDirectory.dir("reports/${suite}InteropTest").get().asFile.absolutePath
         include "**/${suite.capitalize()}InteropTest.class"
+        if (suite == 'bso') {
+            include '**/FrqInteropTest.class'
+        }
         useJUnitPlatform()
         maxParallelForks = 1
         outputs.upToDateWhen { false }
