@@ -26,17 +26,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-/** Primary JAM mailboxes with a separate durable delivery journal, never a SQL mirror. */
-public final class JamMailStore extends FileMailStore implements MailProcessingExtension {
+/** Primary Legacy mailboxes: JAM echoes and JAM/MSG netmail with durable delivery journals. */
+public final class LegacyMailStore extends FileMailStore implements MailProcessingExtension {
     private final Path jamRoot;
     private final Path editorRoot;
     private final FTNAddr aka;
     private final Charset charset;
+    private final MsgNetmailMailbox msgNetmail;
     private final Map<String, JamArea> bindings = new LinkedHashMap<>();
     private final Map<String, FTNAddr> bindingAkas = new LinkedHashMap<>();
     private boolean scanning;
 
-    public JamMailStore(JFtnConfig config) throws IOException {
+    public LegacyMailStore(JFtnConfig config) throws IOException {
         super(config);
         try {
             if (config.getLocalAddresses().isEmpty()) {
@@ -50,6 +51,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             editorRoot = Path.of(config.getValue("EditorConfigPath", "editor"))
                              .toAbsolutePath()
                              .normalize();
+            msgNetmail = configureMsgNetmail();
             configureBindings();
             recoverMailboxes();
             generateEditorFiles();
@@ -60,6 +62,9 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     }
 
     public JamArea mailbox(String area) {
+        if (area == null && msgNetmail != null) {
+            throw new IllegalStateException("Netmail uses MSG, not JAM");
+        }
         JamArea configured = bindings.get(area == null ? "netmail" : "echo:" + areaName(area));
         if (configured != null) {
             return configured;
@@ -68,6 +73,24 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                            area,
                            aka,
                            charset);
+    }
+
+    private MsgNetmailMailbox configureMsgNetmail() throws IOException {
+        String format = config.getValue("LegacyNetmailFormat", "jam");
+        if ("jam".equalsIgnoreCase(format)) {
+            return null;
+        }
+        if (!"msg".equalsIgnoreCase(format)) {
+            throw new IOException("LegacyNetmailFormat must be jam or msg");
+        }
+        if (config.getValue("JamNetmail") != null) {
+            throw new IOException("JamNetmail cannot be used with LegacyNetmailFormat=msg");
+        }
+        return new MsgNetmailMailbox(Path.of(config.getValue("MsgNetmailPath",
+                                                             jamRoot.resolve("netmail-msg")
+                                                                    .toString())),
+                                     Charset.forName(config.getValue("MsgCharset", "CP866")),
+                                     aka);
     }
 
     private void configureBindings() throws IOException {
@@ -95,6 +118,11 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         layout.setProperty("root", jamRoot.toString());
         layout.setProperty("charset", charset.name());
         layout.setProperty("aka", aka.toString());
+        layout.setProperty("netmail-format", msgNetmail == null ? "jam" : "msg");
+        if (msgNetmail != null) {
+            layout.setProperty("msg-path", msgNetmail.getPath().toString());
+            layout.setProperty("msg-charset", config.getValue("MsgCharset", "CP866"));
+        }
         for (Map.Entry<String, JamArea> entry : bindings.entrySet()) {
             if (!paths.add(entry.getValue().getPath())) {
                 throw new IOException("Different JAM bindings cannot share a base path");
@@ -105,6 +133,9 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         Path path = root.resolve("jam-layout.properties");
         Properties previous = FileRecords.read(path);
         previous.remove("format");
+        if (!previous.isEmpty()) {
+            previous.putIfAbsent("netmail-format", "jam");
+        }
         if (!previous.isEmpty()
                 && previous.stringPropertyNames()
                            .stream()
@@ -119,7 +150,11 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                 names.add(key.substring(5));
             }
         }
-        names.add(null);
+        if (msgNetmail == null) {
+            names.add(null);
+        } else {
+            paths.add(msgNetmail.getPath());
+        }
         for (String name : names) {
             if (!paths.add(mailbox(name).getPath())) {
                 throw new IOException("Different JAM areas cannot share a base path");
@@ -162,9 +197,17 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
 
     private void recoverMailboxes() throws IOException {
         for (Path path : FileRecords.list(root.resolve("jam-publications"))) {
-            String base = FileRecords.read(path).getProperty("path");
+            Properties publication = FileRecords.read(path);
+            String base = publication.getProperty("path");
             if (base == null) {
                 throw new IOException("Invalid JAM publication receipt");
+            }
+            if ("msg".equals(publication.getProperty("storage"))) {
+                if (!Files.isDirectory(Path.of(base))) {
+                    throw new IOException("Primary MSG mailbox is missing; restore its backup: "
+                                          + base);
+                }
+                continue;
             }
             for (String suffix : List.of(".jhr", ".jdt", ".jdx")) {
                 if (!Files.isRegularFile(Path.of(base + suffix))) {
@@ -223,6 +266,12 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
         if (Files.exists(publication)) {
             return;
         }
+        if (!message.isEchomail() && msgNetmail != null) {
+            msgNetmail.ensureExists();
+            msgNetmail.appendIfAbsent(message);
+            recordPublication(message, identity);
+            return;
+        }
         JamArea area = mailbox(message.isEchomail() ? message.getArea() : null);
         ensureArea(area);
         area.locked(access -> {
@@ -254,21 +303,31 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
 
     private void recordPublication(Message message, String identity) {
         Properties record = new Properties();
+        boolean msg = !message.isEchomail() && msgNetmail != null;
         record.setProperty("path",
-                           mailbox(message.isEchomail() ? message.getArea() : null).getPath()
-                                                                                   .toString());
+                           msg
+                                   ? msgNetmail.getPath().toString()
+                                   : mailbox(message.isEchomail()
+                                           ? message.getArea()
+                                           : null).getPath().toString());
+        record.setProperty("storage", msg ? "msg" : "jam");
         FileRecords.write(publication(message, identity), record);
     }
 
     @Override
-    protected boolean needsJamPublication() {
+    protected boolean needsMailboxPublication() {
         return true;
     }
 
     @Override
     public synchronized void beforeExport(Tosser tosser) throws IOException {
         requireOpen();
-        scan(mailbox(null), tosser);
+        if (msgNetmail == null) {
+            scan(mailbox(null), tosser);
+        } else {
+            msgNetmail.ensureExists();
+            msgNetmail.scan(entry -> submitMsg(entry, tosser));
+        }
         for (String area : getAreas()) {
             scan(mailbox(area), tosser);
         }
@@ -293,10 +352,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     private void submit(JamArea.Access access, JamArea.Entry entry, Tosser tosser)
             throws IOException {
         Message message = entry.getMessage();
-        if (!message.hasValidAddressing()
-                || !config.getLocalAddresses().contains(message.getFAddr())) {
-            throw new IOException("JAM submission requires a local sender AKA and valid addressing");
-        }
+        validateSender(message);
         if (message.getMsgId() == null) {
             tosser.assignMessageId(message);
             access.assignMsgId(entry.getNumber(),
@@ -304,6 +360,30 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                                CharsetTools.charsetDetect(message.getMessageCharset()));
             message = access.get(entry.getNumber()).getMessage();
         }
+        acceptSubmission(message, tosser);
+        // Queue publication precedes Snt. A restart reuses the same receipt/delivery key.
+        access.attributes(entry.getNumber(), JamArea.SENT, 0);
+    }
+
+    private void submitMsg(MsgNetmailMailbox.Entry entry, Tosser tosser) throws IOException {
+        Message message = entry.getMessage();
+        validateSender(message);
+        if (message.getMsgId() == null) {
+            entry.assignMessageId(tosser.assignMessageId(message));
+            message = entry.getMessage();
+        }
+        acceptSubmission(message, tosser);
+        entry.markSent();
+    }
+
+    private void validateSender(Message message) throws IOException {
+        if (!message.hasValidAddressing()
+                || !config.getLocalAddresses().contains(message.getFAddr())) {
+            throw new IOException("Editor submission requires a local sender AKA and valid addressing");
+        }
+    }
+
+    private void acceptSubmission(Message message, Tosser tosser) throws IOException {
         String identity = MailIdentity.of(message);
         recordPublication(message);
         Path path = root.resolve("submissions").resolve(FileRecords.key(identity) + ".properties");
@@ -318,7 +398,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
                                              + "\n"
                                              + message.getAttributes());
         if (!receipt.isEmpty() && !fingerprint.equals(receipt.getProperty("fingerprint"))) {
-            throw new IOException("JAM message was edited after submission; create a new message");
+            throw new IOException("Editor message was edited after submission; create a new message");
         }
         if (!"ACCEPTED".equals(receipt.getProperty("state"))) {
             receipt.setProperty("fingerprint", fingerprint);
@@ -327,8 +407,6 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
             receipt.setProperty("state", "ACCEPTED");
             FileRecords.write(path, receipt);
         }
-        // Queue publication precedes Snt. A restart reuses the same receipt/delivery key.
-        access.attributes(entry.getNumber(), JamArea.SENT, 0);
     }
 
     private void submitToQueue(Message message, String identity, Tosser tosser) throws IOException {
@@ -348,6 +426,9 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     @Override
     public Iterator<Message> getMessages(String area) {
         try {
+            if (area == null && msgNetmail != null) {
+                return msgNetmail.read().iterator();
+            }
             List<Message> result = new ArrayList<>();
             ensureArea(mailbox(area));
             mailbox(area).visitReadOnly(entry -> result.add(entry.getMessage()));
@@ -391,14 +472,22 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
     public List<Message> getLocalNetmail(FTNAddr address) {
         try {
             List<Message> result = new ArrayList<>();
+            if (msgNetmail != null) {
+                msgNetmail.visit(entry -> addLocalNetmail(result, address, entry.getMessage()));
+                return result;
+            }
             mailbox(null).visitReadOnly(entry -> {
-                if (address.equals(entry.getMessage().getTAddr())) {
-                    result.add(entry.getMessage());
-                }
+                addLocalNetmail(result, address, entry.getMessage());
             });
             return result;
         } catch (IOException failure) {
             throw new UncheckedIOException(failure);
+        }
+    }
+
+    private void addLocalNetmail(List<Message> result, FTNAddr address, Message message) {
+        if (address.equals(message.getTAddr())) {
+            result.add(message);
         }
     }
 
@@ -431,10 +520,19 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
 
     private void editorArea(StringBuilder golded, StringBuilder husky, String area)
             throws IOException {
-        JamArea mailbox = mailbox(area);
-        ensureArea(mailbox);
+        boolean msg = area == null && msgNetmail != null;
+        Path base;
+        if (msg) {
+            msgNetmail.ensureExists();
+            base = msgNetmail.getPath();
+            golded.append("FIDOMSGTYPE FTS1\n");
+        } else {
+            JamArea mailbox = mailbox(area);
+            ensureArea(mailbox);
+            base = mailbox.getPath();
+        }
         String name = area == null ? "NETMAIL" : area;
-        String path = quoted(mailbox.getPath().toString());
+        String path = quoted(base.toString());
         FTNAddr selected = bindingAkas.getOrDefault(area == null ? "netmail" : "echo:" + area, aka);
         golded.append("AREADEF ")
               .append(name)
@@ -442,7 +540,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
               .append(name)
               .append("\" 0 ")
               .append(area == null ? "Net" : "Echo")
-              .append(" JAM ")
+              .append(msg ? " FTS1 " : " JAM ")
               .append(path)
               .append(' ')
               .append(selected)
@@ -451,7 +549,7 @@ public final class JamMailStore extends FileMailStore implements MailProcessingE
              .append(name)
              .append(' ')
              .append(path)
-             .append(" -b Jam -a ")
+             .append(msg ? " -b Msg -a " : " -b Jam -a ")
              .append(selected)
              .append('\n');
     }

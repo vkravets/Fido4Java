@@ -46,7 +46,7 @@ import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.mail.files.FileMailStore;
-import org.fidonet.mail.files.JamMailStore;
+import org.fidonet.mail.files.LegacyMailStore;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -177,7 +177,7 @@ public class JFtnRunner {
                     ? MailStorage.class.cast(requireContext(plugins.getContext("database"),
                                                             "database"))
                     : profile == RuntimeProfile.LEGACY
-                            ? new JamMailStore(config)
+                            ? new LegacyMailStore(config)
                             : new FileMailStore(config);
             mail = new MailRuntime(config, storage, plugins.mailExtensions());
             mail.attach(context);

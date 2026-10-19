@@ -109,7 +109,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
         }
     }
 
-    protected boolean needsJamPublication() {
+    protected boolean needsMailboxPublication() {
         return false;
     }
 
@@ -236,7 +236,7 @@ public class FileMailStore implements MailStorage, MailProcessingExtension {
             for (String consumer : readers) {
                 record.setProperty("done." + consumer, "true");
             }
-            if (!needsJamPublication()) {
+            if (!needsMailboxPublication()) {
                 record.remove("body");
             }
             FileRecords.write(path, record);

@@ -12,7 +12,7 @@ import org.fidonet.types.Message;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
 import java.net.Socket;
@@ -49,8 +49,8 @@ class ProfileDistributionTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"legacy", "transit"})
-    void processedPacketsAndTicsWithoutSqlOrUiAndRecoveredOnRestart(String profile)
+    @CsvSource({"legacy,jam", "legacy,msg", "transit,jam"})
+    void processedPacketsAndTicsWithoutSqlOrUiAndRecoveredOnRestart(String profile, String format)
             throws Exception {
         Path home = unpack(profile);
         try (var paths = Files.walk(home)) {
@@ -59,6 +59,11 @@ class ProfileDistributionTest {
                                                    .matches("(fido-database|h2-|ormlite-|rpc-|web-ui-).*\\.jar")));
         }
         installConfiguration(home, profile);
+        Files.writeString(home.resolve("jftn.conf"),
+                          Files.readString(home.resolve("jftn.conf"))
+                          + "LegacyNetmailFormat="
+                          + format
+                          + "\n");
         Path inbox = home.resolve("mail/inbound/peers/1-500-101-0");
         Files.createDirectories(inbox);
         Files.write(inbox.resolve("00000001.pkt"),
@@ -80,7 +85,9 @@ class ProfileDistributionTest {
         verifyServer(home);
         assertFalse(Files.exists(home.resolve("database")));
         if (profile.equals("legacy")) {
-            assertTrue(Files.exists(home.resolve("mail/echo/netmail.jhr")));
+            assertTrue(Files.exists(home.resolve(format.equals("msg")
+                    ? "mail/echo/netmail-msg/1.msg"
+                    : "mail/echo/netmail.jhr")));
             assertTrue(Files.exists(home.resolve("mail/echo/echo-test.jhr")));
             assertTrue(Files.readString(home.resolve("editor/areas.lst")).contains("AREADEF test"));
         } else {

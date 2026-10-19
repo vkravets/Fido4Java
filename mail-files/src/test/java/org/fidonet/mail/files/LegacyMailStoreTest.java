@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 
-class JamMailStoreTest {
+class LegacyMailStoreTest {
     @TempDir
     Path temporary;
 
@@ -67,7 +67,7 @@ class JamMailStoreTest {
     @Test
     void queuedEditorPostsOnceAndUsedSntOnRescanAndRestart() throws Exception {
         JFtnConfig config = config();
-        JamMailStore store = new JamMailStore(config);
+        LegacyMailStore store = new LegacyMailStore(config);
         store.configureSubscription(config.getLink(new FTNAddr("1:500/101")),
                                     "test",
                                     AccessLevel.BOTH);
@@ -85,7 +85,7 @@ class JamMailStoreTest {
                         .getMsgId()
                         .matches("1:500/100 [0-9a-f]{8}"));
         store.close();
-        JamMailStore reopened = new JamMailStore(config);
+        LegacyMailStore reopened = new LegacyMailStore(config);
         reopened.beforeExport(new Tosser(config, reopened));
         assertEquals(1, reopened.getQueuedNetmail().size());
         assertEquals(1, reopened.getMessageSize("test"));
@@ -104,7 +104,7 @@ class JamMailStoreTest {
     void preservedEditorDeletionAndGeneratedBothCatalogFormatsWithoutOverwritingCustomization()
             throws Exception {
         JFtnConfig config = config();
-        JamMailStore store = new JamMailStore(config);
+        LegacyMailStore store = new LegacyMailStore(config);
         store.createArea("test");
         Message message = outgoing(true, true);
         message.setUpLink(new FTNAddr("1:500/101"));
@@ -118,7 +118,7 @@ class JamMailStoreTest {
         Files.writeString(custom, "; operator customization");
         store.beforeExport(new Tosser(config, store));
         store.close();
-        JamMailStore reopened = new JamMailStore(config);
+        LegacyMailStore reopened = new LegacyMailStore(config);
         assertEquals(0, reopened.getMessageSize("test"));
         assertTrue(reopened.isDupe(message));
         assertEquals("; operator customization", Files.readString(custom));
@@ -128,36 +128,36 @@ class JamMailStoreTest {
                         .contains(" -b Jam -a 1:500/100"));
         reopened.close();
         assertThrows(IOException.class,
-                     () -> new JamMailStore(config("JamEcho=test,"
-                                                   + temporary.resolve("moved/test")
-                                                   + ",1:500/100\n")));
+                     () -> new LegacyMailStore(config("JamEcho=test,"
+                                                      + temporary.resolve("moved/test")
+                                                      + ",1:500/100\n")));
     }
     @Test
     void honoredCustomBindingsAndRejectedMissingPrimaryFiles() throws Exception {
         Path custom = temporary.resolve("custom-jam/test");
         JFtnConfig config = config("JamEcho=test," + custom + ",1:500/100\n");
-        JamMailStore store = new JamMailStore(config);
+        LegacyMailStore store = new LegacyMailStore(config);
         store.addMessage(outgoing(true, true), "test");
         assertEquals(custom.toAbsolutePath(), store.mailbox("test").getPath());
         store.close();
         Path text = Path.of(custom + ".jdt");
         byte[] backup = Files.readAllBytes(text);
         Files.delete(text);
-        assertThrows(IOException.class, () -> new JamMailStore(config));
+        assertThrows(IOException.class, () -> new LegacyMailStore(config));
         Files.write(text, backup);
-        JamMailStore reopened = new JamMailStore(config);
+        LegacyMailStore reopened = new LegacyMailStore(config);
         assertEquals(1, reopened.getMessageSize("test"));
         reopened.close();
         assertThrows(IOException.class,
-                     () -> new JamMailStore(config("JamRoot="
-                                                   + temporary.resolve("different")
-                                                   + "\n")));
+                     () -> new LegacyMailStore(config("JamRoot="
+                                                      + temporary.resolve("different")
+                                                      + "\n")));
     }
 
     @Test
     void leftSntClearUntilRoutingSucceededAndRecoveredPreparedSubmission() throws Exception {
         JFtnConfig config = config();
-        JamMailStore store = new JamMailStore(config);
+        LegacyMailStore store = new LegacyMailStore(config);
         Message message = new Message("Local",
                                       "Remote",
                                       new FTNAddr("1:500/100"),
@@ -173,7 +173,7 @@ class JamMailStoreTest {
         String id = store.mailbox(null).read().get(0).getMessage().getMsgId();
         store.close();
         JFtnConfig routed = config("DefaultRoute=1:500/101\n");
-        JamMailStore reopened = new JamMailStore(routed);
+        LegacyMailStore reopened = new LegacyMailStore(routed);
         reopened.beforeExport(new Tosser(routed, reopened));
         assertEquals(id, reopened.getQueuedNetmail().get(0).getMessage().getMsgId());
         assertTrue((reopened.mailbox(null).read().get(0).getAttributes() & JamArea.SENT) != 0);
@@ -200,14 +200,14 @@ class JamMailStoreTest {
         assertTrue(received.getMsgDate().startsWith(original.getMsgDate().substring(1, 2) + " "));
         assertTrue(received.getMsgId() == null);
         received.setUpLink(original.getFAddr());
-        JamMailStore store = new JamMailStore(config);
+        LegacyMailStore store = new LegacyMailStore(config);
         store.saveNetmail(received, "raw-date", null);
         store.mailbox(null).locked(access -> {
             access.attributes(1, JamArea.DELETED, 0);
             return null;
         });
         store.close();
-        JamMailStore reopened = new JamMailStore(config);
+        LegacyMailStore reopened = new LegacyMailStore(config);
         assertTrue(reopened.mailbox(null).read().isEmpty());
         assertTrue(reopened.getLocalNetmail(new FTNAddr("1:500/100")).isEmpty());
         reopened.close();
@@ -216,11 +216,11 @@ class JamMailStoreTest {
     @Test
     void rejectedInvalidBindingsWithoutPublishingAnEmptyArea() throws Exception {
         JFtnConfig config = config();
-        JamMailStore initial = new JamMailStore(config);
+        LegacyMailStore initial = new LegacyMailStore(config);
         initial.close();
         String invalid = "JamEcho=bad," + temporary.resolve("jam/netmail") + ",1:500/100\n";
-        assertThrows(IOException.class, () -> new JamMailStore(config(invalid)));
-        JamMailStore reopened = new JamMailStore(config);
+        assertThrows(IOException.class, () -> new LegacyMailStore(config(invalid)));
+        LegacyMailStore reopened = new LegacyMailStore(config);
         assertTrue(reopened.getAreas().isEmpty());
         reopened.close();
     }

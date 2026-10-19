@@ -6,7 +6,7 @@ import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.mail.files.FileMailStore;
-import org.fidonet.mail.files.JamMailStore;
+import org.fidonet.mail.files.LegacyMailStore;
 
 import java.util.Locale;
 import java.util.Set;
@@ -43,7 +43,7 @@ final class ProfileCommands {
             return true;
         }
         MailStorage storage = profile == RuntimeProfile.LEGACY
-                ? new JamMailStore(config)
+                ? new LegacyMailStore(config)
                 : new FileMailStore(config);
         try {
             MailRuntime.runOnce(config, storage);

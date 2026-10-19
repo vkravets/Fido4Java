@@ -15,7 +15,7 @@ Station metadata uses `SysOp` and the optional `System`, `Location` and `NDL` ke
 Report bugs and feature requests through the repository's issue tracker.
 
 ### FEATURES
-- Full/Headless with SQL, Legacy with primary JAM, and SQL-free Transit profiles.
+- Full/Headless with SQL, Legacy with JAM/MSG mailboxes, and SQL-free Transit profiles.
 - Netmail and echomail routing, subscriptions and durable outbound queues.
 - Binkp 1.0/1.1, NR and resumable transfers; Netty by default, with MINA2 available.
 - Optional JAM editor views and historical archive import, checked against HPT.

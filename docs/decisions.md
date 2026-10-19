@@ -608,14 +608,17 @@ The subsequent runtime profiles implementation is described in decision 35 and
 ## 35. Storage profiles select capabilities and separate installation artifacts
 
 Full/Headless retain authoritative SQL storage; Full alone includes UI/RPC.
-Legacy uses primary JAM with a separate durable delivery journal. Transit keeps
+Legacy uses primary JAM echoes and selectable JAM/FTS1 MSG netmail with a separate
+durable delivery journal. JAM netmail remains the default; the selected storage
+format/path/encoding is pinned in operational state, with no implicit conversion.
+PKT remains a delivery format rather than an editor mailbox. Transit keeps
 file queues, identities and a retained local service-mail spool without reader
 mailboxes. All profiles reuse the existing parsers, routers, PKT/TIC and delivery
 code. SQL-free profiles reject SQL policy sources and directory-based virtual
 links rather than silently creating a database or granting directory trust.
 
 Legacy scans local unsent editor messages, publishes a stable queue entry and
-then sets JAM Snt. A durable receipt covers restart before that flag is written.
+then sets the mailbox Snt flag. A durable receipt covers restart before that flag is written.
 Editor deletions/read state survive scans and restart. Generated AREADEF and
 Husky area catalogs are separate from personal GoldED configuration. Existing
 SQL-to-JAM bridge semantics remain available only to SQL profiles.

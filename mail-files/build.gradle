@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
 }
 
-description = 'SQL-free mail journals and primary JAM mail storage'
+description = 'SQL-free mail journals, primary JAM mailboxes and MSG netmail storage'
 
 dependencies {
     api project(':jtoss')

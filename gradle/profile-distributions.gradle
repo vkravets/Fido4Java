@@ -95,6 +95,9 @@ def prepareProfiles = tasks.register('prepareProfileLayouts') {
                 example.append('EchoSubscriptions=config\nNetmailRoutes=config\nRobotAccessSource=files\nFileEchoSource=files\nNodeDirectoryEnabled=false\nJamBridgeEnabled=false\n', 'UTF-8')
                 delete new File(root, 'database')
             }
+            if (profile == 'legacy') {
+                example.append('\n# Netmail mailbox: jam (default) or numbered FTS1 *.msg files.\nLegacyNetmailFormat=jam\n# MsgNetmailPath=./mail/netmail\n# MsgCharset=CP866\n', 'UTF-8')
+            }
         }
     }
 }

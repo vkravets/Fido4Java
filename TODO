@@ -31,7 +31,7 @@ Remaining implementation
   KFS/TFS, hold/busy recovery and two-way HTick toss/hatch/Replaces now have
   container tests. Runbook and fixture boundaries: docs/husky-integration.md.
 - Add explicit stopped-node storage/profile migration tooling. Full/Headless,
-  primary-JAM Legacy and SQL-free Transit now have separate installation profiles.
+  JAM/MSG Legacy and SQL-free Transit now have separate installation profiles.
   Current recovery/switching constraints: docs/transit-profiles.md.
 
 Optional future scope (not committed features)
