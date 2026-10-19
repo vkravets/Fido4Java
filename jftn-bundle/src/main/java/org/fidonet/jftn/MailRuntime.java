@@ -119,8 +119,11 @@ public final class MailRuntime implements AutoCloseable {
             if (acquired == null) {
                 throw new IOException("A mail service is already using " + stateDirectory);
             }
-            MailDatabaseConfiguration.apply(config, base);
+            MailStoreConfiguration.apply(config, base);
             tosser = new Tosser(config, base);
+            if (base instanceof MailProcessingExtension) {
+                created.add((MailProcessingExtension) base);
+            }
             for (MailExtensionFactory factory : factories) {
                 factory.create(config, base).ifPresent(created::add);
             }

@@ -1,6 +1,7 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +14,10 @@ final class NodeDirectories {
     }
 
     static void defaults(Path root) throws IOException {
+        defaults(root, RuntimeProfile.FULL);
+    }
+
+    static void defaults(Path root, RuntimeProfile profile) throws IOException {
         for (String directory : List.of("mail/inbound",
                                         "mail/outbound",
                                         "mail/tmp",
@@ -23,16 +28,20 @@ final class NodeDirectories {
                                         "logs",
                                         "lists",
                                         "fileecho")) {
+            if (directory.equals("database") && !profile.usesSql()) {
+                continue;
+            }
             Files.createDirectories(root.resolve(directory));
         }
-        PluginConfigurationFiles.createMissing(root.resolve("conf.d"));
+        PluginConfigurationFiles.createMissing(root.resolve("conf.d"), profile);
     }
 
     static void configured(JFtnConfig config) throws IOException {
         if (config.getSourcePath() != null) {
             PluginConfigurationFiles.createMissing(config.getSourcePath()
                                                          .getParent()
-                                                         .resolve("conf.d"));
+                                                         .resolve("conf.d"),
+                                                   RuntimeProfile.read(config));
         }
         for (String key : List.of("Inbound", "Outbound", "Tmp", "EchoPath")) {
             Files.createDirectories(Path.of(config.getValue(key)));

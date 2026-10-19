@@ -1,7 +1,6 @@
 package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.FileEchoEvent;
@@ -47,11 +46,7 @@ final class FileEchoProcessor implements FileEchoService {
             throw new IllegalArgumentException("TicReplaces must be true or false");
         }
         replacesEnabled = Boolean.parseBoolean(replaces);
-        store = new FileEchoAreaService(config,
-                                        api.getStorage() instanceof MailDatabaseFacade
-                                                ? api.getDatabase()
-                                                : null,
-                                        api.getState());
+        store = new FileEchoAreaService(config, api.getStorage(), api.getState());
     }
 
     FileEchoAreaService store() {

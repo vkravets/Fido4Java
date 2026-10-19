@@ -37,6 +37,7 @@ dependencies {
     implementation project(':scheduler')
     implementation project(':jtoss')
     implementation project(':mail-api')
+    implementation project(':mail-files')
     runtimeOnly project(':fileecho')
     runtimeOnly project(':jam-bridge')
     runtimeOnly project(':nodelist')

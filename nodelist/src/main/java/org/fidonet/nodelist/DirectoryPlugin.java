@@ -1,6 +1,7 @@
 package org.fidonet.nodelist;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
@@ -47,6 +48,9 @@ public final class DirectoryPlugin implements Plugin<MailExtensionFactory>, Mail
     @Override
     public Optional<MailProcessingExtension> create(JFtnConfig config, MailStorage base) {
         if (!DirectoryService.flag(config, "NodeDirectoryEnabled", true)) {
+            return Optional.empty();
+        }
+        if (!RuntimeProfile.read(config).usesSql()) {
             return Optional.empty();
         }
         if (config.getValuesAsList("DirectorySource") == null

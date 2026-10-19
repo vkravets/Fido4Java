@@ -1,6 +1,7 @@
 package org.fidonet.jftn.tosser.jam;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
@@ -52,6 +53,9 @@ public final class JamBridgePlugin implements Plugin<MailExtensionFactory>, Mail
         }
         if (!"true".equalsIgnoreCase(enabled)) {
             throw new IllegalArgumentException("JamBridgeEnabled must be true or false");
+        }
+        if (!RuntimeProfile.read(config).usesSql()) {
+            return Optional.empty();
         }
         JamBridge bridge = new JamBridge(config, base, base);
         return Optional.of(new MailProcessingExtension() {

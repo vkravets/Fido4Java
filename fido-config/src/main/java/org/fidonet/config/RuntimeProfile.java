@@ -8,7 +8,8 @@ public enum RuntimeProfile {
 
     public static RuntimeProfile read(JFtnConfig config) {
         try {
-            return valueOf(config.getValue("RuntimeProfile", "full")
+            return valueOf(config.getValue("RuntimeProfile",
+                                           System.getProperty("jftn.profile", "full"))
                                  .trim()
                                  .toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException failure) {
@@ -38,6 +39,7 @@ public enum RuntimeProfile {
         require(config, "FileEchoSource", "files");
         require(config, "NodeDirectoryEnabled", "false");
         require(config, "JamBridgeEnabled", "false");
+        require(config, "AllowVirtualOutbound", "false");
     }
 
     private static void require(JFtnConfig config, String key, String expected) {

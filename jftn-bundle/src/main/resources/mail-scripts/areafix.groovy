@@ -1,3 +1,4 @@
+import org.fidonet.config.RuntimeProfile
 import org.fidonet.echobase.AccessLevel
 import org.fidonet.echobase.EchoHistory
 import org.fidonet.jftn.script.RobotRequest
@@ -9,7 +10,7 @@ class AreaFixRobot {
 
     AreaFixRobot(api) {
         this.api = api
-        if (!api.config.getValue('EchoSubscriptions', 'config').equalsIgnoreCase('database')) {
+        if (RuntimeProfile.read(api.config) == RuntimeProfile.FULL && !api.config.getValue('EchoSubscriptions', 'config').equalsIgnoreCase('database')) {
             throw new IllegalArgumentException('AreaFix requires EchoSubscriptions=database')
         }
 

@@ -18,7 +18,8 @@ public final class EchoAutoCreatePolicy {
         if (declarations == null || declarations.isEmpty()) {
             return rules;
         }
-        if (!config.getValue("EchoSubscriptions", "config").equalsIgnoreCase("database")) {
+        if (RuntimeProfile.read(config) == RuntimeProfile.FULL
+                && !config.getValue("EchoSubscriptions", "config").equalsIgnoreCase("database")) {
             throw new IllegalArgumentException("AutoCreateEchoFrom requires EchoSubscriptions=database");
         }
         for (String declaration : declarations) {

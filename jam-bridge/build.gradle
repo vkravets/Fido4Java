@@ -3,6 +3,8 @@ apply plugin: 'java-library'
 description = 'Optional JAM editor synchronization plugin'
 
 dependencies {
+    testImplementation project(':fido-database')
+
     api project(':jtoss')
     implementation project(':plugin-manager')
     implementation 'org.slf4j:slf4j-api:2.0.20'

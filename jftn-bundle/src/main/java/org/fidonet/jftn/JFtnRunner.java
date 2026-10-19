@@ -36,7 +36,8 @@ import org.fidonet.binkp.netty.plugin.NettyPlugin;
 import org.fidonet.binkp.netty.plugin.Runner;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.ParseConfigException;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.config.RuntimeProfile;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.plugins.OfflineCommand;
 import org.fidonet.jftn.plugins.PluginManager;
 import org.fidonet.jftn.poll.OutboundTransportFactory;
@@ -44,8 +45,8 @@ import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.scheduler.Scheduler;
 import org.fidonet.jftn.scheduler.plugin.SchedulerPlugin;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
-import org.fidonet.jftn.ui.NodeRpc;
-import org.fidonet.jftn.web.InitialSetup;
+import org.fidonet.mail.files.FileMailStore;
+import org.fidonet.mail.files.JamMailStore;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -55,6 +56,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,25 +83,34 @@ public class JFtnRunner {
             System.out.println("JFtn " + (version == null ? "development" : version));
             return;
         }
+        RuntimeProfile profile = installationProfile();
+        if (ProfileCommands.handle(args, profile)) {
+            return;
+        }
         for (OfflineCommand command : ServiceLoader.load(OfflineCommand.class)) {
             if (command.handle(args)) {
                 return;
             }
         }
-        if (RobotRequestCommand.handle(args) || RobotAccessCommand.handle(args)) {
+        if (profile.usesSql()
+                && (RobotRequestCommand.handle(args) || RobotAccessCommand.handle(args))) {
             return;
         }
         if (args.length > 0 && args[0].startsWith("--")) {
             throw new IllegalArgumentException("Unknown command; its optional plugin may be missing");
         }
-        NodeDirectories.defaults(Path.of("."));
+        NodeDirectories.defaults(Path.of("."), profile);
         logger.info("Starting JFtnNode...");
-        InitialSetup.prepare(Path.of("jftn.conf"));
+        ProfileServices.forProfile(profile).prepare(Path.of("jftn.conf"));
         final long starttime = System.currentTimeMillis();
         final PluginManager pluginManager = PluginManager.getInstance();
         try {
             withShutdownHook(waiter -> runApplication("jftn.conf",
-                                                      pluginManager::loadPlugins,
+                                                      () -> pluginManager.loadPlugins(id -> profile.usesSql()
+                                                              || !Set.of("database",
+                                                                         "jam-bridge",
+                                                                         "nodelist")
+                                                                     .contains(id)),
                                                       pluginContexts(pluginManager),
                                                       pluginManager::unloadPlugins,
                                                       waiter));
@@ -145,12 +156,15 @@ public class JFtnRunner {
             throws Exception {
         JFtnConfig config = new JFtnConfig();
         config.load(configFile);
+        RuntimeProfile profile = RuntimeProfile.read(config);
+        profile.validate(config);
         NodeDirectories.configured(config);
         Runner runner;
         Scheduler scheduler;
         SessionContext context;
         MailRuntime mail = null;
-        NodeRpc rpc = null;
+        AutoCloseable rpc = null;
+        MailStorage storage = null;
         PollService polls = null;
         try {
             loadPlugins.run();
@@ -159,13 +173,17 @@ public class JFtnRunner {
             scheduler = Scheduler.class.cast(requireContext(plugins.getContext(SchedulerPlugin.SCHEDULER_PLUGIN_ID),
                                                             "scheduler"));
             context = createSessionContext(config);
-            MailDatabaseFacade database = MailDatabaseFacade.class.cast(requireContext(plugins.getContext("database"),
-                                                                                       "database"));
-            mail = new MailRuntime(config, database, plugins.mailExtensions());
+            storage = profile.usesSql()
+                    ? MailStorage.class.cast(requireContext(plugins.getContext("database"),
+                                                            "database"))
+                    : profile == RuntimeProfile.LEGACY
+                            ? new JamMailStore(config)
+                            : new FileMailStore(config);
+            mail = new MailRuntime(config, storage, plugins.mailExtensions());
             mail.attach(context);
             mail.start();
             polls = plugins.polling(config, context);
-            rpc = NodeRpc.open(config, database, mail, context, polls);
+            rpc = ProfileServices.forProfile(profile).open(config, storage, mail, context, polls);
         } catch (Exception failure) {
             if (polls != null) {
                 polls.close();
@@ -180,11 +198,15 @@ public class JFtnRunner {
                     failure.addSuppressed(closeFailure);
                 }
             }
+            if (storage != null && !profile.usesSql()) {
+                storage.close();
+            }
             unloadPlugins.run();
             throw failure;
         }
         MailRuntime activeMail = mail;
-        NodeRpc activeRpc = rpc;
+        AutoCloseable activeRpc = rpc;
+        MailStorage activeStorage = storage;
         PollService activePolls = polls;
         runNode(runner,
                 scheduler,
@@ -193,18 +215,18 @@ public class JFtnRunner {
                 Integer.parseInt(config.getValue("BinkpPort",
                                                  Integer.toString(Connector.BINK_PORT))),
                 waiter,
-                () -> stopServices(scheduler,
-                                   runner,
-                                   activeMail,
-                                   activeRpc,
-                                   activePolls,
-                                   unloadPlugins));
+                () -> stopServices(scheduler, runner, activeMail, activeRpc, activePolls, () -> {
+                    if (!profile.usesSql()) {
+                        activeStorage.close();
+                    }
+                    unloadPlugins.run();
+                }));
     }
 
     private static void stopServices(Scheduler scheduler,
                                      Runner runner,
                                      MailRuntime mail,
-                                     NodeRpc rpc,
+                                     AutoCloseable rpc,
                                      PollService polls,
                                      Runnable unloadPlugins) {
         try (mail; polls) {
@@ -219,8 +241,8 @@ public class JFtnRunner {
                     runner.shutdown();
                 }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to stop node services", e);
         } finally {
             unloadPlugins.run();
         }
@@ -243,6 +265,23 @@ public class JFtnRunner {
                                                   config.getValue("NDL", "BINKP"),
                                                   String.join(" ", addresses));
         return new SessionContext(station, new LinksInfo(links));
+    }
+
+    private static RuntimeProfile installationProfile() throws Exception {
+        Path marker = Path.of("runtime-profile");
+        if (Files.isRegularFile(marker)) {
+            System.setProperty("jftn.profile", Files.readString(marker).trim());
+        }
+        JFtnConfig config = new JFtnConfig();
+        if (Files.isRegularFile(Path.of("jftn.conf"))) {
+            config.load("jftn.conf");
+        }
+        RuntimeProfile profile = RuntimeProfile.read(config);
+        if (Files.exists(marker)
+                && !profile.name().equalsIgnoreCase(System.getProperty("jftn.profile"))) {
+            throw new IllegalArgumentException("Configuration profile differs from the installed bundle");
+        }
+        return profile;
     }
 
     interface ApplicationTask {

@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -73,6 +74,16 @@ public class PluginManager extends HasEventBus {
 
     public void loadPlugins() {
         loadPlugins(ServiceLoader.load(Plugin.class));
+    }
+
+    public void loadPlugins(Predicate<String> enabled) {
+        List<Plugin> selected = new ArrayList<>();
+        for (Plugin plugin : ServiceLoader.load(Plugin.class)) {
+            if (enabled.test(plugin.getPluginInfo().getId())) {
+                selected.add(plugin);
+            }
+        }
+        loadPlugins(selected);
     }
 
     void loadPlugins(Iterable<? extends Plugin> plugins) {

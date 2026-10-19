@@ -1,6 +1,7 @@
 package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
@@ -152,7 +153,7 @@ final class FileEchoSettings implements SettingsExtension {
         List<Map<String, String>> rows = new ArrayList<>();
         if (api.getRobotAccess().getSource().equals("database")) {
             for (RobotService service : List.of(RobotService.FileFix, RobotService.Tic)) {
-                for (RobotAccessRule rule : api.getDatabase().getRobotRules().list(service)) {
+                for (RobotAccessRule rule : api.getStorage().getRobotRules().list(service)) {
                     rows.add(Map.of("service",
                                     service.name(),
                                     "peer",
@@ -244,7 +245,7 @@ final class FileEchoSettings implements SettingsExtension {
         }
         RobotService kind = RobotService.valueOf(service);
         String address = new FTNAddr(peer).toString();
-        RobotAccessRule previous = api.getDatabase()
+        RobotAccessRule previous = api.getStorage()
                                       .getRobotRules()
                                       .list(kind)
                                       .stream()
@@ -257,6 +258,6 @@ final class FileEchoSettings implements SettingsExtension {
         RobotAccessRule next = password.isEmpty() && previous != null
                 ? previous.withPolicy(masks, "", active)
                 : RobotAccessRule.create(kind, address, password, masks, "", active);
-        api.getDatabase().getRobotRules().save(next);
+        ((MailDatabaseFacade) api.getStorage()).getRobotRules().save(next);
     }
 }

@@ -10,9 +10,9 @@ import org.fidonet.types.Link;
 import java.util.List;
 import java.util.Locale;
 
-/** Seeds configured links and file-managed echo subscriptions in the mail database. */
-final class MailDatabaseConfiguration {
-    private MailDatabaseConfiguration() {
+/** Seeds configured links and file-managed echo subscriptions in the selected mail store. */
+final class MailStoreConfiguration {
+    private MailStoreConfiguration() {
     }
 
     static void apply(JFtnConfig config, MailStorage base) {

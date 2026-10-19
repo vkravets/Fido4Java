@@ -1,8 +1,10 @@
 package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.types.FTNAddr;
 
@@ -28,11 +30,11 @@ final class FileEchoAreaService {
     private final Map<String, FileCreationRecord> creation = new TreeMap<>();
     private final Map<String, String> fileCreators = new TreeMap<>();
 
-    FileEchoAreaService(JFtnConfig config, MailDatabaseFacade base, ScriptState state)
-            throws IOException {
+    FileEchoAreaService(JFtnConfig config, MailStorage base, ScriptState state) throws IOException {
         this.config = config;
         this.state = state;
-        String source = config.getValue("FileEchoSource", "database");
+        String source = config.getValue("FileEchoSource",
+                                        RuntimeProfile.read(config).hasUi() ? "database" : "files");
         if (!source.equals("files") && !source.equals("database")) {
             throw new IllegalArgumentException("FileEchoSource must be database or files");
         }
@@ -57,7 +59,7 @@ final class FileEchoAreaService {
             }
         }
         if (!files) {
-            repository = new FileEchoRepository(base);
+            repository = new FileEchoRepository((MailDatabaseFacade) base);
             sql(() -> {
                 // Configured initial areas are insert-only. UI edits/disabled records survive restart.
                 for (FileAreaRecord area : declared.values()) {

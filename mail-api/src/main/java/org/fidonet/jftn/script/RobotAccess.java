@@ -1,6 +1,7 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.RuntimeProfile;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotRules;
@@ -30,7 +31,9 @@ public final class RobotAccess {
     }
 
     public static String source(JFtnConfig config) {
-        String source = config.getValue("RobotAccessSource", "database").trim();
+        String source = config.getValue("RobotAccessSource",
+                                        RuntimeProfile.read(config).hasUi() ? "database" : "files")
+                              .trim();
         if (!source.equals("files") && !source.equals("database")) {
             throw new IllegalArgumentException("RobotAccessSource must be files or database");
         }

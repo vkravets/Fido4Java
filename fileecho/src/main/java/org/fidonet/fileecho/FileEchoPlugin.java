@@ -16,7 +16,7 @@ public final class FileEchoPlugin implements Plugin<MailScriptExtension>, MailSc
 
     @Override
     public PluginInformation getPluginInfo() {
-        return new PluginInformation("fileecho", 1, 0, "TIC file echo delivery", "database");
+        return new PluginInformation("fileecho", 1, 0, "TIC file echo delivery");
     }
 
     @Override

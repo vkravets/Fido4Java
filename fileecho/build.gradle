@@ -3,6 +3,9 @@ apply plugin: 'java-library'
 description = 'Optional TIC file echo delivery plugin'
 
 dependencies {
+    compileOnly project(':fido-database')
+    testImplementation project(':fido-database')
+
     implementation project(':mail-api')
     implementation project(':plugin-manager')
     implementation 'org.slf4j:slf4j-api:2.0.20'

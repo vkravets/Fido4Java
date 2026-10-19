@@ -27,7 +27,8 @@ class RuntimeProfileTest {
     void rejectedUnavailableServicesBeforeStarting() throws Exception {
         for (String key : new String[]{"EchoSubscriptions=database", "NetmailRoutes=database",
                 "RobotAccessSource=database", "FileEchoSource=database",
-                "NodeDirectoryEnabled=true", "JamBridgeEnabled=true", "RpcEnabled=true"}) {
+                "NodeDirectoryEnabled=true", "JamBridgeEnabled=true", "RpcEnabled=true",
+                "AllowVirtualOutbound=true"}) {
             JFtnConfig candidate = config("RuntimeProfile=legacy\n" + key + "\n");
             assertThrows(IllegalArgumentException.class,
                          () -> RuntimeProfile.read(candidate).validate(candidate));

@@ -3,6 +3,8 @@ apply plugin: 'java-library'
 description = 'Shared mail automation and optional mail service contracts'
 
 dependencies {
+    testImplementation project(':fido-database')
+
     api project(':jtoss')
     api project(':script-api')
     api project(':plugin-manager')
