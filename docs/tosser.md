@@ -380,7 +380,9 @@ duplicate checking makes repeated imports safe.
 
 ## External JAM editor
 
-SQL remains the authoritative store. Configure the optional JAM plugin in
+In Full/Headless, SQL remains the authoritative store. Legacy instead uses
+[primary JAM mailboxes](transit-profiles.md#primary-jam-and-golded).
+Configure the optional SQL-to-JAM plugin in
 `conf.d/20-jam-bridge.conf`. Optional editor views are configured with
 repeated `JamEcho=AREA,path[,AKA]` and `JamNetmail=path[,AKA]` entries. Paths omit
 the `.jhr` suffix. The default AKA is the first configured local address;

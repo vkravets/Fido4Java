@@ -4,9 +4,9 @@ For request envelopes, command support and Husky interoperability, see
 [mail robots](mail-robots.md).
 
 AreaFix, FileFix and TIC authorization share one Java API and two interchangeable
-providers. This is independent of whether the UI/RPC listeners run. The node still
-uses its normal mail database, subscription state and durable delivery queues.
-The selected source controls authorization rules, not message storage.
+providers. The selected source controls authorization rules, independently of
+message storage. Full/Headless use SQL mail storage; Legacy/Transit use durable
+file state and require file-managed authorization. See [runtime profiles](transit-profiles.md).
 
 The full distribution defaults to `RobotAccessSource=database`, including when
 the setting is absent. Administrative RPC rule editing and explicit file import
@@ -15,7 +15,8 @@ never overwritten: an explicit `RobotAccessSource=files` keeps file mode active.
 
 ## File-only administration
 
-Select file mode explicitly with this in `conf.d/40-mail-scripts.conf`:
+Reduced distributions select file mode by default. In Full, select it explicitly
+with this in `conf.d/40-mail-scripts.conf`:
 
 ```ini
 RobotAccessSource=files
@@ -24,7 +25,7 @@ MailScript=./scripts/mail-scripts/filefix.groovy
 MailScript=./scripts/mail-scripts/directory-import.groovy
 ```
 
-In `conf.d/41-areafix.conf`:
+In `conf.d/41-areafix.conf` (Full example; reduced profiles use `EchoSubscriptions=config`):
 
 ```ini
 EchoSubscriptions=database
@@ -185,3 +186,7 @@ RPC in `90-rpc.conf`. The normal packaged default then selects the database.
 Technical script loading, charset, file-area paths and directory-feed settings
 remain in conf.d in both modes. Scripts retain command parsing and actions;
 credential checks and access policy selection are implemented in Java.
+
+SQL-free Legacy/Transit also support `--check-robot-access` without a database
+driver. Import/export between SQL rules and files applies to SQL profiles only;
+Legacy/Transit already use the files as their authorization source.

@@ -1,6 +1,6 @@
 # Project decisions and working agreements
 
-Last reconciled: 2026-10-18. This is a decision record, not a complete chat transcript.
+Last reconciled: 2026-10-19. This is a decision record, not a complete chat transcript.
 The implementation and tests are authoritative when this document becomes stale.
 Update the relevant entry when a decision changes; record the replacement and reason.
 For current unfinished work, read [TODO](../TODO) and inspect the current Git state.
@@ -16,8 +16,9 @@ Cross-source records remain distinct and labelled. Free-form address inputs use
 bounded debounced suggestions; trusted-peer selectors retain configured-only choices.
 
 Echo autocreation requires both the master switch and an exact configured sender
-in `AutoCreateEchoFrom=address,WRITE|BOTH`. Database-managed subscriptions are
-required. After packet authentication and hooks, SQL creates the absent area and
+in `AutoCreateEchoFrom=address,WRITE|BOTH`. Full uses database-managed
+subscriptions; file-managed runtime profiles persist the same explicit grants
+through their selected mail store. After packet authentication and hooks, SQL creates the absent area and
 its sole initial grant transactionally. Existing areas/grants/cursors stay intact;
 other peers gain no rights. Disabling normal echo access checks does not bypass
 the creation allowlist. Rules are live configuration, editable per link through
@@ -555,7 +556,7 @@ priority order, special route targets, RouteFile and direct FRQ follow those
 implementations. These features do not import the whole Husky configuration
 language or claim implementation of every FTSC document.
 
-SQL and the internal spool remain authoritative. Optional external BSO publishes
+For Full/Headless, SQL and the internal spool remain authoritative. Optional external BSO publishes
 standard FLO/REQ controls and isolated copies with durable ownership/consumption
 records; native polling is disabled in this mode. Raw packets retain eight-hex
 names and use FLO rather than shared `.out` accumulation. Directory links are
@@ -601,8 +602,30 @@ application again. Reports retain command output and per-peer filesystem state.
 Local evidence uses Podman Linux/amd64; actual execution of the updated GHA
 workflow remains a remote CI result, not something implied by a local test.
 
-Headless/SQL-free transit profiles remain a [proposal](transit-profiles.md).
-This integration work does not change the current SQL storage invariant.
+The subsequent runtime profiles implementation is described in decision 35 and
+[the profile runbook](transit-profiles.md).
+
+## 35. Storage profiles select capabilities and separate installation artifacts
+
+Full/Headless retain authoritative SQL storage; Full alone includes UI/RPC.
+Legacy uses primary JAM with a separate durable delivery journal. Transit keeps
+file queues, identities and a retained local service-mail spool without reader
+mailboxes. All profiles reuse the existing parsers, routers, PKT/TIC and delivery
+code. SQL-free profiles reject SQL policy sources and directory-based virtual
+links rather than silently creating a database or granting directory trust.
+
+Legacy scans local unsent editor messages, publishes a stable queue entry and
+then sets JAM Snt. A durable receipt covers restart before that flag is written.
+Editor deletions/read state survive scans and restart. Generated AREADEF and
+Husky area catalogs are separate from personal GoldED configuration. Existing
+SQL-to-JAM bridge semantics remain available only to SQL profiles.
+
+The build seals one compiled superset and its per-profile library manifests.
+Packaging derives eight public ZIPs from that same verified input: four profiles,
+each with/without runtimes. With-JRE ZIPs contain both pinned Windows x64 and
+Linux x64 JREs. Reduced archives exclude UI/RPC; Legacy/Transit additionally omit
+SQL/ORM/database and directory-catalog JARs. No storage migration or pruning is
+implied by changing a profile marker; journals and mail are operational state.
 
 ## Changing these decisions
 

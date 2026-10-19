@@ -232,7 +232,7 @@ These commands are examples for a developer checkout, not the installed node.
 .\gradlew.bat coverageStatistics -PcoverageWithBinkd
 
 # Portable no-JRE package; runtime bundles also use gradle/runtime-lock.json.
-.\gradlew.bat :jftn-bundle:distZip
+.\gradlew.bat :jftn-bundle:distZipFullNoJre
 .\gradlew.bat :jftn-bundle:releaseDistributions
 ```
 
@@ -466,3 +466,20 @@ SHA-256 values were collected from official Node/Apache/Adoptium metadata and th
 Python artifact's published Sigstore message digest; bootstrap checks those fixed
 digests, not the full vendor signing chains. Project tests/CI still need to run
 after changing tools. Never commit the binary download to simplify a tool upgrade.
+
+## Runtime profile installation checks
+
+Runtime profiles are distinct from the development-tool profiles above. Build
+`:jftn-bundle:releaseDistributions` for eight public installation ZIPs, or select
+a task such as `:jftn-bundle:distZipLegacyNoJre`. `:jftn-bundle:distZip` is the
+internal compiled superset in `build/distribution-inputs`; CI seals this input
+and its profile library manifests before integration jobs. Packaging with
+`-PdistributionInput=...` filters that verified input without recompiling Java,
+Thrift or browser sources. See [profiles](transit-profiles.md) and
+[distributions](distributions.md).
+
+`:mail-files:test` checks SQL-free queue/JAM recovery.
+`:jftn-bundle:test --tests org.fidonet.jftn.ProfileDistributionTest` unpacks the
+reduced ZIPs and starts fresh JVMs using only packaged libraries. It covers
+PKT/TIC processing, restart, Headless SQL startup and an ephemeral-port binkp
+greeting. These tests use disposable state, never an installed station.

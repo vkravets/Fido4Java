@@ -32,7 +32,9 @@
 
 ## Architecture invariants
 
-- SQL is authoritative mail storage. JAM is a configurable optional bridge.
+- Full/Headless use authoritative SQL mail storage and an optional JAM bridge.
+  Legacy uses primary JAM; Transit uses filesystem delivery journals without reader
+  mailboxes. Never substitute a dummy SQL database for a SQL-free profile.
 - Netty is the default transport; MINA2 is retained; MINA3 was removed.
 - Thrift supports both TCP and HTTP/JSON. Keep transport lifecycle separate from
   service authorization/handlers. Edit contracts, never generated bindings.

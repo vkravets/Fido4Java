@@ -2,20 +2,26 @@
 
 JFtn uses an ordinary classpath distribution, not a fat JAR. Building from source
 needs the same Java, Node/npm and Thrift compiler/browser-runtime prerequisites
-as the [full build](../README.md#developers); packaging includes the compiled UI.
+as the [full build](../README.md#developers); the Full package includes the compiled UI.
 Run:
 
 ```sh
-./gradlew :jftn-bundle:distZip
+./gradlew :jftn-bundle:distZipFullNoJre
 ./gradlew :jftn-bundle:releaseDistributions
 ```
 
-The first task builds the portable package requiring installed Java 17+. The second
-also downloads the locked Temurin OpenJDK JRE 21 LTS archives and produces Linux x64
-and Windows x64 packages. Downloads are SHA-256 checked before use. URLs, versions
-and hashes are recorded in `gradle/runtime-lock.json`. Runtime binaries are build
-outputs and are not stored in Git. Vendor licenses and notices remain in `jre/`.
-Other platforms can use the no-JRE ZIP with a matching installed Java runtime.
+The first task builds the Full portable package requiring installed Java 17+.
+`releaseDistributions` produces **eight ZIPs**: Full, Headless, Legacy and Transit,
+each with and without JREs. For example, `distZipLegacyNoJre` and
+`distZipLegacyWithJre` build just those variants. See [runtime profiles](transit-profiles.md)
+for storage, configuration and recovery rules.
+
+The `with-jre` ZIPs contain both locked Linux x64 and Windows x64 Temurin runtimes
+under `jre/linux-x64` and `jre/windows-x64`. Launchers select the appropriate one.
+Downloads are SHA-256 checked; URLs, versions and hashes are recorded in
+`gradle/runtime-lock.json`. Runtime binaries stay out of Git. Other hosts can use
+the no-JRE ZIP with a matching installed Java runtime. A combined runtime archive
+is larger than an individual platform runtime package.
 
 ZIPs are in `jftn-bundle/build/distributions`. Use `-PreleaseVersion=1.2.3` to set the
 archive and JAR version; the default is `1.0-SNAPSHOT`.
@@ -29,13 +35,17 @@ jftn-<version>/
     groovy/               Groovy runtime JARs
   plugins/                Database, scheduler, Netty, nodelist and JAM bridge JARs
   scripts/mail-scripts/   Editable AreaFix, FileFix and directory import scripts
-  jre/                    Only present in a platform-specific runtime package
+  jre/                    Linux x64 and Windows x64 runtimes in with-jre packages
+  runtime-profile         Installed profile marker
   jftn.conf.example       Manual configuration template, never activated automatically
   conf.d/                 Plugin *.conf.example templates; UI never writes active *.conf
   database/ logs/ lists/ fileecho/
   mail/inbound/ mail/outbound/ mail/tmp/ mail/echo/ mail/received/
   docs/ LICENSE README.txt
 ```
+
+Full starts its first-run wizard. Headless, Legacy and Transit require a manual
+`jftn.conf` based on the supplied profile example and contain no UI/RPC libraries.
 
 The default Log4j2 configuration writes INFO and higher to both the console and
 `logs/jftn.log`, rotating the file at 10 MB. It includes binkp connection and
@@ -128,7 +138,7 @@ revision. VRT downloads the Storybook artifact from the same workflow run and
 installs browser test dependencies inside its container. No downstream test job
 rebuilds Java, Thrift or Vue application sources. Packaging uses `-PdistributionInput=<sealed-no-jre.zip>`.
 It smoke tests the bundled Linux launcher, JRE, first-run directories and embedded
-UI before saving all three ZIPs, `runtime-lock.json` and `SHA256SUMS`.
+UI before saving all eight profile ZIPs, `runtime-lock.json` and `SHA256SUMS`.
 Thrift and locked OpenJDK downloads are cached. Intermediate workflow artifacts
 and test reports are retained for 15 days; published release assets are separate
 from these temporary artifacts.

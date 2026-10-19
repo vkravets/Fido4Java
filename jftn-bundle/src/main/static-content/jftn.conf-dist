@@ -47,7 +47,7 @@ DupeAction=move
 # DupeAction=discard suppresses duplicates without keeping a separate message copy.
 
 # Unknown echoes are rejected unless both the master switch and a sender rule allow creation.
-# Requires EchoSubscriptions=database (the default AreaFix plugin configuration).
+# Full uses database-managed subscriptions; file-managed profiles persist explicit grants in their store.
 AutoCreateEcho=false
 EnforceEchoAccess=true
 # AutoCreateEchoFrom=1:500/101,WRITE

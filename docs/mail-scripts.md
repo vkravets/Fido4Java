@@ -51,6 +51,11 @@ their source inputs until completion.
 
 ## AreaFix
 
+Headless/Legacy/Transit use file-managed robot rules by default; their AreaFix
+policy can use `EchoSubscriptions=config`. Legacy supports explicit history
+rescans from JAM; Transit deliberately has no reader history to rescan.
+The shared script storage API is `api.storage` (`MailStorage`), not a SQL facade.
+
 The `*Peer` examples below apply to explicit file mode. In the default database
 mode, create equivalent access rules in the UI or perform a deliberate one-time
 file import; merely adding a peer line to a fragment does not grant access.

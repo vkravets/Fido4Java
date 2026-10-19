@@ -15,7 +15,8 @@ Station metadata uses `SysOp` and the optional `System`, `Location` and `NDL` ke
 Report bugs and feature requests through the repository's issue tracker.
 
 ### FEATURES
-- SQL-backed netmail and echomail, routing, subscriptions and durable outbound queues.
+- Full/Headless with SQL, Legacy with primary JAM, and SQL-free Transit profiles.
+- Netmail and echomail routing, subscriptions and durable outbound queues.
 - Binkp 1.0/1.1, NR and resumable transfers; Netty by default, with MINA2 available.
 - Optional JAM editor views and historical archive import, checked against HPT.
 - Scripted AreaFix, FileFix, TIC distribution and node/point directory imports.
@@ -32,15 +33,16 @@ See [remaining work](TODO) and the limitations in each service guide.
 Download and unpack a [release](https://github.com/vkravets/Fido4Java/releases).
 Packages contain separate application libraries, plugins and editable scripts.
 Use `jftn.cmd` on Windows, `./jftn.ps1` in PowerShell or `./jftn.sh` on Linux/macOS.
-On first start, open the private setup URL printed in the console to configure the
-station and create its administrator. Missing working directories are created.
+Full opens a first-run setup wizard through the private URL printed in the console.
+For Headless, Legacy and Transit, configure the supplied `jftn.conf.example` before
+starting. Missing working directories are created.
 See [distribution layout, upgrades and releases](docs/distributions.md).
 
 ### USAGE
 Start a launcher without arguments to run the node. `--version` prints its version.
 Offline [robot rule validation, import and export](docs/robot-access.md) are also
 available. For operation without UI/RPC, create `jftn.conf` from the supplied
-example and disable RPC explicitly; see the same guide.
+profile example; see [runtime profiles](docs/transit-profiles.md).
 
 ### DOCUMENTATION
 
@@ -50,7 +52,7 @@ example and disable RPC explicitly; see the same guide.
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [External BSO delivery, attachments and file requests](docs/bso.md)
 - [Real BSO/HTick container integration tests](docs/husky-integration.md)
-- [Proposed headless and SQL-free transit profiles](docs/transit-profiles.md)
+- [Full, Headless, Legacy and Transit profiles](docs/transit-profiles.md)
 - [RPC contracts, transports and authentication](docs/rpc-ui.md)
 - [Plugin configuration and upgrade rules](docs/plugin-configuration.md)
 - [AreaFix, FileFix, TIC and directory feed scripts](docs/mail-scripts.md)

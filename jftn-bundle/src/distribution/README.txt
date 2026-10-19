@@ -3,9 +3,14 @@ JFtn standalone node
 Windows: run jftn.cmd. PowerShell: run ./jftn.ps1.
 Linux/macOS without bundled JRE: run ./jftn.sh.
 Launchers use the bundled jre first, then JAVA_HOME, then java on PATH.
-The no-jre package requires Java 17 or newer. Runtime packages are platform-specific.
+The no-jre package requires Java 17 or newer. The with-jre package includes locked Windows x64 and Linux x64 runtimes.
 
-On a clean installation, open the private setup URL printed in the console.
+The runtime-profile file selects Full, Headless, Legacy or Transit.
+Only Full provides the setup wizard. For other profiles copy jftn.conf.example
+to jftn.conf and configure identities, trusted links and paths before starting.
+See docs/transit-profiles.md for storage, editor and recovery details.
+
+On a clean Full installation, open the private setup URL printed in the console.
 The wizard creates jftn.conf and the initial administrator account. Do not copy
 jftn.conf.example unless configuring the node manually. Edit all example identity
 and link values before using a manual configuration.
