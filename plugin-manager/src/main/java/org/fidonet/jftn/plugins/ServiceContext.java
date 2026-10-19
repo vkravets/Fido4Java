@@ -3,6 +3,7 @@ package org.fidonet.jftn.plugins;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /** Explicit node capabilities, supplied by the host rather than looked up through globals. */
 public final class ServiceContext {
@@ -34,5 +35,9 @@ public final class ServiceContext {
                                             + type.getSimpleName());
         }
         return type.cast(value);
+    }
+
+    public <T> Optional<T> find(Class<T> type) {
+        return Optional.ofNullable(type.cast(services.get(type)));
     }
 }

@@ -249,22 +249,7 @@ public class JFtnRunner {
     }
 
     static SessionContext createSessionContext(JFtnConfig config) {
-        new OutboundTransportFactory(config).validate();
-        List<Link> links = new ArrayList<>();
-        Set<String> addresses = new LinkedHashSet<>();
-        for (String value : config.getValuesAsList("Link")) {
-            Link link = new Link(value);
-            links.add(link);
-            for (FTNAddr address : link.getMyaddr()) {
-                addresses.add(address.toString());
-            }
-        }
-        StationConfig station = new StationConfig(config.getValue("System", "JFtn"),
-                                                  config.getValue("SysOp"),
-                                                  config.getValue("Location", ""),
-                                                  config.getValue("NDL", "BINKP"),
-                                                  String.join(" ", addresses));
-        return new SessionContext(station, new LinksInfo(links));
+        return NodeSessions.create(config);
     }
 
     private static RuntimeProfile installationProfile() throws Exception {

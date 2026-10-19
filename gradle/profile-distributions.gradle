@@ -10,7 +10,7 @@ profiles.findAll { it != 'full' }.each { profile ->
         canBeConsumed = false
         canBeResolved = true
     }
-    def modules = [':fido-config', ':fido-tools', ':event-bus', ':script-api', ':plugin-manager',
+    def modules = [':node-runtime', ':fido-config', ':fido-tools', ':event-bus', ':script-api', ':plugin-manager',
                    ':scheduler', ':jtoss', ':mail-api', ':mail-files', ':fileecho', ':binkp-root:binkp-netty']
     if (profile == 'headless') {
         modules += [':fido-database', ':jam-bridge', ':nodelist']

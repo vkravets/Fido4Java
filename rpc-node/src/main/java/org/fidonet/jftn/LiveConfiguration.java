@@ -98,7 +98,7 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
             throws Exception {
         validate(candidate);
         Runnable routers = tosser.prepareConfiguration(candidate);
-        SessionContext template = JFtnRunner.createSessionContext(candidate);
+        SessionContext template = NodeSessions.create(candidate);
         template.getStationConfig()
                 .setPartialDirectory(context.getStationConfig().getPartialDirectory());
         List<String> addresses = new ArrayList<>();

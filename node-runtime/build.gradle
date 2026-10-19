@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Shared node mail, polling and configuration runtime without UI or RPC'
+
+dependencies {
+    api project(':fido-tools')
+    api project(':event-bus')
+    api project(':script-api')
+    api project(':plugin-manager')
+    api project(':scheduler')
+    api project(':jtoss')
+    api project(':mail-api')
+    api project(':mail-files')
+    api project(':binkp-root:binkp-common')
+    api project(':binkp-root:binkp-netty')
+    compileOnly project(':fido-database')
+}

@@ -28,6 +28,8 @@ tasks.register('importJamArchive', JavaExec) {
 }
 
 dependencies {
+    implementation project(':node-runtime')
+    implementation project(':rpc-node')
     implementation project(':web-ui')
     implementation project(':fido-config')
     implementation project(':fido-database')

@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Optional authenticated node RPC service plugin'
+
+dependencies {
+    api project(':rpc')
+    api project(':node-runtime')
+    api project(':fido-database')
+    implementation project(':nodelist')
+}

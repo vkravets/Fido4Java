@@ -3,7 +3,7 @@ apply plugin: 'java-library'
 description = 'Embedded browser UI and first-run node configuration'
 
 dependencies {
-    api project(':rpc')
+    api project(':rpc-node')
     implementation project(':fido-config')
     implementation project(':fido-fts')
     implementation project(':nodelist')

@@ -4,7 +4,11 @@ Recorded: 2026-10-19.
 Status: implementation resumed by the user on 2026-10-19.
 Step 1 completed: explicit service context, preparation/start/close lifecycle,
 dependency ordering and failure cleanup. Plugin-manager tests passed.
-Steps 2-7 remain in progress/not yet implemented; the old startup still applies.
+Step 2 completed: node-runtime contains shared node services; rpc-node owns the
+RPC plugin, handlers, transports and server configuration previously located in
+web-ui. RPC-plugin tests passed without browser classes; existing authenticated
+RPC and live-configuration tests passed. The old runner startup still applies
+until step 5. Steps 3-7 remain.
 
 ## Intent and current checkpoint
 

@@ -40,3 +40,6 @@ project(':jtoss').projectDir = "$rootDir/jtoss" as File
 project(':scheduler').projectDir = "$rootDir/scheduler" as File
 project(':jftn-bundle').projectDir = "$rootDir/jftn-bundle" as File
 project(':rpc').projectDir = "$rootDir/rpc" as File
+
+include ':node-runtime'
+include ':rpc-node'
