@@ -19,7 +19,11 @@ Step 5 completed: the runner discovers plugins once, prepares them before
 storage, filters disabled services, and starts/closes loaded service contexts.
 FullProfileServices/ProfileServices were removed. UI is no longer hardcoded to
 Full; RPC validates its SQL capability requirement. Node bootstrap, config,
-RPC capability and runner startup tests passed. Steps 6-7 remain.
+RPC capability and runner startup tests passed.
+Step 6 completed: RPC/Web UI are shipped under plugins/, with no compile-time
+RPC/UI implementation dependency in the runner. All eight ZIPs passed CRC and
+layout inspection; reduced-profile PKT/TIC/startup tests and the fresh-JVM
+packaged-plugin probe passed. Step 7 remains.
 
 ## Intent and current checkpoint
 

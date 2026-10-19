@@ -25,11 +25,15 @@ both locked Linux x64 and Windows x64 JREs. Launchers select the matching runtim
 other supported hosts can use the no-JRE package with installed Java 17+.
 Libraries, plugins, Groovy and editable scripts remain separate.
 
-Full retains the first-run browser wizard. For other profiles, copy
+Full includes the plugins for the first-run browser wizard. For other profiles, copy
 `jftn.conf.example` to `jftn.conf`, replace the example identities/links, and start
 the launcher. Missing working directories and profile-appropriate plugin files
-are created without replacing existing configuration. Reduced profiles do not
-start a setup HTTP server when configuration is absent.
+are created without replacing existing configuration. Reduced packages omit
+UI/RPC plugins and do not start a setup HTTP server when configuration is absent.
+Profiles define default composition and storage. Optional UI/RPC services are
+discovered through the plugin API rather than switched on by the profile name.
+Full also works with the Web UI plugin removed, or with both UI/RPC plugins
+removed. RPC requires SQL-backed storage; see [plugin installation](distributions.md).
 
 SQL-free packages physically omit the database plugin, H2, ORMLite, directory SQL
 catalog, SQL-to-JAM bridge and UI/RPC JARs. They retain fileecho and external mail

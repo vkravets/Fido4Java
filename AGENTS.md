@@ -38,6 +38,10 @@
 - Netty is the default transport; MINA2 is retained; MINA3 was removed.
 - Thrift supports both TCP and HTTP/JSON. Keep transport lifecycle separate from
   service authorization/handlers. Edit contracts, never generated bindings.
+- RPC/Web UI are optional service plugins in `plugins/`; profiles select default
+  bundle composition. The runner must not import concrete RPC/UI implementations.
+  Prepare UI setup before opening storage; validate service dependencies and
+  SQL capabilities before startup. Disabling/removing optional plugins preserves state.
 - Binkp, PKT, robot and UI passwords are separate. Settings must not return stored
   passwords or log them. Empty password edits retain the previous secret.
 - Node management is admin-only on the backend, not only hidden in the UI.

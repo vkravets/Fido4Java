@@ -3,7 +3,7 @@ import org.fidonet.gradle.distribution.DownloadRuntime
 
 def applicationJar = tasks.named('jar')
 def runtimeLibraries = configurations.runtimeClasspath
-def pluginJars = files([':fido-database', ':scheduler', ':nodelist', ':jam-bridge', ':fileecho', ':binkp-root:binkp-netty']
+def pluginJars = files([':rpc-node', ':web-ui', ':fido-database', ':scheduler', ':nodelist', ':jam-bridge', ':fileecho', ':binkp-root:binkp-netty']
         .collect { project(it).tasks.named('jar') })
 def groovyJars = runtimeLibraries.filter { it.name.startsWith('groovy-') }
 def sharedLibraries = runtimeLibraries.minus(pluginJars).minus(groovyJars)

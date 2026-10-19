@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -35,7 +36,11 @@ class DistributionLayoutTest {
         assertTrue(Files.isRegularFile(home.resolve("scripts/mail-scripts/areafix.groovy")));
         try (var plugins = Files.list(home.resolve("plugins"));
                 var groovy = Files.list(home.resolve("lib/groovy"))) {
-            assertEquals(6, plugins.count());
+            List<String> names = plugins.map(path -> path.getFileName().toString())
+                                        .collect(Collectors.toList());
+            assertEquals(8, names.size());
+            assertTrue(names.stream().anyMatch(name -> name.startsWith("rpc-node-")));
+            assertTrue(names.stream().anyMatch(name -> name.startsWith("web-ui-")));
             assertTrue(groovy.count() > 1);
         }
         try (var files = Files.list(home.resolve("lib"))) {
@@ -48,6 +53,8 @@ class DistributionLayoutTest {
                 assertTrue(jar.getEntry("org/fidonet/jftn/JFtnRunner.class") != null);
                 assertTrue(jar.getEntry("mail-scripts/areafix.groovy") == null);
                 assertTrue(jar.getEntry("groovy/lang/GroovyShell.class") == null);
+                assertTrue(jar.getEntry("org/fidonet/jftn/ui/NodeRpc.class") == null);
+                assertTrue(jar.getEntry("org/fidonet/jftn/FullProfileServices.class") == null);
             }
         }
     }

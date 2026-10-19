@@ -79,6 +79,7 @@ def prepareProfiles = tasks.register('prepareProfileLayouts') {
                     if (fragment.name.endsWith('.conf.example')) {
                         def text = fragment.getText('UTF-8')
                                 .replace('RpcEnabled=true', 'RpcEnabled=false')
+                                .replace('WebUiEnabled=true', 'WebUiEnabled=false')
                                 .replace('EchoSubscriptions=database', 'EchoSubscriptions=config')
                                 .replace('RobotAccessSource=database', 'RobotAccessSource=files')
                                 .replace('FileEchoSource=database', 'FileEchoSource=files')

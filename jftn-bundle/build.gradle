@@ -29,10 +29,13 @@ tasks.register('importJamArchive', JavaExec) {
 
 dependencies {
     implementation project(':node-runtime')
-    implementation project(':rpc-node')
-    implementation project(':web-ui')
+    runtimeOnly project(':rpc-node')
+    runtimeOnly project(':web-ui')
+    testImplementation project(':rpc-node')
+    testImplementation project(':web-ui')
     implementation project(':fido-config')
-    implementation project(':fido-database')
+    runtimeOnly project(':fido-database')
+    testImplementation project(':fido-database')
     implementation project(':fido-tools')
     implementation project(':event-bus')
     implementation project(':script-api')
@@ -47,7 +50,6 @@ dependencies {
     testImplementation project(':nodelist')
     implementation project(':binkp-root:binkp-common')
     implementation project(':binkp-root:binkp-netty')
-    implementation project(':rpc')
     implementation 'org.slf4j:slf4j-api:2.0.20'
     implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
     implementation 'com.h2database:h2:2.5.252'

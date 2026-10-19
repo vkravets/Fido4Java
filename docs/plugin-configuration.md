@@ -30,6 +30,7 @@ script lists; update those manually to adopt the new defaults.
 | `43-directory-feed.conf` | TIC `DirectoryFeed` rules; direct `DirectoryInboundEnabled`, `DirectoryInboundFeed`, `DirectoryInboundRequireDate`, `DirectoryInboundRetrySeconds`; shared catalog path is in `30-nodelist.conf` |
 | `49-robot-access.conf` (optional export) | Complete versioned `RobotAccessFormat`/`RobotAccessRule` snapshot; selects file mode, replaces legacy peer rules |
 | `90-rpc.conf` | File-only listener, session, registration and passkey internals |
+| `95-web-ui.conf` | `WebUiEnabled`; optional browser plugin, dependent on RPC/HTTP |
 
 The database and scheduler plugins currently expose no configuration keys.
 The database URL and scheduled poll cadence are implemented in code; no dummy

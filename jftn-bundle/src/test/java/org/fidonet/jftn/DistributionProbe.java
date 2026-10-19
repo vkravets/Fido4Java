@@ -32,7 +32,9 @@ public final class DistributionProbe {
                                         "binkp_netty",
                                         "jam-bridge",
                                         "fileecho",
-                                        "nodelist"))) {
+                                        "nodelist",
+                                        "rpc",
+                                        "web-ui"))) {
             throw new IllegalStateException("Missing packaged plugins: " + plugins);
         }
         ScriptEngine groovy = new ScriptEngineManager().getEngineByName("groovy");

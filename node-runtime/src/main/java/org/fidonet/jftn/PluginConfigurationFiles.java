@@ -54,6 +54,7 @@ final class PluginConfigurationFiles {
             String text = new String(input.readAllBytes(), StandardCharsets.UTF_8);
             if (!profile.includesUiByDefault()) {
                 text = text.replace("RpcEnabled=true", "RpcEnabled=false");
+                text = text.replace("WebUiEnabled=true", "WebUiEnabled=false");
                 text = text.replace("EchoSubscriptions=database", "EchoSubscriptions=config");
                 text = text.replace("RobotAccessSource=database", "RobotAccessSource=files");
                 text = text.replace("FileEchoSource=database", "FileEchoSource=files");

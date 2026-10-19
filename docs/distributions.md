@@ -31,9 +31,9 @@ jftn-<version>/
   jftn.cmd                Windows command prompt launcher
   jftn.sh                 Linux/macOS launcher
   jftn.ps1                PowerShell launcher
-  lib/                    Application, shared libraries and browser UI JARs
+  lib/                    Application/runtime and shared dependency JARs
     groovy/               Groovy runtime JARs
-  plugins/                Database, scheduler, Netty, nodelist and JAM bridge JARs
+  plugins/                Optional RPC/UI, database, scheduler, Netty and mail plugins
   scripts/mail-scripts/   Editable AreaFix, FileFix and directory import scripts
   jre/                    Linux x64 and Windows x64 runtimes in with-jre packages
   runtime-profile         Installed profile marker
@@ -44,8 +44,10 @@ jftn-<version>/
   docs/ LICENSE README.txt
 ```
 
-Full starts its first-run wizard. Headless, Legacy and Transit require a manual
-`jftn.conf` based on the supplied profile example and contain no UI/RPC libraries.
+Full includes the RPC and Web UI plugins and can start its first-run wizard.
+Headless, Legacy and Transit omit those plugins by default and require a manual
+`jftn.conf` based on the supplied profile example. Profiles set default package
+composition and storage policy; they no longer directly start UI/RPC classes.
 
 The default Log4j2 configuration writes INFO and higher to both the console and
 `logs/jftn.log`, rotating the file at 10 MB. It includes binkp connection and
@@ -71,9 +73,27 @@ The plain application JAR is not self-contained; use a launcher.
 
 Plugins use `ServiceLoader` on this shared classpath; restart to load changed JARs.
 There is no hot reload or dependency isolation. Database, scheduler and Netty are
-required by the current runner. Nodelist is used by setup/settings lookup. The JAM
+required by the current runner in SQL profiles (SQL-free profiles replace the
+database with filesystem storage). Nodelist is used by setup/settings lookup. The JAM
 bridge can be disabled through its configuration. Do not remove a required module
 or its shared dependencies just because its JAR is under `plugins/`.
+
+In Full, `plugins/rpc-node-VERSION.jar` supplies authenticated TCP/HTTP RPC and
+`plugins/web-ui-VERSION.jar` supplies browser resources and initial setup. Stop
+the node before changing JARs. Remove only Web UI to keep RPC, or remove both to
+keep ordinary mail processing without either service. Disabling
+`WebUiEnabled=false` in `conf.d/95-web-ui.conf` keeps RPC but removes browser routes;
+`RpcEnabled=false` disables both dependent services. Enabled Web UI requires the
+RPC plugin and `RpcHttpEnabled=true`. Without a setup plugin, prepare the main
+configuration and RPC credentials explicitly. Installed configuration/accounts
+are preserved when a plugin is disabled or removed.
+
+Use matched plugin/dependency versions from the same build. Copying a plugin into
+a reduced installation also requires its shared libraries; plugin JARs do not
+embed those dependencies. RPC currently requires SQL-backed mail storage and can
+be enabled on Full/Headless. Legacy/Transit cannot run it against JAM/file journals.
+The `rpc` library in `lib/` provides contracts/transport primitives; its presence
+alone does not start an RPC service. See [plugin configuration](plugin-configuration.md).
 
 Mail script resources are excluded from the application JAR and supplied externally.
 Default `MailScript` entries load the external files from
