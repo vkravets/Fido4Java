@@ -7,8 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 class ConfigurationFragmentsTest {
     @TempDir
@@ -45,5 +49,20 @@ class ConfigurationFragmentsTest {
         assertThrows(ParseConfigException.class, () -> new JFtnConfig().load(main.toString()));
         fragment("manual.conf", "invalid option\n");
         assertThrows(ParseConfigException.class, () -> new JFtnConfig().load(main.toString()));
+    }
+
+    @Test
+    void retainedRelatedDirectiveOrderAndRemovedOverriddenDeclarations() throws Exception {
+        BaseConfig config = new ConfigurationFragments();
+        config.load(new ByteArrayInputStream(("RouteMail=first\nRoute=second\nRouteMail=third\n").getBytes(StandardCharsets.UTF_8)));
+        assertEquals(List.of(Map.entry("routemail", "first"),
+                             Map.entry("route", "second"),
+                             Map.entry("routemail", "third")),
+                     config.getOrderedValues(List.of("route", "routemail")));
+        BaseConfig overrides = new ConfigurationFragments();
+        overrides.load(new ByteArrayInputStream("Route=fourth\nRouteMail=fifth\n".getBytes(StandardCharsets.UTF_8)));
+        config.applyOverrides(overrides);
+        assertEquals(List.of(Map.entry("route", "fourth"), Map.entry("routemail", "fifth")),
+                     config.getOrderedValues(List.of("route", "routemail")));
     }
 }

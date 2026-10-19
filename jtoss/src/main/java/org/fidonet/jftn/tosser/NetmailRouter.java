@@ -10,6 +10,7 @@ import org.fidonet.types.Message;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /** Explicit routing policy shared by submission, transit and operator previews. */
 public final class NetmailRouter {
@@ -50,22 +51,15 @@ public final class NetmailRouter {
     }
 
     private void readConfiguredRules() {
-        readConfiguredRules("Route", "config:");
-        readConfiguredRules("RouteMail", "config-mail:");
-        readConfiguredRules("RouteFile", "file-config:");
-    }
-
-    private void readConfiguredRules(String key, String prefix) {
-        List<String> values = config.getValuesAsList(key);
-        if (values == null) {
-            return;
-        }
-        for (String value : values) {
-            String[] fields = value.split(",", -1);
+        for (Map.Entry<String, String> declaration : config.getOrderedValues(List.of("route",
+                                                                                     "routemail",
+                                                                                     "routefile"))) {
+            String[] fields = declaration.getValue().split(",", -1);
             if (fields.length != 2) {
                 throw new IllegalArgumentException("Expected Route pattern,next-hop");
             }
             int index = configured.size();
+            String prefix = declaration.getKey().equals("routefile") ? "file-config:" : "config:";
             configured.add(new NetmailRoute(prefix + index,
                                             index,
                                             fields[0].trim(),

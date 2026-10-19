@@ -53,6 +53,7 @@ public abstract class BaseConfig implements IConfig {
     private static final Logger logger = LoggerFactory.getLogger(BaseConfig.class.getName());
 
     private Map<String, List<String>> props;
+    private final List<Map.Entry<String, String>> declarations = new ArrayList<>();
 
     public BaseConfig() {
         props = new HashMap<String, List<String>>();
@@ -103,11 +104,25 @@ public abstract class BaseConfig implements IConfig {
                 props.put(name, values);
             }
             values.add(value);
+            declarations.add(Map.entry(name, value));
         }
     }
 
     protected void applyOverrides(BaseConfig overrides) {
+        declarations.removeIf(entry -> overrides.props.containsKey(entry.getKey()));
+        declarations.addAll(overrides.declarations);
         overrides.props.forEach((key, values) -> props.put(key, new ArrayList<>(values)));
+    }
+
+    /** Related directives retain their declaration order, including repeated interleaved keys. */
+    public List<Map.Entry<String, String>> getOrderedValues(List<String> keys) {
+        List<Map.Entry<String, String>> result = new ArrayList<>();
+        for (Map.Entry<String, String> declaration : declarations) {
+            if (keys.contains(declaration.getKey())) {
+                result.add(declaration);
+            }
+        }
+        return result;
     }
 
     protected List<String> propertyNames() {

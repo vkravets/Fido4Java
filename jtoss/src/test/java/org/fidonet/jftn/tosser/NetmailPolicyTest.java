@@ -88,6 +88,19 @@ public class NetmailPolicyTest {
     }
 
     @Test
+    void preservesInterleavedRouteMailOrderAndKeepsFileRoutesIndependent() throws Exception {
+        NetmailRouter router = new NetmailRouter(config("RouteMail=1:500/9??,1:500/103\n"
+                + "Route=1:500/*,1:500/101\nRouteMail=1:500/999,1:500/101\n"
+                + "RouteFile=1:500/*,1:500/103\n"));
+        Message mail = message("1:500/999", "");
+        assertEquals(new FTNAddr("1:500/103"), router.route(mail).getAddr());
+        Message attach = message("1:500/104", "");
+        attach.setAttributes(17);
+        assertEquals(new FTNAddr("1:500/103"), router.route(attach).getAddr());
+        assertEquals(new FTNAddr("1:500/101"), router.route(message("1:500/104", "")).getAddr());
+    }
+
+    @Test
     void huskyPriorityOrderBypassesRoutesAndOnlyPureHoldIsHeld() throws Exception {
         NetmailRouter router = new NetmailRouter(config("Route=1:500/*,1:500/101\n"));
         for (String flags : new String[]{"HLD", "CRA HLD", "DIR HLD", "IMM HLD"}) {
