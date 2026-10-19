@@ -23,4 +23,5 @@ apply from: "$rootDir/gradle/hpt-integration.gradle"
 dependencies {
     integrationTestImplementation project(':jam-bridge')
     integrationTestImplementation project(':fileecho')
+    integrationTestImplementation project(':mail-api')
 }
