@@ -44,6 +44,7 @@ final class MailPeer implements AutoCloseable {
              ROOT + "/partial",
              ROOT + "/bso",
              ROOT + "/logs");
+        exec("cp", "/opt/hpt-revisions.txt", ROOT + "/logs/revisions.txt");
     }
 
     String exec(String... arguments) throws Exception {
@@ -81,7 +82,11 @@ final class MailPeer implements AutoCloseable {
     }
 
     void serve() throws Exception {
-        commands.execute("exec", "-d", id, "binkd", "-s", "-m", ROOT + "/binkd.cfg");
+        serve("binkd.cfg");
+    }
+
+    void serve(String configuration) throws Exception {
+        commands.execute("exec", "-d", id, "binkd", "-s", "-m", ROOT + "/" + configuration);
         exec("timeout",
              "15s",
              "sh",
@@ -98,6 +103,10 @@ final class MailPeer implements AutoCloseable {
              "-P",
              address + "@fidonet",
              ROOT + "/binkd.cfg");
+    }
+
+    void callAvailable() throws Exception {
+        exec("timeout", "40s", "binkd", "-p", "-m", ROOT + "/binkd.cfg");
     }
 
     @Override

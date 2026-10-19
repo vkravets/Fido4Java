@@ -14,7 +14,9 @@ final class MailPeers implements AutoCloseable {
     private final Path artifacts;
 
     MailPeers(String scenario) throws Exception {
-        artifacts = Path.of(System.getProperty("mailInterop.artifactsDir"), scenario);
+        artifacts = Path.of(System.getProperty("mailInterop.artifactsDir"),
+                            scenario,
+                            UUID.randomUUID().toString());
         commands = new MailPeerCommand(artifacts);
         commands.execute("network", "create", network);
     }
