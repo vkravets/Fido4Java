@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
 class FileEchoDeliveryTest {
@@ -124,6 +125,36 @@ class FileEchoDeliveryTest {
         Files.write(payload, bytes);
         Files.writeString(ticket, tic("tic-password", String.format("%08X", crc.getValue())));
         scripts.beforeExport(tosser);
+    }
+
+    @Test
+    void replacesOldActivePayloadAndDoesNotRemoveNewFileAfterCallbackFailure() throws Exception {
+        Path payload = inbox.resolve("payload");
+        ReceivedFile.record(payload, "LIST.001");
+        receive(payload, "old contents");
+        Path directory = Path.of(processor.store().area("lists.nodes").directory);
+        Files.writeString(payload, "new contents");
+        Files.writeString(ticket,
+                          tic("tic-password", FileChecksum.read(payload).crc)
+                          + "Replaces LIST.???\r\n");
+        AtomicInteger attempts = new AtomicInteger();
+        scripts.onFile((area, path, name, peer, receipt) -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw new IOException("Simulated callback failure after replacement");
+            }
+        });
+        scripts.beforeExport(tosser);
+        scripts.beforeExport(tosser);
+        assertEquals(2, attempts.get());
+        assertEquals("new contents", Files.readString(directory.resolve("LIST.001")));
+        try (var archived = Files.walk(directory.resolve("dupes"))) {
+            List<Path> copies = archived.filter(path -> path.getFileName()
+                                                            .toString()
+                                                            .equals("LIST.001"))
+                                        .collect(Collectors.toList());
+            assertEquals(1, copies.size());
+            assertEquals("old contents", Files.readString(copies.get(0)));
+        }
     }
 
     @Test

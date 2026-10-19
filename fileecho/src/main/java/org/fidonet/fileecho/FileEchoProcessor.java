@@ -35,11 +35,17 @@ final class FileEchoProcessor implements FileEchoService {
     private final JFtnConfig config;
     private final FileEchoAreaService store;
     private final Charset charset;
+    private final boolean replacesEnabled;
 
     FileEchoProcessor(MailAutomationRuntime api) throws IOException {
         this.api = api;
         config = (JFtnConfig) api.getConfig();
         charset = Charset.forName(config.getValue("TicCharset", "IBM437"));
+        String replaces = config.getValue("TicReplaces", "true");
+        if (!Set.of("true", "false").contains(replaces)) {
+            throw new IllegalArgumentException("TicReplaces must be true or false");
+        }
+        replacesEnabled = Boolean.parseBoolean(replaces);
         store = new FileEchoAreaService(config, api.getDatabase(), api.getState());
     }
 
@@ -151,6 +157,7 @@ final class FileEchoProcessor implements FileEchoService {
             throw new IOException("Payload changed after matching TIC");
         }
         FileAreaRecord area = store.createAfterValidation(tag, ticket.getPeer());
+        applyReplacements(tic, Path.of(area.directory), receipt);
         String placementKey = "tic-placement:" + receipt;
         String placement = api.getState().get(placementKey);
         Path directory = Path.of(area.directory);
@@ -186,6 +193,18 @@ final class FileEchoProcessor implements FileEchoService {
                  ticket.getPeer(),
                  checksum.size,
                  placement);
+    }
+
+    private void applyReplacements(TicDocument tic, Path directory, String receipt)
+            throws IOException {
+        String key = "tic-replaces:" + receipt;
+        if (!replacesEnabled || api.getState().get(key) != null) {
+            return;
+        }
+        FileEchoReplacements.apply(directory,
+                                   FileEchoReplacements.mask(tic.value("replaces")),
+                                   receipt);
+        api.getState().put(key, "done");
     }
 
     private boolean occupied(Path directory, String name) throws IOException {
@@ -305,6 +324,7 @@ final class FileEchoProcessor implements FileEchoService {
             throws IOException {
         List<String> output = new ArrayList<>();
         Set<String> replaced = Set.of("from",
+                                      "replaces",
                                       "to",
                                       "pw",
                                       "created",
@@ -318,6 +338,10 @@ final class FileEchoProcessor implements FileEchoService {
             }
         }
         FTNAddr local = link.getMyaddr().get(0);
+        String replaces = FileEchoReplacements.mask(tic.value("replaces"));
+        if (!replaces.isEmpty()) {
+            output.add("Replaces " + replaces);
+        }
         output.add("From " + TicRouting.address(local));
         output.add("To " + TicRouting.address(link.getAddr()));
         output.add("Pw " + api.getRobotAccess().find("Tic", link.getAddr()).getDeliveryPassword());

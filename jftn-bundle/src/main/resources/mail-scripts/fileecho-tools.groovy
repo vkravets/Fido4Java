@@ -10,6 +10,7 @@ import java.time.DateTimeException
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.HashSet
 import java.util.Locale
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -98,15 +99,18 @@ class FileEchoTools {
             }
         }
         // Include existing regular payloads too; exclude staging files, indexes and subdirectories.
+        def present = new HashSet<String>()
         try (def entries = Files.list(event.file.parent)) {
             entries.filter { Files.isRegularFile(it) && !Files.isSymbolicLink(it) }.forEach { file ->
                 String name = file.fileName.toString()
                 String key = name.toLowerCase(Locale.ROOT)
+                present.add(key)
                 if (!name.startsWith('.') && !(key in ['file.bbs', 'files.bbs']) && !rows.containsKey(key)) {
                     rows[key] = indexRow(name, [], Files.size(file), null)
                 }
             }
         }
+        rows.keySet().retainAll(present)
         rows[event.name.toLowerCase(Locale.ROOT)] = indexRow(event.name, event.descriptions,
                 event.size == null ? Files.size(event.file) : event.size, event.date)
         writeIndex(index, rows.values())

@@ -58,7 +58,8 @@ final class TicDocument {
                                   "size",
                                   "date",
                                   "pw",
-                                  "to")) {
+                                  "to",
+                                  "replaces")) {
             if (values(key).size() > 1) {
                 throw new IOException("Duplicate TIC keyword: " + key);
             }
@@ -71,6 +72,7 @@ final class TicDocument {
                 nonnegativeNumber(value(key), key);
             }
         }
+        FileEchoReplacements.mask(value("replaces"));
     }
 
     private void validatePath(String value) throws IOException {

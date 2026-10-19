@@ -129,4 +129,30 @@ class FileEchoToolsTest {
             base.close();
         }
     }
+
+    @Test
+    void dropsIndexEntriesForFilesRemovedByReplaces() throws Exception {
+        JFtnConfig config = config("FileEchoNotifyEnabled=false\n");
+        Path area = Files.createDirectories(root.resolve("lists"));
+        Files.writeString(area.resolve("files.bbs"), "OLD.001  old description\n");
+        Path payload = Files.writeString(area.resolve("NEW.001"), "new");
+        MailDatabaseFacade base = database();
+        try (MailAutomationRuntime scripts = new MailAutomationRuntime(config,
+                                                                       base,
+                                                                       new Tosser(config, base))) {
+            scripts.publishFileEcho(new FileEchoEvent("accepted",
+                                                      "lists",
+                                                      payload,
+                                                      "NEW.001",
+                                                      new FTNAddr("1:500/101"),
+                                                      "replace-receipt",
+                                                      List.of("new description"),
+                                                      ""));
+            List<String> rows = Files.readAllLines(area.resolve("files.bbs"));
+            assertEquals(1, rows.size());
+            assertTrue(rows.get(0).startsWith("NEW.001"));
+        } finally {
+            base.close();
+        }
+    }
 }

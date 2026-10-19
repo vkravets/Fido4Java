@@ -1,5 +1,29 @@
 # File echo plugin
 
+## Husky compatibility and Replaces
+
+The reference is HTick (Husky's file ticker), not HPT's netmail scanner. TIC `To`
+accepts either an address or `Name, address`, `Size` is compared numerically, and
+`Date` supplies the file date. Missing Path/Seenby lists are accepted like HTick;
+present entries remain validated. Relay preserves Origin, descriptions, Date,
+unknown extension lines and existing Path entries, replaces From/To/Pw, appends a
+UTC Path annotation and sorts unique Seenby addresses numerically. Passwords are
+still checked against the authenticated transport peer's independent TIC rule.
+
+`TicReplaces=true` in `conf.d/32-fileecho.conf` enables authenticated `Replaces`
+processing after payload CRC/size validation. Matching regular files are removed
+from the active area before the new payload is installed. Old copies are retained
+under `dupes/<receipt>/replaced/`; indexes/subdirectories/symlinks are excluded.
+Like HTick, a mask beginning with `*` is ignored. Other masks must be bounded
+filename patterns without paths or traversal. A durable receipt prevents retry
+after a callback failure from replacing the newly installed file again. The
+fileecho-tools script removes stale index rows when updating `files.bbs`.
+Set `TicReplaces=false` and restart to retain collision-only behavior.
+
+Reference: [HTick toss.c](https://github.com/huskyproject/htick/blob/b146b48b8ff4e1e86179bc68dccc8fc19b37c464/src/toss.c).
+
+## Administration
+
 Open **Station > Plugins > File echoes** to manage areas, per-link access,
 automatic creation and FileFix/TIC credentials. Changes use the active provider
 and apply without restart. READ means the link receives from us; WRITE means it
@@ -86,9 +110,9 @@ ${name:<14} ${size:>10}  ${date}  ${description}
 
 `${size}` is the validated payload size in bytes with comma thousands separators,
 independent of the host locale. TIC `Size`, when present, must match those bytes;
-when absent, the actual payload size is used. `${date}` is the **first TIC Path
-timestamp**, formatted as `MM-dd-yy` in UTC, not a file modification date or a
-date parsed from the human-readable Path comment. For matching archived copies,
+when absent, the actual payload size is used. `${date}` uses the TIC `Date`
+Unix timestamp when present, otherwise the first TIC `Path` timestamp, formatted
+as `MM-dd-yy` in UTC. Human-readable Path comments are not parsed. For matching archived copies,
 the earliest first-hop timestamp is retained. A missing/unrepresentable date
 prints `-- -- --`; files without matching archived TICs still show their actual
 size. The format is shared by live delivery and offline rebuild.
