@@ -13,6 +13,7 @@ import org.fidonet.jftn.poll.PollLogSlice;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AreaInfo;
 import org.fidonet.jftn.rpc.EchoAccessConfiguration;
+import org.fidonet.jftn.rpc.EchoContext;
 import org.fidonet.jftn.rpc.ExtensionSettings;
 import org.fidonet.jftn.rpc.LinkInfo;
 import org.fidonet.jftn.rpc.LogPage;
@@ -76,7 +77,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
             throws Exception {
         this.config = config;
         draftValidator = new MailDraftValidator(config);
-        access = new MailboxAccess(config, sessions);
+        access = new MailboxAccess(config, sessions, base);
         this.base = base;
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
@@ -230,22 +231,54 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     }
 
     @Override
-    public List<AreaInfo> areas(String owner) {
-        List<AreaInfo> result = new ArrayList<>();
-        base.getAreas()
-            .stream()
-            .sorted()
-            .forEach(area -> result.add(new AreaInfo(area, base.getMessageSize(area))));
-        return result;
+    public List<AreaInfo> areas(String owner) throws UiError {
+        return call(() -> {
+            List<AreaInfo> result = new ArrayList<>();
+            EchoMailboxRights rights = access.echoRights(owner);
+            for (String area : base.getAreas().stream().sorted().collect(Collectors.toList())) {
+                boolean readable = rights.readable(area);
+                List<String> authors = rights.authors(area);
+                if (readable || !authors.isEmpty()) {
+                    result.add(new AreaInfo(area,
+                                            readable ? base.getMessageSize(area) : 0)
+                                                                                     .setReadable(readable)
+                                                                                     .setWriteAddresses(authors));
+                }
+            }
+            return result;
+        });
     }
 
     private String area(Mailbox box, String area) {
         return MailDraftValidator.area(box, area);
     }
 
+    @Override
+    public MailPage echoMessages(String owner, String name, long before, int limit) throws UiError {
+        String area = area(Mailbox.ECHO, name);
+        if (before < 0 || limit < 1 || limit > 200)
+            throw new IllegalArgumentException("Invalid echo page");
+        access.mailbox(owner, Mailbox.ECHO, area);
+        return call(() -> {
+            List<StoredMail> rows = base.readEchoRecent(area, before, limit + 1);
+            List<Long> ids = rows.stream()
+                                 .limit(limit)
+                                 .map(StoredMail::getId)
+                                 .collect(Collectors.toList());
+            Set<Long> read = state.readIds(owner, "ECHO", area, ids);
+            List<MailItem> items = new ArrayList<>();
+            for (StoredMail row : rows.subList(0, Math.min(limit, rows.size()))) {
+                items.add(item(row, false, read.contains(row.getId())));
+            }
+            return new MailPage(items,
+                                items.isEmpty() ? before : items.get(items.size() - 1).getId(),
+                                rows.size() > limit);
+        });
+    }
+
     private List<StoredMail> rows(String owner, Mailbox box, String area, long after, int limit)
             throws Exception {
-        access.mailbox(owner, box);
+        access.mailbox(owner, box, area);
         if (box == Mailbox.ECHO) {
             return base.readEchoPage(area, after, limit);
         }
@@ -286,10 +319,11 @@ public final class NodeUiServiceHandler implements UiService.Iface {
                                        message.getMsgId() == null ? "" : message.getMsgId(),
                                        read);
         result.setAttributes(message.getAttributes());
+        String reply = message.getBody().getKludges().get("REPLY");
+        if (reply != null)
+            result.setReplyTo(reply.trim());
         if (body) {
-            result.setBody(message.isEchomail()
-                    ? message.getBody().toString()
-                    : message.getBody().getBody());
+            result.setBody(message.getBody().getBody());
         }
         return result;
     }
@@ -330,6 +364,49 @@ public final class NodeUiServiceHandler implements UiService.Iface {
                 throw new UiError("NOT_FOUND", "Message not found in this mailbox");
             }
             return item(rows.get(0), true, state.isRead(owner, box.name(), area, id));
+        });
+    }
+
+    @Override
+    public EchoContext echoContext(String owner, String name, long id, long after, int limit)
+            throws UiError {
+        String area = area(Mailbox.ECHO, name);
+        if (after < 0 || limit < 1 || limit > 200) {
+            throw new IllegalArgumentException("Invalid reply page");
+        }
+        MailItem selected = message(owner, Mailbox.ECHO, area, id);
+        return call(() -> {
+            EchoContext context = new EchoContext(new MailPage(List.of(), after, false), false);
+            if (selected.isSetReplyTo() && !selected.getReplyTo().isEmpty()) {
+                StoredMail parent = base.findEchoMessageId(area, selected.getReplyTo());
+                if (parent != null && parent.getId() != id) {
+                    context.setParent(item(parent,
+                                           false,
+                                           state.isRead(owner, "ECHO", area, parent.getId())));
+                } else {
+                    context.setMissingParent(true);
+                }
+            }
+            List<StoredMail> rows = base.readEchoReplies(area,
+                                                         selected.getMessageId(),
+                                                         after,
+                                                         limit + 1,
+                                                         id);
+            List<Long> ids = rows.stream()
+                                 .limit(limit)
+                                 .map(StoredMail::getId)
+                                 .collect(Collectors.toList());
+            Set<Long> read = state.readIds(owner, "ECHO", area, ids);
+            List<MailItem> replies = new ArrayList<>();
+            for (StoredMail row : rows.subList(0, Math.min(limit, rows.size()))) {
+                replies.add(item(row, false, read.contains(row.getId())));
+            }
+            context.setReplies(new MailPage(replies,
+                                            replies.isEmpty()
+                                                    ? after
+                                                    : replies.get(replies.size() - 1).getId(),
+                                            rows.size() > limit));
+            return context;
         });
     }
 
@@ -426,10 +503,12 @@ public final class NodeUiServiceHandler implements UiService.Iface {
     @Override
     public String send(String owner, MailDraft draft, String requestId) throws UiError {
         draftValidator.fields(draft);
-        access.draft(owner, draft);
-        draftValidator.submission(draft, access.addresses(owner));
         MailDraftValidator.id(requestId);
-        return call(() -> submissions.sendValidated(owner, draft, requestId));
+        return call(() -> mail.operate(tosser -> {
+            access.draft(owner, draft);
+            draftValidator.submission(draft, access.addresses(owner));
+            return submissions.sendValidated(owner, draft, requestId);
+        }));
     }
 
     @Override

@@ -256,12 +256,24 @@ activates the account.
 `accounts` and `decideAka` require ADMIN. Light/dark theme and the default approved
 posting AKA persist in the account database. The `ui` service keeps node
 administration ADMIN-only on TCP and HTTP. Mail operations are scoped to the
-account's current approved AKAs; echo access remains ADMIN-only. Personal settings and passkeys remain
+account's current approved AKAs. Echo reading uses READ/BOTH subscriptions for
+those exact AKAs; posting uses WRITE/BOTH for the selected sender AKA. Administrators
+can read all local echoes and post with station AKAs. Node administration remains
+administrator-only. Personal settings and passkeys remain
 available to approved points through `profile` and `auth`.
 
 | Methods | Behavior |
 | --- | --- |
-| `areas` | Existing echo names and message counts |
+| `areas` | Accessible echo names, message counts, readability and exact writable sender AKAs; write-only grants do not disclose counts |
+| `echoMessages` | Newest received echo messages first, using an exclusive decreasing row-ID cursor; separate from the existing ascending `messages` cursor |
+| `echoContext` | Area-scoped parent by exact REPLY/MSGID and a bounded, cursor-paged list of direct replies; missing parents remain explicit |
+
+Echo bodies returned to readers contain plain message text, not transport control
+lines. `MailItem.replyTo` carries the trimmed FTN REPLY identifier separately.
+No subject-based heuristic merges discussions. The parent lookup uses the existing
+MSGID index; reply pages query serialized REPLY lines in the selected area without
+materializing the entire archive. Very large areas can still require a text scan
+for replies; a persistent derived reply index is a future performance improvement.
 | `messages` | Cursor page of summaries, without bodies |
 | `message` | Full stored message including control lines and attributes |
 | `markRead` | Persistent per-account reader position for an individual message |

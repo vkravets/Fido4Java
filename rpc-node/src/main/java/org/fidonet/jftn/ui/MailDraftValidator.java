@@ -22,8 +22,12 @@ final class MailDraftValidator {
         if (box == null || area == null || area.length() > 255) {
             throw new IllegalArgumentException("Mailbox and area are required");
         }
-        if (box == Mailbox.ECHO)
+        if (box == Mailbox.ECHO) {
+            if (!area.trim().matches("[\\x21-\\x7e]{1,255}")) {
+                throw new IllegalArgumentException("A nonempty echo area without whitespace or controls is required");
+            }
             return area.trim().toLowerCase(Locale.ROOT);
+        }
         if (!area.isEmpty())
             throw new IllegalArgumentException("Netmail mailbox uses an empty area");
         return "";

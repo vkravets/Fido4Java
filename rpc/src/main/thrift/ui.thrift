@@ -42,7 +42,8 @@ struct MailItem {
     8: required string messageId,
     9: required bool read,
     10: optional string body,
-    11: optional i32 attributes
+    11: optional i32 attributes,
+    12: optional string replyTo
 }
 
 struct MailPage {
@@ -53,7 +54,15 @@ struct MailPage {
 
 struct AreaInfo {
     1: required string name,
-    2: required i64 messages
+    2: required i64 messages,
+    3: optional bool readable,
+    4: optional list<string> writeAddresses
+}
+
+struct EchoContext {
+    1: optional MailItem parent,
+    2: required MailPage replies,
+    3: required bool missingParent
 }
 
 struct MailDraft {
@@ -222,6 +231,8 @@ service UiService {
     void deleteRobotRule(1:string session, 2:string service, 3:string address) throws (1:UiError error),
     NodeStatus status(1:string session) throws (1:UiError error),
     list<AreaInfo> areas(1:string session) throws (1:UiError error),
+    MailPage echoMessages(1:string session, 2:string area, 3:i64 beforeId, 4:i32 limit) throws (1:UiError error),
+    EchoContext echoContext(1:string session, 2:string area, 3:i64 id, 4:i64 afterId, 5:i32 limit) throws (1:UiError error),
     MailPage messages(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 afterId, 5:i32 limit) throws (1:UiError error),
     MailItem message(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 id) throws (1:UiError error),
     void markRead(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 id, 5:bool read) throws (1:UiError error),

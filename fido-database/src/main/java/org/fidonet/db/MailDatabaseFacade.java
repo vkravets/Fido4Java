@@ -274,6 +274,25 @@ public class MailDatabaseFacade
         }
     }
 
+    public StoredMail findEchoMessageId(String area, String messageId) throws IOException {
+        return new EchoReaderRepository(dbManager).byMessageId(area, messageId);
+    }
+
+    public List<StoredMail> readEchoRecent(String area, long before, int limit) throws IOException {
+        checkPage(before, limit);
+        return new EchoReaderRepository(dbManager).recent(area, before, limit);
+    }
+
+    public List<StoredMail> readEchoReplies(String area,
+                                            String messageId,
+                                            long after,
+                                            int limit,
+                                            long excluded)
+            throws IOException {
+        checkPage(after, limit);
+        return new EchoReaderRepository(dbManager).replies(area, messageId, after, limit, excluded);
+    }
+
     public List<StoredMail> readNetmailPage(Collection<FTNAddr> local,
                                             boolean sent,
                                             long after,

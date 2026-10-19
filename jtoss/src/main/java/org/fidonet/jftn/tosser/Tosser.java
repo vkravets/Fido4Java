@@ -779,7 +779,7 @@ public class Tosser extends HasEventBus {
     }
 
     public synchronized void submitEchomail(Message message) throws IOException {
-        if (!message.isEchomail() || !config.getLocalAddresses().contains(message.getFAddr())
+        if (!message.isEchomail() || !localNetmailAddress(message.getFAddr())
                 || !base.isAreaExists(message.getArea().toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException("Local echomail requires a local AKA and an existing area");
         }

@@ -660,6 +660,19 @@ and sealed CI packaging. Optional service JARs live in plugins/. Backend RPC tes
 execute without the Web UI JAR, and installed-artifact tests exercise removed,
 disabled and missing-dependency combinations, first setup and partial failure.
 
+## 37. Echomail readers use account subscriptions and exact FTN reply identifiers
+
+Echomail reader access is enforced per request using current approved account
+AKAs and exact link subscriptions: READ/BOTH permits reading, WRITE/BOTH permits
+posting from that AKA. Administrators read all local areas and post with their
+station identities. Write-only grants expose neither messages nor counts.
+Hosted, approved identities can author local echo messages through the same
+tosser submission path; no directory lookup creates trust or grants a subscription.
+Conversations use exact MSGID/REPLY within an area. Missing parents and cycles
+must not hide messages. Reader positions are per account and independent of mailer
+delivery state. Newest-first echo cursors are separate from ascending legacy RPC
+mail cursors. No primary mail schema migration is required for the reader.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the
