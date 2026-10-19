@@ -26,6 +26,10 @@ Remaining implementation
 - Expand fault-injection tests for sender deadlines, disk-full/close/fsync failures
   and crash boundaries across supported platforms. Restart/recovery, malformed
   input, connection failure and cross-process JAM locking already have tests.
+- Verify real HTick two-way TIC exchange and external BSO mailer consumption.
+  PKT import/repeated toss passed against pinned HPT. BSO busy locks, restart,
+  request batches, attachment source isolation, KFS/TFS and Replaces currently
+  have Java behavior tests; those do not replace real mailer/TIC interoperability.
 
 Optional future scope (not committed features)
 ---------------------------------------------

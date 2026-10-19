@@ -116,7 +116,7 @@ as `$`, and Unicode, with a limit of 255 UTF-8 bytes. Separators, control
 characters, Windows device names and other nonportable path syntax cannot be used
 as automation filenames. TIC payload names retain their DOS 8.3 restriction,
 including legal DOS punctuation; spaces and Unicode are not added to that format.
-Area, File, From, Origin, Crc, Path and Seenby are required;
+Area, File, From, Origin and Crc are required; Path/Seenby may be absent as in HTick;
 an optional Size is checked. A configured TIC password is mandatory. From must
 match the peer; To, when present, must be local. Path loops are rejected.
 DOS 8.3 File names are supported; Lfile/Fullname are preserved but not used as
@@ -133,9 +133,10 @@ file. Collisions do not forward or trigger directory imports. A placement journa
 makes callback retries reuse their own stored copy.
 They are forwarded only to authorized subscribers, excluding the sender,
 local addresses and Seenby entries. Unknown TIC lines are preserved; outgoing
-From, To, Pw, Created, Path and Seenby are rebuilt as appropriate. Replaces is
-preserved but does not delete local files. No automatic hatching or FREQ service
-is provided.
+From, To, Pw, Created, Path and Seenby are rebuilt as appropriate. Authenticated
+Replaces can remove matching active files after retaining originals; see
+[fileecho compatibility](fileecho.md). FileFix exact-file resends generate a new
+TIC; no general request-serving service is provided.
 
 The transport queue stores a private file/TIC pair and publishes it atomically.
 Payload precedes TIC; each is removed only after its own M_GOT acknowledgement.

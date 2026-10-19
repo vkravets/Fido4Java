@@ -546,6 +546,39 @@ Existing IDs are immutable. Via identifies the actual JFtn build and outgoing
 link AKA in UTC; it does not introduce a second message ID. See
 [tosser tracking and MSGIDs](tosser.md) for the reference revisions and examples.
 
+## 33. Husky wire compatibility retains explicit trust and durable delivery ownership
+
+The PKT/netmail reference is HPT `c2a91d64cee0e6cd357376d30c9285ee3f9c624f`,
+with fidoconf `62c963a6f078905660f2c0b3a6929383823190c5`; TIC processing follows
+HTick `b146b48b8ff4e1e86179bc68dccc8fc19b37c464`. Wire attribute normalization,
+priority order, special route targets, RouteFile and direct FRQ follow those
+implementations. These features do not import the whole Husky configuration
+language or claim implementation of every FTSC document.
+
+SQL and the internal spool remain authoritative. Optional external BSO publishes
+standard FLO/REQ controls and isolated copies with durable ownership/consumption
+records; native polling is disabled in this mode. Raw packets retain eight-hex
+names and use FLO rather than shared `.out` accumulation. Directory links are
+explicitly opt-in and outgoing-only; they do not establish inbound trust or add
+configured credentials. See [BSO](bso.md) and [routing](tosser.md).
+
+FILE attaches resolve beneath an explicit local root or from the authenticated
+transit source's completed receipts. SQL stores that source separately from the
+outgoing route. Missing/ambiguous payloads defer export. KFS/TFS run only after
+handoff consumption, retain durable originals and never remove a changed source.
+External mailers/request processors own actual FRQ service. TIC Replaces removes
+active matches only after authentication/CRC validation and retains replaced
+originals. This preserves the project's default retention policy.
+
+Evidence: focused restart, source-isolation, route, busy-lock, batch-ACK and
+replacement tests cover these paths. Real pinned HPT successfully tossed a JFtn
+packet with point addressing, mixed-case packet password, MSGID/REPLY/Via and a
+repeated toss without duplicate mail. Windows Testcontainers could not discover
+the Podman Docker API; that case was verified through ordinary Podman CLI
+container operations instead. Real HTick exchange and an external BSO mailer's
+end-to-end consumption have not been verified locally; unit fixtures are not
+presented as that evidence.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

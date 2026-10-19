@@ -132,8 +132,10 @@ automatic rerouting of an in-flight or already prepared delivery is performed.
 The first-match approach was compared with HPT's
 [`findSelfRouteForNetmail` / `findRouteForNetmail`](https://github.com/huskyproject/hpt/blob/master/src/scan.c).
 Wire addresses and Via remain governed by FTS-4001 and FTS-4009. Route ordering,
-SQL storage and operator permissions are application policy. Automatic nodelist
-host/hub discovery and HPT's full route/flavour language are not implemented.
+SQL storage and operator permissions are application policy. Targets `host`,
+`boss`, `hub`, `noroute` and durable `nopack`, priority selection, RouteFile and
+optional outgoing directory links are described below. Automatic zonegate policy
+and HPT configuration-file syntax as a whole are not imported.
 
 ## Processing and recovery
 
@@ -502,14 +504,15 @@ This implements the described import, local delivery, configured transit and
 export pipeline. It is not a claim of complete compliance with every FTSC
 document or independent-tosser certification.
 
-- FileAttach, FileRequest and FileUpdateRequest processing is not implemented.
-  Outgoing submissions using these attributes fail explicitly; such transit
-  packets are quarantined. Local messages can be stored with their attributes,
-  but no attachment or FREQ service is executed.
+- FileAttach and FileRequest export require the optional external BSO mode.
+  This includes peer-scoped transit payloads, RouteFile, KFS/TFS and `.req`
+  generation; see [BSO operation](bso.md). Native binkp does not implement these
+  operations. FileUpdateRequest remains a wire attribute; serving requests is
+  the external mailer/request processor's responsibility.
 - Return-receipt/audit requests are preserved in the wire attributes; automatic
   receipt generation and PING/TRACE services are not implemented.
-- Routing uses configured links and patterns; there is no nodelist-based route
-  discovery, DNS node discovery or automatic zonegate selection.
+- Routing uses configured rules and optional outgoing directory links. There is
+  no automatic zonegate selection or DNS discovery independent of the directory.
 - FTN addresses currently use the project's existing 4D model. Distinct domains
   sharing the same zone/net/node/point cannot be represented independently.
 - SQL storage is exercised against H2. Other database drivers require their
