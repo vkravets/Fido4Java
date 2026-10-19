@@ -252,6 +252,28 @@ MSGIDs. Keep `Tmp`, the SQL database and `Outbound/jftn-mail` together when
 backing up or restoring a node. Do not reuse an old progress journal with a
 new, empty database. Receipt/journal retention is currently manual.
 
+New local MSGIDs use HPT's wire layout: `Z:N/F[.P] xxxxxxxx`, with eight lowercase
+hexadecimal digits. Node addresses omit `.0`; points retain their point number.
+The persistent sequence advances at least once per allocation and follows UTC
+epoch seconds when the clock is ahead. Browser submissions use this same generator;
+their request journal reserves the resulting MSGID so retries after restart reuse
+it without allocating a new serial. Existing/imported MSGIDs and REPLY targets
+are preserved.
+
+Netmail tracking follows HPT's `addViaToMsg` layout:
+`^AVia Z:N/F[.P] @YYYYMMDD.HHMMSS.UTC JFtn <version>`.
+The address is our AKA for the outgoing link, not the final recipient. The final
+fields identify the program/build, not another message ID. Packaged builds read
+the `jtoss` JAR's implementation version; source-class execution uses `dev`.
+`-SNAPSHOT` is displayed as `-dev`, and the version field is limited to ten
+characters as required by FTS-4009. Existing Via records remain in order.
+
+Reference behavior: [HPT tracking](https://github.com/huskyproject/hpt/blob/c2a91d64cee0e6cd357376d30c9285ee3f9c624f/src/scan.c),
+[HPT message creation](https://github.com/huskyproject/hpt/blob/c2a91d64cee0e6cd357376d30c9285ee3f9c624f/src/perl.c)
+and [Husky's sequence allocator](https://github.com/huskyproject/huskylib/blob/d3c0c1c3b643d7fce45f82d6c8378802e85d9205/src/genmsgid.c).
+JFtn keeps its existing locked sequence file; it does not share Husky's `.seq`
+directory or reset a counter that is ahead of the clock.
+
 ### Duplicate mail and packet-name collisions
 
 Like HPT's move/discard policies, duplicate handling keeps repeated messages out

@@ -537,6 +537,15 @@ waiting outgoing mail cancels that delivery, but does not erase SQL duplicate
 history, another recipient's copy or prepared packets. Released delivery records
 and ACKs remain valid. Keep mail and UI-state databases together in backups.
 
+## 32. Local MSGIDs and Via use the Husky wire layout with durable JFtn state
+
+Local message IDs use an address plus eight hexadecimal digits, matching HPT's
+wire representation. Browser request IDs remain internal idempotency keys;
+the UI submission journal preserves the allocated MSGID across retries/restarts.
+Existing IDs are immutable. Via identifies the actual JFtn build and outgoing
+link AKA in UTC; it does not introduce a second message ID. See
+[tosser tracking and MSGIDs](tosser.md) for the reference revisions and examples.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -2,6 +2,10 @@
 apply plugin: 'java-library'
 
 description = 'jtoss'
+
+jar {
+    manifest.attributes('Implementation-Version': project.version)
+}
 dependencies {
   api project(':event-bus')
   api project(':fido-config')

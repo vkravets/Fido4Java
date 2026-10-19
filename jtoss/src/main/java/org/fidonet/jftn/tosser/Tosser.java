@@ -63,8 +63,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -713,15 +711,7 @@ public class Tosser extends HasEventBus {
                 return;
             }
             Message copy = queued.getMessage().copy();
-            copy.getBody()
-                .addVia("\1Via "
-                        + route.getMyaddr()
-                               .get(0)
-                        + " @"
-                        + DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")
-                                           .withZone(ZoneOffset.UTC)
-                                           .format(Instant.now())
-                        + ".UTC JFtn 1.0");
+            copy.getBody().addVia(NetmailVia.format(route.getMyaddr().get(0), Instant.now()));
             spool.enqueue("netmail:" + queued.getKey(), route, copy);
         });
     }

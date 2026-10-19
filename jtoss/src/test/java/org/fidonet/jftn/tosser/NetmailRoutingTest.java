@@ -124,6 +124,10 @@ public class NetmailRoutingTest {
                                            packet.getDestZone());
             assertEquals(message.getTAddr(), restored.getTAddr());
             assertTrue(restored.getBody().toString().contains("Hello\r\1Via 2:500/102"));
+            assertTrue(restored.getBody()
+                               .toString()
+                               .matches("(?s).*\\x01Via 2:500/102 @\\d{8}\\.\\d{6}\\.UTC JFtn \\S{1,10}\\r$"));
+            assertEquals(message.getMsgId(), restored.getMsgId());
             assertEquals(1, base.getQueuedNetmail().size());
             spool.acknowledge(file);
             // Simulate a crash after the filesystem receipt but before the SQL update.
