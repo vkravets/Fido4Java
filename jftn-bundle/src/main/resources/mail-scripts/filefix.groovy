@@ -25,19 +25,19 @@ class FileFixRobot {
             request.reply(previous)
             return true
         }
-        def lines = message.body.body.split('[\\r\\n]+')
-        if (message.body.body.length() > 64000 || lines.length > 200) {
-            request.reply('Request exceeds 200 lines or 64000 characters.\r')
+        List<String> lines
+        try {
+            lines = RobotRequest.commands(message.body.body)
+        } catch (IllegalArgumentException invalid) {
+            request.reply(invalid.message + '\r')
             return true
         }
         def output = new StringBuilder()
         for (String line : lines) {
-            line = line.trim()
-            if (line == '---' || line.startsWith('--- ')) {
-                break
-            }
-            if (!line.isEmpty() && !line.startsWith('\u0001')) {
+            try {
                 output.append(command(request, peer, line)).append('\r')
+            } catch (IllegalArgumentException invalid) {
+                output.append('Invalid command: ').append(invalid.message).append('\r')
             }
         }
         request.reply(output.toString())
@@ -48,18 +48,35 @@ class FileFixRobot {
         def fields = line.toLowerCase(Locale.ROOT).split('\\s+')
         String command = fields[0]
         if (command == '%help') {
-            return '%HELP, %LIST [mask], %QUERY, %LINKED, %UNLINKED, +area, -area'
+            return '%HELP, %INFO, %LIST [! mask | mask], %QUERY, %LINKED, %UNLINKED, ' +
+                    '+area, -area, %PAUSE, %RESUME, %RESEND filename area'
+        }
+        if (command == '%info' && fields.length == 1) {
+            return 'FileFix for ' + peer.addr + '\rDelivery: ' +
+                    (api.robotDelivery.isPaused('FileFix', peer.addr) ? 'paused' : 'active')
+        }
+        if (command in ['%pause', '%resume'] && fields.length == 1) {
+            api.robotDelivery.pause('FileFix', peer.addr, command == '%pause')
+            return command == '%pause' ? 'Fileecho delivery paused; subscriptions retained.' :
+                    'Fileecho delivery resumed.'
+        }
+        if (command == '%resend') {
+            if (fields.length != 3 || !request.allows(fields[2])) {
+                return 'Usage: %RESEND exact-filename allowed-linked-area'
+            }
+            api.fileEcho.resend(peer.addr, fields[2], fields[1], request.id)
+            return 'Resend queued: ' + fields[1] + ' from ' + fields[2]
         }
         def linked = subscriptions(peer)
         if (command in ['%list', '%query', '%linked', '%unlinked']) {
-            def mask = fields.length > 1 ? fields[1] : '*'
+            RobotRequest.selects(fields, '')
             return api.fileEcho.areas().findAll { tag ->
-                request.allows(tag) && RobotRequest.matches(mask, tag)
+                request.allows(tag) && RobotRequest.selects(fields, tag)
                         && (command == '%list' || (command == '%unlinked' ? !linked.contains(tag) : linked.contains(tag)))
             }.join('\r') ?: 'No matching file areas.'
         }
         if (command.startsWith('%') || fields.length != 1) {
-            return 'Unsupported command: ' + line
+            return 'Unsupported command: ' + command
         }
         boolean remove = command.startsWith('-')
         String mask = remove || command.startsWith('+') ? command.substring(1) : command

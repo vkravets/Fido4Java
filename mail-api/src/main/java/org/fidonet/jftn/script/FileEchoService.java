@@ -12,4 +12,6 @@ public interface FileEchoService {
     Set<String> subscriptions(FTNAddr peer) throws IOException;
 
     void subscribe(FTNAddr peer, String area, boolean enabled) throws IOException;
+
+    void resend(FTNAddr peer, String area, String filename, String requestId) throws IOException;
 }

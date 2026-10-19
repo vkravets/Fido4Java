@@ -15,6 +15,7 @@ import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.ReceivedFile;
@@ -113,6 +114,70 @@ class FileFixScriptTest {
                     PacketWriter.write(recipient, message.getTAddr(), "secret", List.of(message)));
         tosser.runFast(inbox.toString(), recipient);
         assertFalse(Files.exists(packet));
+    }
+
+    private String lastReply() {
+        List<QueuedNetmail> queued = base.getQueuedNetmail();
+        return queued.get(queued.size() - 1).getMessage().getBody().getBody();
+    }
+
+    @Test
+    void resendQueuesAnAuthenticatedTicPairAndKeepsStableRequestIdentity() throws Exception {
+        command("+lists", "subscribe-resend");
+        Path directory = Files.createDirectories(root.resolve("lists"));
+        Files.writeString(directory.resolve("NODELIST.288"), "payload");
+        command("%RESEND nodelist.288 lists", "resend-one");
+        assertTrue(lastReply().contains("Resend queued"));
+        FileDeliveryQueue queue = new FileDeliveryQueue(config);
+        List<Path> files = queue.pending(config.getLink(recipient));
+        assertEquals(2, files.size());
+        assertEquals("payload", Files.readString(files.get(0)));
+        String tic = Files.readString(files.get(1));
+        assertTrue(tic.contains("File NODELIST.288"));
+        assertTrue(tic.contains("To " + recipient));
+        assertTrue(tic.contains("Pw out-pass"));
+        assertTrue(tic.contains("Size 7"));
+        for (Path file : files) {
+            queue.acknowledge(file);
+        }
+        command("%RESEND nodelist.288 lists", "resend-one");
+        assertTrue(queue.pending(config.getLink(recipient)).isEmpty());
+        command("%RESEND nodelist.288 lists", "resend-two");
+        assertEquals(2, queue.pending(config.getLink(recipient)).size());
+    }
+
+    @Test
+    void resendRejectsUnlinkedAreasTraversalAndMissingFiles() throws Exception {
+        Path directory = Files.createDirectories(root.resolve("lists"));
+        Files.writeString(directory.resolve("NODELIST.288"), "payload");
+        command("%RESEND nodelist.288 lists", "unlinked-resend");
+        assertTrue(lastReply().contains("allowed linked file area"));
+        command("+lists\r%RESEND ../secret lists\r%RESEND missing.zip lists", "invalid-resend");
+        assertTrue(lastReply().contains("exact DOS 8.3"));
+        assertTrue(lastReply().contains("missing"));
+        assertTrue(new FileDeliveryQueue(config).pending(config.getLink(recipient)).isEmpty());
+    }
+
+    @Test
+    void filePausePersistsAndOnlyHidesDeliveriesWithoutChangingSubscriptions() throws Exception {
+        command("+lists", "subscribe-pause");
+        Path source = root.resolve("source");
+        Files.writeString(source, "payload");
+        FileDeliveryQueue queue = new FileDeliveryQueue(config);
+        queue.enqueue(config.getLink(recipient), "paused-job", source, "TEST.ZIP", "tic");
+        List<Path> files = queue.pending(config.getLink(recipient));
+        command("%PAUSE\r%INFO", "file-pause");
+        assertTrue(lastReply().contains("paused"));
+        assertTrue(scripts.getFileEcho().subscriptions(recipient).contains("lists"));
+        assertTrue(new FileDeliveryQueue(config).pending(config.getLink(recipient)).isEmpty());
+        for (Path file : files) {
+            assertTrue(Files.exists(file));
+        }
+        command("%RESUME", "file-resume");
+        assertEquals(files, queue.pending(config.getLink(recipient)));
+        command("%LIST ! lists", "file-exclude");
+        assertTrue(lastReply().contains("No matching file areas"));
+        assertFalse(lastReply().contains("private"));
     }
 
     private Path received(String name, String content) throws Exception {

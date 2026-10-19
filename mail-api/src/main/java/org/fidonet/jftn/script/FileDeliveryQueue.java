@@ -1,6 +1,7 @@
 package org.fidonet.jftn.script;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.tosser.RobotDelivery;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
@@ -20,9 +21,11 @@ import java.util.stream.Stream;
 public final class FileDeliveryQueue {
     public static final long MAX_FILE_BYTES = 128L * 1024 * 1024;
     private final Path root;
+    private final RobotDelivery delivery;
 
     public FileDeliveryQueue(JFtnConfig config) {
         root = Path.of(config.getOutbound(), "file-delivery").toAbsolutePath().normalize();
+        delivery = new RobotDelivery(config);
     }
 
     public synchronized void enqueue(Link peer, String key, Path source, String name, String tic)
@@ -89,6 +92,9 @@ public final class FileDeliveryQueue {
 
     /** One pair per session prevents different jobs with identical filenames from colliding. */
     public synchronized List<Path> pending(Link peer) throws IOException {
+        if (delivery.isPaused("FileFix", peer.getAddr())) {
+            return List.of();
+        }
         Path directory = root.resolve(ReceivedFile.directoryName(peer.getAddr()));
         if (!Files.isDirectory(directory)) {
             return List.of();

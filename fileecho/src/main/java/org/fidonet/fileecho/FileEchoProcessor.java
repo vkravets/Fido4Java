@@ -70,6 +70,12 @@ final class FileEchoProcessor implements FileEchoService {
         store.subscribe(peer, area, enabled);
     }
 
+    @Override
+    public void resend(FTNAddr peer, String area, String filename, String requestId)
+            throws IOException {
+        new FileEchoResender(api, store, charset).resend(peer, area, filename, requestId);
+    }
+
     void scan() throws IOException {
         List<ReceivedFile> inbox = api.getReceivedFiles();
         for (ReceivedFile ticket : inbox) {

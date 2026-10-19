@@ -63,3 +63,29 @@ JFtn does not implement `%AVAIL` forwarding/catalog aggregation, destructive
 `~area`, remote credential changes, packer/bundle settings, reduced SEEN-BY or
 automatic rules delivery. Such commands report unsupported instead of silently
 changing unrelated configuration. Local `%LIST` is not an uplink `%AVAIL` catalog.
+
+## FileFix
+
+FileFix is registered only when the optional fileecho provider is present and
+enabled. Its commands are `%HELP`, `%INFO`, `%LIST`, `%QUERY`/`%LINKED`, `%UNLINKED`,
+`+area`/`area`/`-area`, `%PAUSE`, `%RESUME` and `%RESEND filename area`. Listing
+commands accept a mask or `! mask`; subscription masks cannot escape the peer's
+FileFix access policy. AreaFix and FileFix pauses are independent.
+
+`%RESEND NODELIST.288 LISTS` queues an exact stored file with a new authenticated
+TIC. The request requires an enabled area, a current subscription, FileFix access
+and separate outgoing TIC access/credentials. Wildcards, path components, symlinks,
+ambiguous case variants and non-DOS-8.3 names are rejected. The stored file is not
+modified. Resending twice with the same request identity does not create another
+job, even after acknowledgement; a new request identity deliberately sends again.
+
+The fresh TIC describes a resend originating at this station, with recomputed
+size/CRC, a new local Path and a generic resend description. It does not pretend
+to reproduce the upstream delivery's original Origin, Path or descriptions.
+Payload/TIC copies remain in the normal queue until acknowledged. FileFix pause
+retains queued copies, including payloads already waiting when pause was requested;
+incoming files can still be stored and queued for eventual delivery after resume.
+Files already offered in an active binkp session may finish transferring.
+
+`%AVAIL` upstream catalog aggregation is not implemented. An unsupported command
+is reported explicitly; no successful subscription/forward request is fabricated.
