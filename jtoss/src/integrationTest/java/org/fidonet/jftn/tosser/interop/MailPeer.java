@@ -78,7 +78,15 @@ final class MailPeer implements AutoCloseable {
                    .replace("@HOST@", host);
         Path temporary = Files.createTempFile(artifacts, alias + "-", "-" + name);
         Files.writeString(temporary, text);
-        commands.execute("cp", temporary.toAbsolutePath().toString(), id + ":" + ROOT + "/" + name);
+        copyConfiguration(temporary, ROOT + "/" + name);
+    }
+
+    private void copyConfiguration(Path source, String destination) throws Exception {
+        commands.execute("cp", source.toAbsolutePath().toString(), id + ":" + destination);
+        // docker cp creates root-owned files; Linux temporary files retain mode 600.
+        commands.execute("exec", "--user", "0:0", id, "chmod", "600", destination);
+        commands.execute("exec", "--user", "0:0", id, "chown", "10001:10001", destination);
+        exec("test", "-r", destination);
     }
 
     void serve() throws Exception {

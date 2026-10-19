@@ -27,6 +27,13 @@ do not require Windows Testcontainers Docker API discovery. The older HPT/JAM
 and transport suites retain their Testcontainers setup. There is no engine socket
 inside a test container and no privileged container.
 
+Java, binkd and HTick run as container UID/GID `10001:10001`. Configuration
+copied from host temporary files is explicitly assigned to that identity with
+mode `600`, and readability is checked before use. This avoids Docker's
+root-owned copies of Linux temporary files preventing daemon startup. Only the
+fixture's ownership/permission adjustment uses container UID 0; mail processes
+continue to run unprivileged.
+
 ## Scenarios
 
 The sender's production Java worker creates SQL deliveries and BSO handoffs, then
