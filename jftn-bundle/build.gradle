@@ -40,6 +40,7 @@ dependencies {
     runtimeOnly project(':fileecho')
     runtimeOnly project(':jam-bridge')
     runtimeOnly project(':nodelist')
+    testImplementation project(':nodelist')
     implementation project(':binkp-root:binkp-common')
     implementation project(':binkp-root:binkp-netty')
     implementation project(':rpc')

@@ -5,6 +5,8 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.binkp.common.SessionState;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.tosser.BsoOutbound;
+import org.fidonet.jftn.tosser.OutboundSpool;
+import org.fidonet.jftn.tosser.OutgoingLinks;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -119,7 +121,7 @@ public class PollService implements AutoCloseable {
         if (closed || worker.isShutdown()) {
             throw new IllegalArgumentException("Poll service is stopped");
         }
-        Link link = config.getLink(new FTNAddr(address));
+        Link link = OutgoingLinks.find(config, new FTNAddr(address));
         if (link == null || config.getLocalAddresses().contains(link.getAddr())) {
             throw new IllegalArgumentException("Unknown remote link");
         }
@@ -142,6 +144,12 @@ public class PollService implements AutoCloseable {
         job.journal.flush();
         jobs.put(attempt.getId(), job);
         SessionContext context = new SessionContext(template);
+        if (context.getLinksInfo()
+                   .getLinks()
+                   .stream()
+                   .noneMatch(peer -> peer.getAddr().equals(link.getAddr()))) {
+            context.getLinksInfo().getLinks().add(link);
+        }
         job.future = worker.submit(() -> run(job, link, context));
         prune();
         return attempt.copy();
@@ -152,6 +160,25 @@ public class PollService implements AutoCloseable {
             return;
         }
         config.getConfiguredLinks().forEach(this::enqueueScheduled);
+        pollVirtualQueue();
+    }
+
+    private void pollVirtualQueue() {
+        if (!OutgoingLinks.virtualEnabled(config)) {
+            return;
+        }
+        try {
+            OutboundSpool spool = new OutboundSpool(config);
+            for (FTNAddr address : spool.peers()) {
+                Link link = OutgoingLinks.find(config, address);
+                if (config.getLink(address) == null && link != null
+                        && !spool.pending(link, false).isEmpty()) {
+                    enqueueScheduled(link);
+                }
+            }
+        } catch (IOException failure) {
+            LOGGER.warn("Unable to inspect virtual outbound queue", failure);
+        }
     }
 
     private Job job(PollAttempt info) {

@@ -13,6 +13,8 @@ import org.fidonet.binkp.common.config.StationConfig;
 import org.fidonet.binkp.netty.plugin.Client;
 import org.fidonet.binkp.netty.plugin.Server;
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.jftn.VirtualDirectoryFixture;
+import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 class PollServiceTest {
     @TempDir
     Path root;
+
+    @Test
+    void manualVirtualPollUsesOnlyASessionScopedDirectoryLink() throws Exception {
+        Path catalog = root.resolve("directory/catalog");
+        VirtualDirectoryFixture.seed(catalog);
+        JFtnConfig config = new JFtnConfig();
+        config.load(new ByteArrayInputStream(storage("SysOp=Test\nInbound=in\nOutbound=out\nTmp=tmp\nEchoPath=echo\n"
+                + "Link=1:500/101,1:500/100,secret,localhost\nAllowVirtualOutbound=true\nNodeDirectoryPath="
+                + catalog + "\n").getBytes(StandardCharsets.UTF_8)));
+        SessionContext template = new SessionContext(new StationConfig("Test",
+                                                                       "Sysop",
+                                                                       "",
+                                                                       "",
+                                                                       "1:500/100"),
+                                                     new LinksInfo(new ArrayList<>(config.getConfiguredLinks())));
+        CountDownLatch connected = new CountDownLatch(1);
+        try (PollService polls = new PollService(config, template, link -> new ClientConnector() {
+            @Override
+            public void run(SessionContext context) {
+                assertEquals("127.0.0.1", link.getHostAddress());
+                assertEquals(24555, link.getPort());
+                assertTrue(context.getLinksInfo().setCurLink(new FTNAddr("1:500/103")));
+                context.setSendingIsFinish(true);
+                context.setReceivingIsFinish(true);
+                context.setState(SessionState.STATE_END);
+                connected.countDown();
+            }
+
+            @Override
+            public void stop() {
+            }
+        })) {
+            polls.poll("1:500/103");
+            assertTrue(connected.await(5, TimeUnit.SECONDS));
+            assertEquals(null, config.getLink(new FTNAddr("1:500/103")));
+            assertEquals(1, template.getLinksInfo().getLinks().size());
+        }
+    }
 
     @Test
     void transportCompletionFailureCannotBeReportedAsSuccessfulPoll() throws Exception {

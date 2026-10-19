@@ -731,7 +731,7 @@ public class Tosser extends HasEventBus {
                 nextHop = decision.getNextHop().getAddr().toString();
                 netmailStore.routeUnpackedNetmail(queued.getKey(), nextHop);
             }
-            Link route = config.getLink(new FTNAddr(nextHop));
+            Link route = OutgoingLinks.find(config, new FTNAddr(nextHop));
             if (route == null || route.getMyaddr() == null || route.getMyaddr().isEmpty()) {
                 throw new IOException("Missing configured route " + queued.getNextHop());
             }

@@ -8,6 +8,7 @@ import org.fidonet.jftn.rpc.NetmailRoutesConfiguration;
 import org.fidonet.jftn.rpc.NetmailRoutingPolicy;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.jftn.tosser.NetmailDecision;
+import org.fidonet.jftn.tosser.OutgoingLinks;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
@@ -72,8 +73,9 @@ final class NodeNetmailRouting {
         String next = NetmailRoute.specialTarget(rule.getNextHop())
                 ? rule.getNextHop().toLowerCase(Locale.ROOT)
                 : AccountDirectory.address(rule.getNextHop(), false);
-        if (!NetmailRoute.specialTarget(next) && (config.getLink(new FTNAddr(next)) == null
-                || config.getLocalAddresses().contains(new FTNAddr(next)))) {
+        if (!NetmailRoute.specialTarget(next)
+                && (OutgoingLinks.find(config, new FTNAddr(next)) == null
+                        || config.getLocalAddresses().contains(new FTNAddr(next)))) {
             throw new IllegalArgumentException("Next hop must be a configured remote link");
         }
         tosser.getNetmailRouter()

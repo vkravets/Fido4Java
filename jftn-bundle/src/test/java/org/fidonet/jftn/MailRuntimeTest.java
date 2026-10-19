@@ -2,6 +2,7 @@ package org.fidonet.jftn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -21,6 +22,7 @@ import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.MailExtensionFactory;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.OutboundSpool;
+import org.fidonet.jftn.tosser.OutgoingLinks;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.packet.PacketWriter;
 import org.fidonet.types.FTNAddr;
@@ -51,6 +53,51 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class MailRuntimeTest {
+    @Test
+    void virtualOutgoingPeerCannotInjectMailIntoTrustedInboundOrIncomingSessions()
+            throws Exception {
+        Path catalog = temporary.toPath().resolve("virtual/catalog");
+        VirtualDirectoryFixture.seed(catalog);
+        JFtnConfig config = config("1:500/100",
+                                   "1:500/101",
+                                   "AllowVirtualOutbound=true\nNodeDirectoryPath="
+                                   + catalog
+                                   + "\n");
+        MailDatabaseFacade base = database();
+        try (MailRuntime runtime = new MailRuntime(config, base)) {
+            SessionContext context = JFtnRunner.createSessionContext(config);
+            Link virtual = OutgoingLinks.find(config, new FTNAddr("1:500/103"));
+            context.getLinksInfo().getLinks().add(virtual);
+            context.getLinksInfo().setCurLink(virtual.getAddr());
+            context.setServerRole(ServerRole.CLIENT);
+            runtime.attach(context);
+            commitVirtualFile(context, config, "first.part");
+            runtime.processPending();
+            assertTrue(ReceivedFile.list(config).isEmpty());
+            assertTrue(base.getLocalNetmail(new FTNAddr("1:500/100")).isEmpty());
+            try (var retained = Files.walk(Path.of(config.getTmpDir(), "untrusted-inbound"))) {
+                assertEquals(1, retained.filter(path -> path.toString().endsWith(".pkt")).count());
+            }
+            context.setServerRole(ServerRole.SERVER);
+            assertThrows(IOException.class,
+                         () -> commitVirtualFile(context, config, "second.part"));
+            assertEquals(null, config.getLink(virtual.getAddr()));
+        } finally {
+            base.close();
+        }
+    }
+
+    private void commitVirtualFile(SessionContext context, JFtnConfig config, String name)
+            throws Exception {
+        PartialFileOutputStream partial = new PartialFileOutputStream(Path.of(config.getTmpDir(),
+                                                                              name),
+                                                                      1);
+        partial.write(42);
+        partial.close();
+        context.commitReceivedFile(new FileData<>(new FileTransferInfo("untrusted.pkt", 1, 1),
+                                                  partial));
+    }
+
     @Test
     public void preservesInteroperableOriginalNamesForReceivedFileAutomation() throws Exception {
         JFtnConfig config = config("1:500/100", "1:500/101");

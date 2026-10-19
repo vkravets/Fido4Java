@@ -11,13 +11,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Persistent packets and acknowledgement receipts; preparing a packet does not mark it sent. */
@@ -119,6 +122,28 @@ public final class OutboundSpool {
         } else if (bso.owns("packet:" + key, link.getAddr())) {
             throw new IOException("Delivery remains owned by external BSO; drain it before changing modes");
         }
+    }
+
+    public List<FTNAddr> peers() throws IOException {
+        if (!Files.isDirectory(root)) {
+            return List.of();
+        }
+        try (Stream<Path> paths = Files.list(root)) {
+            return paths.filter(path -> Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
+                        .map(this::peerAddress)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+        }
+    }
+
+    private FTNAddr peerAddress(Path path) {
+        String name = path.getFileName().toString();
+        if (!name.matches("[0-9]{1,5}(?:-[0-9]{1,5}){3}")) {
+            return null;
+        }
+        String[] parts = name.split("-");
+        FTNAddr address = new FTNAddr(parts[0] + ":" + parts[1] + "/" + parts[2] + "." + parts[3]);
+        return address.isValid() ? address : null;
     }
 
     public synchronized List<Path> pending(Link link, boolean includeHeld) throws IOException {

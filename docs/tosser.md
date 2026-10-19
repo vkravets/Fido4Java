@@ -315,12 +315,29 @@ Databases from older schemas must be converted separately before use.
 Husky route targets can be used in the existing `Route=pattern,target` file
 syntax or the RPC rule's `nextHop` field: `host` selects `Z:N/0`, `boss` removes
 the point, `hub` selects the start of the destination's 100-node block, and
-`noroute` selects the final destination. These derived targets currently require
-a configured remote link. `nopack` stores mail without producing a PKT. It is
+`noroute` selects the final destination. These derived targets require a configured
+remote link, or an explicitly enabled outgoing directory lookup. `nopack` stores mail without producing a PKT. It is
 re-evaluated when processing runs after the rule changes; the first real next hop
 is then persisted. Transit mail retains its transport source so release cannot
 bypass source/target authorization or return-to-sender checks. Once a real next
 hop is assigned, later rule edits do not reroute the prepared delivery.
+
+`AllowVirtualOutbound=true` in `conf.d/27-virtual-outbound.conf` enables outgoing-only
+lookups through the nodelist plugin. A configured link always wins. Otherwise a
+listed node/point with IBN/INA data supplies the connection host/port and empty
+session credentials; Down/Hold entries and unknown addresses are not dialled.
+BSO mode can hand listed PSTN nodes to the external mailer too. Explicit packet
+password declarations still apply, but no password or subscription is inferred
+from the catalog. Manual polls use a session-local link, and scheduled processing
+checks queued non-held virtual deliveries. No virtual link is inserted into the
+trusted configuration, SQL link table, incoming server's link list or robot rules.
+
+Unexpected files received from an unconfigured peer during an outgoing virtual
+session are retained under `Tmp/untrusted-inbound/peers/<address>/`, outside the
+normal automatic tosser/directory-feed scans. Incoming sessions still require a
+configured link. Review retained files and explicitly configure/authorize the
+peer before importing them. Disabling directory lookup prevents new virtual
+calls; it does not erase queues or retained files.
 
 Outgoing Type-2+ packets contain next-hop envelope addresses and independent
 final message addresses. Netmail exports INTL/FMPT/TOPT and appends a UTC Via

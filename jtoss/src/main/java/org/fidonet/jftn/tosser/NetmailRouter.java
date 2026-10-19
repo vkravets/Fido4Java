@@ -17,7 +17,7 @@ public final class NetmailRouter {
     private final NetmailRoutingStore store;
     private final List<NetmailRoute> configured = new ArrayList<>();
     private final boolean databaseRules;
-    private final Link fallback;
+    private final String fallback;
     private final List<AddressPattern> transitFrom;
     private final List<AddressPattern> transitTo;
 
@@ -40,7 +40,10 @@ public final class NetmailRouter {
             readConfiguredRules();
         }
         String defaultRoute = config.getValue("DefaultRoute");
-        fallback = defaultRoute == null ? null : requireLink(defaultRoute.trim());
+        fallback = defaultRoute == null ? null : defaultRoute.trim();
+        if (fallback != null) {
+            validateTarget(fallback);
+        }
         transitFrom = masks("TransitFrom");
         transitTo = masks("TransitTo");
         rules();
@@ -98,17 +101,27 @@ public final class NetmailRouter {
     private void validate(NetmailRoute rule) {
         new AddressPattern(rule.getPattern());
         if (rule.isEnabled() && !NetmailRoute.specialTarget(rule.getNextHop())) {
-            requireLink(rule.getNextHop());
+            validateTarget(rule.getNextHop());
         }
     }
 
     private Link requireLink(String address) {
-        Link link = config.getLink(new FTNAddr(address));
+        Link link = OutgoingLinks.find(config, new FTNAddr(address));
         if (link == null || config.getLocalAddresses().contains(link.getAddr())) {
             throw new IllegalArgumentException("Next hop must be a configured remote link: "
                                                + address);
         }
         return link;
+    }
+
+    private void validateTarget(String target) {
+        FTNAddr address = new FTNAddr(target);
+        if (!address.isValid() || config.getLocalAddresses().contains(address)) {
+            throw new IllegalArgumentException("Next hop must be a remote FTN address");
+        }
+        if (!OutgoingLinks.virtualEnabled(config)) {
+            requireLink(target);
+        }
     }
 
     public Link route(Message message) {
@@ -123,7 +136,7 @@ public final class NetmailRouter {
         if (config.getLocalAddresses().contains(destination)) {
             return decision(NetmailDecision.Reason.LOCAL, null, null);
         }
-        Link direct = config.getLink(destination);
+        Link direct = OutgoingLinks.find(config, destination);
         if (NetmailPriority.of(message) != NetmailPriority.NORMAL) {
             return decision(direct == null
                     ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
@@ -137,9 +150,12 @@ public final class NetmailRouter {
         if (direct != null) {
             return decision(NetmailDecision.Reason.DIRECT, direct, null);
         }
-        return decision(fallback == null
+        Link fallbackLink = fallback == null
+                ? null
+                : OutgoingLinks.find(config, new FTNAddr(fallback));
+        return decision(fallbackLink == null
                 ? NetmailDecision.Reason.NO_ROUTE
-                : NetmailDecision.Reason.DEFAULT, fallback, null);
+                : NetmailDecision.Reason.DEFAULT, fallbackLink, null);
     }
 
     public NetmailDecision explainTransit(Message message, FTNAddr source) {
@@ -188,7 +204,10 @@ public final class NetmailRouter {
             return decision(NetmailDecision.Reason.NO_PACK, null, rule.getId());
         }
         if (!NetmailRoute.specialTarget(target)) {
-            return decision(NetmailDecision.Reason.RULE, requireLink(target), rule.getId());
+            Link link = OutgoingLinks.find(config, new FTNAddr(target));
+            return decision(link == null
+                    ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
+                    : NetmailDecision.Reason.RULE, link, rule.getId());
         }
         int node = destination.getNode();
         int point = destination.getPnt();
@@ -202,7 +221,7 @@ public final class NetmailRouter {
             point = 0;
         }
         FTNAddr address = new FTNAddr(destination.getZone(), destination.getNet(), node, point);
-        Link link = config.getLink(address);
+        Link link = OutgoingLinks.find(config, address);
         return decision(link == null
                 ? NetmailDecision.Reason.DIRECT_UNAVAILABLE
                 : NetmailDecision.Reason.RULE, link, rule.getId());

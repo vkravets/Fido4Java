@@ -9,6 +9,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.ReceivedFile;
 import org.fidonet.jftn.tosser.OutboundSpool;
+import org.fidonet.jftn.tosser.OutgoingLinks;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.misc.LazyFileInputStream;
 import org.fidonet.misc.ReceivedFileArchive;
@@ -79,7 +80,12 @@ final class BinkpMailTransferAdapter {
             throw new IOException("Durable receive storage is required");
         }
         PartialFileOutputStream partial = (PartialFileOutputStream) file.getStream();
-        Path directory = peerDirectory(link);
+        Path directory = config.getLink(link.getAddr()) == null
+                ? Path.of(config.getTmpDir(),
+                          "untrusted-inbound",
+                          "peers",
+                          ReceivedFile.directoryName(link.getAddr()))
+                : peerDirectory(link);
         Files.createDirectories(directory);
         String original = file.getInfo().getName().replace('\\', '/');
         original = original.substring(original.lastIndexOf('/') + 1);
@@ -184,6 +190,9 @@ final class BinkpMailTransferAdapter {
     private Link requireLink(SessionContext context) throws IOException {
         Link current = context.getLinksInfo().getCurLink();
         Link configured = current == null ? null : config.getLink(current.getAddr());
+        if (configured == null && current != null && context.getServerRole() == ServerRole.CLIENT) {
+            configured = OutgoingLinks.find(config, current.getAddr());
+        }
         if (configured == null) {
             throw new IOException("Session peer is not configured");
         }
