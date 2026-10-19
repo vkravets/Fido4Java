@@ -36,6 +36,12 @@ public final class HptInteropWorker {
 
     private static void execute(String command, HptScenario scenario) throws Exception {
         switch (command) {
+            case "write-java-packet" :
+                HptPacketScenario.write(scenario);
+                break;
+            case "verify-java-packet" :
+                HptPacketScenario.verify(scenario);
+                break;
             case "init" :
                 break;
             case "export-java" :

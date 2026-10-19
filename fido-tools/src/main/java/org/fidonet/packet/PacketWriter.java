@@ -88,7 +88,7 @@ public final class PacketWriter {
         }
         ByteBuffer header = ByteBuffer.allocate(34).order(ByteOrder.LITTLE_ENDIAN);
         for (int value : new int[]{2, from.getNode(), to.getNode(), from.getNet(), to.getNet(),
-                source.getAttributes() & 0x7013, 0}) {
+                source.getAttributes() & ~(0x0020 | 0x0080 | 0x0100) & 0xffff, 0}) {
             header.putShort((short) value);
         }
         byte[] date = source.getMsgDate().getBytes(StandardCharsets.US_ASCII);

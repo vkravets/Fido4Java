@@ -19,6 +19,38 @@ import java.util.Date;
 
 public class PacketWriterTest {
     @Test
+    void clearsOnlyHuskyLocalTransitAndKillFlagsWhenPacking() throws Exception {
+        Message message = new Message("Author",
+                                      "Reader",
+                                      new FTNAddr("1:500/100.7"),
+                                      new FTNAddr("1:500/101.8"),
+                                      "Subject",
+                                      "\1MSGID: 1:500/100.7 12345678\r\1REPLY: 1:500/99 abcdef01\rBody\r",
+                                      new Date());
+        message.setAttributes(0xffff);
+        String body = message.getBody().toString();
+        byte[] bytes = PacketWriter.write(new FTNAddr("1:500/100"),
+                                          new FTNAddr("1:500/102"),
+                                          "secret",
+                                          Collections.singletonList(message));
+        ByteBuffer wire = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(0xffff & ~(0x20 | 0x80 | 0x100), Short.toUnsignedInt(wire.getShort(58 + 10)));
+        assertEquals(0xffff, message.getAttributes());
+        assertEquals(body, message.getBody().toString());
+        FtsPkt packet = new FtsPkt(ByteBuffer.wrap(bytes));
+        Message restored = new Message(packet.getMsgs()[0],
+                                       packet.getOrigZone(),
+                                       packet.getDestZone());
+        assertEquals(message.getFAddr(), restored.getFAddr());
+        assertEquals(message.getTAddr(), restored.getTAddr());
+        assertEquals(message.getMsgId(), restored.getMsgId());
+        assertEquals("1:500/99 abcdef01", restored.getBody().getKludges().get("REPLY").trim());
+        assertEquals(0x0100, Short.toUnsignedInt(wire.getShort(40)));
+        assertEquals(1, Short.toUnsignedInt(wire.getShort(44)));
+        assertEquals(0, wire.getShort(bytes.length - 2));
+    }
+
+    @Test
     public void writesType2PlusEnvelopeAndIndependentFourDimensionalMessageAddresses()
             throws Exception {
         Message original = new Message("Автор",
@@ -38,7 +70,7 @@ public class PacketWriterTest {
         assertEquals(1, raw.getShort(44));
         assertEquals(0x0100, raw.getShort(40));
         assertEquals(60000, Short.toUnsignedInt(raw.getShort(50)));
-        assertEquals(0x7013, Short.toUnsignedInt(raw.getShort(68)));
+        assertEquals(0xfe5f, Short.toUnsignedInt(raw.getShort(68)));
         assertEquals(0, raw.getShort(bytes.length - 2));
         String body = new String(bytes, StandardCharsets.UTF_8);
         assertTrue(body.contains("\1INTL 3:300/400 1:100/200\r"));

@@ -6,6 +6,19 @@ import org.junit.jupiter.api.Test;
 
 public class HptInteropTest {
     @Test
+    void hptTossesJavaPacketsWithPointAddressesReplyAndViaWithoutDuplicatingMail()
+            throws Exception {
+        try (HptContainer peer = new HptContainer("java-packet-to-hpt")) {
+            peer.start();
+            peer.worker("write-java-packet");
+            peer.hpt("toss");
+            peer.worker("verify-java-packet");
+            peer.hpt("toss");
+            peer.worker("verify-java-packet");
+        }
+    }
+
+    @Test
     public void hptHonorsJamLockHeldByJavaProcess() throws Exception {
         try (HptContainer peer = new HptContainer("jam-lock")) {
             peer.start();
