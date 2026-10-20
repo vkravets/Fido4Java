@@ -18,6 +18,8 @@ struct UserProfile {
 }
 
 service ProfileService {
+    string uiDocument(1:string session, 2:string key) throws (1:ui.UiError error),
+    void saveUiDocument(1:string session, 2:string key, 3:string document) throws (1:ui.UiError error),
     bool registrationEnabled(),
     void register(1:string login, 2:string password, 3:string requestedAka) throws (1:ui.UiError error),
     UserProfile me(1:string session) throws (1:ui.UiError error),

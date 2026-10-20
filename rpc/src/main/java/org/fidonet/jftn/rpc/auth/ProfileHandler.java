@@ -36,6 +36,21 @@ public final class ProfileHandler implements ProfileService.Iface {
     }
 
     @Override
+    public String uiDocument(String session, String key) throws UiError {
+        String owner = sessions.require(session);
+        return call(() -> directory.uiDocument(owner, key));
+    }
+
+    @Override
+    public void saveUiDocument(String session, String key, String document) throws UiError {
+        String owner = sessions.require(session);
+        call(() -> {
+            directory.uiDocument(owner, key, document);
+            return null;
+        });
+    }
+
+    @Override
     public void register(String login, String password, String requestedAka) throws UiError {
         if (!registration) {
             throw new UiError("FORBIDDEN", "Public registration is disabled");

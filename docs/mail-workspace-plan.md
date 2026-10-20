@@ -28,7 +28,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 ## Ordered commits
 
 1. [x] Record design and implementation sequence.
-2. [ ] Persist personal workspace preferences with isolation and validation.
+2. [x] Persist personal workspace preferences with isolation and validation.
 3. [ ] Collapsible application navigation and workspace shell.
 4. [ ] Accessible reusable resizable split pane.
 5. [ ] Netmail right/bottom/separate preview layouts.

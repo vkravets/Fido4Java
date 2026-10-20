@@ -17,6 +17,14 @@ public final class AccountDirectory {
         this.accounts = accounts;
     }
 
+    String uiDocument(String owner, String key) throws Exception {
+        return new UiDocuments(accounts).read(owner, key);
+    }
+
+    void uiDocument(String owner, String key, String document) throws Exception {
+        new UiDocuments(accounts).save(owner, key, document);
+    }
+
     public AccountRecord profile(String login) throws SQLException {
         try (Connection connection = accounts.open();
                 PreparedStatement sql = connection.prepareStatement("SELECT login,role,enabled,theme,default_aka FROM rpc_users WHERE login=?")) {
