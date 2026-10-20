@@ -43,7 +43,8 @@ struct MailItem {
     9: required bool read,
     10: optional string body,
     11: optional i32 attributes,
-    12: optional string replyTo
+    12: optional string replyTo,
+    13: optional string excerpt
 }
 
 struct MailPage {

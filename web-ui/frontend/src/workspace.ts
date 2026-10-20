@@ -51,6 +51,7 @@ export function createWorkspace(client?: Client) {
     const value = ref(workspacePreferences({}));
     let token = '';
     let generation = 0;
+    let queue: Promise<void> = Promise.resolve();
     async function load(session: string) {
         token = session;
         const ticket = ++generation;
@@ -59,13 +60,26 @@ export function createWorkspace(client?: Client) {
         const result = await client.uiDocument(session, 'workspace');
         if (ticket === generation) value.value = parseWorkspace(result);
     }
-    async function update(patch: Partial<WorkspacePreferences>) {
+    function change(patch: (current: WorkspacePreferences) => WorkspacePreferences) {
         const ticket = generation;
-        const next = workspacePreferences({ ...value.value, ...patch });
-        if (client && token) await client.saveUiDocument(token, 'workspace', JSON.stringify(next));
-        if (ticket === generation) value.value = next;
+        const session = token;
+        const operation = queue
+            .catch(() => {})
+            .then(async () => {
+                if (ticket !== generation) return;
+                const next = workspacePreferences(patch(value.value));
+                if (client && session)
+                    await client.saveUiDocument(session, 'workspace', JSON.stringify(next));
+                if (ticket === generation) value.value = next;
+            });
+        queue = operation;
+        return operation;
     }
-    return { value, load, update };
+    const update = (patch: Partial<WorkspacePreferences>) =>
+        change((current) => ({ ...current, ...patch }));
+    const updateLayout = (kind: MailKind, patch: Partial<MailLayout>) =>
+        change((current) => ({ ...current, [kind]: { ...current[kind], ...patch } }));
+    return { value, load, update, updateLayout };
 }
 export type Workspace = ReturnType<typeof createWorkspace>;
 export const workspaceKey: InjectionKey<Workspace> = Symbol('workspace');

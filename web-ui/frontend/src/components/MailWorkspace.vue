@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, provide } from 'vue';
+import { mailSearchKey } from '../mail-search.ts';
 import { t } from '../i18n.ts';
 import { useWorkspace } from '../workspace.ts';
 import type { MailKind, MailLayout } from '../workspace.ts';
@@ -8,6 +9,8 @@ import NotificationBanner from './NotificationBanner.vue';
 const props = defineProps<{ kind: MailKind; opened: boolean; busy?: boolean }>();
 defineEmits<{ back: [] }>();
 const workspace = useWorkspace();
+const query = ref('');
+provide(mailSearchKey, query);
 const preferences = computed(() => workspace.value.value[props.kind]);
 const saving = ref(false);
 const error = ref('');
@@ -16,7 +19,7 @@ async function update(patch: Partial<MailLayout>) {
     saving.value = true;
     error.value = '';
     try {
-        await workspace.update({ [props.kind]: { ...preferences.value, ...patch } });
+        await workspace.updateLayout(props.kind, patch);
     } catch {
         error.value = t('Could not save workspace preferences.');
     } finally {
@@ -34,7 +37,17 @@ const positions = [
         kind="error"
         :message="error"
     />
-    <div class="mail-display-controls actions">
+    <div
+        class="mail-display-controls actions"
+        :class="{ 'detail-open': opened }"
+    >
+        <label
+            >{{ t('Search loaded messages')
+            }}<input
+                v-model="query"
+                type="search"
+                maxlength="120"
+        /></label>
         <label
             >{{ t('Preview position')
             }}<select
@@ -159,6 +172,9 @@ const positions = [
 @media (max-width: 700px) {
     .mail-layout.detail-open :deep(.split-list),
     .mail-layout:not(.detail-open) :deep(.split-detail) {
+        display: none;
+    }
+    .mail-display-controls.detail-open {
         display: none;
     }
     .mail-display-controls label {

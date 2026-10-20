@@ -35,3 +35,22 @@ test('late loads cannot replace another account and failed saves retain previous
     await assert.rejects(workspace.update({ collapsed: true }), /offline/);
     assert.equal(workspace.value.value.collapsed, false);
 });
+
+test('concurrent field saves are serialized and preserve independent layout edits', async () => {
+    const snapshots: string[] = [];
+    const workspace = createWorkspace({
+        uiDocument: async () => '{}',
+        saveUiDocument: async (_token, _key, value) => {
+            snapshots.push(value);
+        }
+    });
+    await workspace.load('account');
+    await Promise.all([
+        workspace.updateLayout('echo', { density: 'compact' }),
+        workspace.updateLayout('echo', { mode: 'flat' }),
+        workspace.update({ collapsed: true })
+    ]);
+    assert.equal(workspace.value.value.echo.mode, 'flat');
+    assert.equal(workspace.value.value.echo.density, 'compact');
+    assert.equal(JSON.parse(snapshots.at(-1)!).collapsed, true);
+});

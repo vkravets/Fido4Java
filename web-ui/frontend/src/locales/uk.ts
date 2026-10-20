@@ -1,4 +1,7 @@
 export const ukrainian = {
+    'Search loaded messages': 'Шукати серед завантажених листів',
+    'No matching loaded messages.': 'Серед завантажених листів збігів немає.',
+    'Search matches': 'Збіги пошуку',
     'Could not save workspace preferences.': 'Не вдалося зберегти налаштування робочого простору.',
     'Expand menu': 'Розгорнути меню',
     'Collapse menu': 'Згорнути меню',

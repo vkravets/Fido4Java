@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
+import NotificationBanner from './NotificationBanner.vue';
+import { useWorkspace } from '../workspace.ts';
+import { matchesMail, useMailSearch } from '../mail-search.ts';
 import { mailId } from '../netmail.ts';
 import { echoThreads } from '../echo-threads.ts';
 import type { EchoThreadRow } from '../echo-threads.ts';
@@ -14,12 +17,36 @@ const props = defineProps<{
     initialMode?: 'flat' | 'tree';
 }>();
 const emit = defineEmits<{ open: [item: MailItem]; more: [] }>();
-const mode = ref<'flat' | 'tree'>(props.initialMode || 'tree');
+const workspace = useWorkspace();
+const selectedMode = ref<'flat' | 'tree'>();
+const savingMode = ref(false);
+const modeError = ref('');
+const mode = computed({
+    get: () => selectedMode.value || props.initialMode || workspace.value.value.echo.mode,
+    set: (value) => {
+        if (savingMode.value) return;
+        savingMode.value = true;
+        modeError.value = '';
+        void workspace
+            .updateLayout('echo', { mode: value })
+            .then(() => {
+                selectedMode.value = value;
+            })
+            .catch(() => {
+                modeError.value = t('Could not save workspace preferences.');
+            })
+            .finally(() => {
+                savingMode.value = false;
+            });
+    }
+});
+const query = useMailSearch();
+const visibleItems = computed(() => props.items.filter((item) => matchesMail(item, query.value)));
 const collapsed = ref(new Set<string>());
 const rows = computed<EchoThreadRow[]>(() =>
     mode.value === 'tree'
-        ? echoThreads(props.items, collapsed.value)
-        : props.items.map((item) => ({ item, depth: 0, children: false, parent: '' }))
+        ? echoThreads(visibleItems.value, collapsed.value)
+        : visibleItems.value.map((item) => ({ item, depth: 0, children: false, parent: '' }))
 );
 function toggle(id: string) {
     const value = new Set(collapsed.value);
@@ -49,6 +76,10 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
 }
 </script>
 <template>
+    <NotificationBanner
+        kind="error"
+        :message="modeError"
+    />
     <section
         class="card echo-message-list"
         :aria-label="t('Conference messages')"
@@ -58,7 +89,7 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                 >{{ t('Message list')
                 }}<select
                     v-model="mode"
-                    :disabled="busy"
+                    :disabled="busy || savingMode"
                 >
                     <option value="flat">{{ t('Flat list') }}</option>
                     <option value="tree">{{ t('Conversation tree') }}</option>
@@ -67,10 +98,10 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
             <span class="muted">{{ t('Loaded messages: {count}', { count: items.length }) }}</span>
         </div>
         <p
-            v-if="!items.length"
+            v-if="!visibleItems.length"
             class="muted"
         >
-            {{ t('No messages in this conference.') }}
+            {{ query ? t('No matching loaded messages.') : t('No messages in this conference.') }}
         </p>
         <p
             v-if="mode === 'tree' && hasMore"
@@ -120,6 +151,11 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                 >
                     <strong>{{ row.item.subject }}</strong>
                     <span>{{ row.item.fromName }} → {{ row.item.toName }}</span>
+                    <span
+                        class="mail-excerpt"
+                        v-if="row.item.excerpt || row.item.body"
+                        >{{ row.item.excerpt || row.item.body?.slice(0, 160) }}</span
+                    >
                     <small
                         >{{ row.item.date }}
                         <span v-if="!row.item.read"> · {{ t('Unread') }}</span></small

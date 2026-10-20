@@ -175,6 +175,10 @@ class EchoReaderRpcTest {
         var rows = ui.messages(admin, Mailbox.ECHO, "test", 0, 10).getItems();
         var recent = ui.echoMessages(admin, "test", 0, 2);
         assertTrue(recent.isHasMore());
+        assertFalse(recent.getItems().get(0).isSetBody());
+        assertTrue(recent.getItems().get(0).isSetExcerpt());
+        assertTrue(recent.getItems().get(0).getExcerpt().length() <= 240);
+        assertFalse(recent.getItems().get(0).getExcerpt().contains("\1"));
         assertEquals(rows.get(3).getId(), recent.getItems().get(0).getId());
         var older = ui.echoMessages(admin, "test", recent.getNextId(), 2);
         assertEquals(rows.get(0).getId(), older.getItems().get(1).getId());
