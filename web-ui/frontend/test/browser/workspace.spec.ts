@@ -32,6 +32,42 @@ test('visual editor preserves FIDO source through formatting, undo and mode chan
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     await expect(page.locator('.mail-body .bold')).toHaveText('Hello Bob');
 });
+test('mail appearance previews unsaved themes beside controls without changing saved preferences', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openStory(page, 'mail-mailappearancesettings--themes');
+    const controls = page.locator('.appearance-layout > fieldset');
+    const preview = page.getByRole('complementary', { name: 'Live mail preview' });
+    const left = await controls.boundingBox();
+    const right = await preview.boundingBox();
+    expect(right!.x).toBeGreaterThan(left!.x + left!.width);
+    const reading = page.getByRole('combobox', { name: 'Reading theme', exact: true });
+    await reading.selectOption('graphite');
+    await expect(preview.locator('.mail-body')).toHaveCSS('background-color', 'rgb(29, 32, 35)');
+    await reading.selectOption('terminal');
+    await expect(preview.locator('.mail-body')).toHaveCSS('background-color', 'rgb(16, 24, 16)');
+    await page.getByRole('combobox', { name: 'Editor theme', exact: true }).selectOption('paper');
+    await expect(preview.locator('.cm-editor')).toBeVisible();
+    await expect(preview.locator('.fido-editor')).toHaveCSS('--mail-background', '#fffdf7');
+    await page.getByRole('combobox', { name: 'Default outgoing encoding' }).selectOption('KOI8-R');
+    await expect(preview.locator('.fido-editor small')).toContainText('KOI8-R');
+    await page.getByLabel('Background', { exact: true }).fill('#123456');
+    await expect(preview.locator('.fido-editor')).toHaveCSS('--mail-background', '#123456');
+    await expect(preview.getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
+    await preview.getByRole('button', { name: 'Reading theme', exact: true }).click();
+    await expect(preview.locator('.mail-body')).toHaveCSS('background-color', 'rgb(16, 24, 16)');
+    await openStory(page, 'mail-mailappearancesettings--themes');
+    await expect(reading).toHaveValue('paper');
+    await expect(page.getByRole('combobox', { name: 'Default outgoing encoding' })).toHaveValue(
+        'UTF-8'
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    const stackedControls = await controls.boundingBox();
+    const stackedPreview = await preview.boundingBox();
+    expect(stackedPreview!.y).toBeGreaterThanOrEqual(stackedControls!.y + stackedControls!.height);
+});
+
 test('mail appearance saves personal copies without overwriting operator palettes', async ({
     page
 }) => {

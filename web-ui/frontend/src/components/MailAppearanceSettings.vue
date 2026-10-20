@@ -2,16 +2,11 @@
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { themeLabel } from '../mail-theme-labels.ts';
-import {
-    mailColors,
-    mailEncodings,
-    mailTheme,
-    themeStyle,
-    useMailAppearance
-} from '../mail-themes.ts';
+import { mailColors, mailEncodings, mailTheme, useMailAppearance } from '../mail-themes.ts';
 import type { MailTheme } from '../mail-themes.ts';
 import type { AppState } from '../state.ts';
-import FidoText from './FidoText.vue';
+import MailAppearancePreview from './MailAppearancePreview.vue';
+import type { AppearancePreviewMode } from './MailAppearancePreview.vue';
 const props = defineProps<{ state: AppState }>();
 const appearance = useMailAppearance();
 const reader = ref(appearance.find(appearance.reader.value).id);
@@ -19,14 +14,14 @@ const editor = ref(appearance.find(appearance.editor.value).id);
 const encoding = ref(appearance.encoding.value);
 const selected = ref(editor.value);
 const draft = ref<MailTheme>(copy(appearance.find(selected.value)));
-const preview =
-    'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thank you.\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';
+const previewMode = ref<AppearancePreviewMode>('reader');
 const custom = computed(() => appearance.custom.value.some((theme) => theme.id === selected.value));
 function copy(theme: MailTheme): MailTheme {
     return { ...theme, colors: { ...theme.colors } };
 }
 function choose() {
     draft.value = copy(appearance.find(selected.value));
+    previewMode.value = 'custom';
 }
 async function save() {
     await appearance.save(reader.value, editor.value, appearance.custom.value, encoding.value);
@@ -60,6 +55,7 @@ async function importTheme(event: Event) {
         if (file.size > 32768) throw new Error(t('Theme file is too large.'));
         draft.value = mailTheme(JSON.parse(await file.text()));
         selected.value = '';
+        previewMode.value = 'custom';
     } finally {
         input.value = '';
     }
@@ -90,127 +86,161 @@ const labels = {
     <section class="card mail-appearance">
         <h2>{{ t('Mail appearance') }}</h2>
         <p>{{ t('Mail themes are independent of the application theme.') }}</p>
-        <fieldset :disabled="state.busy.value">
-            <div class="form-grid">
-                <label
-                    >{{ t('Reading theme')
-                    }}<select v-model="reader">
-                        <option
-                            v-for="theme in appearance.themes.value"
-                            :key="theme.id"
-                            :value="theme.id"
+        <div class="appearance-layout">
+            <fieldset :disabled="state.busy.value">
+                <div class="form-grid">
+                    <label
+                        >{{ t('Reading theme')
+                        }}<select
+                            v-model="reader"
+                            @change="previewMode = 'reader'"
                         >
-                            {{ themeLabel(theme) }}
-                        </option>
-                    </select></label
-                ><label
-                    >{{ t('Editor theme')
-                    }}<select v-model="editor">
-                        <option
-                            v-for="theme in appearance.themes.value"
-                            :key="theme.id"
-                            :value="theme.id"
+                            <option
+                                v-for="theme in appearance.themes.value"
+                                :key="theme.id"
+                                :value="theme.id"
+                            >
+                                {{ themeLabel(theme) }}
+                            </option>
+                        </select></label
+                    ><label
+                        >{{ t('Editor theme')
+                        }}<select
+                            v-model="editor"
+                            @change="previewMode = 'editor'"
                         >
-                            {{ themeLabel(theme) }}
-                        </option>
-                    </select></label
-                >
-            </div>
-            <label
-                >{{ t('Default outgoing encoding')
-                }}<select v-model="encoding">
-                    <option
-                        v-for="value in mailEncodings"
-                        :key="value"
-                        :value="value"
+                            <option
+                                v-for="theme in appearance.themes.value"
+                                :key="theme.id"
+                                :value="theme.id"
+                            >
+                                {{ themeLabel(theme) }}
+                            </option>
+                        </select></label
                     >
-                        {{ value }}
-                    </option>
-                </select></label
-            >
-            <button
-                class="primary"
-                @click="state.run(save)"
-            >
-                {{ t('Save preferences') }}
-            </button>
-            <hr />
-            <label
-                >{{ t('Customize theme')
-                }}<select
-                    v-model="selected"
-                    @change="choose"
-                >
-                    <option
-                        v-for="theme in appearance.themes.value"
-                        :key="theme.id"
-                        :value="theme.id"
-                    >
-                        {{ themeLabel(theme) }}
-                    </option>
-                </select></label
-            >
-            <p
-                v-if="!custom"
-                class="muted"
-            >
-                {{ t('Built-in and file themes are read-only. Changes create a personal copy.') }}
-            </p>
-            <label
-                >{{ t('Theme name')
-                }}<input
-                    v-model="draft.name"
-                    maxlength="80"
-            /></label>
-            <div class="theme-color-grid">
+                </div>
                 <label
-                    v-for="key in mailColors"
-                    :key="key"
-                    >{{ t(labels[key])
-                    }}<input
-                        v-model="draft.colors[key]"
-                        type="color"
-                /></label>
-            </div>
-            <div
-                :style="themeStyle(draft)"
-                class="mail-palette-preview"
-            >
-                <FidoText
-                    :text="preview"
-                    :theme="draft"
-                />
-            </div>
-            <div class="actions">
+                    >{{ t('Default outgoing encoding') }}
+                    <select
+                        v-model="encoding"
+                        @change="previewMode = 'editor'"
+                    >
+                        <option
+                            v-for="value in mailEncodings"
+                            :key="value"
+                            :value="value"
+                        >
+                            {{ value }}
+                        </option>
+                    </select>
+                </label>
                 <button
                     class="primary"
-                    @click="state.run(saveTheme)"
+                    @click="state.run(save)"
                 >
-                    {{ t('Save personal theme') }}</button
-                ><button
-                    class="secondary"
-                    @click="exportTheme"
-                >
-                    {{ t('Export theme') }}</button
-                ><button
-                    v-if="custom"
-                    class="danger"
-                    @click="state.run(remove)"
-                >
-                    {{ t('Delete theme') }}
+                    {{ t('Save preferences') }}
                 </button>
-            </div>
-            <label
-                >{{ t('Import theme')
-                }}<input
-                    type="file"
-                    accept="application/json,.json"
-                    @change="state.run(() => importTheme($event))"
-            /></label>
-        </fieldset>
+                <hr />
+                <label
+                    >{{ t('Customize theme')
+                    }}<select
+                        v-model="selected"
+                        @change="choose"
+                    >
+                        <option
+                            v-for="theme in appearance.themes.value"
+                            :key="theme.id"
+                            :value="theme.id"
+                        >
+                            {{ themeLabel(theme) }}
+                        </option>
+                    </select></label
+                >
+                <p
+                    v-if="!custom"
+                    class="muted"
+                >
+                    {{
+                        t('Built-in and file themes are read-only. Changes create a personal copy.')
+                    }}
+                </p>
+                <label
+                    >{{ t('Theme name')
+                    }}<input
+                        v-model="draft.name"
+                        maxlength="80"
+                /></label>
+                <div class="theme-color-grid">
+                    <label
+                        v-for="key in mailColors"
+                        :key="key"
+                        >{{ t(labels[key])
+                        }}<input
+                            v-model="draft.colors[key]"
+                            type="color"
+                            @input="previewMode = 'custom'"
+                    /></label>
+                </div>
+                <div class="actions">
+                    <button
+                        class="primary"
+                        @click="state.run(saveTheme)"
+                    >
+                        {{ t('Save personal theme') }}</button
+                    ><button
+                        class="secondary"
+                        @click="exportTheme"
+                    >
+                        {{ t('Export theme') }}</button
+                    ><button
+                        v-if="custom"
+                        class="danger"
+                        @click="state.run(remove)"
+                    >
+                        {{ t('Delete theme') }}
+                    </button>
+                </div>
+                <label
+                    >{{ t('Import theme')
+                    }}<input
+                        type="file"
+                        accept="application/json,.json"
+                        @change="state.run(() => importTheme($event))"
+                /></label>
+            </fieldset>
+            <MailAppearancePreview
+                v-model="previewMode"
+                :reader="appearance.find(reader)"
+                :editor="appearance.find(editor)"
+                :custom="draft"
+                :encoding="encoding"
+            />
+        </div>
     </section>
 </template>
 <style scoped>
+.appearance-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.appearance-layout .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+.appearance-layout label {
+    font-size: 13px;
+}
+.appearance-layout button {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 13px;
+}
+.appearance-layout input,
+.appearance-layout select {
+    min-height: 32px;
+    padding: 5px 8px;
+}
 .theme-color-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -219,13 +249,6 @@ const labels = {
 .theme-color-grid input {
     height: 40px;
     padding: 4px;
-}
-.mail-palette-preview {
-    margin: 20px 0;
-}
-.mail-palette-preview :deep(.fido-text) {
-    background: var(--mail-background);
-    color: var(--mail-text);
 }
 hr {
     border: 0;
@@ -236,5 +259,10 @@ fieldset {
     border: 0;
     padding: 0;
     min-width: 0;
+}
+@media (max-width: 1000px) {
+    .appearance-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 </style>

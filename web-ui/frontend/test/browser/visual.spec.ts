@@ -32,6 +32,8 @@ const screens = [
     { name: 'editor-source', story: 'mail-fidoeditor--source' },
     { name: 'editor-preview', story: 'mail-fidoeditor--preview' },
     { name: 'mail-themes', story: 'mail-mailappearancesettings--themes' },
+    { name: 'mail-themes-editor-preview', story: 'mail-mailappearancesettings--editor-preview' },
+    { name: 'mail-themes-custom-preview', story: 'mail-mailappearancesettings--custom-preview' },
     { name: 'mail-themes-busy', story: 'mail-mailappearancesettings--busy' },
     { name: 'mail-themes-file', story: 'mail-mailappearancesettings--file-theme' },
     { name: 'mail-themes-error', story: 'mail-mailappearancesettings--invalid-import' },
