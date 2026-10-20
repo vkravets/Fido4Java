@@ -29,15 +29,18 @@
 package org.fidonet.db.plugin;
 
 import org.fidonet.db.MailDatabaseFacade;
-import org.fidonet.db.OrmManager;
+import org.fidonet.echobase.MailStorage;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
+import org.fidonet.storage.StorageServices;
+import org.fidonet.storage.StorageSession;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.sql.SQLException;
+import java.nio.file.Path;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,7 +54,7 @@ public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
     public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10;DB_CLOSE_ON_EXIT=FALSE";
 
     private MailDatabaseFacade manager;
-    private String databaseUrl;
+    private StorageSession storage;
     private WeakReference<MailDatabaseFacade> context;
 
     @Override
@@ -61,30 +64,40 @@ public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
 
     @Override
     public void init(PluginManager manager, EventBus eventBus) {
-        // TODO: Load configuration from file
-        //        databaseUrl = "jdbc:h2:./database/jftn10;TRACE_LEVEL_FILE=4";
-        databaseUrl = DEFAULT_DATABASE_URL;
+
     }
 
     @Override
     public void load() throws PluginException {
-        OrmManager ormManager = new OrmManager(databaseUrl);
         try {
-            ormManager.connect();
-            ormManager.createTables();
-        } catch (SQLException e) {
-            throw new PluginException(e);
+            storage = StorageServices.file(Path.of("./database/jftn10"));
+            manager = (MailDatabaseFacade) storage.require(MailStorage.class);
+        } catch (IOException | RuntimeException failure) {
+            if (storage != null) {
+                try {
+                    storage.close();
+                } catch (IOException cleanup) {
+                    failure.addSuppressed(cleanup);
+                }
+                storage = null;
+            }
+            throw new PluginException(failure);
         }
 
-        manager = new MailDatabaseFacade(ormManager);
         context = new WeakReference<MailDatabaseFacade>(manager);
     }
 
     @Override
     public void unload() throws PluginException {
-        if (manager != null) {
-            manager.close();
-            manager = null;
+        if (storage != null) {
+            try {
+                storage.close();
+            } catch (IOException failure) {
+                throw new PluginException(failure);
+            } finally {
+                storage = null;
+                manager = null;
+            }
         }
         if (context != null) {
             context.clear();

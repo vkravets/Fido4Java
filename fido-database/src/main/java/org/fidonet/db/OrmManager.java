@@ -45,6 +45,8 @@ import org.fidonet.db.robots.RobotRuleRecord;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.db.DatabaseType;
+import com.j256.ormlite.jdbc.DataSourceConnectionSource;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.misc.TransactionManager;
 import com.j256.ormlite.support.ConnectionSource;
@@ -58,6 +60,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import javax.sql.DataSource;
 
 /**
  * Created by IntelliJ IDEA.
@@ -71,6 +74,8 @@ public class OrmManager {
     public static final Logger logger = LoggerFactory.getLogger(OrmManager.class);
 
     private String jdbcUrl;
+    private DataSource dataSource;
+    private DatabaseType databaseType;
     private String user = null;
     private String password = null;
 
@@ -109,11 +114,19 @@ public class OrmManager {
         this.password = password;
     }
 
+    public OrmManager(DataSource dataSource, DatabaseType databaseType) {
+        this.dataSource = dataSource;
+        this.databaseType = databaseType;
+        setDaoClassesList();
+    }
+
     public void connect() throws SQLException {
         if (isConnect()) {
             return;
         }
-        if (user != null && password != null && user.length() > 0 && password.length() > 0) {
+        if (dataSource != null) {
+            connectionSource = new DataSourceConnectionSource(dataSource, databaseType);
+        } else if (user != null && password != null && user.length() > 0 && password.length() > 0) {
             connectionSource = new JdbcConnectionSource(jdbcUrl, user, password);
         } else {
             connectionSource = new JdbcConnectionSource(jdbcUrl);

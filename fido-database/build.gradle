@@ -3,6 +3,9 @@ apply plugin: 'java-library'
 
 description = ''
 dependencies {
+    api project(':storage-api')
+    implementation project(':storage-jdbc')
+    runtimeOnly project(':storage-h2')
   api project(':fido-tools')
     api 'com.j256.ormlite:ormlite-core:6.1'
     api 'com.j256.ormlite:ormlite-jdbc:6.1'
