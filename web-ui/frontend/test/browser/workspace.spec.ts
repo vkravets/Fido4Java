@@ -1,6 +1,52 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('station content fills the released sidebar width when navigation collapses', async ({
+    page
+}) => {
+    for (const width of [1280, 1920]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const theme of ['light', 'dark'] as const) {
+            for (const language of ['en', 'uk'] as const) {
+                await openStory(
+                    page,
+                    'settings-stationsettingstabs--workspace-logs',
+                    theme,
+                    language
+                );
+                const availableWidth = await page.evaluate(
+                    () => document.documentElement.clientWidth
+                );
+                const content = page.locator('.workspace > .content');
+                const panel = page.getByRole('tabpanel');
+                const expanded = (await content.boundingBox())!;
+                const expandedPanel = (await panel.boundingBox())!;
+                expect(expanded.x + expanded.width).toBeCloseTo(availableWidth, 0);
+                await page.locator('.sidebar-toggle').click();
+                await expect(page.locator('.workspace')).toHaveClass(/navigation-collapsed/);
+                await expect
+                    .poll(async () => (await content.boundingBox())!.width)
+                    .toBeCloseTo(expanded.width + 160, 0);
+                const collapsed = (await content.boundingBox())!;
+                const sidebar = (await page.locator('.workspace > .sidebar').boundingBox())!;
+                expect(sidebar.x + sidebar.width).toBeCloseTo(collapsed.x, 0);
+                expect(collapsed.x + collapsed.width).toBeCloseTo(availableWidth, 0);
+                expect((await panel.boundingBox())!.width).toBeCloseTo(
+                    expandedPanel.width + 160,
+                    0
+                );
+                expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+                    availableWidth
+                );
+                await page.locator('.sidebar-toggle').click();
+                await expect
+                    .poll(async () => (await content.boundingBox())!.width)
+                    .toBeCloseTo(expanded.width, 0);
+            }
+        }
+    }
+});
+
 test('reader and editor cycle quote colors for levels four through six', async ({ page }) => {
     for (const theme of ['light', 'dark'] as const) {
         for (const name of [

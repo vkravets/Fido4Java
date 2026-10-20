@@ -98,6 +98,11 @@ const screens = [
     { name: 'station-tabs-routing', story: 'settings-stationsettingstabs--routing' },
     { name: 'station-tabs-polling', story: 'settings-stationsettingstabs--polling' },
     { name: 'station-tabs-logs', story: 'settings-stationsettingstabs--logs' },
+    { name: 'station-workspace-logs', story: 'settings-stationsettingstabs--workspace-logs' },
+    {
+        name: 'station-workspace-collapsed',
+        story: 'settings-stationsettingstabs--collapsed-workspace-logs'
+    },
     { name: 'station-tabs-robots', story: 'settings-stationsettingstabs--robots' },
     { name: 'station-tabs-accounts', story: 'settings-stationsettingstabs--accounts' },
     { name: 'directory', story: 'directory-directorypanel--nodes-and-points' },

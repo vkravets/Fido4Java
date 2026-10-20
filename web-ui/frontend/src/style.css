@@ -424,7 +424,6 @@ input::placeholder {
 .content {
     min-width: 0;
     padding: 42px 48px;
-    max-width: 1120px;
     width: 100%;
 }
 .page-heading {

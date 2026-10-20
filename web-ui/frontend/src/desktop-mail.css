@@ -108,6 +108,7 @@ summary:has(> .app-icon) {
         grid-template-columns: 56px minmax(0, 1fr);
     }
     .workspace > .sidebar {
+        width: 100%;
         top: 44px;
         height: calc(100dvh - 44px);
         max-height: calc(100dvh - 44px);

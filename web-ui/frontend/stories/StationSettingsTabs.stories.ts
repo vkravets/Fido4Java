@@ -10,6 +10,8 @@ import AccountModeration from '../src/components/AccountModeration.vue';
 import { protocolLines } from './protocol-fixture.ts';
 import StationSettingsTabs from '../src/components/StationSettingsTabs.vue';
 import StationSettingsHeader from '../src/components/StationSettingsHeader.vue';
+import Sidebar from '../src/components/Sidebar.vue';
+import ApplicationHeader from '../src/components/ApplicationHeader.vue';
 import NodeForm from '../src/components/NodeForm.vue';
 import MailLinksEditor from '../src/components/MailLinksEditor.vue';
 import TosserForm from '../src/components/TosserForm.vue';
@@ -129,3 +131,32 @@ export const Polling: Story = { args: { modelValue: 'polling' } };
 export const Logs: Story = { args: { modelValue: 'logs' } };
 export const Robots: Story = { args: { modelValue: 'robots' } };
 export const Accounts: Story = { args: { modelValue: 'accounts' } };
+
+export const WorkspaceLogs: Story = {
+    args: { modelValue: 'logs' },
+    decorators: [
+        (story, context) => ({
+            components: { story, Sidebar, ApplicationHeader },
+            setup() {
+                const collapsed = ref(!!context.parameters.collapsed);
+                const menuOpen = ref(false);
+                return {
+                    collapsed,
+                    menuOpen,
+                    profile: profile('ADMIN'),
+                    theme: context.globals.theme === 'dark' ? 'dark' : 'light'
+                };
+            },
+            template: `<ApplicationHeader :profile="profile" :theme="theme" :busy="false" :menu-open="menuOpen" @menu="menuOpen = !menuOpen" />
+                <div class="workspace" :class="{ 'navigation-collapsed': collapsed, 'navigation-open': menuOpen }">
+                    <Sidebar :profile="profile" page="node" :collapsed="collapsed" @collapse="collapsed = !collapsed" />
+                    <main class="content"><story /></main>
+                </div>`
+        })
+    ]
+};
+
+export const CollapsedWorkspaceLogs: Story = {
+    ...WorkspaceLogs,
+    parameters: { collapsed: true }
+};
