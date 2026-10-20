@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
+import FidoText from './FidoText.vue';
 import type { MailItem } from '@rpc/bindings.mjs';
 withDefaults(
     defineProps<{ message: MailItem; busy: boolean; reply?: boolean; removable?: boolean }>(),
@@ -38,8 +39,6 @@ defineEmits<{ reply: []; remove: [] }>();
             <dt>{{ t('Date') }}</dt>
             <dd>{{ message.date }}</dd>
         </dl>
-        <pre class="mail-body">{{
-            (message.body || '').replaceAll('\r\n', '\n').replaceAll('\r', '\n')
-        }}</pre>
+        <FidoText :text="message.body || ''" />
     </article>
 </template>
