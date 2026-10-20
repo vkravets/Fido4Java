@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { t } from './i18n.ts';
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { api } from './api.ts';
+import { createWorkspace, workspaceKey } from './workspace.ts';
 import { createMailQueue } from './netmail.ts';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
@@ -20,6 +21,13 @@ import NetmailRoutingView from './components/NetmailRoutingView.vue';
 import EchomailView from './components/EchomailView.vue';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
+const workspace = createWorkspace(api.profile);
+provide(workspaceKey, workspace);
+watch(state.session, (token) =>
+    workspace.load(token).catch(() => {
+        state.error.value = t('Could not load workspace preferences.');
+    })
+);
 const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
@@ -145,9 +153,14 @@ function openEchoDraft(draft: MailDraft) {
     <div
         v-else
         class="workspace"
+        :class="{ 'navigation-collapsed': workspace.value.value.collapsed }"
     >
         <Sidebar
             :profile="state.profile.value"
+            :collapsed="workspace.value.value.collapsed"
+            @collapse="
+                state.run(() => workspace.update({ collapsed: !workspace.value.value.collapsed }))
+            "
             :page="page"
             :pending-count="queue.count.value"
             :busy="state.busy.value"

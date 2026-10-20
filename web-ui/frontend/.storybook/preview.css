@@ -11,6 +11,11 @@
 .storybook-sidebar > .sidebar {
     width: 100%;
 }
+@media (min-width: 761px) {
+    .storybook-sidebar:has(.collapsed) {
+        width: 76px;
+    }
+}
 .storybook-scroll {
     min-height: 2000px;
     padding-top: 120px;

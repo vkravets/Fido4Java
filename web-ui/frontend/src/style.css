@@ -384,6 +384,14 @@ input::placeholder {
     width: 21px;
     text-align: center;
 }
+.sidebar button .nav-text {
+    font-size: inherit;
+    width: auto;
+    text-align: left;
+}
+.sidebar.collapsed button small {
+    margin-left: 0;
+}
 .sidebar button small {
     margin-left: auto;
     font-size: 10px;
@@ -1166,5 +1174,51 @@ footer.actions {
     }
     .progress {
         width: 100%;
+    }
+}
+
+/* Application navigation remains separate from each contextual reader pane. */
+.sidebar-toggle {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.workspace.navigation-collapsed {
+    grid-template-columns: 76px minmax(0, 1fr);
+}
+.sidebar.collapsed {
+    width: 76px;
+    box-sizing: border-box;
+    padding: 16px 10px;
+}
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .station-label,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .sidebar-footer {
+    display: none;
+}
+.sidebar.collapsed nav button {
+    justify-content: center;
+    padding: 12px 6px;
+}
+.sidebar.collapsed .sidebar-toggle {
+    width: 100%;
+    justify-content: center;
+}
+@media (max-width: 800px) {
+    .workspace.navigation-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .sidebar.collapsed {
+        width: 100%;
+    }
+    .sidebar.collapsed nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .sidebar.collapsed nav button {
+        width: auto;
     }
 }
