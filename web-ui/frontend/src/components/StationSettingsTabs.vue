@@ -88,6 +88,11 @@ function navigate(event: KeyboardEvent) {
     background: var(--accent-soft);
     box-shadow: inset 3px 0 var(--accent);
 }
+@media (min-width: 701px) {
+    .workspace .station-tabs {
+        top: calc(var(--app-header-height) + 12px);
+    }
+}
 @media (max-width: 700px) {
     .settings-workspace {
         grid-template-columns: minmax(0, 1fr);

@@ -22,6 +22,7 @@
     --success: #317259;
     --shadow: 0 8px 28px #35302508;
     --focus: #89540040;
+    --app-header-height: 76px;
     color-scheme: light;
 }
 :root[data-theme='dark'] {
@@ -117,7 +118,10 @@ small {
     font-weight: 400;
 }
 .topbar {
-    height: 76px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: var(--app-header-height);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -842,9 +846,11 @@ footer.actions {
     }
 }
 @media (max-width: 760px) {
+    :root {
+        --app-header-height: 65px;
+    }
     .topbar {
         padding: 0 20px;
-        height: 65px;
     }
     .version,
     .user-name {

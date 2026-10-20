@@ -143,6 +143,7 @@ export const WorkspaceLogs: Story = {
                 return {
                     collapsed,
                     menuOpen,
+                    longPage: !!context.parameters.longPage,
                     profile: profile('ADMIN'),
                     theme: context.globals.theme === 'dark' ? 'dark' : 'light'
                 };
@@ -150,7 +151,7 @@ export const WorkspaceLogs: Story = {
             template: `<ApplicationHeader :profile="profile" :theme="theme" :busy="false" :menu-open="menuOpen" @menu="menuOpen = !menuOpen" />
                 <div class="workspace" :class="{ 'navigation-collapsed': collapsed, 'navigation-open': menuOpen }">
                     <Sidebar :profile="profile" page="node" :collapsed="collapsed" @collapse="collapsed = !collapsed" />
-                    <main class="content"><story /></main>
+                    <main class="content" :style="longPage ? { minHeight: '1800px' } : undefined"><story /></main>
                 </div>`
         })
     ]
@@ -159,4 +160,14 @@ export const WorkspaceLogs: Story = {
 export const CollapsedWorkspaceLogs: Story = {
     ...WorkspaceLogs,
     parameters: { collapsed: true }
+};
+
+export const LongWorkspaceLogs: Story = {
+    ...WorkspaceLogs,
+    parameters: { longPage: true }
+};
+
+export const LongCollapsedWorkspaceLogs: Story = {
+    ...WorkspaceLogs,
+    parameters: { longPage: true, collapsed: true }
 };

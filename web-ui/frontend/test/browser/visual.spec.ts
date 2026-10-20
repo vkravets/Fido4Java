@@ -102,6 +102,16 @@ const screens = [
     { name: 'station-tabs-logs', story: 'settings-stationsettingstabs--logs' },
     { name: 'station-workspace-logs', story: 'settings-stationsettingstabs--workspace-logs' },
     {
+        name: 'station-header-scrolled',
+        story: 'settings-stationsettingstabs--long-workspace-logs',
+        scroll: 350
+    },
+    {
+        name: 'station-header-collapsed-scrolled',
+        story: 'settings-stationsettingstabs--long-collapsed-workspace-logs',
+        scroll: 350
+    },
+    {
         name: 'station-workspace-collapsed',
         story: 'settings-stationsettingstabs--collapsed-workspace-logs'
     },
@@ -196,6 +206,15 @@ for (const theme of ['light', 'dark']) {
                     await expect(page.locator('.address-options [role=status]')).toBeVisible();
                 if (screen.notification) {
                     await expect(page.locator('.message')).toBeVisible();
+                    await expect(page).toHaveScreenshot(filename);
+                    return;
+                }
+                if (screen.scroll) {
+                    await page.evaluate((offset) => window.scrollTo(0, offset), screen.scroll);
+                    await expect
+                        .poll(() => page.evaluate(() => window.scrollY))
+                        .toBe(screen.scroll);
+                    await expect(page.locator('.sb-errordisplay')).toBeHidden();
                     await expect(page).toHaveScreenshot(filename);
                     return;
                 }

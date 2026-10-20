@@ -1,6 +1,47 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('application header stays above scrolling content and aligned with navigation', async ({
+    page
+}) => {
+    test.setTimeout(60000);
+    for (const width of [1280, 735, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const theme of ['light', 'dark'] as const) {
+            for (const language of ['en', 'uk'] as const) {
+                for (const story of ['long-workspace-logs', 'long-collapsed-workspace-logs']) {
+                    await openStory(
+                        page,
+                        'settings-stationsettingstabs--' + story,
+                        theme,
+                        language
+                    );
+                    await page.evaluate(() => window.scrollTo(0, 350));
+                    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(350);
+                    const header = (await page.locator('.topbar').boundingBox())!;
+                    expect(header.y).toBe(0);
+                    expect(header.height).toBe(width > 700 ? 44 : 65);
+                    expect(
+                        await page.evaluate(
+                            () =>
+                                !!document.elementFromPoint(innerWidth / 2, 20)?.closest('.topbar')
+                        )
+                    ).toBe(true);
+                    if (width > 700) {
+                        const sidebar = (await page
+                            .locator('.workspace > .sidebar')
+                            .boundingBox())!;
+                        expect(sidebar.y).toBe(header.height);
+                        expect(sidebar.y + sidebar.height).toBe(900);
+                    } else {
+                        await expect(page.locator('.mobile-menu-toggle')).toBeInViewport();
+                    }
+                }
+            }
+        }
+    }
+});
+
 test('station content fills the released sidebar width when navigation collapses', async ({
     page
 }) => {

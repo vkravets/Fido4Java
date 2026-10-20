@@ -3,6 +3,10 @@
 The node hosts its browser interface and Thrift HTTP endpoints in the same JVM.
 TCP RPC remains available. No Node.js process is needed when running the node.
 
+The application header stays at the top of the viewport while pages scroll.
+Desktop navigation stays directly below it; on mobile, the header keeps the menu
+button accessible.
+
 Netmail composition uses **Add to send queue**. The MAIL navigation panel shows
 the current account's **Awaiting send** count and a separate **Send queued mail**
 button. Waiting messages survive restart but are not packed by the background

@@ -68,8 +68,10 @@ summary:has(> .app-icon) {
     }
 }
 @media (min-width: 701px) {
+    :root {
+        --app-header-height: 44px;
+    }
     .topbar {
-        height: 44px;
         padding: 0 18px;
     }
     .topbar .brand {
@@ -102,16 +104,16 @@ summary:has(> .app-icon) {
     }
     .workspace {
         grid-template-columns: 216px minmax(0, 1fr);
-        min-height: calc(100dvh - 44px);
+        min-height: calc(100dvh - var(--app-header-height));
     }
     .workspace.navigation-collapsed {
         grid-template-columns: 56px minmax(0, 1fr);
     }
     .workspace > .sidebar {
         width: 100%;
-        top: 44px;
-        height: calc(100dvh - 44px);
-        max-height: calc(100dvh - 44px);
+        top: var(--app-header-height);
+        height: calc(100dvh - var(--app-header-height));
+        max-height: calc(100dvh - var(--app-header-height));
     }
     .sidebar {
         padding: 12px 10px;
