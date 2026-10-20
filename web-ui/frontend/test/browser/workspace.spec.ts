@@ -1,5 +1,57 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
+import type { Page } from '@playwright/test';
+
+async function checkMailBoundary(page: Page) {
+    const sidebar = (await page.locator('.workspace > .sidebar').boundingBox())!;
+    const list = page.locator('.split-list');
+    const table = (await list.locator('.mail-table-head').boundingBox())!;
+    const selected = list.locator('.mail-row.active, li.selected').first();
+    await selected.hover();
+    const row = (await selected.boundingBox())!;
+    const boundary = sidebar.x + sidebar.width;
+    expect(table.x).toBeCloseTo(boundary, 0);
+    expect(row.x).toBeCloseTo(boundary, 0);
+    expect(
+        await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.sidebar'), {
+            x: boundary - 2,
+            y: row.y + row.height / 2
+        })
+    ).toBe(true);
+    expect(
+        await page.evaluate(
+            ({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.split-list'),
+            { x: boundary + 4, y: row.y + row.height / 2 }
+        )
+    ).toBe(true);
+    for (const dot of await list.locator('.unread .mail-unread-dot').all()) {
+        const mark = (await dot.boundingBox())!;
+        expect(mark.x - boundary).toBeGreaterThanOrEqual(24);
+        await expect(dot).toHaveCSS('opacity', '1');
+    }
+    expect(await list.locator('.unread .mail-unread-dot').count()).toBeGreaterThan(0);
+}
+
+test('mail rows and unread markers stay inside their pane when navigation collapses', async ({
+    page
+}) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const theme of ['light', 'dark'] as const) {
+        for (const language of ['en', 'uk'] as const) {
+            for (const name of ['echo-tree', 'echo-flat', 'echo-compact', 'netmail']) {
+                await openStory(page, 'layout-maillistworkspace--' + name, theme, language);
+                await checkMailBoundary(page);
+                await page.locator('.sidebar-toggle').click();
+                await expect(page.locator('.workspace')).not.toHaveClass(/navigation-collapsed/);
+                await checkMailBoundary(page);
+                await page.locator('.sidebar-toggle').click();
+                await expect(page.locator('.workspace')).toHaveClass(/navigation-collapsed/);
+                await checkMailBoundary(page);
+            }
+        }
+    }
+});
 
 test('application header stays above scrolling content and aligned with navigation', async ({
     page

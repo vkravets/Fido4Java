@@ -4,6 +4,10 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'collapsed-list-echo-tree', story: 'layout-maillistworkspace--echo-tree' },
+    { name: 'collapsed-list-echo-flat', story: 'layout-maillistworkspace--echo-flat' },
+    { name: 'collapsed-list-echo-compact', story: 'layout-maillistworkspace--echo-compact' },
+    { name: 'collapsed-list-netmail', story: 'layout-maillistworkspace--netmail' },
     { name: 'echo-focused-desktop', story: 'mail-echomailview--focused-desktop' },
     { name: 'mail-reader-actions', story: 'mail-netmailmessage--reader-actions' },
     {

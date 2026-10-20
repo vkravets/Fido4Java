@@ -3,8 +3,8 @@ import { ref } from 'vue';
 import ApplicationHeader from '../src/components/ApplicationHeader.vue';
 import Sidebar from '../src/components/Sidebar.vue';
 import { profile } from './fixtures.ts';
-defineProps<{ theme: 'light' | 'dark'; page: string }>();
-const collapsed = ref(false);
+const props = defineProps<{ theme: 'light' | 'dark'; page: string; initialCollapsed?: boolean }>();
+const collapsed = ref(!!props.initialCollapsed);
 const open = ref(false);
 const account = profile('POINT');
 </script>
