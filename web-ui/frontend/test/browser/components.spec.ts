@@ -2,6 +2,28 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('personal template settings are editable by points and administrators and protect unsaved edits', async ({
+    page
+}) => {
+    for (const role of ['point', 'administrator']) {
+        await story(page, `settings-accountsettings--${role}-templates`);
+        const navigation = page.getByRole('navigation', { name: 'Personal settings', exact: true });
+        const body = page.getByRole('textbox', { name: 'Template body', exact: true });
+        await body.fill('Personal greeting @tname.\n@position');
+        page.once('dialog', (dialog) => dialog.dismiss());
+        await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+        await expect(body).toHaveValue('Personal greeting @tname.\n@position');
+        await page.getByRole('button', { name: 'Save template', exact: true }).click();
+        await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+        await expect(body).toHaveCount(0);
+        await navigation.getByRole('button', { name: 'Mail templates', exact: true }).click();
+        const choices = page.getByRole('combobox', { name: 'Template', exact: true }).first();
+        const personal = await choices.locator('option[value^="custom-"]').getAttribute('value');
+        await choices.selectOption(personal!);
+        await expect(body).toHaveValue('Personal greeting @tname.\n@position');
+    }
+});
+
 test('sidebar labels keep their position and wrapping when the active page changes', async ({
     page
 }) => {

@@ -14,17 +14,7 @@ defineProps<{
 const emit = defineEmits<{
     sendMail: [];
     collapse: [];
-    navigate: [
-        page:
-            | 'settings'
-            | 'node'
-            | 'directory'
-            | 'netmail'
-            | 'echo'
-            | 'drafts'
-            | 'links'
-            | 'templates'
-    ];
+    navigate: [page: 'settings' | 'node' | 'directory' | 'netmail' | 'echo' | 'drafts' | 'links'];
 }>();
 </script>
 
@@ -62,15 +52,6 @@ const emit = defineEmits<{
                 @click="emit('navigate', 'drafts')"
             >
                 <AppIcon name="file" /><span class="nav-text">{{ t('Drafts') }}</span>
-            </button>
-            <button
-                :class="{ active: page === 'templates' }"
-                :aria-label="t('Mail templates')"
-                :title="collapsed ? t('Mail templates') : undefined"
-                @click="emit('navigate', 'templates')"
-            >
-                <AppIcon name="templates" />
-                <span class="nav-text">{{ t('Mail templates') }}</span>
             </button>
             <button
                 v-if="collapsed"

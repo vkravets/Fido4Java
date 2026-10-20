@@ -36,6 +36,11 @@ const screens = [
     { name: 'mail-themes-file', story: 'mail-mailappearancesettings--file-theme' },
     { name: 'mail-themes-error', story: 'mail-mailappearancesettings--invalid-import' },
     { name: 'mail-templates', story: 'mail-mailtemplatesettings--templates' },
+    { name: 'personal-point-templates', story: 'settings-accountsettings--point-templates' },
+    {
+        name: 'personal-admin-templates',
+        story: 'settings-accountsettings--administrator-templates'
+    },
     { name: 'mail-templates-invalid', story: 'mail-mailtemplatesettings--invalid-token' },
 
     { name: 'split-right', story: 'layout-splitpane--right' },

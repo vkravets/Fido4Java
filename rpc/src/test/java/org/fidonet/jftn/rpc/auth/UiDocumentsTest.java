@@ -18,6 +18,53 @@ class UiDocumentsTest {
     Path root;
 
     @Test
+    void mailTemplatesBelongToEachAuthenticatedPointAndSurviveRestart() throws Exception {
+        Path path = root.resolve("personal-templates");
+        String firstDocument = templateDocument("First point");
+        String secondDocument = templateDocument("Second point");
+        try (RpcAccounts accounts = new RpcAccounts(path)) {
+            accounts.createUser("admin", "password-admin");
+            AccountDirectory directory = new AccountDirectory(accounts);
+            directory.register("first", "password-first", "1:500/100.1");
+            directory.register("second", "password-second", "1:500/100.2");
+            directory.decide("first", "1:500/100.1", true);
+            directory.decide("second", "1:500/100.2", true);
+            UiSessions sessions = new UiSessions(accounts, 3600);
+            ProfileHandler handler = new ProfileHandler(directory, sessions, List.of(), false);
+            String first = login(sessions, "first", "password-first");
+            String second = login(sessions, "second", "password-second");
+            String admin = login(sessions, "admin", "password-admin");
+            assertEquals("POINT", handler.me(first).getRole());
+            handler.saveUiDocument(first, "mail-templates", firstDocument);
+            assertEquals("{}", handler.uiDocument(second, "mail-templates"));
+            assertEquals("{}", handler.uiDocument(admin, "mail-templates"));
+            handler.saveUiDocument(second, "mail-templates", secondDocument);
+            assertEquals(firstDocument, handler.uiDocument(first, "mail-templates"));
+            assertEquals(secondDocument, handler.uiDocument(second, "mail-templates"));
+            assertThrows(UiError.class,
+                         () -> handler.saveUiDocument("invalid", "mail-templates", "{}"));
+        }
+        try (RpcAccounts accounts = new RpcAccounts(path)) {
+            UiDocuments documents = new UiDocuments(accounts);
+            assertEquals(firstDocument, documents.read("first", "mail-templates"));
+            assertEquals(secondDocument, documents.read("second", "mail-templates"));
+        }
+    }
+
+    private static String login(UiSessions sessions, String user, String password)
+            throws Exception {
+        return sessions.login(new Credential(user, password)).getSession_id();
+    }
+
+    private static String templateDocument(String name) {
+        return "{\"version\":1,\"custom\":[{\"id\":\"personal-reply\",\"name\":\""
+               + name
+               + "\",\"kind\":\"reply\",\"body\":\"Hello @oname.\\n@position\\n@cname\"}],"
+               + "\"rules\":[{\"kind\":\"reply\",\"aka\":\"\",\"area\":\"\","
+               + "\"template\":\"personal-reply\"}]}";
+    }
+
+    @Test
     void documentsAreOwnedByTheSessionAndSurviveRestart() throws Exception {
         Path path = root.resolve("accounts");
         try (RpcAccounts accounts = new RpcAccounts(path)) {

@@ -1,6 +1,33 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { builtInTemplates, createMailTemplates, expandTemplate } from '../src/mail-templates.ts';
+
+test('changing accounts clears templates and ignores an earlier account response', async () => {
+    let completeFirst: (document: string) => void = () => {};
+    const first = new Promise<string>((resolve) => {
+        completeFirst = resolve;
+    });
+    const store = createMailTemplates({
+        uiDocument: async (token) => (token === 'first' ? first : '{}'),
+        saveUiDocument: async () => {}
+    });
+    const loading = store.load('first');
+    await store.load('second');
+    completeFirst(
+        JSON.stringify({
+            version: 1,
+            custom: [
+                { id: 'private-first', name: 'First only', kind: 'new', body: 'Private greeting' }
+            ],
+            rules: []
+        })
+    );
+    await loading;
+    assert.deepEqual(store.custom.value, []);
+    assert.deepEqual(store.rules.value, []);
+    await store.load('');
+    assert.deepEqual(store.custom.value, []);
+});
 test('templates expand GoldED-style data, conditions and quotes once with a precise cursor', () => {
     const context = {
         kind: 'quoted' as const,

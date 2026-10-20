@@ -5,7 +5,6 @@ import { api } from './api.ts';
 import { createWorkspace, workspaceKey } from './workspace.ts';
 import { createMailAppearance, mailAppearanceKey } from './mail-themes.ts';
 import { createMailTemplates, mailTemplatesKey } from './mail-templates.ts';
-import MailTemplateSettings from './components/MailTemplateSettings.vue';
 import { createMailQueue } from './netmail.ts';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
@@ -27,7 +26,7 @@ provide(mailAppearanceKey, mailAppearance);
 onMounted(() => mailAppearance.files().catch(() => {}));
 const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
-const templatesView = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
+const settingsView = ref<InstanceType<typeof AccountSettings> | null>(null);
 const templates = createMailTemplates(api.profile);
 provide(mailTemplatesKey, templates);
 const preferencesReady = ref(false);
@@ -57,7 +56,7 @@ function canLeave() {
     return (
         (!netmail.value || netmail.value.canLeave()) &&
         (!echomail.value || echomail.value.canLeave()) &&
-        (!templatesView.value || templatesView.value.canLeave())
+        (!settingsView.value || settingsView.value.canLeave())
     );
 }
 function navigate(next: string) {
@@ -200,14 +199,10 @@ function openForward(draft: MailDraft) {
                 :initial-draft="echoDraft"
                 @forward="openForward"
             />
-            <MailTemplateSettings
-                v-if="page === 'templates'"
-                ref="templatesView"
-                :state="state"
-            />
             <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings
                 v-if="page === 'settings'"
+                ref="settingsView"
                 :state="state"
             /><NodeSettings
                 v-if="['node', 'links'].includes(page) && state.profile.value.role === 'ADMIN'"

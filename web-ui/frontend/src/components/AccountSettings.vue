@@ -5,10 +5,29 @@ import { computed, ref } from 'vue';
 import { api } from '../api.ts';
 import SecuritySettings from './SecuritySettings.vue';
 import MailAppearanceSettings from './MailAppearanceSettings.vue';
+import MailTemplateSettings from './MailTemplateSettings.vue';
 import type { AppState } from '../state.ts';
 import type { Theme } from '../state.ts';
-const props = defineProps<{ state: AppState }>();
-const tab = ref('profile');
+const tabs = [
+    { id: 'profile', label: 'Profile' },
+    { id: 'aka', label: 'My AKAs' },
+    { id: 'security', label: 'Security' },
+    { id: 'theme', label: 'Appearance' },
+    { id: 'mail-appearance', label: 'Mail appearance' },
+    { id: 'templates', label: 'Mail templates' }
+] as const;
+type PersonalTab = (typeof tabs)[number]['id'];
+const props = defineProps<{ state: AppState; initialTab?: PersonalTab }>();
+const tab = ref<PersonalTab>(props.initialTab || 'profile');
+const templateSettings = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
+function canLeave() {
+    return !templateSettings.value || templateSettings.value.canLeave();
+}
+function selectTab(next: PersonalTab) {
+    if (next === tab.value || !canLeave()) return;
+    tab.value = next;
+}
+defineExpose({ canLeave });
 const requested = ref('');
 function preferences(theme: Theme, aka: string) {
     props.state.run(async () => {
@@ -48,20 +67,19 @@ function claimLabel(state: string): string {
             :aria-label="t('Personal settings')"
         >
             <button
-                v-for="item in [
-                    ['profile', t('Profile')],
-                    ['aka', t('My AKAs')],
-                    ['security', t('Security')],
-                    ['theme', t('Appearance')],
-                    ['mail-appearance', t('Mail appearance')]
-                ]"
-                :key="item[0]"
-                :class="{ selected: tab === item[0] }"
-                @click="tab = item[0]"
+                v-for="item in tabs"
+                :key="item.id"
+                :class="{ selected: tab === item.id }"
+                @click="selectTab(item.id)"
             >
-                {{ item[1] }}
+                {{ t(item.label) }}
             </button>
         </nav>
+        <MailTemplateSettings
+            v-if="tab === 'templates'"
+            ref="templateSettings"
+            :state="state"
+        />
         <MailAppearanceSettings
             v-if="tab === 'mail-appearance'"
             :state="state"
