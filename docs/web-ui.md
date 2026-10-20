@@ -119,11 +119,20 @@ write access hides the affected drafts without deleting them.
 
 ## Station settings groups
 
-The administrator's **Station** screen has five tabs: **General**, **Mail links**,
-**Tosser settings**, **Echo areas and link access** and **Packet quarantine**.
-Only the active group is visible. Switching tabs keeps forms mounted, so unsaved
+The administrator's **Station** screen groups configuration, routing, polling,
+logs, mail robots, account approval and plugin settings. Its tabs are **General**,
+**Mail links**, **Netmail routing**, **Tosser settings**, **Echo areas and link
+access**, **Packet quarantine**, **Polling**, **Logs**, **Mail robots**,
+**Accounts and requests** and **Plugins**. **Links** in the main sidebar remains
+a shortcut to **Station → Mail links** (Ukrainian: **Лінки**).
+The shared node directory stays available to points and administrators; personal
+settings stay separate from station administration. Mail templates are under
+**My settings → Mail templates**, available to every authenticated account and
+saved for that account only.
+Only the active group is visible. Switching configuration tabs keeps forms mounted, so unsaved
 station/link/tosser edits and quarantine selections survive navigation between
-groups. Switching is not a save; use the active group's own save/confirm action.
+groups. Operational panels load when opened and stop polling when closed.
+Switching is not a save; use the active group's own save/confirm action.
 Page reload/navigation away and explicit configuration reload have their existing
 state-reset behavior. **Reload configuration files** remains above all tabs.
 
@@ -209,7 +218,7 @@ stopped-node migration and explicit path edits in configuration.
 
 ## Mail robot access
 
-Administrators have a **Mail robots** page under node management. It lists
+Administrators have a **Station → Mail robots** page. It lists
 AreaFix, FileFix and TIC access rules with their link, area masks, enabled state
 and AreaFix rights (READ/BOTH). Create a rule for a configured link, edit its
 policy/password, disable it temporarily or delete it with confirmation. Changes
@@ -225,7 +234,7 @@ configuration remain in `conf.d`; see [robot access](robot-access.md).
 
 ## Connections and binkp logs
 
-Administrators open the **Connections** page through **Polling** in the sidebar.
+Administrators open the **Connections** page through **Station → Polling**.
 It shows active/waiting attempts, paged history and a **Poll now** action for
 configured links. Scheduled and manual
 attempts use the same queue and duplicate active requests select the existing
@@ -245,7 +254,7 @@ and stops on navigation away. Auto refresh and following the journal can be togg
 The browser retains only one history page and the last 1000 loaded log lines.
 
 The **Binkp log** tab shows the same safe INFO format for both incoming and outgoing
-connections from `logs/binkp.log`; **Logs** in the sidebar opens this tab directly.
+connections from `logs/binkp.log`; **Station → Logs** opens this tab directly.
 It starts with the latest 200 complete lines
 within the final 64 KiB, then reads new events every two seconds while visible.
 Use **Show latest events** to reset the cursor. Following the log can be toggled;
@@ -465,7 +474,7 @@ test fixtures; runtime/build reports remain untracked.
 
 ## Accounts and access
 
-Administrators also have a **Netmail routing** page. It shows ordered rules,
+Administrators also have a **Station → Netmail routing** page. It shows ordered rules,
 offers database-rule creation/editing/deletion and changes the default hop and
 transit policy through validated live configuration publication. Rule next hops
 and transit preview senders must be configured links. File-managed rules are

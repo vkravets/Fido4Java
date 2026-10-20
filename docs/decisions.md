@@ -40,6 +40,15 @@ and a subsequent comparison without updates, and cover both themes/languages and
 desktop/mobile. Functional tests do not replace VRT. If the environment prevents
 verification, report that gap explicitly instead of treating it as completed.
 
+Mail appearance uses an isolated live preview of the real reader/composer;
+unsaved palette changes do not mutate account preferences or outgoing mail.
+The personal `mail-themes` document also stores the editor's default outgoing
+encoding. New browser drafts capture it in `MailDraft.encoding`; saved drafts
+retain their choice. The server permits UTF-8, CP866, KOI8-R, CP1251 and CP848,
+validates representability before queuing, and writes matching CHRS/PKT bytes.
+An RPC draft without an explicit encoding uses UTF-8. Incoming decoding and
+JAM/directory fallback settings remain independent.
+
 Supported UI configuration changes are applied live after validation/staging.
 An explicit administrator RPC/UI reload rereads main-file and fragment edits;
 there is no file watcher. The coordinator serializes with mail processing,

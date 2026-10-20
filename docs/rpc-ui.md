@@ -307,6 +307,12 @@ Clients send plain text; the server adds CHRS, MSGID and optional REPLY. Embedde
 NUL/kludge controls and AREA headers are rejected. Request/draft IDs contain
 1..80 letters, digits, `_` or `-`. Up to 200 drafts can be stored.
 
+`MailDraft.encoding` selects `UTF-8`, `CP866`, `KOI8-R`, `CP1251` or `CP848`;
+omitting it selects UTF-8. It is preserved in drafts and used for both `CHRS` and
+packet encoding. Submission rejects unrepresentable names, subject or body.
+The account's `mail-themes` document stores the editor default in `encoding`;
+external editors can read that preference and put it on new drafts explicitly.
+
 Use a new stable requestId for each logical send and retain it across retries.
 The same ID/content yields the same MSGID and durable delivery identity; changing
 content with that ID fails. Submission intents persist before mail storage;
@@ -549,6 +555,44 @@ missing document returns `{}`. JSON must be an object, use unique keys, be at
 most 256 KiB UTF-8, depth 16 and string values at most 60,000 characters. These
 preferences never grant permissions. Account ownership is selected server-side;
 the request accepts no arbitrary owner. Both transports share these checks.
+
+### Personal mail templates for external editors
+
+Template management belongs to the authenticated user, not the station or an FTN
+AKA. Administrators and approved points use the same calls:
+
+```text
+ProfileService.uiDocument(session, "mail-templates")
+ProfileService.saveUiDocument(session, "mail-templates", json)
+```
+
+An external RPC editor can read and replace the same document as the browser UI:
+
+```json
+{
+  "version": 1,
+  "custom": [
+    {"id": "personal-new", "name": "My greeting", "kind": "new",
+     "body": "Hello @tname.\n\n@position\n\n@cname"}
+  ],
+  "rules": [
+    {"kind": "new", "aka": "", "area": "", "template": "personal-new"}
+  ]
+}
+```
+
+`custom` contains up to 20 templates: unique IDs (1–64 letters, digits, `_`, `-`),
+names up to 80 characters, bodies up to 6000 characters, and kind `new`, `reply`,
+`quoted` or `forward`. `rules` contains up to 64 defaults; empty AKA/area means
+any, otherwise it selects a particular sender or conference. Built-in IDs are
+`new`, `reply`, `quoted` and `forward`; custom IDs must not replace them. Clients
+must preserve other personal templates/rules when editing this document.
+
+Built-in template text, token expansion and preview currently run in the editor.
+RPC persists the document with JSON/size checks; editors must apply template
+validation and the documented expansion rules. Templates never affect tosser
+processing or grant posting rights. They survive restart and are isolated by the
+session owner, including when multiple users share a node or AKA.
 
 `MailItem.excerpt` is an optional bounded summary (240 characters); list calls
 still omit full bodies and routing kludges. `MailDraft` optionally stores original

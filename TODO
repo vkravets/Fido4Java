@@ -7,6 +7,12 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Add a personal editable list of outgoing encodings, including adding supported
+  encodings by name (for example KOI8-U or CP437), selecting enabled choices and
+  a default. Validate additions on the server and expose the same preferences
+  to external RPC editors. The current implementation has a fixed five-encoding
+  list and a personal default; the editable list is requested but not implemented.
+
 - Move FileEcho DAO queries/mappings behind a typed backend adapter while preserving
   existing area/access/creation tables and SQL-free file mode. It already shares
   the main mail source; see docs/storage.md for the remaining portability boundary.

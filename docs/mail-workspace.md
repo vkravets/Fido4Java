@@ -25,8 +25,9 @@ The reader offers **Reply**, **Previous**, **Next** and **Next unread** within t
 loaded list. **More** groups quoted/short replies, a new message, forwarding and
 deletion where permitted. Short replies preserve the original reply identifier
 without inserting the original quote. Expand **Conversation** to navigate the
-parent and replies. Administrators also have direct **Links**, **Polling** and
-**Logs** shortcuts; point accounts do not receive these controls.
+parent and replies. Administrators have a **Links** shortcut and open polling,
+logs, routing and robot management under **Station**; point accounts do not
+receive these controls.
 
 On narrow screens the list, reader and composer occupy separate screens. **Back
 to messages** returns to the retained list and scroll position. Leaving a changed
@@ -53,8 +54,33 @@ links become anchors.
 Select text and use the formatting toolbar, or Ctrl/Cmd+B, I or U. Multiline
 formatting preserves quote prefixes and blank paragraphs. **Quote** prefixes the
 selected lines; Undo and Redo preserve editing history across mode switches.
+Quote colors cycle through the three configured levels: 1/4/7 use the first,
+2/5/8 the second and 3/6/9 the third. Reader and visual editor use the same
+classification; the appearance preview includes levels one through six.
+The formatting/mode toolbar uses icons with translated tooltips and accessible
+labels. Undo (Ctrl/Cmd+Z) reverts the last text edit; Redo
+(Ctrl/Cmd+Shift+Z) restores an undone edit. The template selector and **Apply
+template** button share an aligned row above the toolbar.
+Mail appearance settings place controls beside a live preview on desktop. Choosing
+a reading/editor theme or changing a custom color immediately updates the real
+message reader/composer components in that preview, without changing saved
+preferences. The preview has its own editable sample; it cannot send mail or save
+drafts. Use **Save preferences** or **Save personal theme** to persist changes.
+On narrower screens the preview follows the controls.
+
 The status shows UTF-8 bytes; outgoing text is limited to 60,000 bytes. Line
 endings are normalized to LF in the editor; packet encoding remains server-owned.
+**My settings → Mail appearance → Default outgoing encoding** selects UTF-8,
+CP866, KOI8-R, CP1251 or CP848 for new letters. The preference belongs to the
+current account; saved drafts retain their `encoding`. The editor status shows
+the selected encoding alongside the separate UTF-8 size limit. UI/RPC submission
+writes the matching `CHRS` declaration and PKT bytes for both netmail and echomail.
+Unsupported encodings and characters that cannot be represented are rejected
+before mail enters the outgoing queue. RPC clients set `MailDraft.encoding`;
+omitting it uses UTF-8. Incoming messages use their
+`CHRS`/`CHARSET` declaration, with the legacy CP866 fallback described in
+[Mail processing](tosser.md). `JamCharset` is a separate JAM decoding fallback,
+and the nodelist encoding setting applies only to directory imports.
 The backend still validates headers, authors, recipients and routing controls.
 
 Netmail **Add to send queue** stages the letter without creating PKTs; use the
@@ -101,7 +127,7 @@ rendering falls back to Paper; save another available palette in settings.
 
 ## Templates
 
-**Templates** manages personal copies of New message, Short reply, Quoted reply
+**My settings → Mail templates** manages personal copies of New message, Short reply, Quoted reply
 and Forward defaults. Edit the template text, insert a variable using its button,
 and inspect the live preview. Unsupported tokens block saving. Built-ins remain
 available. A default can apply to a composition kind globally, to one approved
