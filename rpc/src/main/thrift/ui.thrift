@@ -76,7 +76,13 @@ struct MailDraft {
     7: required string toAddress,
     8: required string subject,
     9: required string body,
-    10: optional string replyTo
+    10: optional string replyTo,
+    11: optional string originalBody,
+    12: optional string originalDate,
+    13: optional string composeKind,
+    14: optional bool templateInitialized,
+    15: optional string originalName,
+    16: optional string originalAddress
 }
 
 struct LinkInfo {

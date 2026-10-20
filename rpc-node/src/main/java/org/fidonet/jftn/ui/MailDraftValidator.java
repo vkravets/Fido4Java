@@ -47,6 +47,17 @@ final class MailDraftValidator {
             throw new IllegalArgumentException("Draft fields are required");
         }
         id(draft.getId());
+        if (draft.isSetOriginalBody()
+                && draft.getOriginalBody().getBytes(StandardCharsets.UTF_8).length > 60000)
+            throw new IllegalArgumentException("Original message exceeds 60000 bytes");
+        if (draft.isSetOriginalDate() && draft.getOriginalDate().length() > 100)
+            throw new IllegalArgumentException("Original date is too long");
+        if ((draft.isSetOriginalName() && draft.getOriginalName().length() > 255)
+                || (draft.isSetOriginalAddress() && draft.getOriginalAddress().length() > 255))
+            throw new IllegalArgumentException("Original message header is too long");
+        if (draft.isSetComposeKind()
+                && !List.of("new", "reply", "quoted", "forward").contains(draft.getComposeKind()))
+            throw new IllegalArgumentException("Unknown composition kind");
         area(draft.getMailbox(), draft.getArea());
         for (String value : List.of(draft.getFromName(),
                                     draft.getToName(),
