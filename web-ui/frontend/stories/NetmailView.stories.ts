@@ -1,4 +1,5 @@
 import { provide, ref } from 'vue';
+import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import NetmailView from '../src/components/NetmailView.vue';
 import { netmailClientKey } from '../src/netmail.ts';
@@ -12,9 +13,12 @@ const meta = {
     component: NetmailView,
     args: { state: {} as AppState },
     argTypes: { state: { control: false, table: { disable: true } } },
-    render: (args) => ({
+    render: (args, context) => ({
         components: { NetmailView },
         setup() {
+            const workspace = createWorkspace();
+            workspace.value.value = workspacePreferences(context.parameters.workspace || {});
+            provide(workspaceKey, workspace);
             const saved: MailDraft[] = [{ ...netmailDraft }];
             let deleted = false;
             const state = {
@@ -61,3 +65,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Inbox: Story = { args: { initialFolder: 'inbox' } };
 export const Drafts: Story = { args: { initialFolder: 'drafts' } };
+
+export const Reading: Story = { args: { initialMessage: String(netmailMessage.id) } };
+export const Below: Story = {
+    parameters: { workspace: { netmail: { preview: 'below' } } },
+    args: { initialMessage: String(netmailMessage.id) }
+};
+export const Separate: Story = {
+    parameters: { workspace: { netmail: { preview: 'separate' } } },
+    args: { initialMessage: String(netmailMessage.id) }
+};

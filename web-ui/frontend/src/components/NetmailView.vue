@@ -10,7 +10,12 @@ import NetmailList from './NetmailList.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
 import NetmailMessage from './NetmailMessage.vue';
 import MailComposer from './MailComposer.vue';
-const props = defineProps<{ state: AppState; initialFolder?: MailFolder }>();
+import MailWorkspace from './MailWorkspace.vue';
+const props = defineProps<{
+    state: AppState;
+    initialFolder?: MailFolder;
+    initialMessage?: string;
+}>();
 const emit = defineEmits<{ queueChanged: []; openEchoDraft: [draft: MailDraft] }>();
 const reader = createNetmail(
     props.state,
@@ -21,12 +26,23 @@ const reader = createNetmail(
 defineExpose({ canLeave: reader.discard, refresh: reader.load });
 const folders = ['inbox', 'outbox', 'drafts'] as const;
 const labels = { inbox: 'Inbox', outbox: 'Outbox', drafts: 'Drafts' } as const;
-onMounted(() => props.state.run(() => reader.navigate(props.initialFolder || 'inbox')));
+onMounted(() =>
+    props.state.run(async () => {
+        await reader.navigate(props.initialFolder || 'inbox');
+        const item = reader.items.value.find((item) => mailId(item.id) === props.initialMessage);
+        if (item) await reader.open(item);
+    })
+);
 function beforeUnload(event: BeforeUnloadEvent) {
     if (reader.draft.value) event.preventDefault();
 }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
+function back() {
+    if (!reader.discard()) return;
+    reader.draft.value = null;
+    reader.selected.value = null;
+}
 function cancel() {
     if (reader.discard()) reader.draft.value = null;
 }
@@ -73,37 +89,42 @@ function editDraft(value: MailDraft) {
             {{ t(labels[folder]) }}
         </button>
     </nav>
-    <MailComposer
-        v-if="reader.draft.value"
-        v-model="reader.draft.value"
-        :addresses="state.profile.value?.allowedAkas || []"
-        :busy="state.busy.value"
-        @save="state.run(reader.save)"
-        @send="state.run(reader.send)"
-        @cancel="cancel"
-    />
     <NetmailDrafts
-        v-else-if="reader.folder.value === 'drafts'"
+        v-if="reader.folder.value === 'drafts' && !reader.draft.value"
         :drafts="reader.drafts.value"
         :busy="state.busy.value"
         @edit="editDraft"
         @remove="(draft) => state.run(() => reader.remove(draft))"
     />
-    <div
+    <MailWorkspace
         v-else
-        class="mail-workspace"
+        kind="netmail"
+        :opened="!!reader.selected.value || !!reader.draft.value"
+        :busy="state.busy.value"
+        @back="back"
     >
-        <NetmailList
-            :items="reader.items.value"
-            :selected="reader.selected.value ? mailId(reader.selected.value.id) : ''"
+        <template #list>
+            <NetmailList
+                :items="reader.items.value"
+                :selected="reader.selected.value ? mailId(reader.selected.value.id) : ''"
+                :busy="state.busy.value"
+                :has-more="reader.hasMore.value"
+                :outgoing="reader.folder.value === 'outbox'"
+                @open="(item) => state.run(() => reader.open(item))"
+                @more="state.run(() => reader.load(true))"
+            />
+        </template>
+        <MailComposer
+            v-if="reader.draft.value"
+            v-model="reader.draft.value"
+            :addresses="state.profile.value?.allowedAkas || []"
             :busy="state.busy.value"
-            :has-more="reader.hasMore.value"
-            :outgoing="reader.folder.value === 'outbox'"
-            @open="(item) => state.run(() => reader.open(item))"
-            @more="state.run(() => reader.load(true))"
+            @save="state.run(reader.save)"
+            @send="state.run(reader.send)"
+            @cancel="cancel"
         />
         <NetmailMessage
-            v-if="reader.selected.value"
+            v-else-if="reader.selected.value"
             :message="reader.selected.value"
             :busy="state.busy.value"
             :reply="reader.folder.value === 'inbox'"
@@ -116,5 +137,5 @@ function editDraft(value: MailDraft) {
         >
             <p>{{ t('Select a message to read.') }}</p>
         </section>
-    </div>
+    </MailWorkspace>
 </template>

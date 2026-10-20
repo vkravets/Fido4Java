@@ -23,3 +23,18 @@ test('collapsed navigation retains accessible names and point restrictions', asy
     await expect(page.getByRole('button', { name: 'Echomail', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Station', exact: true })).toHaveCount(0);
 });
+
+test('netmail preview switches between right, below and separate without losing the message', async ({
+    page
+}) => {
+    await openStory(page, 'mail-netmailview--reading');
+    const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
+    await expect(page.locator('.split-pane')).toHaveClass(/right/);
+    await position.selectOption('below');
+    await expect(page.locator('.split-pane')).toHaveClass(/below/);
+    await position.selectOption('separate');
+    await expect(page.locator('.mail-body')).toBeVisible();
+    await expect(page.locator('.separate-list')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.locator('.separate-list')).toBeVisible();
+});
