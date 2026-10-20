@@ -4,6 +4,7 @@ import { t } from '../i18n.ts';
 import { computed, ref } from 'vue';
 import { api } from '../api.ts';
 import SecuritySettings from './SecuritySettings.vue';
+import MailAppearanceSettings from './MailAppearanceSettings.vue';
 import type { AppState } from '../state.ts';
 import type { Theme } from '../state.ts';
 const props = defineProps<{ state: AppState }>();
@@ -51,7 +52,8 @@ function claimLabel(state: string): string {
                     ['profile', t('Profile')],
                     ['aka', t('My AKAs')],
                     ['security', t('Security')],
-                    ['theme', t('Appearance')]
+                    ['theme', t('Appearance')],
+                    ['mail-appearance', t('Mail appearance')]
                 ]"
                 :key="item[0]"
                 :class="{ selected: tab === item[0] }"
@@ -60,6 +62,10 @@ function claimLabel(state: string): string {
                 {{ item[1] }}
             </button>
         </nav>
+        <MailAppearanceSettings
+            v-if="tab === 'mail-appearance'"
+            :state="state"
+        />
         <section
             v-if="tab === 'profile'"
             class="card"

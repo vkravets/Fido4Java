@@ -3,6 +3,7 @@ import { t } from './i18n.ts';
 import { onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { api } from './api.ts';
 import { createWorkspace, workspaceKey } from './workspace.ts';
+import { createMailAppearance, mailAppearanceKey } from './mail-themes.ts';
 import { createMailQueue } from './netmail.ts';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
@@ -23,6 +24,10 @@ import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
 const workspace = createWorkspace(api.profile);
 provide(workspaceKey, workspace);
+const mailAppearance = createMailAppearance(api.profile);
+provide(mailAppearanceKey, mailAppearance);
+onMounted(() => mailAppearance.files().catch(() => {}));
+watch(state.session, (token) => mailAppearance.load(token).catch(() => { state.error.value = t("Could not load mail preferences."); }));
 watch(state.session, (token) =>
     workspace.load(token).catch(() => {
         state.error.value = t('Could not load workspace preferences.');
