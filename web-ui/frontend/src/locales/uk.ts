@@ -1,4 +1,6 @@
 export const ukrainian = {
+    'Default outgoing encoding': 'РўРёРїРѕРІРµ РєРѕРґСѓРІР°РЅРЅСЏ РІРёС…С–РґРЅРёС… Р»РёСЃС‚С–РІ',
+    'UTF-8 bytes': 'Р±Р°Р№С‚С–РІ UTF-8',
     'Display options': 'Параметри вигляду',
     'Search messages': 'Пошук листів',
     Polling: 'Пулінг',

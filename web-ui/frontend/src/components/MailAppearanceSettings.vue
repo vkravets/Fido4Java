@@ -2,7 +2,13 @@
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { themeLabel } from '../mail-theme-labels.ts';
-import { mailColors, mailTheme, themeStyle, useMailAppearance } from '../mail-themes.ts';
+import {
+    mailColors,
+    mailEncodings,
+    mailTheme,
+    themeStyle,
+    useMailAppearance
+} from '../mail-themes.ts';
 import type { MailTheme } from '../mail-themes.ts';
 import type { AppState } from '../state.ts';
 import FidoText from './FidoText.vue';
@@ -10,6 +16,7 @@ const props = defineProps<{ state: AppState }>();
 const appearance = useMailAppearance();
 const reader = ref(appearance.find(appearance.reader.value).id);
 const editor = ref(appearance.find(appearance.editor.value).id);
+const encoding = ref(appearance.encoding.value);
 const selected = ref(editor.value);
 const draft = ref<MailTheme>(copy(appearance.find(selected.value)));
 const preview =
@@ -22,14 +29,14 @@ function choose() {
     draft.value = copy(appearance.find(selected.value));
 }
 async function save() {
-    await appearance.save(reader.value, editor.value, appearance.custom.value);
+    await appearance.save(reader.value, editor.value, appearance.custom.value, encoding.value);
     props.state.notice.value = t('Settings saved.');
 }
 async function saveTheme() {
     const id = custom.value ? selected.value : 'custom-' + crypto.randomUUID().slice(0, 12);
     const theme = mailTheme({ ...draft.value, id });
     const themes = [...appearance.custom.value.filter((value) => value.id !== id), theme];
-    await appearance.save(reader.value, id, themes);
+    await appearance.save(reader.value, id, themes, encoding.value);
     editor.value = id;
     selected.value = id;
     choose();
@@ -62,7 +69,7 @@ async function remove() {
     const next = appearance.custom.value.filter((theme) => theme.id !== selected.value);
     reader.value = reader.value === selected.value ? 'paper' : reader.value;
     editor.value = editor.value === selected.value ? 'paper' : editor.value;
-    await appearance.save(reader.value, editor.value, next);
+    await appearance.save(reader.value, editor.value, next, encoding.value);
     selected.value = editor.value;
     choose();
 }
@@ -109,6 +116,18 @@ const labels = {
                     </select></label
                 >
             </div>
+            <label
+                >{{ t('Default outgoing encoding')
+                }}<select v-model="encoding">
+                    <option
+                        v-for="value in mailEncodings"
+                        :key="value"
+                        :value="value"
+                    >
+                        {{ value }}
+                    </option>
+                </select></label
+            >
             <button
                 class="primary"
                 @click="state.run(save)"

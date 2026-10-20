@@ -8,12 +8,14 @@ import NotificationBanner from './NotificationBanner.vue';
 import { expandTemplate, useMailTemplates } from '../mail-templates.ts';
 import type { ComposeKind, MailTemplate } from '../mail-templates.ts';
 import AddressInput from './AddressInput.vue';
+import { useMailAppearance } from '../mail-themes.ts';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const draft = defineModel<MailDraft>({ required: true });
 const props = defineProps<{ addresses: string[]; busy: boolean }>();
 const emit = defineEmits<{ save: []; send: []; cancel: []; initialized: [] }>();
 const editor = ref<InstanceType<typeof FidoEditor>>();
 const templates = useMailTemplates();
+const appearance = useMailAppearance();
 const error = ref('');
 const selectedTemplate = ref('');
 const canSubmit = computed(
@@ -66,6 +68,7 @@ function apply(template: MailTemplate, automatic = false) {
     }
 }
 onMounted(() => {
+    if (!draft.value.encoding) draft.value.encoding = appearance.encoding.value;
     if (draft.value.composeKind && !draft.value.templateInitialized)
         apply(templates.choose(kind.value, draft.value.fromAddress, draft.value.area), true);
     emit('initialized');
@@ -191,6 +194,7 @@ function chooseTemplate() {
                 ref="editor"
                 v-model="draft.body"
                 :disabled="busy"
+                :encoding="draft.encoding"
             />
             <div class="actions">
                 <button

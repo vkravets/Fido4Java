@@ -18,7 +18,11 @@ import { themeStyle, useMailAppearance } from '../mail-themes.ts';
 import { t, locale } from '../i18n.ts';
 import FidoText from './FidoText.vue';
 const model = defineModel<string>({ required: true });
-const props = defineProps<{ disabled?: boolean; initialMode?: 'visual' | 'source' | 'preview' }>();
+const props = defineProps<{
+    disabled?: boolean;
+    initialMode?: 'visual' | 'source' | 'preview';
+    encoding?: string;
+}>();
 const host = ref<HTMLElement>();
 const source = ref(props.initialMode === 'source');
 const preview = ref(props.initialMode === 'preview');
@@ -311,7 +315,10 @@ defineExpose({
         >
             {{ t('Message exceeds 60000 UTF-8 bytes.') }}
         </p>
-        <small>{{ t('Plain text') }} · UTF-8 · {{ bytes }} / 60000</small>
+        <small
+            >{{ t('Plain text') }} · {{ encoding || 'UTF-8' }} · {{ bytes }} / 60000
+            {{ t('UTF-8 bytes') }}</small
+        >
     </div>
 </template>
 <style scoped>

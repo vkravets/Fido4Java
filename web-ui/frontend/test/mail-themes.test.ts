@@ -26,3 +26,20 @@ test('personal theme saves do not modify operator themes and failure retains the
     assert.equal(appearance.reader.value, 'paper');
     await assert.rejects(appearance.save('paper', 'paper', [builtInMailThemes[0]!]), /unique/);
 });
+
+test('default editor encoding is owner-scoped, persisted and reset on account changes', async () => {
+    const rows = new Map<string, string>();
+    const appearance = createMailAppearance({
+        uiDocument: async (token) => rows.get(token) || '{}',
+        saveUiDocument: async (token, _key, value) => {
+            rows.set(token, value);
+        }
+    });
+    await appearance.load('first');
+    await appearance.save('paper', 'graphite', [], 'KOI8-R');
+    assert.equal(appearance.encoding.value, 'KOI8-R');
+    await appearance.load('second');
+    assert.equal(appearance.encoding.value, 'UTF-8');
+    await appearance.load('first');
+    assert.equal(appearance.encoding.value, 'KOI8-R');
+});

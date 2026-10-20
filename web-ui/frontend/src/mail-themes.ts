@@ -13,6 +13,11 @@ export const mailColors = [
     'search'
 ] as const;
 export type MailColor = (typeof mailColors)[number];
+export const mailEncodings = ['UTF-8', 'CP866', 'KOI8-R', 'CP1251', 'CP848'] as const;
+export type MailEncoding = (typeof mailEncodings)[number];
+function encodingValue(value: unknown): MailEncoding {
+    return mailEncodings.includes(value as MailEncoding) ? (value as MailEncoding) : 'UTF-8';
+}
 export interface MailTheme {
     id: string;
     name: string;
@@ -95,6 +100,7 @@ export function createMailAppearance(client?: Client) {
             : 'paper';
     const reader = ref(initial);
     const editor = ref(initial);
+    const encoding = ref<MailEncoding>('UTF-8');
     const custom = ref<MailTheme[]>([]);
     const operator = ref<MailTheme[]>([]);
     const themes = computed(() => [...builtInMailThemes, ...operator.value, ...custom.value]);
@@ -106,6 +112,7 @@ export function createMailAppearance(client?: Client) {
         token = session;
         const ticket = ++generation;
         custom.value = [];
+        encoding.value = 'UTF-8';
         reader.value = editor.value =
             typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
                 ? 'graphite'
@@ -116,6 +123,7 @@ export function createMailAppearance(client?: Client) {
         custom.value = Array.isArray(row.custom) ? row.custom.slice(0, 20).map(mailTheme) : [];
         if (typeof row.reader === 'string') reader.value = row.reader;
         if (typeof row.editor === 'string') editor.value = row.editor;
+        encoding.value = encodingValue(row.encoding);
     }
     async function files() {
         const response = await fetch('/ui/mail-themes.json');
@@ -137,7 +145,12 @@ export function createMailAppearance(client?: Client) {
         }
         operator.value = result;
     }
-    async function save(nextReader: string, nextEditor: string, nextCustom: MailTheme[]) {
+    async function save(
+        nextReader: string,
+        nextEditor: string,
+        nextCustom: MailTheme[],
+        nextEncoding: MailEncoding = encoding.value
+    ) {
         const ticket = generation;
         const values = nextCustom.map(mailTheme);
         if (values.length > 20 || new Set(values.map((value) => value.id)).size !== values.length)
@@ -148,14 +161,23 @@ export function createMailAppearance(client?: Client) {
         const ids = [...occupied, ...values.map((value) => value.id)];
         if (!ids.includes(nextReader) || !ids.includes(nextEditor))
             throw new Error('Unknown mail theme');
-        const row = { version: 1, reader: nextReader, editor: nextEditor, custom: values };
+        if (!mailEncodings.includes(nextEncoding))
+            throw new Error('Unsupported outgoing mail encoding');
+        const row = {
+            version: 1,
+            reader: nextReader,
+            editor: nextEditor,
+            encoding: nextEncoding,
+            custom: values
+        };
         if (client && token) await client.saveUiDocument(token, 'mail-themes', JSON.stringify(row));
         if (ticket !== generation) return;
         reader.value = nextReader;
         editor.value = nextEditor;
         custom.value = values;
+        encoding.value = nextEncoding;
     }
-    return { reader, editor, custom, operator, themes, find, load, files, save };
+    return { reader, editor, encoding, custom, operator, themes, find, load, files, save };
 }
 export type MailAppearance = ReturnType<typeof createMailAppearance>;
 export const mailAppearanceKey: InjectionKey<MailAppearance> = Symbol('mail-appearance');
