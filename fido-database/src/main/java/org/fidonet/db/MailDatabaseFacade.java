@@ -252,13 +252,6 @@ public class MailDatabaseFacade
         return extensions.require(contract);
     }
 
-    public <T, ID> Dao<T, ID> extensionDao(Class<T> type) throws SQLException {
-        return dbManager.extensionDao(type);
-    }
-
-    public <T> T extensionTransaction(Callable<T> operation) throws SQLException {
-        return dbManager.inTransaction(operation);
-    }
     private final NetmailRepository netmailRepository;
     private final AreaRepository areas;
     private final SubscriptionRepository subscriptions;

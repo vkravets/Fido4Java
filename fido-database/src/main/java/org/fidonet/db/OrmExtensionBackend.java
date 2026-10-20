@@ -3,6 +3,7 @@ package org.fidonet.db;
 import org.fidonet.storage.jdbc.JdbcBackend;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import javax.sql.DataSource;
 
@@ -17,7 +18,7 @@ final class OrmExtensionBackend implements JdbcBackend {
 
     @Override
     public String dialect() {
-        return orm.connectionSource.getDatabaseType().getDatabaseName();
+        return orm.connectionSource.getDatabaseType().getDatabaseName().toLowerCase(Locale.ROOT);
     }
 
     @Override

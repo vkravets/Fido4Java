@@ -125,7 +125,7 @@ public final class H2FileEchoStorage implements FileEchoStorage {
         transaction(connection -> {
             for (FileArea area : areas) {
                 if (area(connection, area.name) == null) {
-                    saveArea(connection, area);
+                    insertArea(connection, area);
                 }
             }
             return null;
@@ -143,6 +143,15 @@ public final class H2FileEchoStorage implements FileEchoStorage {
     private static void saveArea(Connection connection, FileArea area) throws SQLException {
         execute(connection,
                 "MERGE INTO `fileecho_area` (`name`,`directory`,`description`,`enabled`) KEY(`name`) VALUES (?,?,?,?)",
+                area.name,
+                area.directory,
+                area.description,
+                area.enabled);
+    }
+
+    private static void insertArea(Connection connection, FileArea area) throws SQLException {
+        execute(connection,
+                "INSERT INTO `fileecho_area` (`name`,`directory`,`description`,`enabled`) VALUES (?,?,?,?)",
                 area.name,
                 area.directory,
                 area.description,
@@ -220,7 +229,7 @@ public final class H2FileEchoStorage implements FileEchoStorage {
                     || !current.access.equals(expected.access)) {
                 throw new IOException("File creation policy changed");
             }
-            saveArea(connection, area);
+            insertArea(connection, area);
             saveAccess(connection, area.name, current.peer, current.access);
             return area;
         });

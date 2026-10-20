@@ -1,9 +1,13 @@
 package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.db.robots.EditableRobotRules;
 import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.db.robots.RobotRules;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.fileecho.storage.FileAccess;
+import org.fidonet.fileecho.storage.FileArea;
+import org.fidonet.fileecho.storage.FileCreationPolicy;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.types.FTNAddr;
@@ -53,7 +57,7 @@ final class FileEchoSettings implements SettingsExtension {
     public View describe() throws IOException {
         List<Section> sections = new ArrayList<>();
         List<Map<String, String>> areas = new ArrayList<>();
-        for (FileAreaRecord area : store.list()) {
+        for (FileArea area : store.list()) {
             areas.add(Map.of("name",
                              area.name,
                              "directory",
@@ -72,7 +76,7 @@ final class FileEchoSettings implements SettingsExtension {
                                  areas,
                                  !store.isFiles()));
         List<Map<String, String>> access = new ArrayList<>();
-        for (FileAccessRecord rule : store.access()) {
+        for (FileAccess rule : store.access()) {
             access.add(Map.of("name", rule.area, "peer", rule.peer, "access", rule.access));
         }
         List<String> names = areas.stream()
@@ -88,7 +92,7 @@ final class FileEchoSettings implements SettingsExtension {
                                  access,
                                  !store.isFiles()));
         List<Map<String, String>> policies = new ArrayList<>();
-        for (FileCreationRecord policy : store.policies()) {
+        for (FileCreationPolicy policy : store.policies()) {
             policies.add(Map.of("peer",
                                 policy.peer,
                                 "masks",
@@ -258,6 +262,10 @@ final class FileEchoSettings implements SettingsExtension {
         RobotAccessRule next = password.isEmpty() && previous != null
                 ? previous.withPolicy(masks, "", active)
                 : RobotAccessRule.create(kind, address, password, masks, "", active);
-        ((MailDatabaseFacade) api.getStorage()).getRobotRules().save(next);
+        RobotRules rules = api.getStorage().getRobotRules();
+        if (!(rules instanceof EditableRobotRules)) {
+            throw new IllegalStateException("Storage does not support editing robot rules");
+        }
+        ((EditableRobotRules) rules).save(next);
     }
 }

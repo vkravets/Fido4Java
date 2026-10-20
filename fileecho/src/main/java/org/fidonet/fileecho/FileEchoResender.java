@@ -2,6 +2,7 @@ package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.fileecho.storage.FileArea;
 import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
@@ -35,7 +36,7 @@ final class FileEchoResender {
             throws IOException {
         String tag = FileEchoAreaService.tag(area);
         Link peer = ((JFtnConfig) api.getConfig()).getLink(address);
-        FileAreaRecord record = store.area(tag);
+        FileArea record = store.area(tag);
         RobotAccessRule robot = api.getRobotAccess().find("FileFix", address);
         RobotAccessRule tic = api.getRobotAccess().find("Tic", address);
         if (peer == null || record == null || !record.enabled || robot == null || tic == null

@@ -183,19 +183,6 @@ public class OrmManager {
         return (Dao<T, ID>) daoMap.get(clazz);
     }
 
-    /** Optional plugins own their table classes; the host owns the connection lifetime. */
-    public synchronized <T, ID> Dao<T, ID> extensionDao(Class<T> type) throws SQLException {
-        if (!isConnect()) {
-            throw new SQLException("Database is not connected");
-        }
-        if (!daoMap.containsKey(type)) {
-            Dao<T, ID> dao = DaoManager.createDao(connectionSource, type);
-            TableUtils.createTableIfNotExists(connectionSource, type);
-            daoMap.put(type, dao);
-        }
-        return getDao(type);
-    }
-
     public <T extends Dao<?, ?>> Set<T> getAllDaos() {
         Set<T> result = new HashSet<T>();
         for (Class<?> daoClass : daoClasses) {

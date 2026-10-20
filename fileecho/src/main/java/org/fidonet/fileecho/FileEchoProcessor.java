@@ -2,6 +2,7 @@ package org.fidonet.fileecho;
 
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.robots.RobotAccessRule;
+import org.fidonet.fileecho.storage.FileArea;
 import org.fidonet.jftn.script.FileDeliveryQueue;
 import org.fidonet.jftn.script.FileEchoEvent;
 import org.fidonet.jftn.script.FileEchoService;
@@ -56,7 +57,7 @@ final class FileEchoProcessor implements FileEchoService {
     @Override
     public Set<String> areas() throws IOException {
         Set<String> result = new TreeSet<>();
-        for (FileAreaRecord area : store.list()) {
+        for (FileArea area : store.list()) {
             if (area.enabled) {
                 result.add(area.name);
             }
@@ -159,7 +160,7 @@ final class FileEchoProcessor implements FileEchoService {
         if (!checksum.crc.equalsIgnoreCase(tic.value("crc")) || !tic.matchesSize(checksum.size)) {
             throw new IOException("Payload changed after matching TIC");
         }
-        FileAreaRecord area = store.createAfterValidation(tag, ticket.getPeer());
+        FileArea area = store.createAfterValidation(tag, ticket.getPeer());
         applyReplacements(tic, Path.of(area.directory), receipt);
         String placementKey = "tic-placement:" + receipt;
         String placement = api.getState().get(placementKey);

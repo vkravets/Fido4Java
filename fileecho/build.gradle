@@ -3,7 +3,8 @@ apply plugin: 'java-library'
 description = 'Optional TIC file echo delivery plugin'
 
 dependencies {
-    compileOnly project(':fido-database')
+    api project(':storage-api')
+    testRuntimeOnly project(':fileecho-storage-h2')
     testImplementation project(':fido-database')
 
     implementation project(':mail-api')
