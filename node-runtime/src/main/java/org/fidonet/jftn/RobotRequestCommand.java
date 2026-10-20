@@ -1,13 +1,12 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
-import org.fidonet.db.OrmManager;
-import org.fidonet.db.plugin.DatabasePlugin;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.script.RemoteRobotRequests;
 import org.fidonet.jftn.script.RobotRequest;
 import org.fidonet.jftn.script.ScriptState;
 import org.fidonet.jftn.tosser.Tosser;
+import org.fidonet.storage.StorageSession;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
@@ -54,15 +53,11 @@ final class RobotRequestCommand {
     }
 
     static String queue(JFtnConfig config, Properties request) throws Exception {
-        OrmManager orm = new OrmManager(DatabasePlugin.DEFAULT_DATABASE_URL + ";IFEXISTS=TRUE");
-        try {
-            orm.connect();
-            MailDatabaseFacade database = new MailDatabaseFacade(orm);
+        try (StorageSession storage = OfflineMailStorage.open(config, true)) {
+            MailRepository database = OfflineMailStorage.repository(storage);
             String key = submit(config, new Tosser(config, database), request);
             System.out.println("Queued robot request: " + key);
             return key;
-        } finally {
-            orm.disconnect();
         }
     }
 

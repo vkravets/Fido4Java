@@ -10,10 +10,10 @@ import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -77,7 +77,7 @@ public final class DistributionProbe {
         try {
             JFtnRunner.main(new String[]{"--export-robot-access", output.toString()});
             throw new IllegalStateException("Export must refuse a missing database");
-        } catch (SQLException expected) {
+        } catch (IOException expected) {
             if (Files.exists(output) || Files.exists(Path.of("database/jftn10.mv.db"))) {
                 throw new IllegalStateException("Export must not create a database or output on failure");
             }

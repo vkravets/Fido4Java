@@ -1,12 +1,10 @@
 package org.fidonet.jftn;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.OrmManager;
-import org.fidonet.db.plugin.DatabasePlugin;
-import org.fidonet.db.robots.DatabaseRobotRules;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotRuleSnapshot;
 import org.fidonet.jftn.script.RobotAccess;
+import org.fidonet.storage.StorageSession;
 
 import java.nio.file.Path;
 
@@ -35,14 +33,10 @@ final class RobotAccessCommand {
             System.out.println("Validated robot access rules: " + files.all().size());
             return true;
         }
-        OrmManager orm = new OrmManager(DatabasePlugin.DEFAULT_DATABASE_URL);
-        try {
-            orm.connect();
-            new DatabaseRobotRules(orm).importIntoEmpty(files.all());
+        try (StorageSession storage = OfflineMailStorage.open(config, false)) {
+            OfflineMailStorage.repository(storage).getRobotRules().importIntoEmpty(files.all());
             System.out.println("Imported robot access rules: " + files.all().size());
             System.out.println("Select RobotAccessSource=database and restart to use them. Configuration files were not changed.");
-        } finally {
-            orm.disconnect();
         }
         return true;
     }
@@ -55,14 +49,12 @@ final class RobotAccessCommand {
         config.load(args.length == 3 ? args[2] : "jftn.conf");
         RobotAccess.source(config);
         // Refuse to create an empty database when run from the wrong working directory.
-        OrmManager orm = new OrmManager(DatabasePlugin.DEFAULT_DATABASE_URL + ";IFEXISTS=TRUE");
-        try {
-            orm.connect();
-            int count = RobotRuleSnapshot.write(Path.of(args[1]), new DatabaseRobotRules(orm));
+        try (StorageSession storage = OfflineMailStorage.open(config, true)) {
+            int count = RobotRuleSnapshot.write(Path.of(args[1]),
+                                                OfflineMailStorage.repository(storage)
+                                                                  .getRobotRules());
             System.out.println("Exported robot access rules: " + count);
             System.out.println("Load the exported fragment in conf.d to select files mode. Other configuration files were not changed.");
-        } finally {
-            orm.disconnect();
         }
     }
 }
