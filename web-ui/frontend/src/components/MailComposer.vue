@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { templateLabel, templateError } from '../mail-template-labels.ts';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
@@ -182,7 +183,7 @@ function chooseTemplate() {
                     :disabled="!selectedTemplate"
                     @click="chooseTemplate"
                 >
-                    {{ t('Apply template') }}
+                    <AppIcon name="templates" />{{ t('Apply template') }}
                 </button>
             </div>
             <FidoEditor
@@ -197,21 +198,23 @@ function chooseTemplate() {
                     type="submit"
                     :disabled="!canSubmit"
                 >
-                    {{ draft.mailbox === 1 ? t('Post message') : t('Add to send queue') }}
+                    <AppIcon name="send" />{{
+                        draft.mailbox === 1 ? t('Post message') : t('Add to send queue')
+                    }}
                 </button>
                 <button
                     class="secondary"
                     type="button"
                     @click="$emit('save')"
                 >
-                    {{ t('Save draft') }}
+                    <AppIcon name="save" />{{ t('Save draft') }}
                 </button>
                 <button
                     class="text-button"
                     type="button"
                     @click="$emit('cancel')"
                 >
-                    {{ t('Cancel') }}
+                    <AppIcon name="close" />{{ t('Cancel') }}
                 </button>
             </div>
         </fieldset>

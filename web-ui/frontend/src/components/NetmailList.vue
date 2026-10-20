@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortMailDate } from '../mail-date.ts';
 import { t } from '../i18n.ts';
 import { computed } from 'vue';
 import { matchesMail, useMailSearch } from '../mail-search.ts';
@@ -24,6 +25,14 @@ defineEmits<{ open: [item: MailItem]; more: [] }>();
         <p v-if="!visibleItems.length">
             {{ busy ? t('Loading messages…') : t('No messages in this folder.') }}
         </p>
+        <div
+            class="mail-table-head"
+            aria-hidden="true"
+        >
+            <span>{{ outgoing ? t('To') : t('From') }}</span
+            ><span>{{ t('Subject') }}</span
+            ><span>{{ t('Date') }}</span>
+        </div>
         <button
             v-for="item in visibleItems"
             :key="mailId(item.id)"
@@ -38,12 +47,31 @@ defineEmits<{ open: [item: MailItem]; more: [] }>();
                 v-if="item.excerpt || item.body"
                 >{{ item.excerpt || item.body?.slice(0, 160) }}</span
             >
-            <span>{{ outgoing ? item.toName : item.fromName }}</span>
-            <small>{{ outgoing ? item.toAddress : item.fromAddress }} · {{ item.date }}</small>
-            <small v-if="outgoing">{{
-                (item.attributes || 0) & 8 ? t('Sent') : t('Queued')
-            }}</small>
-            <small v-else-if="!item.read">{{ t('Unread') }}</small>
+            <span class="mail-sender"
+                ><i
+                    class="mail-unread-dot"
+                    aria-hidden="true"
+                ></i
+                >{{ outgoing ? item.toName : item.fromName }}</span
+            >
+            <small class="mobile-mail-date"
+                >{{ outgoing ? item.toAddress : item.fromAddress }} · {{ item.date }}</small
+            >
+            <time
+                class="mail-date"
+                :title="item.date"
+                >{{ shortMailDate(item.date) }}</time
+            >
+            <small
+                class="mail-row-status"
+                v-if="outgoing"
+                >{{ (item.attributes || 0) & 8 ? t('Sent') : t('Queued') }}</small
+            >
+            <small
+                class="mail-row-status"
+                v-else-if="!item.read"
+                >{{ t('Unread') }}</small
+            >
         </button>
         <button
             v-if="hasMore"

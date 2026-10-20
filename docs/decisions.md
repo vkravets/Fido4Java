@@ -680,6 +680,11 @@ right/below/separate reader. Per-account preferences keep independent mail-kind
 layouts. Mobile uses list/reader/composer screens with retained scroll and dirty
 draft guards. Search currently filters loaded headers and bounded excerpts only.
 
+Desktop mail uses a compact, flush three-pane layout with outline controls,
+sender/subject/date columns and a reader action menu. Preview position and density
+remain personal choices behind Display options. The compact desktop pass does
+not imply a new mobile design or change message/AKA authorization.
+
 CodeMirror supplies the visual/source plain-text editor; a shared FTN parser
 styles the reader and editor without rendering incoming HTML. Mail palettes are
 independent of the application theme: built-ins, read-only validated operator

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 defineProps<{ count: number; busy: boolean }>();
 defineEmits<{ send: [] }>();
@@ -11,9 +12,10 @@ defineEmits<{ send: [] }>();
         <p role="status">{{ t('Awaiting send: {count}', { count }) }}</p>
         <button
             :disabled="busy || count === 0"
+            :title="t('Send queued mail')"
             @click="$emit('send')"
         >
-            {{ t('Send queued mail') }}
+            <AppIcon name="send" />{{ t('Send queued mail') }}
         </button>
     </section>
 </template>

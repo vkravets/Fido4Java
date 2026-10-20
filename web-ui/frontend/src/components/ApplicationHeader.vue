@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import type { UserProfile } from '@rpc/bindings.mjs';
 import LanguageSelector from './LanguageSelector.vue';
@@ -25,6 +26,35 @@ defineEmits<{ menu: []; theme: []; logout: [] }>();
             href="/"
             class="brand"
             :aria-label="t('JFtn, home')"
+            ><svg
+                class="desktop-brand-mark"
+                viewBox="0 0 32 32"
+                aria-hidden="true"
+            >
+                <path
+                    d="M7 25L18 6L25 25"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                />
+                <circle
+                    cx="7"
+                    cy="25"
+                    r="4"
+                    fill="currentColor"
+                />
+                <circle
+                    cx="18"
+                    cy="6"
+                    r="4"
+                    fill="currentColor"
+                />
+                <circle
+                    cx="25"
+                    cy="25"
+                    r="4"
+                    fill="currentColor"
+                /></svg
             ><img
                 class="brand-mark"
                 src="/jftn.svg"
@@ -43,7 +73,7 @@ defineEmits<{ menu: []; theme: []; logout: [] }>();
                 :disabled="busy"
                 @click="$emit('theme')"
             >
-                {{ theme === 'dark' ? '☀' : '☾' }}</button
+                <AppIcon :name="theme === 'dark' ? 'sun' : 'moon'" /></button
             ><button
                 v-if="profile"
                 class="text-button"
@@ -51,7 +81,7 @@ defineEmits<{ menu: []; theme: []; logout: [] }>();
                 :disabled="busy"
                 @click="$emit('logout')"
             >
-                {{ t('Sign out') }}
+                <AppIcon name="logout" /><span>{{ t('Sign out') }}</span>
             </button>
         </div>
     </header>

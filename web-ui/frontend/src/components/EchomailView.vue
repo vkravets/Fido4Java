@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
 import { api, bindings } from '../api.ts';
@@ -64,55 +65,68 @@ async function refresh() {
     await reader.refreshAreas();
     await reader.selectArea(reader.area.value);
 }
+function reply(kind: 'quoted' | 'reply' = 'quoted') {
+    reader.edit(undefined, reader.selected.value!);
+    if (reader.draft.value) reader.draft.value.composeKind = kind;
+}
+const nextUnread = computed(() =>
+    reader.items.value.find(
+        (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
+    )
+);
 </script>
 <template>
-    <header class="page-heading">
-        <div>
-            <p class="eyebrow">{{ t('MAIL') }}</p>
-            <h1>{{ t('Echomail') }}</h1>
-            <p class="muted">{{ t('Read and discuss in your subscribed conferences.') }}</p>
-        </div>
-        <div class="actions">
-            <button
-                class="primary"
-                :disabled="state.busy.value || !reader.authors.value.length"
-                @click="reader.edit()"
-            >
-                {{ t('New echomail') }}
-            </button>
-            <button
-                class="secondary"
-                :disabled="state.busy.value"
-                @click="state.run(reader.loadDrafts)"
-            >
-                {{ t('Echo drafts') }}
-            </button>
-            <button
-                class="secondary"
-                :disabled="state.busy.value"
-                @click="state.run(refresh)"
-            >
-                {{ t('Refresh') }}
-            </button>
-        </div>
-    </header>
     <MailWorkspace
         kind="echo"
         :opened="!!reader.selected.value || !!reader.draft.value || reader.showDrafts.value"
         :busy="state.busy.value"
         @back="back"
     >
-        <template #list>
+        <template #toolbar>
+            <header class="page-heading">
+                <div>
+                    <p class="eyebrow">{{ t('MAIL') }}</p>
+                    <h1>{{ t('Echomail') }}</h1>
+                    <p class="muted">{{ t('Read and discuss in your subscribed conferences.') }}</p>
+                </div>
+                <div class="actions">
+                    <button
+                        class="primary"
+                        :disabled="state.busy.value || !reader.authors.value.length"
+                        @click="reader.edit()"
+                    >
+                        <AppIcon name="edit" />{{ t('New echomail') }}
+                    </button>
+                    <button
+                        class="secondary"
+                        :disabled="state.busy.value"
+                        :aria-label="t('Echo drafts')"
+                        :title="t('Echo drafts')"
+                        @click="state.run(reader.loadDrafts)"
+                    >
+                        <AppIcon name="file" /><span class="desktop-hidden">{{
+                            t('Echo drafts')
+                        }}</span>
+                    </button>
+                    <button
+                        class="secondary"
+                        :disabled="state.busy.value"
+                        :aria-label="t('Refresh')"
+                        :title="t('Refresh')"
+                        @click="state.run(refresh)"
+                    >
+                        <AppIcon name="refresh" /><span class="desktop-hidden">{{
+                            t('Refresh')
+                        }}</span>
+                    </button>
+                </div>
+            </header>
+        </template>
+        <template #filters>
             <div class="card conference-selector">
                 <label
-                    >{{ t('Find a conference')
-                    }}<input
-                        v-model="search"
-                        type="search"
-                /></label>
-                <label
-                    >{{ t('Select a conference')
-                    }}<select
+                    ><span class="control-label">{{ t('Select a conference') }}</span
+                    ><select
                         :value="reader.area.value"
                         :disabled="state.busy.value"
                         @change="
@@ -154,6 +168,16 @@ async function refresh() {
                     {{ t('No matching conferences.') }}
                 </p>
             </div>
+        </template>
+        <template #options>
+            <label
+                >{{ t('Find a conference')
+                }}<input
+                    v-model="search"
+                    type="search"
+            /></label>
+        </template>
+        <template #list>
             <EchoMessageList
                 v-if="reader.currentArea.value?.readable"
                 :key="reader.area.value"
@@ -194,27 +218,6 @@ async function refresh() {
             v-else-if="reader.selected.value"
             class="echo-reading"
         >
-            <nav
-                class="actions echo-message-navigation"
-                :aria-label="t('Message navigation')"
-            >
-                <button
-                    class="secondary"
-                    :disabled="state.busy.value || index <= 0"
-                    @click="state.run(() => reader.open(reader.items.value[index - 1]!))"
-                >
-                    {{ t('Previous message') }}
-                </button>
-                <button
-                    class="secondary"
-                    :disabled="
-                        state.busy.value || index < 0 || index >= reader.items.value.length - 1
-                    "
-                    @click="state.run(() => reader.open(reader.items.value[index + 1]!))"
-                >
-                    {{ t('Next message') }}
-                </button>
-            </nav>
             <NetmailMessage
                 :message="reader.selected.value"
                 :busy="state.busy.value"
@@ -224,14 +227,25 @@ async function refresh() {
                 @forward="
                     emit('forward', forwardDraft(reader.selected.value!, state.profile.value!))
                 "
-                @reply="reader.edit(undefined, reader.selected.value!)"
+                @reply="reply"
+                @compose="reader.edit()"
+                :navigation="true"
+                :previous-disabled="index <= 0"
+                :next-disabled="index < 0 || index >= reader.items.value.length - 1"
+                :unread-disabled="!nextUnread"
+                @previous="state.run(() => reader.open(reader.items.value[index - 1]!))"
+                @next="state.run(() => reader.open(reader.items.value[index + 1]!))"
+                @unread="nextUnread && state.run(() => reader.open(nextUnread!))"
             />
-            <section
+            <details
+                role="region"
                 v-if="reader.context.value"
                 class="card echo-conversation"
                 :aria-label="t('Conversation')"
             >
-                <h3>{{ t('Conversation') }}</h3>
+                <summary>
+                    <AppIcon name="logs" />{{ t('Conversation') }}<AppIcon name="down" />
+                </summary>
                 <button
                     v-if="reader.context.value.parent"
                     class="secondary"
@@ -282,7 +296,7 @@ async function refresh() {
                 >
                     {{ t('More replies') }}
                 </button>
-            </section>
+            </details>
         </div>
         <section
             v-else

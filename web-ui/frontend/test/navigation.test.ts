@@ -49,29 +49,32 @@ test('point navigation contains mail placeholders and personal settings without 
     assert.ok(html.includes('Netmail'));
     assert.ok(html.includes('Echomail'));
     assert.ok(html.includes('My settings'));
-    assert.ok(!html.includes('NODE MANAGEMENT'));
     assert.ok(!html.includes('Accounts and requests'));
     assert.ok(!html.includes('Mail robots'));
-    assert.ok(!html.includes('Connections'));
+    assert.ok(!html.includes('Polling'));
+    assert.ok(!html.includes('Mail links'));
+    assert.ok(!html.includes('Logs'));
     assert.ok(html.includes('disabled'));
 });
 
 test('administrator navigation exposes station configuration and account moderation', async () => {
     const html = await renderToString(h(sidebar, { profile: profile('ADMIN'), page: 'node' }));
-    assert.ok(html.includes('NODE MANAGEMENT'));
+    assert.ok(html.includes('Settings'));
     assert.ok(html.includes('Accounts and requests'));
     assert.ok(html.includes('Station'));
     assert.ok(html.includes('Mail robots'));
-    assert.ok(html.includes('Connections'));
+    assert.ok(html.includes('Polling'));
+    assert.ok(html.includes('Mail links'));
+    assert.ok(html.includes('Logs'));
 });
 
 test('Ukrainian navigation and the language selector expose only English and Ukrainian', async () => {
     changeLocale('uk');
     try {
         const html = await renderToString(h(sidebar, { profile: profile('ADMIN'), page: 'node' }));
-        assert.ok(html.includes('КЕРУВАННЯ НОДОЮ'));
+        assert.ok(html.includes('Налаштування'));
         assert.ok(html.includes('Облікові записи та заявки'));
-        assert.ok(html.includes('З’єднання'));
+        assert.ok(html.includes('Пулінг'));
         assert.ok(!html.includes('NODE MANAGEMENT'));
         const selector = await renderToString(h(languageSelector));
         assert.ok(selector.includes('value="en"'));

@@ -29,3 +29,19 @@
         min-height: 0;
     }
 }
+
+/* Application frames use the available viewport, just like the hosted SPA. */
+.storybook-stage:has(> .workspace),
+.storybook-stage:has(> .topbar) {
+    max-width: none;
+    padding: 0;
+}
+
+@media (min-width: 761px) {
+    .storybook-sidebar {
+        width: 216px;
+    }
+    .storybook-sidebar:has(.collapsed) {
+        width: 56px;
+    }
+}

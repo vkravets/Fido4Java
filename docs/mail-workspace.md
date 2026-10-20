@@ -8,17 +8,31 @@ subscription and AKA restrictions; layout preferences never grant access.
 
 ## Layout and navigation
 
-**Preview position** selects the reading pane on the right, below the list, or
+On desktop, the three panes meet without card gutters. A 44px application header,
+216px menu (56px collapsed), outline icons and compact controls leave more space
+for mail. Message rows align sender, subject and date; the full date remains in
+the date tooltip. Unread markers and the selected row remain visible.
+
+Open **Display options** beside the search field. **Preview position** selects
+the reading pane on the right, below the list, or
 on a separate screen. Drag the separator or focus it and use Left/Right (right
 preview), Up/Down (below preview), Home or End. The list occupies 20-75% of the
 available space. Density is Compact or Comfortable; echo lists independently
-support Tree and Flat views. These choices, split ratios and menu collapse are
+support **Threads** and **Flat** views. These choices, split ratios and menu collapse are
 saved per account. Netmail and echo layouts are independent.
+
+The reader offers **Reply**, **Previous**, **Next** and **Next unread** within the
+loaded list. **More** groups quoted/short replies, a new message, forwarding and
+deletion where permitted. Short replies preserve the original reply identifier
+without inserting the original quote. Expand **Conversation** to navigate the
+parent and replies. Administrators also have direct **Links**, **Polling** and
+**Logs** shortcuts; point accounts do not receive these controls.
 
 On narrow screens the list, reader and composer occupy separate screens. **Back
 to messages** returns to the retained list and scroll position. Leaving a changed
 unsaved draft asks for confirmation. The mobile header opens the application
 menu; node administration remains available only to administrators.
+This compact-layout pass targets desktop; a broader mobile redesign is deferred.
 
 **Search loaded messages** filters the currently loaded headers and bounded text
 excerpts. It is not a full archive or full body search. Load more messages to

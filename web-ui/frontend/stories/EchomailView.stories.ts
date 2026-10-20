@@ -88,3 +88,8 @@ export const ApplicationWorkspace: Story = {
         })
     ]
 };
+
+export const FocusedDesktop: Story = {
+    ...ApplicationWorkspace,
+    parameters: { echo: { dense: true } }
+};

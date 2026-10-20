@@ -14,7 +14,7 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await root.focus();
     await root.press('ArrowRight');
     await expect(page.locator('[data-mail-row="9007199254740994"]')).toBeFocused();
-    await page.getByRole('combobox', { name: 'Message list', exact: true }).selectOption('flat');
+    await page.getByRole('button', { name: 'Flat list', exact: true }).click();
     await expect(page.getByRole('treeitem')).toHaveCount(0);
     await expect(page.locator('[data-mail-row]')).toHaveCount(4);
     await page.getByRole('button', { name: /^Welcome to the conference/ }).click();
@@ -23,6 +23,7 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     ).toBeVisible();
     await expect(page.locator('.mail-body')).toContainText('<script>alert("hello")</script>');
     await expect(page.getByRole('button', { name: 'Delete message', exact: true })).toHaveCount(0);
+    await page.locator('.echo-conversation > summary').click();
     await page
         .getByRole('region', { name: 'Conversation' })
         .getByRole('button', { name: /Bob Example/ })
@@ -148,6 +149,7 @@ test('netmail deletes a selected letter after confirmation', async ({ page }) =>
     await story(page, 'mail-netmailview--inbox');
     await page.getByRole('button', { name: /Welcome to FidoNet/ }).click();
     page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('.reader-more > summary').click();
     await page.getByRole('button', { name: 'Delete message', exact: true }).click();
     await expect(page.getByText('No messages in this folder.', { exact: true })).toBeVisible();
     await expect(page.locator('.mail-body')).toHaveCount(0);
@@ -434,7 +436,9 @@ for (const theme of ['light', 'dark']) {
 
             await story(page, 'navigation-sidebar--administrator', theme, locale);
             await expect(
-                page.getByRole('button', { name: locale === 'en' ? 'Connections' : 'З’єднання' })
+                page.getByRole('button', {
+                    name: locale === 'en' ? 'Polling' : '\u041f\u0443\u043b\u0456\u043d\u0433'
+                })
             ).toBeVisible();
             await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
             await expect(page.locator('html')).toHaveAttribute('lang', locale);
@@ -444,7 +448,9 @@ for (const theme of ['light', 'dark']) {
             });
             await story(page, 'navigation-sidebar--point', theme, locale);
             await expect(
-                page.getByRole('button', { name: locale === 'en' ? 'Connections' : 'З’єднання' })
+                page.getByRole('button', {
+                    name: locale === 'en' ? 'Polling' : '\u041f\u0443\u043b\u0456\u043d\u0433'
+                })
             ).toHaveCount(0);
         });
     }

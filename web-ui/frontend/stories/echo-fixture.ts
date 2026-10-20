@@ -68,9 +68,36 @@ export const echoDraft: MailDraft = {
 };
 
 export function echoClient(
-    options: { empty?: boolean; readOnly?: boolean; noAreas?: boolean } = {}
+    options: { empty?: boolean; readOnly?: boolean; noAreas?: boolean; dense?: boolean } = {}
 ): EchoClient {
     const messages = options.empty ? [] : echoMessages.map((item) => ({ ...item }));
+    if (options.dense) {
+        const subjects = [
+            'New file area available',
+            'Looking for old BBS software',
+            'FidoNet in 2026',
+            'Useful documentation links',
+            'Node hardware recommendations',
+            'Conference guidelines',
+            'Packet routing discussion',
+            'Offline mail readers',
+            'Directory updates',
+            'Weekend station maintenance'
+        ];
+        for (let i = 0; i < subjects.length; i++)
+            messages.push({
+                ...echoMessages[0]!,
+                id: String(9007199254741000n + BigInt(i)),
+                messageId: `1:500/${200 + i} demo`,
+                subject: subjects[i]!,
+                fromName: ['Alex Example', 'Tom Jennings', 'Lisa Example', 'Retro Station'][i % 4]!,
+                fromAddress: `1:500/${200 + i}`,
+                date: `${12 + (i % 7)} Oct 26  14:00:00`,
+                read: i % 3 === 0
+            });
+        messages[1]!.body =
+            'Hi Alex,\n\nGood to see you here!\n\nAE> Welcome to the conference!\nAE> I hope you will find it useful.\n\nBE>> Thanks for the introduction.\nBE>> It is great to see this conference active again.\n\nI have been running a small home node for a few years and it is still a fantastic community.\n\n--- JFtn\n * Origin: Example station (1:500/102)';
+    }
     const drafts: MailDraft[] = [{ ...echoDraft }];
     const area = (name: string): AreaInfo => ({
         name,

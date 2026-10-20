@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import type { UserProfile } from '@rpc/bindings.mjs';
 import MailQueueControl from './MailQueueControl.vue';
@@ -24,6 +25,8 @@ const emit = defineEmits<{
             | 'netmail'
             | 'echo'
             | 'drafts'
+            | 'links'
+            | 'logs'
             | 'routing'
             | 'templates'
     ];
@@ -35,16 +38,6 @@ const emit = defineEmits<{
         class="sidebar"
         :class="{ collapsed }"
     >
-        <button
-            class="sidebar-toggle secondary"
-            :aria-label="collapsed ? t('Expand menu') : t('Collapse menu')"
-            :aria-expanded="!collapsed"
-            :disabled="busy"
-            @click="emit('collapse')"
-        >
-            {{ collapsed ? '\u00bb' : '\u00ab'
-            }}<span class="nav-text">{{ t('Collapse menu') }}</span>
-        </button>
         <div class="station-label">
             <span class="status-dot"></span>{{ t('My account') }}
             <small>{{ profile.defaultAka || 'JFtn station' }}</small>
@@ -57,7 +50,7 @@ const emit = defineEmits<{
                 :title="collapsed ? t('Netmail') : undefined"
                 @click="emit('navigate', 'netmail')"
             >
-                <span aria-hidden="true">✉</span><span class="nav-text">{{ t('Netmail') }}</span>
+                <AppIcon name="mail" /><span class="nav-text">{{ t('Netmail') }}</span>
             </button>
             <button
                 :class="{ active: page === 'echo' }"
@@ -65,7 +58,7 @@ const emit = defineEmits<{
                 :title="collapsed ? t('Echomail') : undefined"
                 @click="emit('navigate', 'echo')"
             >
-                <span aria-hidden="true">◎</span><span class="nav-text">{{ t('Echomail') }}</span>
+                <AppIcon name="echo" /><span class="nav-text">{{ t('Echomail') }}</span>
             </button>
             <button
                 :class="{ active: page === 'drafts' }"
@@ -73,7 +66,7 @@ const emit = defineEmits<{
                 :title="collapsed ? t('Drafts') : undefined"
                 @click="emit('navigate', 'drafts')"
             >
-                <span aria-hidden="true">▤</span><span class="nav-text">{{ t('Drafts') }}</span>
+                <AppIcon name="file" /><span class="nav-text">{{ t('Drafts') }}</span>
             </button>
             <button
                 :class="{ active: page === 'templates' }"
@@ -81,8 +74,8 @@ const emit = defineEmits<{
                 :title="collapsed ? t('Mail templates') : undefined"
                 @click="emit('navigate', 'templates')"
             >
-                <span aria-hidden="true">&#9638;</span
-                ><span class="nav-text">{{ t('Mail templates') }}</span>
+                <AppIcon name="templates" />
+                <span class="nav-text">{{ t('Mail templates') }}</span>
             </button>
             <button
                 v-if="collapsed"
@@ -92,7 +85,7 @@ const emit = defineEmits<{
                 :title="t('Send queued mail')"
                 @click="emit('sendMail')"
             >
-                &#8679;<small>{{ pendingCount || 0 }}</small>
+                <AppIcon name="send" /><small>{{ pendingCount || 0 }}</small>
             </button>
             <MailQueueControl
                 v-else
@@ -100,36 +93,35 @@ const emit = defineEmits<{
                 :busy="busy || false"
                 @send="emit('sendMail')"
             />
-            <span class="nav-label">{{ t('DIRECTORY') }}</span>
+            <span class="nav-label">{{ t('Settings') }}</span>
             <button
                 :class="{ active: page === 'directory' }"
                 :aria-label="t('Node directory')"
                 :title="collapsed ? t('Node directory') : undefined"
                 @click="emit('navigate', 'directory')"
             >
-                <span aria-hidden="true">⌕</span
-                ><span class="nav-text">{{ t('Node directory') }}</span>
+                <AppIcon name="directory" />
+                <span class="nav-text">{{ t('Node directory') }}</span>
             </button>
-            <span class="nav-label">{{ t('ACCOUNT') }}</span>
+
             <button
                 :class="{ active: page === 'settings' }"
                 :aria-label="t('My settings')"
                 :title="collapsed ? t('My settings') : undefined"
                 @click="emit('navigate', 'settings')"
             >
-                <span aria-hidden="true">⚙</span
-                ><span class="nav-text">{{ t('My settings') }}</span>
+                <AppIcon name="settings" />
+                <span class="nav-text">{{ t('My settings') }}</span>
             </button>
             <template v-if="profile.role === 'ADMIN'">
-                <span class="nav-label">{{ t('NODE MANAGEMENT') }}</span>
                 <button
                     :class="{ active: page === 'routing' }"
                     :aria-label="t('Netmail routing')"
                     :title="collapsed ? t('Netmail routing') : undefined"
                     @click="emit('navigate', 'routing')"
                 >
-                    <span aria-hidden="true">⇢</span
-                    ><span class="nav-text">{{ t('Netmail routing') }}</span>
+                    <AppIcon name="routes" />
+                    <span class="nav-text">{{ t('Netmail routing') }}</span>
                 </button>
                 <button
                     :class="{ active: page === 'node' }"
@@ -137,17 +129,33 @@ const emit = defineEmits<{
                     :title="collapsed ? t('Station') : undefined"
                     @click="emit('navigate', 'node')"
                 >
-                    <span aria-hidden="true">⌘</span
-                    ><span class="nav-text">{{ t('Station') }}</span>
+                    <AppIcon name="settings" />
+                    <span class="nav-text">{{ t('Station') }}</span>
+                </button>
+                <button
+                    :class="{ active: page === 'links' }"
+                    :aria-label="t('Mail links')"
+                    :title="collapsed ? t('Mail links') : undefined"
+                    @click="emit('navigate', 'links')"
+                >
+                    <AppIcon name="link" /><span class="nav-text">{{ t('Links') }}</span>
                 </button>
                 <button
                     :class="{ active: page === 'connections' }"
-                    :aria-label="t('Connections')"
-                    :title="collapsed ? t('Connections') : undefined"
+                    :aria-label="t('Polling')"
+                    :title="collapsed ? t('Polling') : undefined"
                     @click="emit('navigate', 'connections')"
                 >
-                    <span aria-hidden="true">↔</span
-                    ><span class="nav-text">{{ t('Connections') }}</span>
+                    <AppIcon name="clock" />
+                    <span class="nav-text">{{ t('Polling') }}</span>
+                </button>
+                <button
+                    :class="{ active: page === 'logs' }"
+                    :aria-label="t('Logs')"
+                    :title="collapsed ? t('Logs') : undefined"
+                    @click="emit('navigate', 'logs')"
+                >
+                    <AppIcon name="logs" /><span class="nav-text">{{ t('Logs') }}</span>
                 </button>
                 <button
                     :class="{ active: page === 'robots' }"
@@ -155,8 +163,8 @@ const emit = defineEmits<{
                     :title="collapsed ? t('Mail robots') : undefined"
                     @click="emit('navigate', 'robots')"
                 >
-                    <span aria-hidden="true">⇄</span
-                    ><span class="nav-text">{{ t('Mail robots') }}</span>
+                    <AppIcon name="robot" />
+                    <span class="nav-text">{{ t('Mail robots') }}</span>
                 </button>
                 <button
                     :class="{ active: page === 'accounts' }"
@@ -164,13 +172,26 @@ const emit = defineEmits<{
                     :title="collapsed ? t('Accounts and requests') : undefined"
                     @click="emit('navigate', 'accounts')"
                 >
-                    <span aria-hidden="true">♙</span
-                    ><span class="nav-text">{{ t('Accounts and requests') }}</span>
+                    <AppIcon name="users" />
+                    <span class="nav-text">{{ t('Accounts and requests') }}</span>
                 </button>
             </template>
         </nav>
         <div class="sidebar-footer">
-            {{ t('FidoNet · Connected') }}<span>{{ t('Your address. Your voice.') }}</span>
+            <AppIcon name="user" /><span
+                >{{ profile.login }}<small>{{ profile.defaultAka }}</small></span
+            >
         </div>
+        <button
+            class="sidebar-toggle secondary"
+            :aria-label="collapsed ? t('Expand menu') : t('Collapse menu')"
+            :aria-expanded="!collapsed"
+            :disabled="busy"
+            @click="emit('collapse')"
+        >
+            <AppIcon :name="collapsed ? 'expand' : 'collapse'" /><span class="nav-text">{{
+                t('Collapse menu')
+            }}</span>
+        </button>
     </aside>
 </template>

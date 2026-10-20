@@ -12,7 +12,10 @@ import NotificationBanner from './NotificationBanner.vue';
 import PluginSettings from './PluginSettings.vue';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
-const props = defineProps<{ state: AppState }>();
+const props = defineProps<{ state: AppState; initialSection?: 'general' | 'links' }>();
+const section = ref<'general' | 'links' | 'tosser' | 'echoes' | 'quarantine' | 'plugins'>(
+    props.initialSection || 'general'
+);
 const model = reactive(new bindings.NodeConfiguration());
 const saved = ref(false);
 const mailVersion = ref(0);
@@ -61,6 +64,7 @@ async function reload() {
         "
     />
     <StationSettingsTabs
+        v-model="section"
         v-slot="{ group }"
         :busy="state.busy.value"
     >

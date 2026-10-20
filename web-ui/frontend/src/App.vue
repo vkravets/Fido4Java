@@ -218,10 +218,16 @@ function openForward(draft: MailDraft) {
                 v-if="page === 'settings'"
                 :state="state"
             /><NodeSettings
-                v-if="page === 'node' && state.profile.value.role === 'ADMIN'"
+                v-if="['node', 'links'].includes(page) && state.profile.value.role === 'ADMIN'"
+                :key="page"
+                :initial-section="page === 'links' ? 'links' : 'general'"
                 :state="state"
             /><Connections
-                v-if="page === 'connections' && state.profile.value.role === 'ADMIN'"
+                v-if="
+                    ['connections', 'logs'].includes(page) && state.profile.value.role === 'ADMIN'
+                "
+                :key="page"
+                :initial-tab="page === 'logs' ? 'log' : 'polls'"
                 :state="state"
             /><RobotAccess
                 v-if="page === 'robots' && state.profile.value.role === 'ADMIN'"

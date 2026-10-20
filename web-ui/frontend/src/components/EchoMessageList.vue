@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
+import { shortMailDate } from '../mail-date.ts';
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import NotificationBanner from './NotificationBanner.vue';
@@ -85,7 +87,7 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         :aria-label="t('Conference messages')"
     >
         <div class="actions echo-list-controls">
-            <label
+            <label class="list-mode-select"
                 >{{ t('Message list')
                 }}<select
                     v-model="mode"
@@ -95,6 +97,28 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                     <option value="tree">{{ t('Conversation tree') }}</option>
                 </select></label
             >
+            <div
+                class="list-mode-buttons"
+                role="group"
+                :aria-label="t('Message list')"
+            >
+                <button
+                    :aria-label="t('Flat list')"
+                    :aria-pressed="mode === 'flat'"
+                    :disabled="busy || savingMode"
+                    @click="mode = 'flat'"
+                >
+                    {{ t('Flat') }}
+                </button>
+                <button
+                    :aria-label="t('Conversation tree')"
+                    :aria-pressed="mode === 'tree'"
+                    :disabled="busy || savingMode"
+                    @click="mode = 'tree'"
+                >
+                    {{ t('Threads') }}
+                </button>
+            </div>
             <span class="muted">{{ t('Loaded messages: {count}', { count: items.length }) }}</span>
         </div>
         <p
@@ -109,6 +133,14 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         >
             {{ t('The tree includes loaded messages. Load more to see earlier or later replies.') }}
         </p>
+        <div
+            class="mail-table-head"
+            aria-hidden="true"
+        >
+            <span>{{ t('From') }}</span
+            ><span>{{ t('Subject') }}</span
+            ><span>{{ t('Date') }}</span>
+        </div>
         <ul
             class="echo-message-rows"
             :role="mode === 'tree' ? 'tree' : 'list'"
@@ -128,7 +160,7 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                 :data-mail-row="mailId(row.item.id)"
                 tabindex="0"
                 :class="{ selected: selected === mailId(row.item.id), unread: !row.item.read }"
-                :style="{ paddingInlineStart: `${Math.min(row.depth, 12) * 1.1 + 0.6}rem` }"
+                :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
                 @keydown="keyboard($event, row)"
             >
                 <button
@@ -142,21 +174,33 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                     :disabled="busy"
                     @click.stop="toggle(mailId(row.item.id))"
                 >
-                    {{ collapsed.has(mailId(row.item.id)) ? '▸' : '▾' }}
+                    <AppIcon :name="collapsed.has(mailId(row.item.id)) ? 'right' : 'down'" />
                 </button>
                 <button
                     class="echo-message-open"
                     :disabled="busy"
                     @click="emit('open', row.item)"
                 >
-                    <strong>{{ row.item.subject }}</strong>
-                    <span>{{ row.item.fromName }} → {{ row.item.toName }}</span>
+                    <strong class="mail-row-title">{{ row.item.subject }}</strong>
+                    <span class="mail-sender"
+                        ><i
+                            class="mail-unread-dot"
+                            aria-hidden="true"
+                        ></i
+                        >{{ row.item.fromName
+                        }}<span class="mail-recipient"> → {{ row.item.toName }}</span></span
+                    >
                     <span
                         class="mail-excerpt"
                         v-if="row.item.excerpt || row.item.body"
                         >{{ row.item.excerpt || row.item.body?.slice(0, 160) }}</span
                     >
-                    <small
+                    <time
+                        class="mail-date"
+                        :title="row.item.date"
+                        >{{ shortMailDate(row.item.date) }}</time
+                    >
+                    <small class="mobile-mail-date"
                         >{{ row.item.date }}
                         <span v-if="!row.item.read"> · {{ t('Unread') }}</span></small
                     >

@@ -55,6 +55,7 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await expect(page.getByRole('treeitem')).toHaveCount(2);
     await page.getByRole('button', { name: /^Welcome to general/ }).click();
     await expect(page.locator('.mail-body')).toContainText("<script>alert('mail')</script>");
+    await page.locator('.echo-conversation > summary').click();
     await page
         .getByRole('region', { name: 'Conversation' })
         .getByRole('button', { name: /Bob/ })
@@ -80,6 +81,7 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await expect(notification(page)).toContainText('Message posted to the conference.');
     await page.getByRole('button', { name: /^Browser echo reply/ }).click();
     await expect(page.locator('.mail-body')).toHaveText('A reply from the browser.');
+    await page.locator('.echo-conversation > summary').click();
     await expect(page.getByRole('button', { name: /^In reply to/ })).toContainText(
         'Welcome to general'
     );
@@ -131,7 +133,7 @@ test('administrator browses paged lists and searches addresses names and IPs thr
 test('administrator sees incoming and outgoing binkp logs through HTTP RPC', async ({ page }) => {
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
-    await page.getByRole('button', { name: /Connections/ }).click();
+    await page.getByRole('button', { name: /Polling/ }).click();
     await page.getByRole('tab', { name: 'Binkp log', exact: true }).click();
     const log = page.locator('pre[aria-label="Binkp log"]');
     await expect(log).toContainText('role=SERVER');
@@ -350,7 +352,13 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
         await point.getByRole('button', { name: 'Back to sign-in' }).click();
         await signIn(point, 'new-point', 'example-point-password');
         await expect(point.getByRole('button', { name: /Station/ })).toHaveCount(0);
-        await expect(point.getByRole('button', { name: /Connections/ })).toHaveCount(0);
+        await expect(point.getByRole('button', { name: /Polling/ })).toHaveCount(0);
+        await expect(
+            point.locator('.sidebar').getByRole('button', { name: 'Logs', exact: true })
+        ).toHaveCount(0);
+        await expect(
+            point.locator('.sidebar').getByRole('button', { name: 'Mail links', exact: true })
+        ).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Accounts and requests/ })).toHaveCount(0);
         await expect(point.getByRole('button', { name: /Netmail/ })).toBeEnabled();
         await point.getByRole('button', { name: /Node directory/ }).click();
@@ -363,4 +371,22 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     }
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Sign in to JFtn' })).toBeVisible();
+});
+
+test('administrator sidebar shortcuts open links and the connection log directly', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.locator('.sidebar').getByRole('button', { name: 'Mail links', exact: true }).click();
+    await expect(page.getByRole('tab', { name: 'Mail links', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
+    await page.locator('.sidebar').getByRole('button', { name: 'Logs', exact: true }).click();
+    await expect(page.getByRole('tab', { name: 'Binkp log', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
+    await expect(page.locator('pre[aria-label="Binkp log"]')).toBeVisible();
 });

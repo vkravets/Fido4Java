@@ -78,6 +78,12 @@ export const Inbox: Story = { args: { initialFolder: 'inbox' } };
 export const Drafts: Story = { args: { initialFolder: 'drafts' } };
 
 export const Reading: Story = { args: { initialMessage: String(netmailMessage.id) } };
+export const DisplayOptions: Story = {
+    ...Reading,
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLDetailsElement>('.mail-view-options')!.open = true;
+    }
+};
 export const Below: Story = {
     parameters: { workspace: { netmail: { preview: 'below' } } },
     args: { initialMessage: String(netmailMessage.id) }

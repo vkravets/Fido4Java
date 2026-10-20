@@ -18,3 +18,11 @@ export const LongText: Story = {
         }
     }
 };
+
+export const ReaderActions: Story = { args: { navigation: true, forwardable: true } };
+export const MoreActions: Story = {
+    ...ReaderActions,
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLDetailsElement>('.reader-more')!.open = true;
+    }
+};

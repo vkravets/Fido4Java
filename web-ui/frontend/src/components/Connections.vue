@@ -11,9 +11,9 @@ import ConnectionTabs from './ConnectionTabs.vue';
 import type { AppState } from '../state.ts';
 import type { PollInfo } from '@rpc/bindings.mjs';
 
-const props = defineProps<{ state: AppState }>();
-const tab = ref<'polls' | 'log'>('polls');
-const logOpened = ref(false);
+const props = defineProps<{ state: AppState; initialTab?: 'polls' | 'log' }>();
+const tab = ref<'polls' | 'log'>(props.initialTab || 'polls');
+const logOpened = ref(props.initialTab === 'log');
 watch(tab, (value) => {
     if (value === 'log') logOpened.value = true;
 });

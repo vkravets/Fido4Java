@@ -63,6 +63,7 @@ test('netmail preview switches between right, below and separate without losing 
     page
 }) => {
     await openStory(page, 'mail-netmailview--reading');
+    await page.getByRole('button', { name: 'Display options', exact: true }).click();
     const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
     await expect(page.locator('.split-pane')).toHaveClass(/right/);
     await position.selectOption('below');
@@ -116,6 +117,7 @@ test('forwarding copies original text into a new draft without reusing reply ide
     page
 }) => {
     await openStory(page, 'mail-netmailview--reading');
+    await page.locator('.reader-more > summary').click();
     await page.getByRole('button', { name: 'Forward', exact: true }).click();
     await expect(page.getByLabel('Subject', { exact: true })).toHaveValue(/^Fwd:/);
     await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(
@@ -174,3 +176,36 @@ for (const kind of ['netmail', 'echomail']) {
         );
     });
 }
+
+test('desktop workspace uses compact icon controls and aligned message columns', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1536, height: 900 });
+    await openStory(page, 'mail-echomailview--focused-desktop');
+    await expect(page.locator('.topbar')).toHaveCSS('height', '44px');
+    await expect(page.locator('.sidebar')).toHaveCSS('width', '216px');
+    const compose = page.getByRole('button', { name: 'New echomail', exact: true });
+    expect((await compose.boundingBox())!.height).toBeLessThanOrEqual(32);
+    await expect(compose.locator('svg')).toBeVisible();
+    await expect(page.locator('.mail-table-head')).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Conversation tree', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Flat list', exact: true }).click();
+    await expect(page.getByRole('treeitem')).toHaveCount(0);
+    await expect(page.locator('.mail-date').first()).toBeVisible();
+});
+
+test('desktop More menu supports short replies and dismisses with Escape', async ({ page }) => {
+    await openStory(page, 'mail-netmailview--reading');
+    const menu = page.locator('.reader-more');
+    await menu.locator('summary').click();
+    await menu.locator('summary').press('Escape');
+    await expect(menu).not.toHaveAttribute('open');
+    await menu.locator('summary').click();
+    await page.getByRole('button', { name: 'Short reply', exact: true }).click();
+    const text = page.getByRole('textbox', { name: 'Message text', exact: true });
+    await expect(text).toContainText('Hello Alice Example.');
+    await expect(text).not.toContainText('Your station is ready');
+    await expect(page.locator('.mail-composer')).toContainText('Reply to message');
+});

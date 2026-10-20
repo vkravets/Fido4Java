@@ -5,6 +5,8 @@ import { t } from '../i18n.ts';
 import { useWorkspace } from '../workspace.ts';
 import type { MailKind, MailLayout } from '../workspace.ts';
 import SplitPane from './SplitPane.vue';
+import MailListTools from './MailListTools.vue';
+import AppIcon from './AppIcon.vue';
 import NotificationBanner from './NotificationBanner.vue';
 const props = defineProps<{ kind: MailKind; opened: boolean; busy?: boolean }>();
 defineEmits<{ back: [] }>();
@@ -52,64 +54,12 @@ async function update(patch: Partial<MailLayout>) {
         saving.value = false;
     }
 }
-const positions = [
-    ['right', 'Preview on the right'],
-    ['below', 'Preview below'],
-    ['separate', 'No preview']
-] as const;
 </script>
 <template>
     <NotificationBanner
         kind="error"
         :message="error"
     />
-    <div
-        class="mail-display-controls actions"
-        :class="{ 'detail-open': opened }"
-    >
-        <label
-            >{{ t('Search loaded messages')
-            }}<input
-                v-model="query"
-                type="search"
-                maxlength="120"
-        /></label>
-        <label
-            >{{ t('Preview position')
-            }}<select
-                :value="preferences.preview"
-                :disabled="busy || saving"
-                @change="
-                    update({
-                        preview: ($event.target as HTMLSelectElement).value as MailLayout['preview']
-                    })
-                "
-            >
-                <option
-                    v-for="position in positions"
-                    :key="position[0]"
-                    :value="position[0]"
-                >
-                    {{ t(position[1]) }}
-                </option>
-            </select></label
-        >
-        <label
-            >{{ t('List density')
-            }}<select
-                :value="preferences.density"
-                :disabled="busy || saving"
-                @change="
-                    update({
-                        density: ($event.target as HTMLSelectElement).value as MailLayout['density']
-                    })
-                "
-            >
-                <option value="compact">{{ t('Compact') }}</option>
-                <option value="comfortable">{{ t('Comfortable') }}</option>
-            </select></label
-        >
-    </div>
     <div
         ref="layoutRoot"
         class="mail-layout"
@@ -124,14 +74,25 @@ const positions = [
             :ratio="preferences.ratio"
             @resize="(ratio) => update({ ratio })"
         >
-            <template #list><slot name="list" /></template>
+            <template #list
+                ><MailListTools
+                    v-model="query"
+                    :preferences="preferences"
+                    :busy="busy || saving"
+                    @update="update"
+                >
+                    <template #toolbar><slot name="toolbar" /></template>
+                    <template #filters><slot name="filters" /></template>
+                    <template #options><slot name="options" /></template> </MailListTools
+                ><slot name="list"
+            /></template>
             <button
                 v-if="opened"
                 class="secondary mail-back"
                 :disabled="busy"
                 @click="$emit('back')"
             >
-                ← {{ t('Back to messages') }}
+                <AppIcon name="left" />{{ t('Back to messages') }}
             </button>
             <slot />
         </SplitPane>
@@ -140,6 +101,16 @@ const positions = [
                 v-show="!opened"
                 class="separate-list"
             >
+                <MailListTools
+                    v-model="query"
+                    :preferences="preferences"
+                    :busy="busy || saving"
+                    @update="update"
+                >
+                    <template #toolbar><slot name="toolbar" /></template>
+                    <template #filters><slot name="filters" /></template>
+                    <template #options><slot name="options" /></template>
+                </MailListTools>
                 <slot name="list" />
             </section>
             <section
@@ -147,65 +118,52 @@ const positions = [
                 class="separate-detail"
             >
                 <button
-                    class="secondary"
+                    class="secondary mail-back"
                     :disabled="busy"
                     @click="$emit('back')"
                 >
-                    ← {{ t('Back to messages') }}</button
+                    <AppIcon name="left" />{{ t('Back to messages') }}</button
                 ><slot />
             </section>
         </template>
     </div>
 </template>
 <style scoped>
-.mail-display-controls {
-    margin: 12px 0;
-    flex-wrap: wrap;
-    align-items: end;
-}
-.mail-display-controls label {
-    max-width: 240px;
-}
 .mail-back {
     margin-bottom: 10px;
 }
 .mail-layout {
     min-width: 0;
 }
-.mail-layout :deep(.card) {
-    box-shadow: none;
-    border-radius: 6px;
-    padding: 16px;
-}
-.mail-layout.compact :deep(.mail-row) {
-    margin-bottom: 0;
-    padding: 8px;
-    gap: 2px;
-    border-width: 0 0 1px;
-    border-radius: 0;
-}
-.mail-layout.compact :deep(.echo-message-rows > li) {
-    padding-top: 3px;
-    padding-bottom: 3px;
-}
-.mail-layout.compact :deep(.mail-row small),
-.mail-layout.compact :deep(.echo-message-open small) {
-    display: none;
-}
 .separate-detail {
     max-width: 1100px;
     margin: auto;
 }
 @media (max-width: 700px) {
+    .mail-layout :deep(.card) {
+        box-shadow: none;
+        border-radius: 6px;
+        padding: 16px;
+    }
+    .mail-layout.compact :deep(.mail-row) {
+        margin-bottom: 0;
+        padding: 8px;
+        gap: 2px;
+        border-width: 0 0 1px;
+        border-radius: 0;
+    }
+    .mail-layout.compact :deep(.echo-message-rows > li) {
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+    .mail-layout.compact :deep(.mail-row small),
+    .mail-layout.compact :deep(.echo-message-open small) {
+        display: none;
+    }
+
     .mail-layout.detail-open :deep(.split-list),
     .mail-layout:not(.detail-open) :deep(.split-detail) {
         display: none;
-    }
-    .mail-display-controls.detail-open {
-        display: none;
-    }
-    .mail-display-controls label {
-        flex: 1 1 140px;
     }
 }
 </style>

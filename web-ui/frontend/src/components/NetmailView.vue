@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { inject, onMounted, onBeforeUnmount } from 'vue';
+import { computed, inject, onMounted, onBeforeUnmount } from 'vue';
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
 import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
@@ -56,61 +57,80 @@ function editDraft(value: MailDraft) {
     if (value.mailbox === 1) emit('openEchoDraft', value);
     else reader.edit(value);
 }
+function reply(kind: 'quoted' | 'reply' = 'quoted') {
+    reader.edit(undefined, reader.selected.value!);
+    if (reader.draft.value) reader.draft.value.composeKind = kind;
+}
+const nextUnread = computed(() =>
+    reader.items.value.find(
+        (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
+    )
+);
+const index = computed(() =>
+    reader.items.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
+);
 </script>
 <template>
-    <header class="page-heading">
-        <div>
-            <p class="eyebrow">{{ t('MAIL') }}</p>
-            <h1>{{ reader.folder.value === 'drafts' ? t('Drafts') : t('Netmail') }}</h1>
-        </div>
-        <div class="actions">
-            <button
-                class="primary"
-                :disabled="state.busy.value || !state.profile.value?.allowedAkas.length"
-                @click="reader.edit()"
-            >
-                {{ t('New netmail') }}
-            </button>
-            <button
-                class="secondary"
-                :disabled="state.busy.value"
-                @click="state.run(() => reader.load())"
-            >
-                {{ t('Refresh') }}
-            </button>
-        </div>
-    </header>
-    <nav
-        class="tabs"
-        :aria-label="t('Mail folders')"
-    >
-        <button
-            v-for="folder in folders"
-            :key="folder"
-            :class="{ selected: reader.folder.value === folder }"
-            :aria-current="reader.folder.value === folder ? 'page' : undefined"
-            :disabled="state.busy.value"
-            @click="state.run(() => reader.navigate(folder))"
-        >
-            {{ t(labels[folder]) }}
-        </button>
-    </nav>
-    <NetmailDrafts
-        v-if="reader.folder.value === 'drafts' && !reader.draft.value"
-        :drafts="reader.drafts.value"
-        :busy="state.busy.value"
-        @edit="editDraft"
-        @remove="(draft) => state.run(() => reader.remove(draft))"
-    />
     <MailWorkspace
-        v-else
         kind="netmail"
         :opened="!!reader.selected.value || !!reader.draft.value"
         :busy="state.busy.value"
         @back="back"
     >
+        <template #toolbar>
+            <header class="page-heading">
+                <div>
+                    <p class="eyebrow">{{ t('MAIL') }}</p>
+                    <h1>{{ reader.folder.value === 'drafts' ? t('Drafts') : t('Netmail') }}</h1>
+                </div>
+                <div class="actions">
+                    <button
+                        class="primary"
+                        :disabled="state.busy.value || !state.profile.value?.allowedAkas.length"
+                        @click="reader.edit()"
+                    >
+                        <AppIcon name="edit" />{{ t('New netmail') }}
+                    </button>
+                    <button
+                        class="secondary"
+                        :aria-label="t('Refresh')"
+                        :title="t('Refresh')"
+                        :disabled="state.busy.value"
+                        @click="state.run(() => reader.load())"
+                    >
+                        <AppIcon name="refresh" /><span class="desktop-hidden">{{
+                            t('Refresh')
+                        }}</span>
+                    </button>
+                </div>
+            </header>
+            <nav
+                class="tabs"
+                :aria-label="t('Mail folders')"
+            >
+                <button
+                    v-for="folder in folders"
+                    :key="folder"
+                    :class="{ selected: reader.folder.value === folder }"
+                    :aria-current="reader.folder.value === folder ? 'page' : undefined"
+                    :disabled="state.busy.value"
+                    @click="state.run(() => reader.navigate(folder))"
+                >
+                    {{ t(labels[folder]) }}
+                </button>
+            </nav>
+        </template>
         <template #list>
+            <NetmailDrafts
+                v-if="reader.folder.value === 'drafts'"
+                :drafts="reader.drafts.value"
+                :busy="state.busy.value"
+                @edit="editDraft"
+                @remove="(draft) => state.run(() => reader.remove(draft))"
+            />
+
             <NetmailList
+                v-else
                 :items="reader.items.value"
                 :selected="reader.selected.value ? mailId(reader.selected.value.id) : ''"
                 :busy="state.busy.value"
@@ -138,7 +158,15 @@ function editDraft(value: MailDraft) {
             :reply="reader.folder.value === 'inbox'"
             :forwardable="!!state.profile.value?.allowedAkas.length"
             @forward="reader.edit(forwardDraft(reader.selected.value!, state.profile.value!))"
-            @reply="reader.edit(undefined, reader.selected.value!)"
+            @reply="reply"
+            @compose="reader.edit()"
+            :navigation="true"
+            :previous-disabled="index <= 0"
+            :next-disabled="index < 0 || index >= reader.items.value.length - 1"
+            :unread-disabled="!nextUnread"
+            @previous="state.run(() => reader.open(reader.items.value[index - 1]!))"
+            @next="state.run(() => reader.open(reader.items.value[index + 1]!))"
+            @unread="nextUnread && state.run(() => reader.open(nextUnread!))"
             @remove="state.run(reader.removeMessage)"
         />
         <section
