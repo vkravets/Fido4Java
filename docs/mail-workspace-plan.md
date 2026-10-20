@@ -35,7 +35,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 6. [x] Shared echomail layout with conference selection in the list pane.
 7. [x] Independent list density and flat/threaded presentation.
 8. [x] Mobile screens, Back and retained list position.
-9. [ ] Adapt administration/settings to the shell.
+9. [x] Adapt administration/settings to the shell.
 10. [ ] Shared FIDO text parser with behavior tests.
 11. [ ] Highlighted message reader.
 12. [ ] Built-in and operator-file mail themes.
@@ -45,7 +45,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 16. [x] Netmail editor integration.
 17. [x] Echomail editor integration.
 18. [x] Persistent template model and safe expansion.
-19. [ ] Built-in new/reply/quoted/forward templates.
+19. [x] Built-in new/reply/quoted/forward templates.
 20. [ ] Template management UI and preview.
 21. [ ] Composer selection and template defaults by kind/AKA/area.
 22. [ ] End-to-end checks, affected Linux VRT, documentation and removal of replaced code.

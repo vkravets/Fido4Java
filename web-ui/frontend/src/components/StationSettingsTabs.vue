@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
+import { useMedia } from '../media.ts';
+const narrow = useMedia('(max-width: 700px)');
 
 type Group = 'general' | 'links' | 'tosser' | 'echoes' | 'quarantine' | 'plugins';
 const active = defineModel<Group>({ default: 'general' });
@@ -16,7 +18,9 @@ function navigate(event: KeyboardEvent) {
     const index = groups.findIndex((group) => group.id === active.value);
     const targets: Record<string, number> = {
         ArrowRight: (index + 1) % groups.length,
+        ArrowDown: (index + 1) % groups.length,
         ArrowLeft: (index + groups.length - 1) % groups.length,
+        ArrowUp: (index + groups.length - 1) % groups.length,
         Home: 0,
         End: groups.length - 1
     };
@@ -31,39 +35,77 @@ function navigate(event: KeyboardEvent) {
 }
 </script>
 <template>
-    <nav
-        class="tabs station-tabs"
-        role="tablist"
-        :aria-label="t('Station settings')"
-        @keydown="navigate"
-    >
-        <button
-            v-for="group in groups"
-            :id="`station-tab-${group.id}`"
-            :key="group.id"
-            type="button"
-            role="tab"
-            :class="{ selected: active === group.id }"
-            :aria-selected="active === group.id"
-            aria-controls="station-settings-panel"
-            :tabindex="active === group.id ? 0 : -1"
-            :disabled="busy"
-            @click="active = group.id"
+    <div class="settings-workspace">
+        <nav
+            class="tabs station-tabs"
+            role="tablist"
+            :aria-orientation="narrow ? 'horizontal' : 'vertical'"
+            :aria-label="t('Station settings')"
+            @keydown="navigate"
         >
-            {{ t(group.label) }}
-        </button>
-    </nav>
-    <div
-        id="station-settings-panel"
-        role="tabpanel"
-        :aria-labelledby="`station-tab-${active}`"
-        tabindex="0"
-    >
-        <slot :group="active" />
+            <button
+                v-for="group in groups"
+                :id="`station-tab-${group.id}`"
+                :key="group.id"
+                type="button"
+                role="tab"
+                :class="{ selected: active === group.id }"
+                :aria-selected="active === group.id"
+                aria-controls="station-settings-panel"
+                :tabindex="active === group.id ? 0 : -1"
+                :disabled="busy"
+                @click="active = group.id"
+            >
+                {{ t(group.label) }}
+            </button>
+        </nav>
+        <div
+            id="station-settings-panel"
+            role="tabpanel"
+            :aria-labelledby="`station-tab-${active}`"
+            tabindex="0"
+        >
+            <slot :group="active" />
+        </div>
     </div>
 </template>
 <style scoped>
+.settings-workspace {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
 .station-tabs {
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
+    border: 0;
+    position: sticky;
+    top: 12px;
+}
+.station-tabs button {
+    width: 100%;
+    text-align: left;
+    white-space: normal;
+    border: 0;
+    padding: 12px;
+    border-radius: 5px;
+}
+.station-tabs button.selected {
+    background: var(--accent-soft);
+    box-shadow: inset 3px 0 var(--accent);
+}
+@media (max-width: 700px) {
+    .settings-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .station-tabs {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .station-tabs button {
+        width: auto;
+    }
 }
 </style>
