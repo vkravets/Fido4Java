@@ -1,0 +1,10 @@
+apply plugin: 'java-library'
+
+description = 'H2 adapter for typed FileEcho storage'
+
+dependencies {
+    implementation project(':fileecho')
+    implementation project(':storage-jdbc')
+    testImplementation project(':storage-h2')
+    testImplementation 'com.h2database:h2:2.5.252'
+}
