@@ -17,6 +17,7 @@ import { formatFidoLines } from '../editor-format.ts';
 import { themeStyle, useMailAppearance } from '../mail-themes.ts';
 import { t, locale } from '../i18n.ts';
 import FidoText from './FidoText.vue';
+import AppIcon from './AppIcon.vue';
 const model = defineModel<string>({ required: true });
 const props = defineProps<{
     disabled?: boolean;
@@ -227,75 +228,95 @@ defineExpose({
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Bold')"
+                :title="`${t('Bold')} (Ctrl/⌘+B)`"
                 @click="wrap('*')"
             >
-                <b>B</b>
+                <AppIcon name="bold" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Italic')"
+                :title="`${t('Italic')} (Ctrl/⌘+I)`"
                 @click="wrap('/')"
             >
-                <i>I</i>
+                <AppIcon name="italic" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Underline')"
+                :title="`${t('Underline')} (Ctrl/⌘+U)`"
                 @click="wrap('_')"
             >
-                <u>U</u>
+                <AppIcon name="underline" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Reverse')"
+                :title="t('Reverse')"
                 @click="wrap('#')"
             >
-                #
+                <AppIcon name="reverse" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
+                class="icon-action"
+                :aria-label="t('Quote')"
+                :title="t('Quote')"
                 @click="quote"
             >
-                {{ t('Quote') }}
+                <AppIcon name="quote" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
+                class="icon-action"
+                :aria-label="t('Undo')"
+                :title="`${t('Undo')} (Ctrl/⌘+Z)`"
                 @click="historyAction(undo)"
             >
-                {{ t('Undo') }}
+                <AppIcon name="undo" />
             </button>
             <button
                 type="button"
                 :disabled="disabled || preview"
+                class="icon-action"
+                :aria-label="t('Redo')"
+                :title="`${t('Redo')} (Ctrl/⌘+Shift+Z)`"
                 @click="historyAction(redo)"
             >
-                {{ t('Redo') }}
+                <AppIcon name="redo" />
             </button>
             <button
                 type="button"
                 :aria-pressed="!source && !preview"
+                :aria-label="t('Visual')"
+                :title="t('Visual')"
                 @click="setSource(false)"
             >
-                {{ t('Visual') }}
+                <AppIcon name="edit" />
             </button>
             <button
                 type="button"
                 :aria-pressed="source && !preview"
+                :aria-label="t('Source text')"
+                :title="t('Source text')"
                 @click="setSource(true)"
             >
-                {{ t('Source text') }}
+                <AppIcon name="source" />
             </button>
             <button
                 type="button"
                 :aria-pressed="preview"
+                class="icon-action"
+                :aria-label="t('Preview')"
+                :title="t('Preview')"
                 @click="preview = !preview"
             >
-                {{ t('Preview') }}
+                <AppIcon name="eye" />
             </button>
         </div>
         <div
@@ -330,7 +351,10 @@ defineExpose({
     border-radius: 6px 6px 0 0;
 }
 .editor-toolbar button {
-    padding: 6px 9px;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 6px;
     background: var(--surface);
     color: var(--text);
 }
@@ -347,5 +371,19 @@ defineExpose({
 }
 .fido-editor {
     min-width: 0;
+}
+@media (min-width: 701px) {
+    .editor-toolbar {
+        gap: 3px;
+        padding: 4px;
+    }
+    .editor-toolbar button {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        padding: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
 }
 </style>

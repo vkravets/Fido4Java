@@ -82,6 +82,8 @@ const screens = [
     { name: 'mail-delete-busy', story: 'mail-netmailmessage--deleting' },
     { name: 'mail-long-text', story: 'mail-netmailmessage--long-text' },
     { name: 'mail-reply', story: 'mail-mailcomposer--reply' },
+    { name: 'mail-compact-reply', story: 'mail-mailcomposer--compact-reply' },
+    { name: 'mail-workspace-reply', story: 'mail-mailcomposer--workspace-reply' },
     { name: 'mail-compose', story: 'mail-mailcomposer--new-message' },
     { name: 'mail-sending', story: 'mail-mailcomposer--sending' },
     { name: 'plugin-areas', story: 'plugins-pluginsettingspanel--areas' },

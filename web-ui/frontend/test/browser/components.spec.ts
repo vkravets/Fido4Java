@@ -2,6 +2,67 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('editor toolbar uses labelled icons and tooltips without visible button text', async ({
+    page
+}) => {
+    for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        await story(page, 'mail-fidoeditor--writing');
+        const controls = page.getByRole('toolbar').getByRole('button');
+        await expect(controls).toHaveCount(10);
+        for (const control of await controls.all()) {
+            await expect(control).toHaveAttribute('aria-label', /.+/);
+            await expect(control).toHaveAttribute('title', /.+/);
+            await expect(control.locator('svg')).toBeVisible();
+            await expect(control).toHaveText('');
+        }
+    }
+});
+
+test('composer actions retain bottom spacing after scrolling the mail pane', async ({ page }) => {
+    for (const theme of ['light', 'dark'] as const) {
+        for (const language of ['en', 'uk'] as const) {
+            await page.setViewportSize({ width: 1280, height: 720 });
+            await story(page, 'mail-mailcomposer--workspace-reply', theme, language);
+            await page.locator('.composer-actions button').last().scrollIntoViewIfNeeded();
+            const gap = await page.locator('.mail-composer').evaluate((form) => {
+                const buttons = [...form.querySelectorAll('.composer-actions button')];
+                const lastBottom = Math.max(
+                    ...buttons.map((button) => button.getBoundingClientRect().bottom)
+                );
+                return form.getBoundingClientRect().bottom - lastBottom;
+            });
+            expect(gap).toBeGreaterThanOrEqual(16);
+        }
+    }
+});
+
+test('compact desktop composer aligns template controls and keeps the editor toolbar on one row', async ({
+    page
+}) => {
+    for (const width of [1280, 820]) {
+        await page.setViewportSize({ width, height: 900 });
+        await story(page, 'mail-mailcomposer--compact-reply', 'dark', 'uk');
+        const select = await page
+            .getByRole('combobox', { name: 'Шаблон', exact: true })
+            .boundingBox();
+        const apply = await page
+            .getByRole('button', { name: 'Застосувати шаблон', exact: true })
+            .boundingBox();
+        expect(Math.abs(select!.y + select!.height - apply!.y - apply!.height)).toBeLessThan(1);
+        const controls = await page
+            .locator('.editor-toolbar button')
+            .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().y));
+        expect(Math.max(...controls) - Math.min(...controls)).toBeLessThan(1);
+        const form = await page.locator('.mail-composer').boundingBox();
+        const editor = await page.locator('.editor-toolbar').boundingBox();
+        expect(editor!.y - form!.y).toBeLessThan(300);
+        await expect(
+            page.getByRole('button', { name: 'Скасувати зміну', exact: true })
+        ).toHaveAttribute('title', /Z/);
+    }
+});
+
 test('personal template settings are editable by points and administrators and protect unsaved edits', async ({
     page
 }) => {

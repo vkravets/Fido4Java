@@ -8,10 +8,10 @@ import NotificationBanner from './NotificationBanner.vue';
 import { expandTemplate, useMailTemplates } from '../mail-templates.ts';
 import type { ComposeKind, MailTemplate } from '../mail-templates.ts';
 import AddressInput from './AddressInput.vue';
-import { useMailAppearance } from '../mail-themes.ts';
 import type { MailDraft } from '@rpc/bindings.mjs';
+import { useMailAppearance } from '../mail-themes.ts';
 const draft = defineModel<MailDraft>({ required: true });
-const props = defineProps<{ addresses: string[]; busy: boolean }>();
+const props = defineProps<{ addresses: string[]; busy: boolean; previewOnly?: boolean }>();
 const emit = defineEmits<{ save: []; send: []; cancel: []; initialized: [] }>();
 const editor = ref<InstanceType<typeof FidoEditor>>();
 const templates = useMailTemplates();
@@ -94,7 +94,7 @@ function chooseTemplate() {
 <template>
     <form
         class="card mail-composer"
-        @submit.prevent="canSubmit && $emit('send')"
+        @submit.prevent="!previewOnly && canSubmit && $emit('send')"
     >
         <h2>
             {{
@@ -196,11 +196,11 @@ function chooseTemplate() {
                 :disabled="busy"
                 :encoding="draft.encoding"
             />
-            <div class="actions">
+            <div class="actions composer-actions">
                 <button
                     class="primary"
                     type="submit"
-                    :disabled="!canSubmit"
+                    :disabled="!canSubmit || previewOnly"
                 >
                     <AppIcon name="send" />{{
                         draft.mailbox === 1 ? t('Post message') : t('Add to send queue')
@@ -210,6 +210,7 @@ function chooseTemplate() {
                     class="secondary"
                     type="button"
                     @click="$emit('save')"
+                    :disabled="previewOnly"
                 >
                     <AppIcon name="save" />{{ t('Save draft') }}
                 </button>
@@ -217,6 +218,7 @@ function chooseTemplate() {
                     class="text-button"
                     type="button"
                     @click="$emit('cancel')"
+                    :disabled="previewOnly"
                 >
                     <AppIcon name="close" />{{ t('Cancel') }}
                 </button>
@@ -224,3 +226,37 @@ function chooseTemplate() {
         </fieldset>
     </form>
 </template>
+<style scoped>
+.composer-actions {
+    padding-block: 8px 16px;
+}
+.composer-template {
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.composer-template label {
+    flex: 0 1 240px;
+    min-width: 0;
+    margin: 0;
+}
+.composer-template button {
+    flex-shrink: 0;
+}
+@media (min-width: 701px) {
+    .composer-template label {
+        flex-direction: row;
+        align-items: center;
+        flex-basis: 280px;
+        gap: 8px;
+        white-space: nowrap;
+    }
+    .composer-template button {
+        height: 28px;
+        min-height: 28px;
+        padding: 4px 7px;
+        font-size: 12px;
+    }
+}
+</style>

@@ -676,22 +676,40 @@ summary:has(> .app-icon) {
     :root .mail-layout .echo-conversation[open] {
         padding: 12px;
     }
+    .mail-composer.card {
+        padding: 0;
+    }
     .mail-composer h2 {
-        font-size: 18px;
-        padding: 12px 14px 0;
+        font-size: 16px;
+        padding: 8px 12px 0;
+        margin-bottom: 4px;
     }
     .mail-composer > p,
     .mail-composer fieldset {
-        padding-inline: 14px;
+        padding-inline: 12px;
+    }
+    .mail-composer > p {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+    :root .mail-composer > h2 + p {
+        margin-bottom: 8px;
+    }
+    .mail-composer fieldset {
+        padding-bottom: 0;
+    }
+    .mail-composer .form-grid {
+        column-gap: 12px;
     }
     .mail-composer label {
         font-size: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
+        gap: 4px;
     }
     .mail-composer input,
     .mail-composer select {
-        height: 32px;
-        padding: 5px 8px;
+        height: 28px;
+        padding: 4px 7px;
         font-size: 12px;
     }
     .mail-composer .editor-toolbar {
