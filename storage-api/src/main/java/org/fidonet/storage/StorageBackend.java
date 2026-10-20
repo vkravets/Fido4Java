@@ -6,6 +6,10 @@ import java.io.IOException;
 public interface StorageBackend extends AutoCloseable {
     String dialect();
 
+    int schemaVersion(String module) throws IOException;
+
+    void recordSchemaVersion(String module, int version) throws IOException;
+
     @Override
     void close() throws IOException;
 }

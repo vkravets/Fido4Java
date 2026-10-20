@@ -17,8 +17,19 @@ class StorageServicesTest {
         void close();
     }
 
-    static final class Backend implements StorageBackend {
+    static class Backend implements StorageBackend {
         int closes;
+        int schema;
+
+        @Override
+        public int schemaVersion(String module) {
+            return schema;
+        }
+
+        @Override
+        public void recordSchemaVersion(String module, int version) {
+            schema = version;
+        }
 
         @Override
         public String dialect() {
@@ -129,6 +140,81 @@ class StorageServicesTest {
         }
     }
 
+    @Test
+    void incompatibleSchemaIsRejectedBeforeOpeningARepository() throws Exception {
+        Provider provider = new Provider();
+        provider.backend.schema = 2;
+        Adapter adapter = new Adapter();
+        try (StorageSession session = new StorageServices(List.of(provider),
+                                                          List.of(adapter)).open("test", "file")) {
+            assertThrows(IOException.class, () -> session.require(Names.class));
+            assertEquals(0, adapter.opens);
+            assertEquals(2, provider.backend.schema);
+        }
+    }
+
+    @Test
+    void closingAnExtensionRegistryDoesNotCloseItsParentBackend() throws Exception {
+        Backend backend = new Backend();
+        Adapter adapter = new Adapter();
+        StorageServices services = new StorageServices(List.of(), List.of(adapter));
+        try (StorageSession session = services.borrow(backend)) {
+            assertEquals("available", session.require(Names.class).read());
+        }
+        assertEquals(1, adapter.closes);
+        assertEquals(0, backend.closes);
+    }
+
+    @Test
+    void anAbsentOptionalPluginContractDoesNotBreakUnrelatedRepositories() throws Exception {
+        RepositoryAdapter<Names> absent = new RepositoryAdapter<Names>() {
+            @Override
+            public Class<Names> contract() {
+                throw new NoClassDefFoundError("RemovedOptionalPluginContract");
+            }
+
+            @Override
+            public boolean supports(String dialect) {
+                return true;
+            }
+
+            @Override
+            public Names open(StorageBackend backend) {
+                throw new AssertionError("An absent plugin must not be opened");
+            }
+        };
+        StorageServices services = new StorageServices(List.of(new Provider()),
+                                                       List.of(absent, new Adapter()));
+        try (StorageSession session = services.open("test", "file")) {
+            assertEquals("available", session.require(Names.class).read());
+        }
+    }
+
+    @Test
+    void unchangedClientCodeUsesAnAdapterForAnotherBackend() throws Exception {
+        StorageProvider provider = new StorageProvider() {
+            @Override
+            public String id() {
+                return "other";
+            }
+
+            @Override
+            public StorageBackend open(String location) {
+                return new Backend() {
+                    @Override
+                    public String dialect() {
+                        return "other";
+                    }
+                };
+            }
+        };
+        StorageServices services = new StorageServices(List.of(provider),
+                                                       List.of(new AdapterForOtherDialect()));
+        try (StorageSession session = services.open("other", "opaque-location")) {
+            assertEquals("other-provider", session.require(Names.class).read());
+        }
+    }
+
     static final class AdapterForOtherDialect implements RepositoryAdapter<Names> {
         @Override
         public Class<Names> contract() {
@@ -142,7 +228,16 @@ class StorageServicesTest {
 
         @Override
         public Names open(StorageBackend backend) {
-            throw new AssertionError("An unsupported adapter must never be opened");
+            return new Names() {
+                @Override
+                public String read() {
+                    return "other-provider";
+                }
+
+                @Override
+                public void close() {
+                }
+            };
         }
     }
 }

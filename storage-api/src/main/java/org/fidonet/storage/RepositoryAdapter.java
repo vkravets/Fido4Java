@@ -8,5 +8,10 @@ public interface RepositoryAdapter<T extends AutoCloseable> {
 
     boolean supports(String dialect);
 
+    /** Persistent module schema version, independent of the application/plugin version. */
+    default int schemaVersion() {
+        return 1;
+    }
+
     T open(StorageBackend backend) throws IOException;
 }
