@@ -48,3 +48,4 @@ include ':storage-jdbc'
 include ':storage-h2'
 
 include ':directory-storage-h2'
+include ':account-storage-h2'

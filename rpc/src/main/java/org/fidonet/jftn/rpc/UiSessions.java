@@ -5,7 +5,6 @@ import org.fidonet.jftn.rpc.auth.RpcAccounts;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.sql.SQLException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -98,7 +97,7 @@ public final class UiSessions implements LoginService.Iface {
                 throw new UiError("FORBIDDEN",
                                   "Node administration requires an administrator account");
             }
-        } catch (SQLException failure) {
+        } catch (IOException failure) {
             throw new UiError("FORBIDDEN", "Cannot verify administrator permissions");
         }
     }
@@ -107,12 +106,12 @@ public final class UiSessions implements LoginService.Iface {
     public List<String> mailAddresses(String owner, List<String> station) throws UiError {
         try {
             return new AccountDirectory(accounts).allowed(owner, station);
-        } catch (SQLException failure) {
+        } catch (IOException failure) {
             throw new UiError("FORBIDDEN", "Cannot verify mailbox permissions");
         }
     }
 
-    public List<String> hostedMailAddresses() throws SQLException {
+    public List<String> hostedMailAddresses() throws IOException {
         return new AccountDirectory(accounts).hostedAddresses();
     }
 

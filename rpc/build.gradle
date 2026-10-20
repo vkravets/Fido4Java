@@ -10,7 +10,9 @@ dependencies {
     implementation enforcedPlatform('com.fasterxml.jackson:jackson-bom:2.22.3')
     implementation 'com.fasterxml.jackson.core:jackson-core'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
-    runtimeOnly 'com.h2database:h2:2.5.252'
+    api project(':storage-api')
+    runtimeOnly project(':storage-h2')
+    runtimeOnly project(':account-storage-h2')
 
     // Yubico publishes broad dependency ranges; keep runtime resolution on tested GA releases.
     constraints {

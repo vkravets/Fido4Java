@@ -10,7 +10,6 @@ import org.fidonet.jftn.ui.transport.RpcTransports;
 import org.fidonet.types.FTNAddr;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -76,15 +75,11 @@ public final class NodeRpc implements AutoCloseable {
     }
 
     private static Set<FTNAddr> hostedAddresses(RpcIdentity identity) throws IOException {
-        try {
-            Set<FTNAddr> addresses = new LinkedHashSet<>();
-            for (String address : identity.sessions().hostedMailAddresses()) {
-                addresses.add(new FTNAddr(address));
-            }
-            return addresses;
-        } catch (SQLException failure) {
-            throw new IOException("Cannot resolve hosted mailboxes", failure);
+        Set<FTNAddr> addresses = new LinkedHashSet<>();
+        for (String address : identity.sessions().hostedMailAddresses()) {
+            addresses.add(new FTNAddr(address));
         }
+        return addresses;
     }
 
     public int getPort(String transport) {
