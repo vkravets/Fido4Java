@@ -14,11 +14,11 @@ test('templates expand GoldED-style data, conditions and quotes once with a prec
         originalBody: '@cname\nOriginal',
         originalName: 'Bob'
     };
-    const result = expandTemplate({ id: 'quoted', name: 'Quoted', kind: 'quoted', body: 'Hello @oname.\n\n@quote\n\n@position\n\n@cname' }, context);
+    const result = expandTemplate(builtInTemplates[2]!, context);
     assert.ok(result.body.includes('> @cname\n> Original'));
     assert.equal(result.body.slice(result.cursor), '\n\nAlex Example');
     const template = {
-        ...{ id: 'new', name: 'New', kind: 'new' },
+        ...builtInTemplates[0]!,
         body: '@newNew\n@echoEcho\n@netNet\n@@cname\n@caddr @position!'
     };
     const value = expandTemplate(template, context);
@@ -28,4 +28,16 @@ test('templates expand GoldED-style data, conditions and quotes once with a prec
         () => expandTemplate({ ...template, body: '@include /private' }, context),
         /Unsupported/
     );
+});
+test('specific defaults override generic rules without changing stored identities', async () => {
+    const store = createMailTemplates();
+    await store.save(
+        [],
+        [
+            { kind: 'quoted', aka: '', area: '', template: 'quoted' },
+            { kind: 'quoted', aka: '1:500/100.1', area: 'TEST.ECHO', template: 'reply' }
+        ]
+    );
+    assert.equal(store.choose('quoted', '1:500/100.1', 'test.echo').id, 'reply');
+    assert.equal(store.choose('quoted', '1:500/100.2', 'test.echo').id, 'quoted');
 });

@@ -28,7 +28,27 @@ export interface TemplateContext {
     originalBody?: string;
     date?: Date;
 }
-export const builtInTemplates: MailTemplate[] = [];
+export const builtInTemplates: MailTemplate[] = [
+    { id: 'new', name: 'New message', kind: 'new', body: 'Hello @tname.\n\n@position\n\n@cname' },
+    {
+        id: 'reply',
+        name: 'Short reply',
+        kind: 'reply',
+        body: 'Hello @oname.\n\n@position\n\n@cname'
+    },
+    {
+        id: 'quoted',
+        name: 'Quoted reply',
+        kind: 'quoted',
+        body: 'Hello @oname.\n\n@quote\n\n@position\n\n@cname'
+    },
+    {
+        id: 'forward',
+        name: 'Forward',
+        kind: 'forward',
+        body: 'Forwarded from @oname (@oaddr), @odate:\n\n@message\n\n@position\n\n@cname'
+    }
+];
 export function mailTemplate(value: unknown): MailTemplate {
     if (!value || typeof value !== 'object') throw new Error('Invalid mail template');
     const row = value as Partial<MailTemplate>;
