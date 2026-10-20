@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'split-right', story: 'layout-splitpane--right' },
+    { name: 'split-below', story: 'layout-splitpane--below' },
     { name: 'navigation-collapsed', story: 'navigation-sidebar--collapsed' },
     { name: 'navigation-collapsed-point', story: 'navigation-sidebar--collapsed-point' },
     { name: 'echo-tree', story: 'mail-echomailview--tree' },

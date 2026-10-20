@@ -30,7 +30,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 1. [x] Record design and implementation sequence.
 2. [x] Persist personal workspace preferences with isolation and validation.
 3. [x] Collapsible application navigation and workspace shell.
-4. [ ] Accessible reusable resizable split pane.
+4. [x] Accessible reusable resizable split pane.
 5. [ ] Netmail right/bottom/separate preview layouts.
 6. [ ] Shared echomail layout with conference selection in the list pane.
 7. [ ] Independent list density and flat/threaded presentation.
