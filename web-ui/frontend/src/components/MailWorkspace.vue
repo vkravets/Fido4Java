@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, provide } from 'vue';
+import { computed, ref, provide, watch, nextTick } from 'vue';
 import { mailSearchKey } from '../mail-search.ts';
 import { t } from '../i18n.ts';
 import { useWorkspace } from '../workspace.ts';
@@ -14,6 +14,32 @@ provide(mailSearchKey, query);
 const preferences = computed(() => workspace.value.value[props.kind]);
 const saving = ref(false);
 const error = ref('');
+const layoutRoot = ref<HTMLElement>();
+let listTop = 0;
+let windowTop = 0;
+watch(
+    () => props.opened,
+    (opened, previous) => {
+        if (opened === previous) return;
+        const list = layoutRoot.value?.querySelector<HTMLElement>('.split-list, .separate-list');
+        if (opened) {
+            listTop = list?.scrollTop || 0;
+            windowTop = window.scrollY;
+        }
+        void nextTick(() => {
+            const separate =
+                window.matchMedia('(max-width: 700px)').matches ||
+                preferences.value.preview === 'separate';
+            if (!opened) {
+                const restored = layoutRoot.value?.querySelector<HTMLElement>(
+                    '.split-list, .separate-list'
+                );
+                if (restored) restored.scrollTop = listTop;
+            }
+            if (separate) window.scrollTo({ top: opened ? 0 : windowTop, behavior: 'instant' });
+        });
+    }
+);
 async function update(patch: Partial<MailLayout>) {
     if (saving.value) return;
     saving.value = true;
@@ -85,6 +111,7 @@ const positions = [
         >
     </div>
     <div
+        ref="layoutRoot"
         class="mail-layout"
         :class="[
             preferences.density,

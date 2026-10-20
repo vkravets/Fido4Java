@@ -30,6 +30,7 @@ watch(state.session, (token) =>
 );
 const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
+const mobileNavigation = ref(false);
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
 const echomail = ref<InstanceType<typeof EchomailView> | null>(null);
 const echoDraft = ref<MailDraft>();
@@ -43,6 +44,7 @@ function navigate(next: string) {
     if (!canLeave()) return;
     echoDraft.value = undefined;
     page.value = next;
+    mobileNavigation.value = false;
     refreshQueue();
 }
 async function refreshQueue() {
@@ -83,6 +85,7 @@ function openEchoDraft(draft: MailDraft) {
         :aria-label="t('Request in progress')"
     ></div>
     <header class="topbar">
+        <button v-if="state.profile.value" class="mobile-menu-toggle secondary" :aria-label="t('Open menu')" :aria-expanded="mobileNavigation" @click="mobileNavigation = !mobileNavigation">&#9776;</button>
         <a
             href="/"
             class="brand"
@@ -109,6 +112,7 @@ function openEchoDraft(draft: MailDraft) {
             ><button
                 v-if="state.profile.value"
                 class="text-button"
+                :aria-label="t('Sign out')"
                 :disabled="state.busy.value"
                 @click="logout"
             >
@@ -153,7 +157,7 @@ function openEchoDraft(draft: MailDraft) {
     <div
         v-else
         class="workspace"
-        :class="{ 'navigation-collapsed': workspace.value.value.collapsed }"
+        :class="{ 'navigation-collapsed': workspace.value.value.collapsed, 'navigation-open': mobileNavigation }"
     >
         <Sidebar
             :profile="state.profile.value"
@@ -167,7 +171,7 @@ function openEchoDraft(draft: MailDraft) {
             @navigate="navigate"
             @send-mail="state.run(sendQueue)"
         />
-        <main class="content">
+        <main class="content" :class="{ 'mail-content': ['netmail', 'echo', 'drafts'].includes(page) }">
             <NetmailRoutingView
                 v-if="page === 'routing' && state.profile.value.role === 'ADMIN'"
                 :state="state"

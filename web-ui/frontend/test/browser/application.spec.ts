@@ -344,3 +344,23 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Sign in to JFtn' })).toBeVisible();
 });
+
+test('mobile application exposes navigation as a screen without horizontal overflow', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+    ).toBe(true);
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Echomail', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Echomail', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Echomail', exact: true })).toBeVisible();
+    await expect(page.locator('.workspace > .sidebar')).toBeHidden();
+    await page.getByRole('button', { name: /^Welcome to general/ }).click();
+    await expect(page.locator('.mail-body')).toBeVisible();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.getByRole('treeitem').first()).toBeVisible();
+});

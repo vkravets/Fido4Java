@@ -1,4 +1,5 @@
 export const ukrainian = {
+    'Open menu': 'Відкрити меню',
     'Search loaded messages': 'Шукати серед завантажених листів',
     'No matching loaded messages.': 'Серед завантажених листів збігів немає.',
     'Search matches': 'Збіги пошуку',
