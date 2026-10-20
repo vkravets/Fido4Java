@@ -96,7 +96,7 @@ const emit = defineEmits<{
                     :title="collapsed ? t('Station') : undefined"
                     @click="emit('navigate', 'node')"
                 >
-                    <AppIcon name="settings" />
+                    <AppIcon name="station" />
                     <span class="nav-text">{{ t('Station') }}</span>
                 </button>
                 <button

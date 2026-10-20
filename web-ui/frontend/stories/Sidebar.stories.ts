@@ -28,3 +28,5 @@ export const PreparingMail: Story = { args: { pendingCount: 12, busy: true, page
 
 export const Collapsed: Story = { args: { collapsed: true } };
 export const CollapsedPoint: Story = { args: { collapsed: true, profile: profile('POINT') } };
+export const Station: Story = { args: { page: 'node' } };
+export const CollapsedStation: Story = { args: { page: 'node', collapsed: true } };

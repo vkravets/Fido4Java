@@ -49,6 +49,8 @@ const screens = [
     { name: 'split-below', story: 'layout-splitpane--below' },
     { name: 'navigation-collapsed', story: 'navigation-sidebar--collapsed' },
     { name: 'navigation-collapsed-point', story: 'navigation-sidebar--collapsed-point' },
+    { name: 'navigation-station', story: 'navigation-sidebar--station' },
+    { name: 'navigation-station-collapsed', story: 'navigation-sidebar--collapsed-station' },
     { name: 'echo-tree', story: 'mail-echomailview--tree' },
     { name: 'echo-flat', story: 'mail-echomailview--flat' },
     { name: 'echo-reading', story: 'mail-echomailview--reading' },
