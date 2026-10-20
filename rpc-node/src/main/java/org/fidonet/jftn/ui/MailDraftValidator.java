@@ -47,6 +47,7 @@ final class MailDraftValidator {
             throw new IllegalArgumentException("Draft fields are required");
         }
         id(draft.getId());
+        MailEncoding.name(draft);
         if (draft.isSetOriginalBody()
                 && draft.getOriginalBody().getBytes(StandardCharsets.UTF_8).length > 60000)
             throw new IllegalArgumentException("Original message exceeds 60000 bytes");
@@ -78,6 +79,7 @@ final class MailDraftValidator {
 
     void submission(MailDraft draft, Collection<FTNAddr> authors) {
         fields(draft);
+        MailEncoding.validate(draft);
         header(draft.getFromName(), 35);
         header(draft.getToName(), 35);
         header(draft.getSubject(), 71);

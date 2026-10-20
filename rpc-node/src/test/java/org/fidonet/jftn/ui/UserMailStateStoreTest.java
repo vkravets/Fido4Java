@@ -72,6 +72,7 @@ class UserMailStateStoreTest {
                                         .setOriginalAddress("1:500/101")
                                         .setOriginalDate("20 Oct 26 10:00:00")
                                         .setComposeKind("quoted")
+                                        .setEncoding("KOI8-R")
                                         .setTemplateInitialized(true)
                                         .setReplyTo("1:500/101 1234abcd");
         new MailDraftValidator(null).fields(draft);

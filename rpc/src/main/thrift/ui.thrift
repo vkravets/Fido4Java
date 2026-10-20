@@ -82,7 +82,8 @@ struct MailDraft {
     13: optional string composeKind,
     14: optional bool templateInitialized,
     15: optional string originalName,
-    16: optional string originalAddress
+    16: optional string originalAddress,
+    17: optional string encoding
 }
 
 struct LinkInfo {

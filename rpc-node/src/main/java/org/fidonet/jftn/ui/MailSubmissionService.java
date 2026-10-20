@@ -28,19 +28,7 @@ final class MailSubmissionService {
             String key = ScriptState.digest(owner + ":" + requestId);
             String hash = ScriptState.digest(Base64.getEncoder()
                                                    .encodeToString(new TSerializer().serialize(draft)));
-            String text = draft.getBody().replace("\r\n", "\r").replace('\n', '\r');
-            Message message = new Message(draft.getFromName(),
-                                          draft.getToName(),
-                                          new FTNAddr(draft.getFromAddress()),
-                                          new FTNAddr(draft.getToAddress()),
-                                          draft.getSubject(),
-                                          (draft.getMailbox() == Mailbox.ECHO
-                                                  ? "AREA:" + draft.getArea() + "\r"
-                                                  : "") + "\1CHRS: UTF-8 4\r" + text,
-                                          new Date());
-            if (draft.isSetReplyTo()) {
-                message.getBody().getKludges().put("REPLY", draft.getReplyTo());
-            }
+            Message message = createMessage(draft);
             if (draft.getMailbox() != Mailbox.ECHO
                     && !tosser.previewNetmail(message, null).isPermitted()) {
                 throw new UiError("NO_ROUTE",
@@ -58,5 +46,26 @@ final class MailSubmissionService {
             state.delete(owner, draft.getId());
             return msgid;
         });
+    }
+
+    static Message createMessage(MailDraft draft) {
+        MailEncoding.validate(draft);
+        String text = draft.getBody().replace("\r\n", "\r").replace('\n', '\r');
+        String prefix = draft.getMailbox() == Mailbox.ECHO ? "AREA:" + draft.getArea() + "\r" : "";
+        Message message = new Message(draft.getFromName(),
+                                      draft.getToName(),
+                                      new FTNAddr(draft.getFromAddress()),
+                                      new FTNAddr(draft.getToAddress()),
+                                      draft.getSubject(),
+                                      prefix
+                                      + "\1CHRS: "
+                                      + MailEncoding.declaration(draft)
+                                      + "\r"
+                                      + text,
+                                      new Date());
+        if (draft.isSetReplyTo()) {
+            message.getBody().getKludges().put("REPLY", draft.getReplyTo());
+        }
+        return message;
     }
 }
