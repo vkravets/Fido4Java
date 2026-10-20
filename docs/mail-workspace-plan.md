@@ -32,7 +32,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 3. [x] Collapsible application navigation and workspace shell.
 4. [x] Accessible reusable resizable split pane.
 5. [x] Netmail right/bottom/separate preview layouts.
-6. [ ] Shared echomail layout with conference selection in the list pane.
+6. [x] Shared echomail layout with conference selection in the list pane.
 7. [ ] Independent list density and flat/threaded presentation.
 8. [ ] Mobile screens, Back and retained list position.
 9. [ ] Adapt administration/settings to the shell.
@@ -42,7 +42,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 13. [ ] Personal theme UI, preview, import/export.
 14. [ ] Visual/source editor foundation and plain-text round trips.
 15. [x] Editor styles, quoting, history and preview.
-16. [ ] Netmail editor integration.
+16. [x] Netmail editor integration.
 17. [ ] Echomail editor integration.
 18. [ ] Persistent template model and safe expansion.
 19. [ ] Built-in new/reply/quoted/forward templates.

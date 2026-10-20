@@ -1,4 +1,5 @@
 import { provide, ref } from 'vue';
+import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import EchomailView from '../src/components/EchomailView.vue';
 import { echoClientKey } from '../src/echomail.ts';
@@ -14,6 +15,9 @@ const meta = {
     render: (args, context) => ({
         components: { EchomailView },
         setup() {
+            const workspace = createWorkspace();
+            workspace.value.value = workspacePreferences(context.parameters.workspace || {});
+            provide(workspaceKey, workspace);
             const state = {
                 session: ref('storybook-session'),
                 profile: ref(profile('POINT')),
@@ -59,3 +63,13 @@ export const ReadOnly: Story = {
 };
 export const Empty: Story = { parameters: { echo: { empty: true } } };
 export const NoAccess: Story = { parameters: { echo: { noAreas: true } } };
+
+export const Below: Story = {
+    parameters: { workspace: { echo: { preview: 'below' } } },
+    args: { initialMessage: '9007199254740994' }
+};
+export const Separate: Story = {
+    parameters: { workspace: { echo: { preview: 'separate' } } },
+    args: { initialMessage: '9007199254740994' }
+};
+export const Compact: Story = { parameters: { workspace: { echo: { density: 'compact' } } } };
