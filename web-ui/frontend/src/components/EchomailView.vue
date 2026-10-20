@@ -300,7 +300,7 @@ const nextUnread = computed(() =>
         </div>
         <section
             v-else
-            class="card muted"
+            class="card muted mail-reader-empty"
         >
             <p>{{ t('Select a message to read.') }}</p>
         </section>

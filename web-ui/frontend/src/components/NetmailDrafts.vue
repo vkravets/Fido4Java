@@ -7,6 +7,7 @@ defineEmits<{ edit: [draft: MailDraft]; remove: [draft: MailDraft] }>();
 <template>
     <section
         class="card"
+        :class="{ 'mail-list-empty': !drafts.length }"
         :aria-label="t('Drafts')"
     >
         <p v-if="!drafts.length">{{ t('No saved drafts.') }}</p>

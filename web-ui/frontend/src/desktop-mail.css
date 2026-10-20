@@ -288,6 +288,11 @@ summary:has(> .app-icon) {
     .mail-list-tools .actions {
         gap: 5px;
     }
+    .mail-list-tools .actions button,
+    .mail-list-tools .tabs button {
+        min-height: 28px;
+        padding: 4px 7px;
+    }
     .mail-list-tools .tabs {
         margin: 6px 0;
         gap: 4px;

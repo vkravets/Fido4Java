@@ -60,6 +60,8 @@ const screens = [
     { name: 'routing-preview', story: 'routing-netmailroutepreviewform--matching-rule' },
     { name: 'routing-no-route', story: 'routing-netmailroutepreviewform--no-route' },
     { name: 'mail-workspace', story: 'mail-netmailview--inbox' },
+    { name: 'mail-empty-reader-below', story: 'mail-netmailview--empty-reader-below' },
+    { name: 'mail-empty-drafts-workspace', story: 'mail-netmailview--empty-drafts' },
     { name: 'mail-queue-waiting', story: 'mail-mailqueuecontrol--waiting' },
     { name: 'mail-queue-empty', story: 'mail-mailqueuecontrol--empty' },
     { name: 'mail-queue-busy', story: 'mail-mailqueuecontrol--busy' },

@@ -135,6 +135,35 @@ async function update(patch: Partial<MailLayout>) {
 .mail-layout {
     min-width: 0;
 }
+.mail-layout :deep(.split-list:has(> .mail-list-empty)) {
+    display: flex;
+    flex-direction: column;
+}
+.mail-layout :deep(.mail-list-tools) {
+    flex-shrink: 0;
+}
+.mail-layout :deep(.mail-list-empty) {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    text-align: center;
+}
+.mail-layout :deep(.mail-list-empty p) {
+    margin: 0;
+    padding: 16px;
+}
+.mail-layout :deep(.mail-reader-empty) {
+    display: grid;
+    place-items: center;
+    min-height: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    text-align: center;
+}
+.mail-layout :deep(.mail-reader-empty p) {
+    margin: 0;
+    padding: 16px;
+}
 .separate-detail {
     max-width: 1100px;
     margin: auto;

@@ -2,6 +2,46 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('empty drafts are centered below the mail toolbar with compact desktop buttons', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await story(page, 'mail-netmailview--empty-drafts');
+    const message = page.locator('.mail-list-empty p');
+    await expect(message).toHaveText('No saved drafts.');
+    const pane = await page.locator('.split-list').boundingBox();
+    const toolbar = await page.locator('.mail-list-tools').boundingBox();
+    const text = await message.boundingBox();
+    const contentTop = toolbar!.y + toolbar!.height;
+    expect(Math.abs(text!.x + text!.width / 2 - (pane!.x + pane!.width / 2))).toBeLessThan(2);
+    expect(
+        Math.abs(text!.y + text!.height / 2 - (contentTop + pane!.y + pane!.height) / 2)
+    ).toBeLessThan(2);
+    const button = await page
+        .getByRole('button', { name: 'New netmail', exact: true })
+        .boundingBox();
+    expect(button!.height).toBeLessThanOrEqual(28);
+});
+
+test('empty mail reader is centered in both split directions and mail views', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const id of [
+        'mail-netmailview--inbox',
+        'mail-netmailview--empty-reader-below',
+        'mail-echomailview--tree'
+    ]) {
+        await story(page, id);
+        const placeholder = page.locator('.mail-reader-empty p');
+        await expect(placeholder).toBeVisible();
+        const pane = await page.locator('.split-detail').boundingBox();
+        const text = await placeholder.boundingBox();
+        expect(pane).not.toBeNull();
+        expect(text).not.toBeNull();
+        expect(Math.abs(text!.x + text!.width / 2 - (pane!.x + pane!.width / 2))).toBeLessThan(2);
+        expect(Math.abs(text!.y + text!.height / 2 - (pane!.y + pane!.height / 2))).toBeLessThan(2);
+    }
+});
+
 test('echo tree collapses conversations, supports keyboard navigation and switches to a flat list', async ({
     page
 }) => {

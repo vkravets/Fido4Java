@@ -57,7 +57,7 @@ const meta = {
                 deleteMessage: async () => {
                     deleted = true;
                 },
-                drafts: async () => [...saved],
+                drafts: async () => (context.parameters.emptyDrafts ? [] : [...saved]),
                 saveDraft: async (_token, draft) => {
                     saved.push({ ...draft });
                 },
@@ -75,7 +75,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Inbox: Story = { args: { initialFolder: 'inbox' } };
+export const EmptyReaderBelow: Story = {
+    parameters: { workspace: { netmail: { preview: 'below' } } }
+};
 export const Drafts: Story = { args: { initialFolder: 'drafts' } };
+export const EmptyDrafts: Story = {
+    args: { initialFolder: 'drafts' },
+    parameters: { emptyDrafts: true }
+};
 
 export const Reading: Story = { args: { initialMessage: String(netmailMessage.id) } };
 export const DisplayOptions: Story = {
