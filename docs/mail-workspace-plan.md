@@ -36,7 +36,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 7. [x] Independent list density and flat/threaded presentation.
 8. [x] Mobile screens, Back and retained list position.
 9. [x] Adapt administration/settings to the shell.
-10. [ ] Shared FIDO text parser with behavior tests.
+10. [x] Shared FIDO text parser with behavior tests.
 11. [ ] Highlighted message reader.
 12. [ ] Built-in and operator-file mail themes.
 13. [ ] Personal theme UI, preview, import/export.
