@@ -13,7 +13,8 @@ import java.util.List;
 
 /** Installs editable plugin templates once; upgrades never replace operator configuration. */
 final class PluginConfigurationFiles {
-    static final List<String> NAMES = List.of("10-binkp.conf",
+    static final List<String> NAMES = List.of("05-storage.conf",
+                                              "10-binkp.conf",
                                               "20-jam-bridge.conf",
                                               "26-bso.conf",
                                               "27-virtual-outbound.conf",

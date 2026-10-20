@@ -89,6 +89,31 @@ class ServicePluginDistributionTest {
     }
 
     @Test
+    void startedWithoutAnUninstalledDirectoryPlugin() throws Exception {
+        Path home = InstalledNodeFixture.unpack(temporary, "full");
+        InstalledNodeFixture.configure(home, "full");
+        configureRpc(home, false, false, 0);
+        removePlugin(home, "nodelist-");
+        try (InstalledNodeFixture.NodeProcess node = InstalledNodeFixture.start(home)) {
+            verifyBinkp(node);
+            assertFalse(node.output().contains("NoClassDefFoundError"));
+        }
+    }
+
+    @Test
+    void refusedMissingStorageProviderWithoutCreatingAFallbackDatabase() throws Exception {
+        Path home = InstalledNodeFixture.unpack(temporary, "full");
+        InstalledNodeFixture.configure(home, "full");
+        configureRpc(home, false, false, 0);
+        removePlugin(home, "storage-h2-");
+        try (InstalledNodeFixture.NodeProcess node = InstalledNodeFixture.start(home)) {
+            assertNotEquals(0, node.awaitExit());
+            assertTrue(node.output().contains("Expected one storage provider for h2, found 0"));
+            assertFalse(Files.exists(home.resolve("database/jftn10.mv.db")));
+        }
+    }
+
+    @Test
     void reportedMissingRpcBeforeOpeningStorageAndIgnoredDisabledUi() throws Exception {
         Path home = InstalledNodeFixture.unpack(temporary, "full");
         InstalledNodeFixture.configure(home, "full");

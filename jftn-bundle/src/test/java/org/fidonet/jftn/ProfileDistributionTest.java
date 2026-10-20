@@ -48,7 +48,7 @@ class ProfileDistributionTest {
         try (var paths = Files.walk(home)) {
             assertFalse(paths.anyMatch(path -> path.getFileName()
                                                    .toString()
-                                                   .matches("(fido-database|h2-|ormlite-|rpc-|web-ui-).*\\.jar")));
+                                                   .matches("(fido-database|h2-|ormlite-|rpc-|web-ui-|storage-h2-|directory-storage-h2-|account-storage-h2-).*\\.jar")));
         }
         installConfiguration(home, profile);
         Files.writeString(home.resolve("jftn.conf"),
