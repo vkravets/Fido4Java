@@ -29,7 +29,7 @@ public final class H2MailRepositoryAdapter implements RepositoryAdapter<MailStor
         OrmManager orm = new OrmManager(((JdbcBackend) backend).dataSource(), new H2DatabaseType());
         try {
             orm.connect();
-            return new MailDatabaseFacade(orm);
+            return new MailDatabaseFacade(orm, backend);
         } catch (SQLException failure) {
             throw new IOException("Unable to initialize mail storage", failure);
         }

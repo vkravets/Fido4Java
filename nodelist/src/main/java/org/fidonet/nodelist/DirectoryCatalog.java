@@ -16,7 +16,11 @@ public final class DirectoryCatalog implements AutoCloseable {
     private boolean closed;
 
     public DirectoryCatalog(Path path) throws IOException {
-        storage = StorageServices.file(path);
+        this(StorageServices.file(path));
+    }
+
+    public DirectoryCatalog(StorageSession storage) throws IOException {
+        this.storage = storage;
         try {
             repository = storage.require(DirectoryRepository.class);
         } catch (IOException | RuntimeException failure) {

@@ -2,7 +2,7 @@ package org.fidonet.jftn;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.tosser.Tosser;
@@ -44,14 +44,14 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
                                                    "transitto",
                                                    "tossintervalseconds");
     private final JFtnConfig active;
-    private final MailDatabaseFacade database;
+    private final MailRepository database;
     private final MailRuntime mail;
     private final PollService polls;
     private final SessionContext context;
     private final ProfileHandler profiles;
 
     public LiveConfiguration(JFtnConfig active,
-                             MailDatabaseFacade database,
+                             MailRepository database,
                              MailRuntime mail,
                              PollService polls,
                              SessionContext context,

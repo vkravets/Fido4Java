@@ -58,7 +58,7 @@ public final class NodeSettingsRpcHandler implements SettingsService.Iface {
     @Override
     public DirectoryPage searchDirectory(String query, int offset, int limit, boolean includePoints)
             throws UiError {
-        return call(() -> DirectoryBrowser.search(store.catalogPath(),
+        return call(() -> DirectoryBrowser.search(store.directoryStorage(),
                                                   query,
                                                   offset,
                                                   limit,
@@ -102,7 +102,7 @@ public final class NodeSettingsRpcHandler implements SettingsService.Iface {
             throws Exception {
         FTNAddr target = new FTNAddr(AccountDirectory.address(address, false));
         NodeLookup result = new NodeLookup(false, false, "", "", "", "", 24554, "");
-        try (DirectoryCatalog catalog = new DirectoryCatalog(store.catalogPath())) {
+        try (DirectoryCatalog catalog = new DirectoryCatalog(store.directoryStorage())) {
             if (url != null && !url.isBlank()) {
                 DirectorySource source = new DirectorySource("nodes",
                                                              DirectorySource.Format.NODELIST,

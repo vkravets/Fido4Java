@@ -8,7 +8,11 @@ public final class AccountRecord {
     public final String theme;
     public final String defaultAka;
 
-    AccountRecord(String login, String role, boolean enabled, String theme, String defaultAka) {
+    public AccountRecord(String login,
+                         String role,
+                         boolean enabled,
+                         String theme,
+                         String defaultAka) {
         this.login = login;
         this.role = role;
         this.enabled = enabled;

@@ -1,6 +1,7 @@
 package org.fidonet.nodelist;
 
 import org.fidonet.config.IConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.jftn.script.DirectoryImportService;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.Tosser;
@@ -105,8 +106,10 @@ public final class DirectoryService implements MailProcessingExtension, Director
         }
         DirectoryChecksumExceptions checksumExceptions = new DirectoryChecksumExceptions(config,
                                                                                          names);
-        return new DirectoryService(new DirectoryCatalog(Path.of(config.getValue("NodeDirectoryPath",
-                                                                                 "./database/nodelist/catalog"))),
+        return new DirectoryService(new DirectoryCatalog(StorageConfiguration.open(config,
+                                                                                   "directory",
+                                                                                   Path.of(config.getValue("NodeDirectoryPath",
+                                                                                                           "./database/nodelist/catalog")))),
                                     sources,
                                     seconds,
                                     refreshEnabled,

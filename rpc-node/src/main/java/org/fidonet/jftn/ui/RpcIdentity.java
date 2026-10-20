@@ -1,6 +1,7 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.UiSessions;
 import org.fidonet.jftn.rpc.auth.AccountAuthentication;
@@ -45,7 +46,9 @@ final class RpcIdentity implements AutoCloseable {
             Path path = Path.of(config.getValue("RpcAuthPath",
                                                 Path.of(config.getTmpDir(), "rpc-auth")
                                                     .toString()));
-            RpcAccounts accounts = resources.add(new RpcAccounts(path));
+            RpcAccounts accounts = resources.add(new RpcAccounts(StorageConfiguration.open(config,
+                                                                                           "accounts",
+                                                                                           path)));
             accounts.bootstrap(config.getValue("RpcUser", ""), config.getValue("RpcPassword", ""));
             UiSessions sessions = new UiSessions(accounts,
                                                  Long.parseLong(config.getValue("RpcSessionSeconds",

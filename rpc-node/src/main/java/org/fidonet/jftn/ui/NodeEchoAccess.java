@@ -1,7 +1,7 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.rpc.EchoAccessConfiguration;
 import org.fidonet.jftn.rpc.EchoSubscriptionInfo;
 import org.fidonet.jftn.rpc.UiError;
@@ -25,7 +25,7 @@ final class NodeEchoAccess {
         }
     }
 
-    static EchoAccessConfiguration current(JFtnConfig config, MailDatabaseFacade base) {
+    static EchoAccessConfiguration current(JFtnConfig config, MailRepository base) {
         List<String> peers = new ArrayList<>();
         List<EchoSubscriptionInfo> subscriptions = new ArrayList<>();
         for (Link link : config.getConfiguredLinks()) {

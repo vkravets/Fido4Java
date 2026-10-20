@@ -5,6 +5,8 @@ import org.fidonet.jftn.rpc.DirectoryPage;
 import org.fidonet.nodelist.DirectoryCatalog;
 import org.fidonet.nodelist.DirectoryEntry;
 import org.fidonet.nodelist.InternetEndpoint;
+import org.fidonet.storage.StorageServices;
+import org.fidonet.storage.StorageSession;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,10 +24,19 @@ final class DirectoryBrowser {
                                 int limit,
                                 boolean includePoints)
             throws IOException {
-        if (limit < 1 || limit > 100) {
-            throw new IllegalArgumentException("Directory page size must be 1..100");
-        }
-        try (DirectoryCatalog catalog = new DirectoryCatalog(path)) {
+        return search(StorageServices.file(path), query, offset, limit, includePoints);
+    }
+
+    static DirectoryPage search(StorageSession storage,
+                                String query,
+                                int offset,
+                                int limit,
+                                boolean includePoints)
+            throws IOException {
+        try (DirectoryCatalog catalog = new DirectoryCatalog(storage)) {
+            if (limit < 1 || limit > 100) {
+                throw new IllegalArgumentException("Directory page size must be 1..100");
+            }
             List<DirectoryEntry> entries = catalog.search(query, offset, limit + 1, includePoints);
             List<DirectoryNode> items = new ArrayList<>();
             for (DirectoryEntry entry : entries.subList(0, Math.min(limit, entries.size()))) {

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Live rules from the mail database. This repository does not depend on the RPC account database. */
-public final class DatabaseRobotRules implements RobotRules {
+public final class DatabaseRobotRules implements EditableRobotRules {
     private final OrmManager orm;
 
     public DatabaseRobotRules(OrmManager orm) {

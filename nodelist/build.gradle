@@ -3,8 +3,6 @@ apply plugin: 'java-library'
 description = 'Optional FTSC node and point directory plugin'
 
 dependencies {
-    implementation project(':fido-database')
-
     api project(':mail-api')
     implementation project(':plugin-manager')
     implementation 'org.slf4j:slf4j-api:2.0.20'

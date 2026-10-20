@@ -1,8 +1,8 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.echobase.AccessLevel;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
@@ -24,7 +24,7 @@ final class EchoMailboxRights {
     EchoMailboxRights(boolean administrator,
                       List<FTNAddr> addresses,
                       JFtnConfig config,
-                      MailDatabaseFacade base) {
+                      MailRepository base) {
         this.administrator = administrator;
         authors = addresses.stream().map(FTNAddr::toString).collect(Collectors.toList());
         if (administrator)

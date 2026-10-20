@@ -9,11 +9,11 @@ public final class DirectoryImportResult implements DirectoryImportService.Resul
     private final String fingerprint;
     private final String header;
 
-    DirectoryImportResult(String source,
-                          long records,
-                          boolean changed,
-                          String fingerprint,
-                          String header) {
+    public DirectoryImportResult(String source,
+                                 long records,
+                                 boolean changed,
+                                 String fingerprint,
+                                 String header) {
         this.source = source;
         this.records = records;
         this.changed = changed;

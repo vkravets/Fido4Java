@@ -1,7 +1,7 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.UiError;
@@ -15,9 +15,9 @@ import java.util.List;
 final class MailboxAccess {
     private final JFtnConfig config;
     private final UiSessions sessions;
-    private final MailDatabaseFacade base;
+    private final MailRepository base;
 
-    MailboxAccess(JFtnConfig config, UiSessions sessions, MailDatabaseFacade base) {
+    MailboxAccess(JFtnConfig config, UiSessions sessions, MailRepository base) {
         this.config = config;
         this.sessions = sessions;
         this.base = base;

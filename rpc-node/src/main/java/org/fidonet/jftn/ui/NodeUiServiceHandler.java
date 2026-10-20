@@ -2,9 +2,10 @@ package org.fidonet.jftn.ui;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.echobase.AccessLevel;
 import org.fidonet.echobase.EchoHistory;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.echobase.StoredMail;
 import org.fidonet.jftn.MailRuntime;
 import org.fidonet.jftn.poll.PollAttempt;
@@ -59,7 +60,7 @@ import java.util.stream.Collectors;
 public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(NodeUiServiceHandler.class);
     private final JFtnConfig config;
-    private final MailDatabaseFacade base;
+    private final MailRepository base;
     private final MailRuntime mail;
     private final UserMailStateStore state;
     private final MailDraftValidator draftValidator;
@@ -70,7 +71,7 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
     private final long started = System.nanoTime();
 
     public NodeUiServiceHandler(JFtnConfig config,
-                                MailDatabaseFacade base,
+                                MailRepository base,
                                 MailRuntime mail,
                                 PollService polls,
                                 UiSessions sessions)
@@ -81,7 +82,10 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
         this.base = base;
         this.mail = mail;
         robotRules = new NodeRobotRules(config, base);
-        state = new UserMailStateStore(Path.of(config.getTmpDir(), "ui-state"));
+        state = new UserMailStateStore(StorageConfiguration.open(config,
+                                                                 "reader",
+                                                                 Path.of(config.getTmpDir(),
+                                                                         "ui-state")));
         submissions = new MailSubmissionService(mail, state);
         this.polls = polls;
     }

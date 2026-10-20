@@ -7,7 +7,7 @@ description = 'Optional authenticated node RPC service plugin'
 dependencies {
     api project(':rpc')
     api project(':node-runtime')
-    api project(':fido-database')
+    testImplementation project(':fido-database')
     implementation project(':nodelist')
     testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 }

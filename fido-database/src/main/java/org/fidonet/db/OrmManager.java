@@ -120,6 +120,10 @@ public class OrmManager {
         setDaoClassesList();
     }
 
+    DataSource extensionDataSource() {
+        return dataSource != null ? dataSource : new OrmDataSource(jdbcUrl, user, password);
+    }
+
     public void connect() throws SQLException {
         if (isConnect()) {
             return;

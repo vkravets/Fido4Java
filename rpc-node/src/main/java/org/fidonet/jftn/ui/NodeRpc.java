@@ -2,7 +2,7 @@ package org.fidonet.jftn.ui;
 
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.LiveConfiguration;
 import org.fidonet.jftn.MailRuntime;
 import org.fidonet.jftn.poll.PollService;
@@ -24,7 +24,7 @@ public final class NodeRpc implements AutoCloseable {
     }
 
     public static NodeRpc open(JFtnConfig config,
-                               MailDatabaseFacade base,
+                               MailRepository base,
                                MailRuntime mail,
                                SessionContext context)
             throws Exception {
@@ -32,7 +32,7 @@ public final class NodeRpc implements AutoCloseable {
     }
 
     public static NodeRpc open(JFtnConfig config,
-                               MailDatabaseFacade base,
+                               MailRepository base,
                                MailRuntime mail,
                                SessionContext context,
                                PollService sharedPolls)

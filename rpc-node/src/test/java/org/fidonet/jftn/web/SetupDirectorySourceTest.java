@@ -16,6 +16,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -35,6 +36,17 @@ class SetupDirectorySourceTest {
                                    500,
                                    StandardCharsets.US_ASCII,
                                    false);
+    }
+
+    @Test
+    void firstSetupRespectsTheDirectoryProviderFragmentWithoutCreatingAH2Fallback()
+            throws Exception {
+        Files.createDirectory(root.resolve("conf.d"));
+        Files.writeString(root.resolve("conf.d/05-storage.conf"),
+                          "StorageEndpoint=directory|unavailable|opaque-location\n");
+        NodeConfigurationService store = new NodeConfigurationService(root.resolve("jftn.conf"));
+        assertThrows(IOException.class, store::directoryStorage);
+        assertTrue(Files.notExists(root.resolve("database/nodelist/catalog.mv.db")));
     }
 
     private byte[] checked(String name) {

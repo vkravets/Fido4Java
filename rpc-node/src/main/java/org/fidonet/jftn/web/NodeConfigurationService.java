@@ -1,9 +1,11 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.jftn.rpc.NodeConfiguration;
 import org.fidonet.jftn.rpc.auth.AccountDirectory;
 import org.fidonet.nodelist.HttpDirectoryDownload;
+import org.fidonet.storage.StorageSession;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
@@ -75,6 +77,11 @@ public final class NodeConfigurationService {
         JFtnConfig config = new JFtnConfig();
         config.load(path.toString());
         return Path.of(config.getValue("NodeDirectoryPath", "database/nodelist/catalog"));
+    }
+
+    public synchronized StorageSession directoryStorage() throws Exception {
+        JFtnConfig config = original.length == 0 ? JFtnConfig.bootstrap(path) : configuration();
+        return StorageConfiguration.open(config, "directory", catalogPath());
     }
 
     public NodeConfiguration current() throws Exception {

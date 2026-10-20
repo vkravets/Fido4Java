@@ -1,13 +1,13 @@
 package org.fidonet.nodelist;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.jftn.tosser.BsoOutbound;
 import org.fidonet.jftn.tosser.OutgoingLinkResolver;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +18,13 @@ public final class DirectoryOutgoingLinks implements OutgoingLinkResolver {
     public Link lookup(JFtnConfig config, FTNAddr address) throws IOException {
         Path database = Path.of(config.getValue("NodeDirectoryPath",
                                                 "./database/nodelist/catalog"));
-        if (!Files.isRegularFile(Path.of(database + ".mv.db"))
+        if (!StorageConfiguration.exists(config, "directory", database)
                 || config.getLocalAddresses().isEmpty()) {
             return null;
         }
-        try (DirectoryCatalog catalog = new DirectoryCatalog(database)) {
+        try (DirectoryCatalog catalog = new DirectoryCatalog(StorageConfiguration.open(config,
+                                                                                       "directory",
+                                                                                       database))) {
             for (DirectoryEntry entry : catalog.lookup(address)) {
                 Link link = fromEntry(config, entry);
                 if (link != null) {

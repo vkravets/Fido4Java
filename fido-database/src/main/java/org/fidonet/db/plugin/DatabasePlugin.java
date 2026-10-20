@@ -28,18 +28,19 @@
 
 package org.fidonet.db.plugin;
 
-import org.fidonet.db.MailDatabaseFacade;
+import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.events.EventBus;
 import org.fidonet.jftn.plugins.Plugin;
 import org.fidonet.jftn.plugins.PluginException;
 import org.fidonet.jftn.plugins.PluginInformation;
 import org.fidonet.jftn.plugins.PluginManager;
-import org.fidonet.storage.StorageServices;
 import org.fidonet.storage.StorageSession;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -49,13 +50,13 @@ import java.nio.file.Path;
  * Date: 8/7/13
  * Time: 9:53 AM
  */
-public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
+public class DatabasePlugin implements Plugin<MailStorage> {
     // The node stops mail workers before closing this connection; H2's parallel exit hook must not.
     public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10;DB_CLOSE_ON_EXIT=FALSE";
 
-    private MailDatabaseFacade manager;
+    private MailStorage manager;
     private StorageSession storage;
-    private WeakReference<MailDatabaseFacade> context;
+    private WeakReference<MailStorage> context;
 
     @Override
     public PluginInformation getPluginInfo() {
@@ -70,9 +71,13 @@ public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
     @Override
     public void load() throws PluginException {
         try {
-            storage = StorageServices.file(Path.of("./database/jftn10"));
-            manager = (MailDatabaseFacade) storage.require(MailStorage.class);
-        } catch (IOException | RuntimeException failure) {
+            JFtnConfig config = new JFtnConfig();
+            if (Files.isRegularFile(Path.of("jftn.conf"))) {
+                config.load("jftn.conf");
+            }
+            storage = StorageConfiguration.open(config, "mail", Path.of("./database/jftn10"));
+            manager = storage.require(MailStorage.class);
+        } catch (Exception failure) {
             if (storage != null) {
                 try {
                     storage.close();
@@ -84,7 +89,7 @@ public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
             throw new PluginException(failure);
         }
 
-        context = new WeakReference<MailDatabaseFacade>(manager);
+        context = new WeakReference<MailStorage>(manager);
     }
 
     @Override
@@ -105,7 +110,7 @@ public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
     }
 
     @Override
-    public WeakReference<MailDatabaseFacade> getContext() {
+    public WeakReference<MailStorage> getContext() {
         return context;
     }
 }

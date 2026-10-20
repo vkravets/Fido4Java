@@ -1,6 +1,7 @@
 package org.fidonet.jftn.web;
 
 import org.fidonet.config.JFtnConfig;
+import org.fidonet.config.StorageConfiguration;
 import org.fidonet.jftn.ServiceConfiguration;
 import org.fidonet.jftn.rpc.DefaultRpcServiceProvider;
 import org.fidonet.jftn.rpc.HttpRpcServer;
@@ -38,21 +39,25 @@ public final class InitialSetup {
                 : configuration.toAbsolutePath().getParent().resolve("database/rpc-auth");
         Path authPath = Path.of(config.getValue("RpcAuthPath", fallback.toString()));
         if (configured) {
-            try (RpcAccounts accounts = new RpcAccounts(authPath)) {
+            try (RpcAccounts accounts = new RpcAccounts(StorageConfiguration.open(config,
+                                                                                  "accounts",
+                                                                                  authPath))) {
                 if (accounts.hasUsers() || !config.getValue("RpcPassword", "").isEmpty()) {
                     return;
                 }
             }
         }
-        run(configuration, authPath);
+        run(configuration, authPath, config);
     }
 
-    private static void run(Path configuration, Path authPath) throws Exception {
+    private static void run(Path configuration, Path authPath, JFtnConfig config) throws Exception {
         byte[] random = new byte[32];
         new SecureRandom().nextBytes(random);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(random);
         CountDownLatch completion = new CountDownLatch(1);
-        try (RpcAccounts accounts = new RpcAccounts(authPath)) {
+        try (RpcAccounts accounts = new RpcAccounts(StorageConfiguration.open(config,
+                                                                              "accounts",
+                                                                              authPath))) {
             NodeSettingsRpcHandler settings = new NodeSettingsRpcHandler(new NodeConfigurationService(configuration),
                                                                          accounts,
                                                                          new UiSessions(accounts,

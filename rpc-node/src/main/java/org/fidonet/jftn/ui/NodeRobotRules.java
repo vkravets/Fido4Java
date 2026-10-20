@@ -1,12 +1,12 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.config.JFtnConfig;
-import org.fidonet.db.MailDatabaseFacade;
-import org.fidonet.db.robots.DatabaseRobotRules;
+import org.fidonet.db.robots.EditableRobotRules;
 import org.fidonet.db.robots.FileRobotRules;
 import org.fidonet.db.robots.RobotAccessRule;
 import org.fidonet.db.robots.RobotRules;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.jftn.rpc.RobotAccessConfiguration;
 import org.fidonet.jftn.rpc.RobotRuleChange;
 import org.fidonet.jftn.rpc.RobotRuleInfo;
@@ -22,10 +22,10 @@ import java.util.List;
 final class NodeRobotRules {
     private final JFtnConfig config;
     private final String source;
-    private final DatabaseRobotRules database;
+    private final EditableRobotRules database;
     private final RobotRules rules;
 
-    NodeRobotRules(JFtnConfig config, MailDatabaseFacade base) {
+    NodeRobotRules(JFtnConfig config, MailRepository base) {
         this.config = config;
         source = RobotAccess.source(config);
         database = base.getRobotRules();

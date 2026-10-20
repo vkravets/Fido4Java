@@ -5,7 +5,7 @@ public final class AddressClaim {
     public final String address;
     public final String state;
 
-    AddressClaim(String address, String state) {
+    public AddressClaim(String address, String state) {
         this.address = address;
         this.state = state;
     }

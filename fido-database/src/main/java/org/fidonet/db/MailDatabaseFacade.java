@@ -46,7 +46,7 @@ import org.fidonet.echobase.EchoHistory;
 import org.fidonet.echobase.EchoRoutingStore;
 import org.fidonet.echobase.IBase;
 import org.fidonet.echobase.IncrementalEchoStore;
-import org.fidonet.echobase.MailStorage;
+import org.fidonet.echobase.MailRepository;
 import org.fidonet.echobase.MessageIteration;
 import org.fidonet.echobase.NetmailRoute;
 import org.fidonet.echobase.NetmailRoutingStore;
@@ -54,6 +54,9 @@ import org.fidonet.echobase.NetmailStore;
 import org.fidonet.echobase.QueuedNetmail;
 import org.fidonet.echobase.StoredMail;
 import org.fidonet.packet.MailIdentity;
+import org.fidonet.storage.StorageBackend;
+import org.fidonet.storage.StorageServices;
+import org.fidonet.storage.StorageSession;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Link;
 import org.fidonet.types.Message;
@@ -67,6 +70,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -87,7 +91,7 @@ import java.util.concurrent.Callable;
  */
 public class MailDatabaseFacade
         implements
-            MailStorage,
+            MailRepository,
             NetmailStore,
             ArchiveStore,
             IncrementalEchoStore,
@@ -238,6 +242,15 @@ public class MailDatabaseFacade
     private static final Logger logger = LoggerFactory.getLogger(MailDatabaseFacade.class);
 
     private OrmManager dbManager;
+    private final StorageSession extensions;
+
+    @Override
+    public <T extends AutoCloseable> T repository(Class<T> contract) throws IOException {
+        if (!dbManager.isConnect()) {
+            throw new IOException("Mail storage is not open");
+        }
+        return extensions.require(contract);
+    }
 
     public <T, ID> Dao<T, ID> extensionDao(Class<T> type) throws SQLException {
         return dbManager.extensionDao(type);
@@ -356,7 +369,12 @@ public class MailDatabaseFacade
     }
 
     public MailDatabaseFacade(OrmManager manager) {
+        this(manager, new OrmExtensionBackend(manager));
+    }
+
+    public MailDatabaseFacade(OrmManager manager, StorageBackend backend) {
         this.dbManager = manager;
+        extensions = StorageServices.extensions(backend);
         netmailRepository = new NetmailRepository(manager);
         areas = new AreaRepository(manager);
         subscriptions = new SubscriptionRepository(manager, areas);
@@ -840,7 +858,13 @@ public class MailDatabaseFacade
 
     @Override
     public void close() {
-        dbManager.disconnect();
+        try {
+            extensions.close();
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
+        } finally {
+            dbManager.disconnect();
+        }
     }
 
     @Override

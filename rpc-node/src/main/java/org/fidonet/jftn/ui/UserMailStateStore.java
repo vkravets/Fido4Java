@@ -17,7 +17,11 @@ final class UserMailStateStore implements AutoCloseable {
     private final UserMailRepository repository;
 
     UserMailStateStore(Path path) throws IOException {
-        storage = StorageServices.file(path);
+        this(StorageServices.file(path));
+    }
+
+    UserMailStateStore(StorageSession storage) throws IOException {
+        this.storage = storage;
         try {
             repository = storage.require(UserMailRepository.class);
         } catch (IOException | RuntimeException failure) {
