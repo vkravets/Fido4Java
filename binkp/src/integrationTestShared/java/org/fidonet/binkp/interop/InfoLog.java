@@ -28,7 +28,9 @@ final class InfoLog extends AbstractAppender implements AutoCloseable {
 
     InfoLog() {
         super("binkp-info", null,
-                PatternLayout.newBuilder().withPattern("%d{ISO8601} %-5p %c{1} - %m%n").build(),
+                PatternLayout.newBuilder()
+                             .withPattern("%d{yyyy-MM-dd HH:mm:ss.SSSXXX} %-5p %c{1} - %m%n")
+                             .build(),
                 false, Property.EMPTY_ARRAY);
         LoggerFactory.getILoggerFactory();
         start();

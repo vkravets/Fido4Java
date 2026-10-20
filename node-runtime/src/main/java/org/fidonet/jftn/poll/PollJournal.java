@@ -7,29 +7,39 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
+import java.time.Clock;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Netty callbacks enqueue bounded safe events; only the poll worker writes the journal. */
 final class PollJournal {
+    private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSSXXX",
+                                                                                   Locale.ROOT);
     private final Path path;
     private final int maximumBytes;
+    private final Clock clock;
     private final ArrayBlockingQueue<String> pending = new ArrayBlockingQueue<>(256);
     private final AtomicInteger dropped = new AtomicInteger();
     private boolean sealed;
 
     PollJournal(Path path, int maximumBytes) {
+        this(path, maximumBytes, Clock.systemDefaultZone());
+    }
+
+    PollJournal(Path path, int maximumBytes, Clock clock) {
         this.path = path;
         this.maximumBytes = maximumBytes;
+        this.clock = clock;
     }
 
     void record(String kind, String detail, long bytes) {
         String safe = detail.replaceAll("[\\p{Cntrl}]", " ");
         safe = safe.substring(0, Math.min(safe.length(), 2048));
-        String line = Instant.now()
+        String line = timestamp()
                       + " "
                       + kind
                       + " "
@@ -49,7 +59,7 @@ final class PollJournal {
         }
         int omitted = dropped.getAndSet(0);
         if (omitted > 0) {
-            events.add(Instant.now() + " [" + omitted + " events omitted: buffer full]\n");
+            events.add(timestamp() + " [" + omitted + " events omitted: buffer full]\n");
         }
         if (events.isEmpty()) {
             return;
@@ -59,6 +69,10 @@ final class PollJournal {
         } catch (IOException failure) {
             throw new UncheckedIOException("Cannot write poll journal", failure);
         }
+    }
+
+    private String timestamp() {
+        return TIMESTAMP.withZone(clock.getZone()).format(clock.instant());
     }
 
     private void append(List<String> events) throws IOException {

@@ -7,13 +7,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 class PollJournalTest {
     @TempDir
     Path root;
+
+    @ParameterizedTest
+    @CsvSource({"2026-10-20T08:43:17.307434900Z, Europe/Kyiv, 2026-10-20 11:43:17.307+03:00",
+            "2026-01-20T08:43:17.307434900Z, Europe/Kyiv, 2026-01-20 10:43:17.307+02:00",
+            "2026-10-20T08:43:17.000000001Z, UTC, 2026-10-20 08:43:17.000Z"})
+    void formattedMillisecondsAndTheClockZoneForEventsAndDroppedMessages(String instant,
+                                                                         String zone,
+                                                                         String expected)
+            throws Exception {
+        Clock clock = Clock.fixed(Instant.parse(instant), ZoneId.of(zone));
+        Path path = root.resolve("timestamp.log");
+        PollJournal journal = new PollJournal(path, 65536, clock);
+        for (int index = 0; index < 257; index++) {
+            journal.record("INFO", "binkp >>> NUL OPT", 0);
+        }
+        journal.flush();
+        var lines = Files.readAllLines(path);
+        assertEquals(257, lines.size());
+        assertEquals(expected + " INFO binkp >>> NUL OPT", lines.get(0));
+        assertEquals(expected + " [1 events omitted: buffer full]", lines.get(256));
+    }
 
     @Test
     void pagedUtf8EventsWithoutMixingAttemptsOrAllowingLineInjection() throws Exception {

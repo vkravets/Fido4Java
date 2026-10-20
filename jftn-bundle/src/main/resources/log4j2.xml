@@ -3,16 +3,16 @@
     <Appenders>
         <RollingFile name="Binkp" fileName="logs/binkp.log"
                      filePattern="logs/binkp-%d{yyyy-MM-dd}-%i.log.gz" createOnDemand="true">
-            <PatternLayout pattern="%d{ISO8601} %-5p [%t] %c{1} - %m%n%ex{full}"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSSXXX} %-5p [%t] %c{1} - %m%n%ex{full}"/>
             <Policies><SizeBasedTriggeringPolicy size="10 MB"/></Policies>
             <DefaultRolloverStrategy max="5"/>
         </RollingFile>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ISO8601} %-5p [%t] %c{1} - %m%n%ex{full}"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSSXXX} %-5p [%t] %c{1} - %m%n%ex{full}"/>
         </Console>
         <RollingFile name="File" fileName="logs/jftn.log"
                      filePattern="logs/jftn-%d{yyyy-MM-dd}-%i.log.gz" createOnDemand="true">
-            <PatternLayout pattern="%d{ISO8601} %-5p [%t] %c - %m%n%ex{full}"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSSXXX} %-5p [%t] %c - %m%n%ex{full}"/>
             <Policies><SizeBasedTriggeringPolicy size="10 MB"/></Policies>
             <DefaultRolloverStrategy max="5"/>
         </RollingFile>
