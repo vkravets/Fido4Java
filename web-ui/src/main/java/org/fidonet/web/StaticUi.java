@@ -6,16 +6,34 @@ import org.fidonet.jftn.rpc.HttpRouteProvider;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
 
 /** Serves packaged Vue assets and SPA routes; never exposes server filesystem paths. */
 public final class StaticUi implements HttpRouteProvider {
     @Override
     public Map<String, HttpHandler> routes(JFtnConfig config) {
-        return ServiceConfiguration.flag(config, "WebUiEnabled", true) ? routes() : Map.of();
+        if (!ServiceConfiguration.flag(config, "WebUiEnabled", true))
+            return Map.of();
+        Path directory = config.getSourcePath() == null
+                ? Path.of(".")
+                : config.getSourcePath().getParent();
+        Path themes = directory.resolve("themes/mail");
+        try {
+            Files.createDirectories(themes);
+        } catch (IOException failure) {
+            LoggerFactory.getLogger(StaticUi.class)
+                         .warn("Could not create mail theme directory", failure);
+        }
+        return Map.of("/", this::serve, "/ui/mail-themes.json", new MailThemeFiles(themes));
     }
     @Override
     public Map<String, HttpHandler> routes() {
@@ -55,6 +73,15 @@ public final class StaticUi implements HttpRouteProvider {
             return;
         }
         byte[] bytes = input.readAllBytes();
+        byte[] random = new byte[18];
+        new SecureRandom().nextBytes(random);
+        String nonce = Base64.getEncoder().encodeToString(random);
+        if (resource.equals("/index.html")) {
+            String html = new String(bytes, StandardCharsets.UTF_8);
+            bytes = html.replace("<head>",
+                                 "<head><meta name=\"jftn-style-nonce\" content=\"" + nonce + "\">")
+                        .getBytes(StandardCharsets.UTF_8);
+        }
         exchange.getResponseHeaders().set("Content-Type", contentType(resource));
         exchange.getResponseHeaders()
                 .set("Cache-Control",
@@ -64,7 +91,8 @@ public final class StaticUi implements HttpRouteProvider {
         exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
         exchange.getResponseHeaders()
                 .set("Content-Security-Policy",
-                     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'");
+                     "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-" + nonce
+                             + "'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'");
         exchange.sendResponseHeaders(200, head ? -1 : bytes.length);
         if (!head) {
             exchange.getResponseBody().write(bytes);

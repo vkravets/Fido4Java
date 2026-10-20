@@ -7,6 +7,7 @@ dependencies {
     implementation project(':fido-config')
     implementation project(':fido-fts')
     implementation project(':nodelist')
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.3'
     runtimeOnly 'com.h2database:h2:2.5.252'
 }
 
