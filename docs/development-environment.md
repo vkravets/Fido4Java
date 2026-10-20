@@ -223,6 +223,7 @@ These commands are examples for a developer checkout, not the installed node.
 .\gradlew.bat build --no-daemon --console=plain
 
 # Focused examples; choose checks relevant to your change.
+.\gradlew.bat :storage-api:test :storage-h2:test :fido-config:test
 .\gradlew.bat :jtoss:test
 .\gradlew.bat :plugin-manager:test :node-runtime:test :rpc-node:test
 .\gradlew.bat :jftn-bundle:test --tests '*ServicePluginDistributionTest'
@@ -485,3 +486,18 @@ Thrift or browser sources. See [profiles](transit-profiles.md) and
 reduced ZIPs and starts fresh JVMs using only packaged libraries. It covers
 PKT/TIC processing, restart, Headless SQL startup and an ephemeral-port binkp
 greeting. These tests use disposable state, never an installed station.
+
+## Storage adapter checks
+
+Storage ownership and backend selection are described in [storage.md](storage.md).
+Keep `StorageEndpoint` directives in one file-only fragment and preserve existing
+paths unless a separate stopped-node migration is intended. H2 is the only
+production SQL provider currently shipped. Domain API tests do not establish
+compatibility with another database implementation.
+
+On Windows/Temurin 17, verification covered the H2 pool and schema checks,
+mail/directory/account/reader tests, configured offline endpoints and fresh-JVM
+installation checks. Full/Headless startup, SQL-free Legacy/Transit packet/TIC
+processing and restart, removed UI/RPC plugins, missing storage providers and a
+removed directory plugin were exercised using isolated packaged installations.
+No installed workstation databases/configuration/mail were changed by these checks.

@@ -59,6 +59,7 @@ profile example; see [runtime profiles](docs/transit-profiles.md).
 - [Full, Headless, Legacy and Transit profiles](docs/transit-profiles.md)
 - [RPC contracts, transports and authentication](docs/rpc-ui.md)
 - [Plugin configuration and upgrade rules](docs/plugin-configuration.md)
+- [Storage providers and repository contracts](docs/storage.md)
 - [AreaFix, FileFix, TIC and directory feed scripts](docs/mail-scripts.md)
 - [Mail robot access and offline administration](docs/robot-access.md)
 - [Node and point directory parsing](docs/nodelist.md)

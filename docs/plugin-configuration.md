@@ -21,6 +21,7 @@ script lists; update those manually to adopt the new defaults.
 
 | File | Configuration |
 | --- | --- |
+| `05-storage.conf` | Optional `StorageEndpoint` declarations; provider-specific locations and shared repository ownership |
 | `10-binkp.conf` | Transport listen port/advertised flags (`BinkpPort`, `NDL`); poll retention, deadline and journal limit (`PollHistoryLimit`, `PollTimeoutSeconds`, `PollLogLimitBytes`) |
 | `20-jam-bridge.conf` | `JamBridgeEnabled`, `JamCharset`, `JamEcho`, `JamNetmail` |
 | `30-nodelist.conf` | `NodeDirectoryEnabled`, `NodeDirectoryPath`, `DirectoryRefreshEnabled`, `DirectoryRefreshSeconds`, `DirectoryLocalSource`, `DirectorySource` |
@@ -32,9 +33,10 @@ script lists; update those manually to adopt the new defaults.
 | `90-rpc.conf` | File-only listener, session, registration and passkey internals |
 | `95-web-ui.conf` | `WebUiEnabled`; optional browser plugin, dependent on RPC/HTTP |
 
-The database and scheduler plugins currently expose no configuration keys.
-The database URL and scheduled poll cadence are implemented in code; no dummy
-options are provided for them. This does not cover the separate configurable
+The database provider and domain endpoints can be selected through `StorageEndpoint`;
+see [storage providers](storage.md). Omitting declarations preserves existing paths.
+The scheduler poll cadence is still implemented in code; no dummy option is provided.
+This does not cover the separate configurable
 `PollTimeoutSeconds` deadline or `TossIntervalSeconds` mail-scan interval. Station links and AKAs are shared node data, not private
 transport plugin options, and remain in the main configuration.
 

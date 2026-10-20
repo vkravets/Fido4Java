@@ -7,6 +7,10 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Move FileEcho DAO queries/mappings behind a typed backend adapter while preserving
+  existing area/access/creation tables and SQL-free file mode. It already shares
+  the main mail source; see docs/storage.md for the remaining portability boundary.
+
 - Add full archive/body search and optional trash for browser mail readers.
   Local filtering of loaded message headers/excerpts is already available.
 - Refine the mobile mail layout after desktop review; retain separate list,
@@ -49,9 +53,9 @@ Optional future scope (not committed features)
 
 - Select additional binkp/TIC extensions or services only with explicit protocol
   requirements and interoperability/security tests; current limits are in docs/.
-- Consider storage-provider plugins for the current SQL/JAM/MSG/file selection.
-  UI/RPC already use optional service plugins; four profile bundles exist with
-  and without JREs. Storage migration remains an explicit separate operation.
+- Add additional SQL provider implementations and test each repository contract
+  against the actual backend. Typed storage SPI and the H2 adapters now exist;
+  physical database/profile migration remains an explicit separate operation.
 - Consider an RSS posting robot.
 - Consider further Husky robot commands and a dedicated uplink-request UI only
   with matching backend support: upstream %AVAIL catalogs, date-based/unlimited

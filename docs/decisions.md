@@ -1,6 +1,6 @@
 # Project decisions and working agreements
 
-Last reconciled: 2026-10-19. This is a decision record, not a complete chat transcript.
+Last reconciled: 2026-10-20. This is a decision record, not a complete chat transcript.
 The implementation and tests are authoritative when this document becomes stale.
 Update the relevant entry when a decision changes; record the replacement and reason.
 For current unfinished work, read [TODO](../TODO) and inspect the current Git state.
@@ -712,3 +712,20 @@ linked guide. Write the new decision and its consequences, adjust tests, and
 update the relevant service guide and TODO. Ask about genuine product/protocol
 ambiguity; routine implementation choices do not need another approval round. Keep future proposals
 visibly separate from accepted and shipped behavior.
+
+## Typed SQL storage providers (2026-10-20)
+
+SQL infrastructure has one owner per provider/location, with reference-counted
+leases and bounded H2 pools. Domain plugins use typed repositories rather than
+connections or arbitrary named SQL. Driver-specific directory/account/reader
+queries are separate adapters; RPC consumes `MailRepository` capabilities rather
+than the concrete mail facade. Optional extensions can register additional
+repository interfaces through SPI. Versioned module metadata rejects incompatible
+schemas instead of silently changing data. H2 is the only production SQL backend.
+
+Existing physical database paths remain authoritative and are not automatically
+merged. File-only `StorageEndpoint` declarations live in `conf.d/05-storage.conf`;
+setup and normal runtime resolve the same account endpoint. SQL-free profiles
+retain no SQL backend. Fileecho's existing DAO extension is explicitly pending
+migration; it shares the primary source but is not yet a portable typed adapter.
+See [storage boundaries and extension guide](storage.md).
