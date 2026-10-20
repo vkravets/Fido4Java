@@ -1,6 +1,94 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('mobile Back restores the previous list scroll position', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openStory(page, 'mail-netmailview--long-list');
+    const row = page.getByRole('button', { name: /^Discussion 25 / });
+    await row.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => window.scrollY);
+    expect(before).toBeGreaterThan(300);
+    await row.click();
+    await expect(page.locator('.split-list')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before - 20);
+});
+
+test('visual editor preserves FIDO source through formatting, undo and mode changes', async ({
+    page
+}) => {
+    await openStory(page, 'mail-fidoeditor--writing');
+    const editor = page.getByRole('textbox', { name: 'Message text', exact: true });
+    await editor.fill('Hello Bob');
+    await editor.press('ControlOrMeta+a');
+    await page.getByRole('button', { name: 'Bold', exact: true }).click();
+    await expect(editor).toHaveText('*Hello Bob*');
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(editor).toHaveText('Hello Bob');
+    await page.getByRole('button', { name: 'Redo', exact: true }).click();
+    await expect(editor).toHaveText('*Hello Bob*');
+    await page.getByRole('button', { name: 'Source text', exact: true }).click();
+    await expect(editor).toHaveText('*Hello Bob*');
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect(page.locator('.mail-body .bold')).toHaveText('Hello Bob');
+});
+test('mail appearance saves personal copies without overwriting operator palettes', async ({
+    page
+}) => {
+    await openStory(page, 'mail-mailappearancesettings--themes');
+    await page
+        .getByRole('combobox', { name: 'Customize theme', exact: true })
+        .selectOption('operator-green');
+    await page.getByLabel('Theme name', { exact: true }).fill('My green');
+    await page.getByRole('button', { name: 'Save personal theme' }).click();
+    const choices = page.getByRole('combobox', { name: 'Editor theme', exact: true });
+    await expect(choices.locator('option', { hasText: 'Operator green' })).toHaveCount(1);
+    await expect(choices.locator('option', { hasText: 'My green' })).toHaveCount(1);
+    expect(await choices.inputValue()).toMatch(/^custom-/);
+});
+test('template preview expands tokens and rejects unsupported file directives', async ({
+    page
+}) => {
+    await openStory(page, 'mail-mailtemplatesettings--templates');
+    const body = page.getByRole('textbox', { name: 'Template body', exact: true });
+    await body.fill('Hello @tname.\n@quote\n@position');
+    await expect(page.locator('.mail-body')).toContainText('Hello Bob.');
+    await expect(page.locator('.mail-body')).toContainText('> Welcome to the conference!');
+    await body.fill('@include /private');
+    await expect(page.getByRole('button', { name: 'Save template' })).toBeDisabled();
+    await expect(page.getByRole('status')).toContainText('Unsupported template token');
+});
+
+test('netmail preview switches between right, below and separate without losing the message', async ({
+    page
+}) => {
+    await openStory(page, 'mail-netmailview--reading');
+    const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
+    await expect(page.locator('.split-pane')).toHaveClass(/right/);
+    await position.selectOption('below');
+    await expect(page.locator('.split-pane')).toHaveClass(/below/);
+    await position.selectOption('separate');
+    await expect(page.locator('.mail-body')).toBeVisible();
+    await expect(page.locator('.separate-list')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.locator('.separate-list')).toBeVisible();
+});
+test('mobile mail uses separate list and detail screens and protects a modified reply', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openStory(page, 'mail-echomailview--reading');
+    await expect(page.locator('.split-list')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.locator('.split-list')).toBeVisible();
+    await page.getByRole('button', { name: /^Welcome to the conference/ }).click();
+    await page.getByRole('button', { name: 'Reply', exact: true }).click();
+    await page.getByLabel('Subject', { exact: true }).fill('Unsaved changes');
+    page.once('dialog', (dialog) => dialog.dismiss());
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unsaved changes');
+});
+
 test('split panes resize by keyboard, clamp boundaries and expose orientation', async ({
     page
 }) => {
@@ -24,46 +112,65 @@ test('collapsed navigation retains accessible names and point restrictions', asy
     await expect(page.getByRole('button', { name: 'Station', exact: true })).toHaveCount(0);
 });
 
-test('netmail preview switches between right, below and separate without losing the message', async ({
+test('forwarding copies original text into a new draft without reusing reply identifiers', async ({
     page
 }) => {
     await openStory(page, 'mail-netmailview--reading');
-    const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
-    await expect(page.locator('.split-pane')).toHaveClass(/right/);
-    await position.selectOption('below');
-    await expect(page.locator('.split-pane')).toHaveClass(/below/);
-    await position.selectOption('separate');
-    await expect(page.locator('.mail-body')).toBeVisible();
-    await expect(page.locator('.separate-list')).toBeHidden();
-    await page.getByRole('button', { name: 'Back to messages' }).click();
-    await expect(page.locator('.separate-list')).toBeVisible();
+    await page.getByRole('button', { name: 'Forward', exact: true }).click();
+    await expect(page.getByLabel('Subject', { exact: true })).toHaveValue(/^Fwd:/);
+    await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(
+        'Forwarded from'
+    );
+    await expect(page.locator('.mail-composer')).not.toContainText('Reply to message:');
+    await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('');
 });
 
-test('mobile Back restores the previous list scroll position', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await openStory(page, 'mail-netmailview--long-list');
-    const row = page.getByRole('button', { name: /^Discussion 25 / });
-    await row.scrollIntoViewIfNeeded();
-    const before = await page.evaluate(() => window.scrollY);
-    expect(before).toBeGreaterThan(300);
-    await row.click();
-    await expect(page.locator('.split-list')).toBeHidden();
-    await page.getByRole('button', { name: 'Back to messages' }).click();
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before - 20);
-});
+for (const width of [1280, 820, 375]) {
+    test(`application mail panes fit a ${width}px viewport`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await openStory(page, 'mail-netmailview--application-workspace');
+        await expect(page.locator('.mail-body')).toBeVisible();
+        const overflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > window.innerWidth
+        );
+        expect(overflow).toBe(false);
+    });
+}
 
-test('mobile mail uses separate list and detail screens and protects a modified reply', async ({
+test('starting another draft reinitializes its template without retaining previous edits', async ({
     page
 }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await openStory(page, 'mail-echomailview--reading');
-    await expect(page.locator('.split-list')).toBeHidden();
-    await page.getByRole('button', { name: 'Back to messages' }).click();
-    await expect(page.locator('.split-list')).toBeVisible();
-    await page.getByRole('button', { name: /^Welcome to the conference/ }).click();
+    await openStory(page, 'mail-netmailview--reading');
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
-    await page.getByLabel('Subject', { exact: true }).fill('Unsaved changes');
-    page.once('dialog', (dialog) => dialog.dismiss());
-    await page.getByRole('button', { name: 'Back to messages' }).click();
-    await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unsaved changes');
+    const editor = page.getByRole('textbox', { name: 'Message text', exact: true });
+    await editor.fill('Changed reply');
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'New netmail', exact: true }).click();
+    await expect(editor).toContainText('Hello there.');
+    await expect(editor).not.toContainText('Changed reply');
+    await expect(page.locator('.mail-composer')).not.toContainText('Reply to message:');
 });
+
+test('visual editor applies the shared link and text style palette', async ({ page }) => {
+    await openStory(page, 'mail-fidoeditor--writing');
+    await expect(page.locator('.editor-host .link')).toHaveCSS('color', 'rgb(128, 86, 0)');
+    await expect(page.locator('.editor-host .bold')).toHaveCSS('font-weight', '750');
+});
+
+for (const kind of ['netmail', 'echomail']) {
+    test(`${kind} composition fits the desktop reading pane`, async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await openStory(page, `mail-${kind}view--application-workspace`);
+        await page.getByRole('button', { name: 'Reply', exact: true }).click();
+        await expect(
+            page.getByRole('textbox', { name: 'Message text', exact: true })
+        ).toBeVisible();
+        const fits = await page
+            .locator('.mail-composer')
+            .evaluate((element) => element.scrollWidth <= element.clientWidth);
+        expect(fits).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+            true
+        );
+    });
+}

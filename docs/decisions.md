@@ -673,6 +673,28 @@ must not hide messages. Reader positions are per account and independent of mail
 delivery state. Newest-first echo cursors are separate from ascending legacy RPC
 mail cursors. No primary mail schema migration is required for the reader.
 
+## 38. Personal mail workspaces preserve plain-text FTN messages
+
+Netmail and echomail share collapsible app navigation, a contextual list and a
+right/below/separate reader. Per-account preferences keep independent mail-kind
+layouts. Mobile uses list/reader/composer screens with retained scroll and dirty
+draft guards. Search currently filters loaded headers and bounded excerpts only.
+
+CodeMirror supplies the visual/source plain-text editor; a shared FTN parser
+styles the reader and editor without rendering incoming HTML. Mail palettes are
+independent of the application theme: built-ins, read-only validated operator
+JSON files and personal copies have separate ownership. Browser-generated CSS
+uses a response nonce without widening script permissions.
+
+Bounded GoldED-inspired templates are non-executable personal data. Original
+reply/forward context persists with drafts. Default rules select by composition
+kind, permitted AKA and conference; they never grant author identities or bypass
+server controls. The backend remains authoritative for packet/kludge generation,
+subscription checks and explicit netmail release. Preferences are isolated in the
+RPC account database rather than installation configuration. Operator JSON files
+are public presentation data and may contain no secrets. Details and limits:
+[Mail workspace](mail-workspace.md).
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -4,6 +4,28 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'netmail-application', story: 'mail-netmailview--application-workspace' },
+    { name: 'echo-application', story: 'mail-echomailview--application-workspace' },
+    { name: 'application-header', story: 'navigation-applicationheader--signed-in' },
+    { name: 'mail-workspace-reading', story: 'mail-netmailview--reading' },
+    { name: 'mail-workspace-below', story: 'mail-netmailview--below' },
+    { name: 'mail-workspace-separate', story: 'mail-netmailview--separate' },
+    { name: 'echo-below', story: 'mail-echomailview--below' },
+    { name: 'echo-separate', story: 'mail-echomailview--separate' },
+    { name: 'echo-compact', story: 'mail-echomailview--compact' },
+    { name: 'fido-highlighted', story: 'mail-fidotext--highlighted' },
+    { name: 'fido-source', story: 'mail-fidotext--source' },
+    { name: 'editor-writing', story: 'mail-fidoeditor--writing' },
+    { name: 'editor-read-only', story: 'mail-fidoeditor--read-only' },
+    { name: 'editor-source', story: 'mail-fidoeditor--source' },
+    { name: 'editor-preview', story: 'mail-fidoeditor--preview' },
+    { name: 'mail-themes', story: 'mail-mailappearancesettings--themes' },
+    { name: 'mail-themes-busy', story: 'mail-mailappearancesettings--busy' },
+    { name: 'mail-themes-file', story: 'mail-mailappearancesettings--file-theme' },
+    { name: 'mail-themes-error', story: 'mail-mailappearancesettings--invalid-import' },
+    { name: 'mail-templates', story: 'mail-mailtemplatesettings--templates' },
+    { name: 'mail-templates-invalid', story: 'mail-mailtemplatesettings--invalid-token' },
+
     { name: 'split-right', story: 'layout-splitpane--right' },
     { name: 'split-below', story: 'layout-splitpane--below' },
     { name: 'navigation-collapsed', story: 'navigation-sidebar--collapsed' },

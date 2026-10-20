@@ -1,0 +1,10 @@
+{
+  "id": "operator-paper",
+  "name": "Station paper",
+  "colors": {
+    "background": "#fffdf7", "text": "#242424",
+    "quote1": "#116577", "quote2": "#6e4090", "quote3": "#82551e",
+    "ending": "#66615b", "link": "#805600", "selection": "#f4d38c",
+    "caret": "#242424", "search": "#f4d38c"
+  }
+}

@@ -1,3 +1,4 @@
+import MailApplicationFrame from './MailApplicationFrame.vue';
 import { provide, ref } from 'vue';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
@@ -87,3 +88,15 @@ export const Separate: Story = {
 };
 
 export const LongList: Story = { parameters: { rows: 100 } };
+
+export const ApplicationWorkspace: Story = {
+    args: { initialMessage: String(netmailMessage.id) },
+    decorators: [
+        (_story, context) => ({
+            components: { MailApplicationFrame },
+            setup: () => ({ theme: context.globals.theme === 'dark' ? 'dark' : 'light' }),
+            template:
+                '<MailApplicationFrame :theme="theme" page="netmail"><story /></MailApplicationFrame>'
+        })
+    ]
+};

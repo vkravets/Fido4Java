@@ -46,6 +46,34 @@ class UserMailStateStoreTest {
         assertEquals(1, state.drafts("other").size());
     }
 
+    @Test
+    void originalReplyContextSurvivesReopenAndRemainsOwnerScoped() throws Exception {
+        Path path = root.resolve("context");
+        MailDraft draft = draft("reply").setOriginalBody("Original *plain text*")
+                                        .setOriginalName("Peer")
+                                        .setOriginalAddress("1:500/101")
+                                        .setOriginalDate("20 Oct 26 10:00:00")
+                                        .setComposeKind("quoted")
+                                        .setTemplateInitialized(true)
+                                        .setReplyTo("1:500/101 1234abcd");
+        new MailDraftValidator(null).fields(draft);
+        new UserMailStateStore(path).save("sysop", draft);
+        UserMailStateStore reopened = new UserMailStateStore(path);
+        assertEquals(draft, reopened.drafts("sysop").get(0));
+        assertEquals(0, reopened.drafts("other").size());
+    }
+
+    @Test
+    void originalTemplateContextHasBoundedSizeAndKnownCompositionKinds() {
+        MailDraftValidator validator = new MailDraftValidator(null);
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft("large").setOriginalBody("x".repeat(60001))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft("date").setOriginalDate("x".repeat(101))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft("kind").setComposeKind("execute")));
+    }
+
     private static void seedDrafts(Path path, String owner, int count) throws Exception {
         try (Connection connection = DriverManager.getConnection("jdbc:h2:"
                                                                  + path.toAbsolutePath());

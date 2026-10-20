@@ -1,3 +1,4 @@
+import MailApplicationFrame from './MailApplicationFrame.vue';
 import { provide, ref } from 'vue';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
@@ -75,3 +76,15 @@ export const Separate: Story = {
     args: { initialMessage: '9007199254740994' }
 };
 export const Compact: Story = { parameters: { workspace: { echo: { density: 'compact' } } } };
+
+export const ApplicationWorkspace: Story = {
+    args: { initialMessage: '9007199254740994' },
+    decorators: [
+        (_story, context) => ({
+            components: { MailApplicationFrame },
+            setup: () => ({ theme: context.globals.theme === 'dark' ? 'dark' : 'light' }),
+            template:
+                '<MailApplicationFrame :theme="theme" page="echo"><story /></MailApplicationFrame>'
+        })
+    ]
+};

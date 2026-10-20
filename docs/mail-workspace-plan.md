@@ -1,6 +1,6 @@
 # Mail workspace implementation
 
-Accepted on 2026-10-20. This is an implementation checklist, not a list of shipped features.
+Accepted on 2026-10-20. Implementation record; verification evidence is recorded below.
 
 ## Interaction contract
 
@@ -8,7 +8,7 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
   and a reading/composition pane. Conference selection belongs to the list pane.
 - Reading pane positions: right, below, or a separate screen. Resizable boundaries
   support pointer and keyboard input. Persist netmail/echo preferences independently.
-- Flat/threaded presentation and compact/comfortable density are independent.
+- Echo flat/threaded presentation and compact/comfortable list density are independent.
 - Mobile uses list, message and compose screens with Back, retained scroll position
   and protection against discarding unsaved drafts.
 - Mail rendering and editing share FTN text parsing. Visual styles remain plain-text
@@ -37,18 +37,18 @@ Accepted on 2026-10-20. This is an implementation checklist, not a list of shipp
 8. [x] Mobile screens, Back and retained list position.
 9. [x] Adapt administration/settings to the shell.
 10. [x] Shared FIDO text parser with behavior tests.
-11. [ ] Highlighted message reader.
-12. [ ] Built-in and operator-file mail themes.
-13. [ ] Personal theme UI, preview, import/export.
-14. [ ] Visual/source editor foundation and plain-text round trips.
+11. [x] Highlighted message reader.
+12. [x] Built-in and operator-file mail themes.
+13. [x] Personal theme UI, preview, import/export.
+14. [x] Visual/source editor foundation and plain-text round trips.
 15. [x] Editor styles, quoting, history and preview.
 16. [x] Netmail editor integration.
 17. [x] Echomail editor integration.
 18. [x] Persistent template model and safe expansion.
 19. [x] Built-in new/reply/quoted/forward templates.
-20. [ ] Template management UI and preview.
-21. [ ] Composer selection and template defaults by kind/AKA/area.
-22. [ ] End-to-end checks, affected Linux VRT, documentation and removal of replaced code.
+20. [x] Template management UI and preview.
+21. [x] Composer selection and template defaults by kind/AKA/area.
+22. [x] End-to-end checks, affected Linux VRT, documentation and removal of replaced code.
 
 Each functional step carries focused tests. Visible states need Storybook and
 affected desktop/mobile EN/UK light/dark VRT. Compare reviewed Linux references
@@ -60,3 +60,25 @@ remaining limitations here at stage boundaries.
 [GoldED+ reference](https://github.com/golded-plus/golded-plus/blob/master/manuals/gold_ref.txt):
 STYLECODES and The Message Template. In particular, @position is cursor placement,
 @caddr is the author's address, and @quote inserts the original quote.
+
+## Verification on 2026-10-20
+
+- Root Spotless and Java layout verification passed.
+- RPC/account, RPC-node and Web UI Java suites passed. Focused restart tests also
+  verified owner-isolated original reply context and metadata size/kind rejection.
+- Frontend unit tests: 72 passed; application and Storybook type checks passed.
+- Component/workspace browser checks: 57 passed, including all catalogue smoke
+  batches, 1280/820/375px layouts, both desktop composer panes, dirty-draft guards,
+  scroll restoration, new-draft template reset, formatting history and forwarding.
+- Actual HTTP application and setup workflows passed (12 application scenarios
+  and one setup scenario), with the generated Thrift browser client.
+- Reviewed affected Linux references: 232 updated and 168 added PNGs. A separate
+  comparison without snapshot updates passed all 400 affected scenarios across
+  EN/UK, light/dark and desktop/mobile. Unrelated references were not refreshed.
+
+Native browser workers are bounded to two, matching CI: four simultaneous cold
+catalogue loads exceeded the local story-ready assertion deadline. The same
+scenarios and final full component run passed with two, without increasing test
+timeouts or adding retries. Mobile checks emulate viewports; they are not physical
+phone certification. See [Mail workspace](mail-workspace.md) for behavior, palette
+files, supported template tokens and the loaded-search/GoldED-subset limits.

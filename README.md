@@ -26,8 +26,10 @@ Report bugs and feature requests through the repository's issue tracker.
 - Thrift RPC over framed TCP and HTTP for administration and mail APIs.
 - Node/point directory browsing and FTN address suggestions from imported lists.
 
-The browser supports netmail reading, replies and drafts for approved account AKAs,
-plus administrator routing controls. The echomail reader remains planned.
+The browser supports netmail and threaded echomail reading, composition, replies,
+forwarding and drafts for permitted account AKAs, plus administrator routing controls.
+Its mail workspace includes resizable previews, a plain-text FIDO visual editor,
+personal themes and templates.
 See [remaining work](TODO) and the limitations in each service guide.
 
 ### INSTALL
@@ -50,6 +52,7 @@ profile example; see [runtime profiles](docs/transit-profiles.md).
 - [Developer environment, bootstrap and offline recovery](docs/development-environment.md)
 - [Architecture decisions and working agreements](docs/decisions.md)
 - [Browser setup, settings and UI testing](docs/web-ui.md)
+- [Mail layouts, FIDO editor, themes and templates](docs/mail-workspace.md)
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [External BSO delivery, attachments and file requests](docs/bso.md)
 - [Real BSO/HTick container integration tests](docs/husky-integration.md)

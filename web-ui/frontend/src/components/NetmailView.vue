@@ -122,6 +122,7 @@ function editDraft(value: MailDraft) {
         </template>
         <MailComposer
             v-if="reader.draft.value"
+            :key="reader.draft.value.id"
             v-model="reader.draft.value"
             :addresses="state.profile.value?.allowedAkas || []"
             :busy="state.busy.value"

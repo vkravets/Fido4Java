@@ -323,9 +323,7 @@ public final class NodeUiServiceHandler implements UiService.Iface {
         int end = Math.min(240, plain.length());
         if (end > 0 && Character.isHighSurrogate(plain.charAt(end - 1)))
             end--;
-        String excerpt = plain.substring(0, end)
-                              .replaceAll("\\s+", " ")
-                              .trim();
+        String excerpt = plain.substring(0, end).replaceAll("\\s+", " ").trim();
         result.setExcerpt(excerpt);
         String reply = message.getBody().getKludges().get("REPLY");
         if (reply != null)

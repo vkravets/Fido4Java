@@ -341,7 +341,8 @@ test('echo creation requires an explicit per-link grant and keeps receiving righ
     await expect(page.getByText('Only links explicitly allowed', { exact: false })).toBeVisible();
 });
 
-for (let batch = 0; batch < 4; batch++) {
+const catalogueBatches = 8;
+for (let batch = 0; batch < catalogueBatches; batch++) {
     test(`catalogue stories render without browser errors (batch ${batch + 1})`, async ({
         page,
         request
@@ -355,7 +356,7 @@ for (let batch = 0; batch < 4; batch++) {
         };
         const stories = Object.values(index.entries).filter((entry) => entry.type === 'story');
         expect(stories.length).toBeGreaterThanOrEqual(16);
-        for (const entry of stories.filter((_entry, index) => index % 4 === batch)) {
+        for (const entry of stories.filter((_entry, index) => index % catalogueBatches === batch)) {
             await story(page, entry.id);
             await expect(page.locator('#storybook-root')).not.toBeEmpty();
             expect(errors, entry.id).toEqual([]);

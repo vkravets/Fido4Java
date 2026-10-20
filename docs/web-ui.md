@@ -23,6 +23,11 @@ field. The component passes the flag through Thrift `searchDirectory` to the
 catalog's SQL query before pagination. The full Node directory includes points.
 This is a presentation filter, not an authorization or link-trust decision.
 
+## Mail workspace
+
+See [Mail workspace](mail-workspace.md) for the three-pane layout, mobile screens,
+visual/source FIDO editor, independent mail themes and safe reply templates.
+
 ## Building and opening the interface
 
 The browser application uses Vue 3 and TypeScript (`strict` mode), built with Vite.
@@ -78,6 +83,10 @@ English is the default language; Ukrainian is the other supported language.
 The header selector is available during setup and before sign-in. Its choice is
 stored locally in the browser (`jftn-language`), independently of the account's
 theme preference. Russian is not an interface language.
+
+Local component checks use two browser workers, matching CI, to keep cold catalogue
+loads reliable on development machines. Catalogue smoke checks are divided into
+eight batches; focused runs do not narrow the CI test matrix.
 
 ## Echomail reader
 
@@ -481,7 +490,7 @@ composition with directory suggestions including points. Outgoing status changes
 from queued to sent after transport acknowledgement; submission alone does not
 mean delivery. Network retries retain the same send request ID. Unsaved edits are
 protected when switching folders, leaving the reader or signing out. Netmail
-deletion is available as described above; mail search and trash are not implemented.
+deletion is available as described above; full archive search and trash are not implemented. The workspace offers a loaded-message filter.
 
 Passkeys are an additional sign-in method. A new localhost setup enables WebAuthn
 for `localhost`. Remote access requires an HTTPS reverse proxy and matching

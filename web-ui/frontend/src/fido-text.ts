@@ -1,4 +1,4 @@
-export type TextStyle = 'bold' | 'italic' | 'underline' | 'reverse' | 'address';
+export type TextStyle = 'bold' | 'italic' | 'underline' | 'reverse' | 'address' | 'link';
 export interface TextRun {
     text: string;
     styles: TextStyle[];
@@ -45,8 +45,10 @@ function runs(
         )
             continue;
         if (start > position) result.push({ text: text.slice(position, start), styles: inherited });
-        if (link) result.push({ text: match[0], styles: inherited, href: match[0] });
-        else if (address) {
+        if (link) {
+            result.push({ text: match[0], styles: inherited, href: match[0] });
+            ranges?.push({ from: base + start, to: base + end, style: 'link', markers: false });
+        } else if (address) {
             result.push({ text: match[0], styles: [...inherited, 'address'] });
             ranges?.push({ from: base + start, to: base + end, style: 'address', markers: false });
         } else {

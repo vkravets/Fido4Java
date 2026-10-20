@@ -1,7 +1,12 @@
 import { t } from './i18n.ts';
 import type { MailTemplate } from './mail-templates.ts';
 export function templateLabel(template: MailTemplate) {
-    const labels: Record<string, string> = { new: t('New message'), reply: t('Short reply'), quoted: t('Quoted reply'), forward: t('Forward') };
+    const labels: Record<string, string> = {
+        new: t('New message'),
+        reply: t('Short reply'),
+        quoted: t('Quoted reply'),
+        forward: t('Forward')
+    };
     return labels[template.id] || template.name;
 }
 export function templateError(failure: unknown) {

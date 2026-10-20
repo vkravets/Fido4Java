@@ -168,6 +168,7 @@ async function refresh() {
         </template>
         <MailComposer
             v-if="reader.draft.value"
+            :key="reader.draft.value.id"
             v-model="reader.draft.value"
             :addresses="reader.authors.value"
             :busy="state.busy.value"

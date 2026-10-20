@@ -5,7 +5,7 @@ export default defineConfig({
     testMatch: ['components.spec.ts', 'workspace.spec.ts'],
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    workers: process.env.CI ? 2 : undefined,
+    workers: 2,
     retries: 0,
     timeout: 30000,
     reporter: [

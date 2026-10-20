@@ -76,7 +76,9 @@ final class MailThemeFiles implements HttpHandler {
         if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS) || Files.size(file) > 32768)
             return null;
         byte[] bytes;
-        try (InputStream input = Files.newInputStream(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+        try (InputStream input = Files.newInputStream(file,
+                                                      StandardOpenOption.READ,
+                                                      LinkOption.NOFOLLOW_LINKS)) {
             bytes = input.readNBytes(32769);
         }
         if (bytes.length > 32768)

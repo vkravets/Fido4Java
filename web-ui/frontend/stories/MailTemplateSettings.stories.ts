@@ -22,4 +22,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Templates: Story = {};
 
-export const InvalidToken: Story = { args: { initialTemplate: { id: 'invalid', name: 'Unsupported directive', kind: 'new', body: '@include /private' } } };
+export const InvalidToken: Story = {
+    args: {
+        initialTemplate: {
+            id: 'invalid',
+            name: 'Unsupported directive',
+            kind: 'new',
+            body: '@include /private'
+        }
+    }
+};

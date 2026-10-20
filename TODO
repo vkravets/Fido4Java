@@ -7,6 +7,8 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Add full archive/body search and optional trash for browser mail readers.
+  Local filtering of loaded message headers/excerpts is already available.
 - Add safe link removal/renaming, accounting for routes, subscriptions and queues.
   Netmail routing policy/rule administration and preview now exist in RPC/UI.
 - Decide whether to implement or remove the empty legacy JAMEchoBase.getMessage()

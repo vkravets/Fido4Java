@@ -77,6 +77,7 @@ const lines = computed(() => fidoText(props.text, !props.source));
     color: var(--mail-background, var(--surface));
 }
 .fido-text a,
+.fido-text .link,
 .fido-text .address {
     color: var(--mail-link, var(--accent));
 }

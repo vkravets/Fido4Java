@@ -156,11 +156,21 @@ function wrap(marker: string) {
     if (!editor || props.disabled) return;
     const { from, to } = editor.state.selection.main;
     const selected = editor.state.sliceDoc(from, to);
-    const surrounding = from > 0 && editor.state.sliceDoc(from - marker.length, from) === marker && editor.state.sliceDoc(to, to + marker.length) === marker;
+    const surrounding =
+        from > 0 &&
+        editor.state.sliceDoc(from - marker.length, from) === marker &&
+        editor.state.sliceDoc(to, to + marker.length) === marker;
     const start = surrounding ? from - marker.length : from;
     const end = surrounding ? to + marker.length : to;
     const insert = surrounding ? selected : formatFidoLines(selected, marker);
-    editor.dispatch({ annotations: isolateHistory.of('full'), changes: { from: start, to: end, insert }, selection: { anchor: selected ? start : start + marker.length, head: selected ? start + insert.length : start + marker.length } });
+    editor.dispatch({
+        annotations: isolateHistory.of('full'),
+        changes: { from: start, to: end, insert },
+        selection: {
+            anchor: selected ? start : start + marker.length,
+            head: selected ? start + insert.length : start + marker.length
+        }
+    });
     editor.focus();
 }
 function quote() {
@@ -294,7 +304,13 @@ defineExpose({
             :theme-id="appearance.editor.value"
             :text="model"
         />
-        <p v-if="bytes > 60000" class="muted" role="status">{{ t('Message exceeds 60000 UTF-8 bytes.') }}</p>
+        <p
+            v-if="bytes > 60000"
+            class="muted"
+            role="status"
+        >
+            {{ t('Message exceeds 60000 UTF-8 bytes.') }}
+        </p>
         <small>{{ t('Plain text') }} · UTF-8 · {{ bytes }} / 60000</small>
     </div>
 </template>

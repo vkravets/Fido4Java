@@ -35,6 +35,7 @@ jftn-<version>/
     groovy/               Groovy runtime JARs
   plugins/                Optional RPC/UI, database, scheduler, Netty and mail plugins
   scripts/mail-scripts/   Editable AreaFix, FileFix and directory import scripts
+  themes/mail/            Read-only operator JSON palettes and an example
   jre/                    Linux x64 and Windows x64 runtimes in with-jre packages
   runtime-profile         Installed profile marker
   jftn.conf.example       Manual configuration template, never activated automatically

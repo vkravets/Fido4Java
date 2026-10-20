@@ -539,3 +539,21 @@ Uninspectable/oversized rows have an empty checksum and require manual handling.
 These operations are serialized with normal mail processing and administrator-only
 on both transports. Recovery copies/metadata and toss journals are operational
 state; do not clean them as caches.
+
+## Personal workspace documents and draft context
+
+`ProfileService.uiDocument(session, key)` and `saveUiDocument(session, key, document)`
+read/write only the authenticated account's `workspace`, `mail-themes` and
+`mail-templates` documents. Unknown keys and invalid sessions are rejected. A
+missing document returns `{}`. JSON must be an object, use unique keys, be at
+most 256 KiB UTF-8, depth 16 and string values at most 60,000 characters. These
+preferences never grant permissions. Account ownership is selected server-side;
+the request accepts no arbitrary owner. Both transports share these checks.
+
+`MailItem.excerpt` is an optional bounded summary (240 characters); list calls
+still omit full bodies and routing kludges. `MailDraft` optionally stores original
+body/date/name/address, composition kind and template-initialized state. This
+context survives draft persistence for client-side template expansion; it does
+not override server submission authorization, MSGID generation or REPLY handling.
+Original bodies are bounded to 60,000 UTF-8 bytes. See [Mail workspace](mail-workspace.md)
+for the supported template tokens and preference limits.

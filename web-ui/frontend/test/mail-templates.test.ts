@@ -43,9 +43,24 @@ test('specific defaults override generic rules without changing stored identitie
 });
 
 test('escaped cursor tokens remain literal and values never expand recursively', () => {
-    const context = { kind: 'new' as const, echo: false, fromName: '@quote', fromAddress: '1:500/100', toName: 'Bob', toAddress: '1:500/101', subject: '', area: '' };
-    const result = expandTemplate({ ...builtInTemplates[0]!, body: '; ignored\n@@position @cname @position!\n@position' }, context);
+    const context = {
+        kind: 'new' as const,
+        echo: false,
+        fromName: '@quote',
+        fromAddress: '1:500/100',
+        toName: 'Bob',
+        toAddress: '1:500/101',
+        subject: '',
+        area: ''
+    };
+    const result = expandTemplate(
+        { ...builtInTemplates[0]!, body: '; ignored\n@@position @cname @position!\n@position' },
+        context
+    );
     assert.equal(result.body, '@position @quote !\n');
     assert.equal(result.cursor, '@position @quote '.length);
-    assert.throws(() => expandTemplate({ ...builtInTemplates[0]!, body: '@constructor' }, context), /Unsupported/);
+    assert.throws(
+        () => expandTemplate({ ...builtInTemplates[0]!, body: '@constructor' }, context),
+        /Unsupported/
+    );
 });

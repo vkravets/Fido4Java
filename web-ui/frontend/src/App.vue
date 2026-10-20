@@ -18,7 +18,7 @@ import RobotAccess from './components/RobotAccess.vue';
 import Connections from './components/Connections.vue';
 import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
-import LanguageSelector from './components/LanguageSelector.vue';
+import ApplicationHeader from './components/ApplicationHeader.vue';
 import NetmailView from './components/NetmailView.vue';
 import NetmailRoutingView from './components/NetmailRoutingView.vue';
 import EchomailView from './components/EchomailView.vue';
@@ -114,42 +114,15 @@ function openForward(draft: MailDraft) {
         role="status"
         :aria-label="t('Request in progress')"
     ></div>
-    <header class="topbar">
-        <button v-if="state.profile.value" class="mobile-menu-toggle secondary" :aria-label="t('Open menu')" :aria-expanded="mobileNavigation" @click="mobileNavigation = !mobileNavigation">&#9776;</button>
-        <a
-            href="/"
-            class="brand"
-            :aria-label="t('JFtn, home')"
-            ><img
-                class="brand-mark"
-                src="/jftn.svg"
-                alt=""
-            />JFtn<span class="version">NODE / WEB</span></a
-        >
-        <div class="topbar-actions">
-            <LanguageSelector />
-            <span
-                v-if="state.profile.value"
-                class="user-name"
-                >{{ state.profile.value.login }}</span
-            ><button
-                class="icon-button"
-                :aria-label="state.theme.value === 'dark' ? t('Light theme') : t('Dark theme')"
-                :disabled="state.busy.value"
-                @click="state.run(state.toggleTheme)"
-            >
-                {{ state.theme.value === 'dark' ? '☀' : '☾' }}</button
-            ><button
-                v-if="state.profile.value"
-                class="text-button"
-                :aria-label="t('Sign out')"
-                :disabled="state.busy.value"
-                @click="logout"
-            >
-                {{ t('Sign out') }}
-            </button>
-        </div>
-    </header>
+    <ApplicationHeader
+        :profile="state.profile.value"
+        :theme="state.theme.value"
+        :busy="state.busy.value"
+        :menu-open="mobileNavigation"
+        @menu="mobileNavigation = !mobileNavigation"
+        @theme="state.run(state.toggleTheme)"
+        @logout="logout"
+    />
     <Teleport to="body">
         <section
             id="notifications"

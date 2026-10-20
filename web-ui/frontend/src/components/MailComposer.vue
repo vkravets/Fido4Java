@@ -15,7 +15,12 @@ const editor = ref<InstanceType<typeof FidoEditor>>();
 const templates = useMailTemplates();
 const error = ref('');
 const selectedTemplate = ref('');
-const canSubmit = computed(() => props.addresses.length > 0 && draft.value.body.trim().length > 0 && new TextEncoder().encode(draft.value.body).length <= 60000);
+const canSubmit = computed(
+    () =>
+        props.addresses.length > 0 &&
+        draft.value.body.trim().length > 0 &&
+        new TextEncoder().encode(draft.value.body).length <= 60000
+);
 const kind = computed<ComposeKind>(() =>
     ['new', 'reply', 'quoted', 'forward'].includes(draft.value.composeKind || '')
         ? (draft.value.composeKind as ComposeKind)
@@ -158,9 +163,7 @@ function chooseTemplate() {
                 kind="error"
                 :message="error"
             />
-            <div
-                class="composer-template actions"
-            >
+            <div class="composer-template actions">
                 <label
                     >{{ t('Template')
                     }}<select v-model="selectedTemplate">

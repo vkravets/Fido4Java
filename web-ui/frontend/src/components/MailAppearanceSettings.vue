@@ -2,12 +2,7 @@
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { themeLabel } from '../mail-theme-labels.ts';
-import {
-    mailColors,
-    mailTheme,
-    themeStyle,
-    useMailAppearance
-} from '../mail-themes.ts';
+import { mailColors, mailTheme, themeStyle, useMailAppearance } from '../mail-themes.ts';
 import type { MailTheme } from '../mail-themes.ts';
 import type { AppState } from '../state.ts';
 import FidoText from './FidoText.vue';
@@ -160,7 +155,7 @@ const labels = {
             </div>
             <div
                 :style="themeStyle(draft)"
-                class="theme-preview"
+                class="mail-palette-preview"
             >
                 <FidoText
                     :text="preview"
@@ -206,16 +201,17 @@ const labels = {
     height: 40px;
     padding: 4px;
 }
-.theme-preview {
+.mail-palette-preview {
     margin: 20px 0;
 }
-.theme-preview :deep(.fido-text) {
+.mail-palette-preview :deep(.fido-text) {
     background: var(--mail-background);
     color: var(--mail-text);
 }
-.theme-preview pre {
-    padding: 12px;
-    white-space: pre-wrap;
+hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 20px 0;
 }
 fieldset {
     border: 0;

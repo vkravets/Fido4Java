@@ -965,12 +965,6 @@ footer.actions {
     background: var(--accent-soft);
     color: var(--accent);
 }
-.mail-workspace {
-    display: grid;
-    grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.7fr);
-    gap: 20px;
-    align-items: start;
-}
 .mail-row {
     display: flex;
     flex-direction: column;
@@ -1045,17 +1039,6 @@ footer.actions {
     justify-content: space-between;
     margin-bottom: 12px;
 }
-@media (max-width: 800px) {
-    .mail-workspace {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-.echo-workspace {
-    display: grid;
-    grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
-}
 .echo-areas {
     padding: 20px;
 }
@@ -1082,13 +1065,9 @@ footer.actions {
 .echo-area small {
     color: var(--muted);
 }
-.echo-content,
 .echo-reading,
 .echo-message-list {
     min-width: 0;
-}
-.echo-reader {
-    grid-template-columns: minmax(230px, 0.85fr) minmax(0, 1.4fr);
 }
 .echo-message-list {
     padding: 16px;
@@ -1155,15 +1134,7 @@ footer.actions {
 .echo-conversation ul {
     padding-inline-start: 20px;
 }
-@media (max-width: 1200px) {
-    .echo-reader {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
 @media (max-width: 700px) {
-    .echo-workspace {
-        grid-template-columns: minmax(0, 1fr);
-    }
     .echo-areas {
         max-height: 280px;
         overflow: auto;
