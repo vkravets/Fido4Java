@@ -245,7 +245,7 @@ public final class DirectoryService implements MailProcessingExtension, Director
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         catalog.close();
     }
 }

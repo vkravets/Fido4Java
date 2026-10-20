@@ -1,0 +1,7 @@
+apply plugin: 'java-library'
+
+description = 'H2 implementation of the node directory storage contract'
+dependencies {
+    implementation project(':nodelist')
+    implementation project(':storage-jdbc')
+}

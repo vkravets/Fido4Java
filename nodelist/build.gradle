@@ -8,7 +8,9 @@ dependencies {
     api project(':mail-api')
     implementation project(':plugin-manager')
     implementation 'org.slf4j:slf4j-api:2.0.20'
-    runtimeOnly 'com.h2database:h2:2.5.252'
+    api project(':storage-api')
+    runtimeOnly project(':storage-h2')
+    runtimeOnly project(':directory-storage-h2')
 }
 
 tasks.register('importDirectory', JavaExec) {

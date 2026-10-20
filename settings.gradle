@@ -46,3 +46,5 @@ include ':rpc-node'
 include ':storage-api'
 include ':storage-jdbc'
 include ':storage-h2'
+
+include ':directory-storage-h2'
