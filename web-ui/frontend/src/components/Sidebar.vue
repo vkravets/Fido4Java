@@ -18,16 +18,11 @@ const emit = defineEmits<{
         page:
             | 'settings'
             | 'node'
-            | 'accounts'
-            | 'robots'
-            | 'connections'
             | 'directory'
             | 'netmail'
             | 'echo'
             | 'drafts'
             | 'links'
-            | 'logs'
-            | 'routing'
             | 'templates'
     ];
 }>();
@@ -115,15 +110,6 @@ const emit = defineEmits<{
             </button>
             <template v-if="profile.role === 'ADMIN'">
                 <button
-                    :class="{ active: page === 'routing' }"
-                    :aria-label="t('Netmail routing')"
-                    :title="collapsed ? t('Netmail routing') : undefined"
-                    @click="emit('navigate', 'routing')"
-                >
-                    <AppIcon name="routes" />
-                    <span class="nav-text">{{ t('Netmail routing') }}</span>
-                </button>
-                <button
                     :class="{ active: page === 'node' }"
                     :aria-label="t('Station')"
                     :title="collapsed ? t('Station') : undefined"
@@ -139,41 +125,6 @@ const emit = defineEmits<{
                     @click="emit('navigate', 'links')"
                 >
                     <AppIcon name="link" /><span class="nav-text">{{ t('Links') }}</span>
-                </button>
-                <button
-                    :class="{ active: page === 'connections' }"
-                    :aria-label="t('Polling')"
-                    :title="collapsed ? t('Polling') : undefined"
-                    @click="emit('navigate', 'connections')"
-                >
-                    <AppIcon name="clock" />
-                    <span class="nav-text">{{ t('Polling') }}</span>
-                </button>
-                <button
-                    :class="{ active: page === 'logs' }"
-                    :aria-label="t('Logs')"
-                    :title="collapsed ? t('Logs') : undefined"
-                    @click="emit('navigate', 'logs')"
-                >
-                    <AppIcon name="logs" /><span class="nav-text">{{ t('Logs') }}</span>
-                </button>
-                <button
-                    :class="{ active: page === 'robots' }"
-                    :aria-label="t('Mail robots')"
-                    :title="collapsed ? t('Mail robots') : undefined"
-                    @click="emit('navigate', 'robots')"
-                >
-                    <AppIcon name="robot" />
-                    <span class="nav-text">{{ t('Mail robots') }}</span>
-                </button>
-                <button
-                    :class="{ active: page === 'accounts' }"
-                    :aria-label="t('Accounts and requests')"
-                    :title="collapsed ? t('Accounts and requests') : undefined"
-                    @click="emit('navigate', 'accounts')"
-                >
-                    <AppIcon name="users" />
-                    <span class="nav-text">{{ t('Accounts and requests') }}</span>
                 </button>
             </template>
         </nav>

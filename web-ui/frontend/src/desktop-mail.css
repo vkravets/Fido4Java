@@ -137,9 +137,7 @@ summary:has(> .app-icon) {
         gap: 12px;
     }
     .sidebar nav button.active {
-        border-left: 3px solid var(--accent-fill);
-        padding-left: 7px;
-        box-shadow: none;
+        box-shadow: inset 3px 0 var(--accent-fill);
     }
     .sidebar nav button .app-icon {
         width: 20px;

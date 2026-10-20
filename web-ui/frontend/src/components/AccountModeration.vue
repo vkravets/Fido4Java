@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { onMounted, ref } from 'vue';
+import { inject, onMounted, ref } from 'vue';
+import { accountModerationClientKey } from '../station-clients.ts';
 import { api } from '../api.ts';
 import type { UserProfile } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
 const props = defineProps<{ state: AppState }>();
+const client = inject(accountModerationClientKey, api.profile);
 const accounts = ref<UserProfile[]>([]);
 async function refresh() {
-    accounts.value = await api.profile.accounts(props.state.session.value);
+    accounts.value = await client.accounts(props.state.session.value);
 }
 onMounted(() => props.state.run(refresh));
 function decide(owner: string, address: string, approve: boolean) {
     props.state.run(async () => {
-        await api.profile.decideAka(props.state.session.value, owner, address, approve);
+        await client.decideAka(props.state.session.value, owner, address, approve);
         await refresh();
         props.state.notice.value = approve
             ? t('Address approved and account activated.')

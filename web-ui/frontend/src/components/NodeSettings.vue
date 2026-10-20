@@ -10,12 +10,15 @@ import EchoSettings from './EchoSettings.vue';
 import QuarantineSettings from './QuarantineSettings.vue';
 import NotificationBanner from './NotificationBanner.vue';
 import PluginSettings from './PluginSettings.vue';
+import NetmailRoutingView from './NetmailRoutingView.vue';
+import Connections from './Connections.vue';
+import RobotAccess from './RobotAccess.vue';
+import AccountModeration from './AccountModeration.vue';
+import type { StationSection } from '../station-navigation.ts';
 import type { NodeConfiguration } from '@rpc/bindings.mjs';
 import type { AppState } from '../state.ts';
 const props = defineProps<{ state: AppState; initialSection?: 'general' | 'links' }>();
-const section = ref<'general' | 'links' | 'tosser' | 'echoes' | 'quarantine' | 'plugins'>(
-    props.initialSection || 'general'
-);
+const section = ref<StationSection>(props.initialSection || 'general');
 const model = reactive(new bindings.NodeConfiguration());
 const saved = ref(false);
 const mailVersion = ref(0);
@@ -68,6 +71,24 @@ async function reload() {
         v-slot="{ group }"
         :busy="state.busy.value"
     >
+        <NetmailRoutingView
+            v-if="group === 'routing'"
+            :state="state"
+        />
+        <Connections
+            v-if="group === 'polling' || group === 'logs'"
+            :key="group"
+            :initial-tab="group === 'logs' ? 'log' : 'polls'"
+            :state="state"
+        />
+        <RobotAccess
+            v-if="group === 'robots'"
+            :state="state"
+        />
+        <AccountModeration
+            v-if="group === 'accounts'"
+            :state="state"
+        />
         <PluginSettings
             v-if="group === 'plugins'"
             :state="state"

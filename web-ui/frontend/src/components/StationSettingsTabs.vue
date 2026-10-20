@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
 import { useMedia } from '../media.ts';
+import { stationSections as groups } from '../station-navigation.ts';
+import type { StationSection } from '../station-navigation.ts';
 const narrow = useMedia('(max-width: 700px)');
 
-type Group = 'general' | 'links' | 'tosser' | 'echoes' | 'quarantine' | 'plugins';
-const active = defineModel<Group>({ default: 'general' });
+const active = defineModel<StationSection>({ default: 'general' });
 defineProps<{ busy?: boolean }>();
-const groups = [
-    { id: 'general', label: 'General' },
-    { id: 'links', label: 'Mail links' },
-    { id: 'tosser', label: 'Tosser settings' },
-    { id: 'echoes', label: 'Echo areas and link access' },
-    { id: 'quarantine', label: 'Packet quarantine' },
-    { id: 'plugins', label: 'Plugins' }
-] as const;
 function navigate(event: KeyboardEvent) {
     const index = groups.findIndex((group) => group.id === active.value);
     const targets: Record<string, number> = {

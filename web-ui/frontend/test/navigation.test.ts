@@ -10,6 +10,7 @@ import type { UserProfile } from '../../build/frontend-generated/bindings.mjs';
 
 let server: ViteDevServer;
 let sidebar: Component;
+let stationTabs: Component;
 let pollDetails: Component;
 let languageSelector: Component;
 let changeLocale: (locale: string) => void;
@@ -21,6 +22,8 @@ before(async () => {
         appType: 'custom'
     });
     sidebar = (await server.ssrLoadModule('/src/components/Sidebar.vue')).default as Component;
+    stationTabs = (await server.ssrLoadModule('/src/components/StationSettingsTabs.vue'))
+        .default as Component;
     pollDetails = (await server.ssrLoadModule('/src/components/PollDetails.vue'))
         .default as Component;
     languageSelector = (await server.ssrLoadModule('/src/components/LanguageSelector.vue'))
@@ -57,15 +60,30 @@ test('point navigation contains mail placeholders and personal settings without 
     assert.ok(html.includes('disabled'));
 });
 
-test('administrator navigation exposes station configuration and account moderation', async () => {
+test('administrator navigation groups management under Station with a links shortcut', async () => {
     const html = await renderToString(h(sidebar, { profile: profile('ADMIN'), page: 'node' }));
     assert.ok(html.includes('Settings'));
-    assert.ok(html.includes('Accounts and requests'));
     assert.ok(html.includes('Station'));
-    assert.ok(html.includes('Mail robots'));
-    assert.ok(html.includes('Polling'));
     assert.ok(html.includes('Mail links'));
-    assert.ok(html.includes('Logs'));
+    for (const label of [
+        'Accounts and requests',
+        'Mail robots',
+        'Polling',
+        'Logs',
+        'Netmail routing'
+    ]) {
+        assert.ok(!html.includes(label));
+    }
+    const station = await renderToString(h(stationTabs));
+    for (const label of [
+        'Accounts and requests',
+        'Mail robots',
+        'Polling',
+        'Logs',
+        'Netmail routing'
+    ]) {
+        assert.ok(station.includes(label));
+    }
 });
 
 test('Ukrainian navigation and the language selector expose only English and Ukrainian', async () => {
@@ -73,8 +91,8 @@ test('Ukrainian navigation and the language selector expose only English and Ukr
     try {
         const html = await renderToString(h(sidebar, { profile: profile('ADMIN'), page: 'node' }));
         assert.ok(html.includes('Налаштування'));
-        assert.ok(html.includes('Облікові записи та заявки'));
-        assert.ok(html.includes('Пулінг'));
+        assert.ok(html.includes('Лінки'));
+        assert.ok(!html.includes('Посилання'));
         assert.ok(!html.includes('NODE MANAGEMENT'));
         const selector = await renderToString(h(languageSelector));
         assert.ok(selector.includes('value="en"'));

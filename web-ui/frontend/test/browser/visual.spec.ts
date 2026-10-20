@@ -86,6 +86,11 @@ const screens = [
     { name: 'plugin-files', story: 'plugins-pluginsettingspanel--file-managed' },
     { name: 'plugin-empty', story: 'plugins-pluginsettingspanel--empty' },
     { name: 'station-tabs-plugins', story: 'settings-stationsettingstabs--plugins' },
+    { name: 'station-tabs-routing', story: 'settings-stationsettingstabs--routing' },
+    { name: 'station-tabs-polling', story: 'settings-stationsettingstabs--polling' },
+    { name: 'station-tabs-logs', story: 'settings-stationsettingstabs--logs' },
+    { name: 'station-tabs-robots', story: 'settings-stationsettingstabs--robots' },
+    { name: 'station-tabs-accounts', story: 'settings-stationsettingstabs--accounts' },
     { name: 'directory', story: 'directory-directorypanel--nodes-and-points' },
     { name: 'directory-empty', story: 'directory-directorypanel--empty' },
     { name: 'directory-loading', story: 'directory-directorypanel--loading' },
@@ -179,6 +184,7 @@ for (const theme of ['light', 'dark']) {
                     return;
                 }
                 await expect(page.locator('.storybook-stage')).toHaveScreenshot(filename);
+                await expect(page.locator('.sb-errordisplay')).toBeHidden();
             });
         }
     }

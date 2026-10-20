@@ -2,6 +2,36 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openStory as story } from './story.ts';
 
+test('sidebar labels keep their position and wrapping when the active page changes', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const theme of ['light', 'dark']) {
+        for (const locale of ['en', 'uk']) {
+            await story(page, 'navigation-sidebar--switching-pages', theme, locale);
+            const labels = page.locator('.sidebar nav button .nav-text');
+            const positions = () =>
+                labels.evaluateAll((items) =>
+                    items.map((item) => {
+                        const { x, y, width, height } = item.getBoundingClientRect();
+                        return { x, y, width, height };
+                    })
+                );
+            const before = await positions();
+            await page
+                .getByRole('button', {
+                    name: locale === 'uk' ? 'Каталог вузлів' : 'Node directory',
+                    exact: true
+                })
+                .click();
+            await expect(page.locator('.sidebar nav button.active .nav-text')).toHaveText(
+                locale === 'uk' ? 'Каталог вузлів' : 'Node directory'
+            );
+            expect(await positions()).toEqual(before);
+        }
+    }
+});
+
 test('empty drafts are centered below the mail toolbar with compact desktop buttons', async ({
     page
 }) => {
@@ -398,7 +428,9 @@ for (let batch = 0; batch < catalogueBatches; batch++) {
         };
         const stories = Object.values(index.entries).filter((entry) => entry.type === 'story');
         expect(stories.length).toBeGreaterThanOrEqual(16);
-        for (const entry of stories.filter((_entry, index) => index % catalogueBatches === batch)) {
+        const batchStories = stories.filter((_entry, index) => index % catalogueBatches === batch);
+        test.setTimeout(15000 + batchStories.length * 5000);
+        for (const entry of batchStories) {
             await story(page, entry.id);
             await expect(page.locator('#storybook-root')).not.toBeEmpty();
             expect(errors, entry.id).toEqual([]);
@@ -425,6 +457,27 @@ test('quarantine batch uses a source selector only for unknown peers and validat
     await page.getByRole('checkbox', { name: 'Select packet unknown.bad', exact: true }).check();
     await page.getByRole('button', { name: 'Restore selected (1)', exact: true }).click();
     await expect(page.getByText('Selected packets: 1')).toBeVisible();
+});
+
+test('station groups open operational panels without losing general configuration edits', async ({
+    page
+}) => {
+    await story(page, 'settings-stationsettingstabs--general');
+    await page.getByLabel('Station name', { exact: true }).fill('Unsaved station');
+    const navigation = page.getByRole('tablist', { name: 'Station settings', exact: true });
+    for (const [tab, heading] of [
+        ['Polling', 'Polling'],
+        ['Logs', 'Binkp log'],
+        ['Mail robots', 'Mail robots'],
+        ['Accounts and requests', 'Accounts and requests']
+    ]) {
+        await navigation.getByRole('tab', { name: tab, exact: true }).click();
+        await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+    }
+    await navigation.getByRole('tab', { name: 'Netmail routing', exact: true }).click();
+    await expect(page.getByLabel('Allow netmail transit', { exact: true })).toBeVisible();
+    await navigation.getByRole('tab', { name: 'General', exact: true }).click();
+    await expect(page.getByLabel('Station name', { exact: true })).toHaveValue('Unsaved station');
 });
 
 test('station groups support keyboard navigation and keep unsaved form values', async ({
@@ -477,7 +530,8 @@ for (const theme of ['light', 'dark']) {
             await story(page, 'navigation-sidebar--administrator', theme, locale);
             await expect(
                 page.getByRole('button', {
-                    name: locale === 'en' ? 'Polling' : '\u041f\u0443\u043b\u0456\u043d\u0433'
+                    name: locale === 'en' ? 'Station' : 'Станція',
+                    exact: true
                 })
             ).toBeVisible();
             await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -489,7 +543,8 @@ for (const theme of ['light', 'dark']) {
             await story(page, 'navigation-sidebar--point', theme, locale);
             await expect(
                 page.getByRole('button', {
-                    name: locale === 'en' ? 'Polling' : '\u041f\u0443\u043b\u0456\u043d\u0433'
+                    name: locale === 'en' ? 'Station' : 'Станція',
+                    exact: true
                 })
             ).toHaveCount(0);
         });

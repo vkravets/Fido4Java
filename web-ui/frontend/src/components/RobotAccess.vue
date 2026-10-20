@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { onMounted } from 'vue';
+import { inject, onMounted } from 'vue';
+import { robotAccessClientKey } from '../station-clients.ts';
 import { api, bindings } from '../api.ts';
 import { createRobotEditor } from '../robot-rules.ts';
 import NotificationBanner from './NotificationBanner.vue';
 import type { AppState } from '../state.ts';
 
 const props = defineProps<{ state: AppState }>();
-const editor = createRobotEditor(api.ui, () => props.state.session.value, bindings);
+const client = inject(robotAccessClientKey, api.ui);
+const editor = createRobotEditor(client, () => props.state.session.value, bindings);
 const { configuration, editing, pendingDelete, model } = editor;
 onMounted(() =>
     props.state.run(async () => {

@@ -46,7 +46,7 @@ export const ukrainian = {
         'Правило для конкретного AKA чи конференції має пріоритет над загальним.',
     'Apply template': 'Застосувати шаблон',
     'Replace the message body with this template?': 'Замінити текст листа цим шаблоном?',
-    Links: 'Посилання',
+    Links: 'Лінки',
     'Could not load mail preferences.': 'Не вдалося завантажити налаштування листів.',
     'Mail appearance': 'Оформлення листів',
     'Mail themes are independent of the application theme.':

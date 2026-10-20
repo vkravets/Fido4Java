@@ -15,6 +15,14 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+async function stationSection(page: Page, name: string) {
+    await page.locator('.sidebar').getByRole('button', { name: 'Station', exact: true }).click();
+    await page
+        .getByRole('tablist', { name: 'Station settings', exact: true })
+        .getByRole('tab', { name, exact: true })
+        .click();
+}
+
 test('mobile application exposes navigation as a screen without horizontal overflow', async ({
     page
 }) => {
@@ -133,7 +141,7 @@ test('administrator browses paged lists and searches addresses names and IPs thr
 test('administrator sees incoming and outgoing binkp logs through HTTP RPC', async ({ page }) => {
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
-    await page.getByRole('button', { name: /Polling/ }).click();
+    await stationSection(page, 'Polling');
     await page.getByRole('tab', { name: 'Binkp log', exact: true }).click();
     const log = page.locator('pre[aria-label="Binkp log"]');
     await expect(log).toContainText('role=SERVER');
@@ -343,7 +351,7 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
             .click();
         await expect(point.getByRole('heading', { name: 'Awaiting confirmation' })).toBeVisible();
 
-        await page.getByRole('button', { name: /Accounts and requests/ }).click();
+        await stationSection(page, 'Accounts and requests');
         const account = page
             .locator('.account-row')
             .filter({ has: page.getByRole('heading', { name: 'new-point', exact: true }) });
@@ -383,7 +391,7 @@ test('administrator sidebar shortcuts open links and the connection log directly
         'aria-selected',
         'true'
     );
-    await page.locator('.sidebar').getByRole('button', { name: 'Logs', exact: true }).click();
+    await stationSection(page, 'Logs');
     await expect(page.getByRole('tab', { name: 'Binkp log', exact: true })).toHaveAttribute(
         'aria-selected',
         'true'

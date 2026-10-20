@@ -11,16 +11,12 @@ import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
 import SetupWizard from './components/SetupWizard.vue';
 import AccountSettings from './components/AccountSettings.vue';
-import AccountModeration from './components/AccountModeration.vue';
 import NodeSettings from './components/NodeSettings.vue';
 import Sidebar from './components/Sidebar.vue';
-import RobotAccess from './components/RobotAccess.vue';
-import Connections from './components/Connections.vue';
 import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
 import ApplicationHeader from './components/ApplicationHeader.vue';
 import NetmailView from './components/NetmailView.vue';
-import NetmailRoutingView from './components/NetmailRoutingView.vue';
 import EchomailView from './components/EchomailView.vue';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
@@ -187,10 +183,6 @@ function openForward(draft: MailDraft) {
             class="content"
             :class="{ 'mail-content': ['netmail', 'echo', 'drafts'].includes(page) }"
         >
-            <NetmailRoutingView
-                v-if="page === 'routing' && state.profile.value.role === 'ADMIN'"
-                :state="state"
-            />
             <NetmailView
                 v-if="page === 'netmail' || page === 'drafts'"
                 :key="page"
@@ -221,19 +213,6 @@ function openForward(draft: MailDraft) {
                 v-if="['node', 'links'].includes(page) && state.profile.value.role === 'ADMIN'"
                 :key="page"
                 :initial-section="page === 'links' ? 'links' : 'general'"
-                :state="state"
-            /><Connections
-                v-if="
-                    ['connections', 'logs'].includes(page) && state.profile.value.role === 'ADMIN'
-                "
-                :key="page"
-                :initial-tab="page === 'logs' ? 'log' : 'polls'"
-                :state="state"
-            /><RobotAccess
-                v-if="page === 'robots' && state.profile.value.role === 'ADMIN'"
-                :state="state"
-            /><AccountModeration
-                v-if="page === 'accounts' && state.profile.value.role === 'ADMIN'"
                 :state="state"
             />
         </main>
