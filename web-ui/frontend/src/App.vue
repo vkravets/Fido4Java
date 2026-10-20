@@ -4,6 +4,8 @@ import { onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { api } from './api.ts';
 import { createWorkspace, workspaceKey } from './workspace.ts';
 import { createMailAppearance, mailAppearanceKey } from './mail-themes.ts';
+import { createMailTemplates, mailTemplatesKey } from './mail-templates.ts';
+import MailTemplateSettings from './components/MailTemplateSettings.vue';
 import { createMailQueue } from './netmail.ts';
 import { createState } from './state.ts';
 import AuthScreen from './components/AuthScreen.vue';
@@ -27,22 +29,38 @@ provide(workspaceKey, workspace);
 const mailAppearance = createMailAppearance(api.profile);
 provide(mailAppearanceKey, mailAppearance);
 onMounted(() => mailAppearance.files().catch(() => {}));
-watch(state.session, (token) => mailAppearance.load(token).catch(() => { state.error.value = t("Could not load mail preferences."); }));
-watch(state.session, (token) =>
-    workspace.load(token).catch(() => {
-        state.error.value = t('Could not load workspace preferences.');
-    })
-);
 const queue = createMailQueue(state, api.ui);
 const page = ref('settings');
+const templatesView = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
+const templates = createMailTemplates(api.profile);
+provide(mailTemplatesKey, templates);
+const preferencesReady = ref(false);
+watch([state.session, () => state.profile.value?.login], async ([token, owner]) => {
+    if (token && !owner) return;
+    preferencesReady.value = false;
+    try {
+        await Promise.all([
+            workspace.load(token),
+            mailAppearance.load(token),
+            templates.load(token)
+        ]);
+    } catch {
+        if (token === state.session.value)
+            state.error.value = t('Could not load mail preferences.');
+    } finally {
+        if (token === state.session.value) preferencesReady.value = true;
+    }
+});
 const mobileNavigation = ref(false);
+
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
 const echomail = ref<InstanceType<typeof EchomailView> | null>(null);
 const echoDraft = ref<MailDraft>();
 function canLeave() {
     return (
         (!netmail.value || netmail.value.canLeave()) &&
-        (!echomail.value || echomail.value.canLeave())
+        (!echomail.value || echomail.value.canLeave()) &&
+        (!templatesView.value || templatesView.value.canLeave())
     );
 }
 function navigate(next: string) {
@@ -80,6 +98,7 @@ function openEchoDraft(draft: MailDraft) {
     echoDraft.value = draft;
     page.value = 'echo';
 }
+
 </script>
 
 <template>
@@ -159,10 +178,19 @@ function openEchoDraft(draft: MailDraft) {
         v-else-if="!state.profile.value"
         :state="state"
     />
+    <main
+        v-else-if="!preferencesReady"
+        class="loading"
+    >
+        <p>{{ t('Connecting to the station\u2026') }}</p>
+    </main>
     <div
         v-else
         class="workspace"
-        :class="{ 'navigation-collapsed': workspace.value.value.collapsed, 'navigation-open': mobileNavigation }"
+        :class="{
+            'navigation-collapsed': workspace.value.value.collapsed,
+            'navigation-open': mobileNavigation
+        }"
     >
         <Sidebar
             :profile="state.profile.value"
@@ -176,7 +204,10 @@ function openEchoDraft(draft: MailDraft) {
             @navigate="navigate"
             @send-mail="state.run(sendQueue)"
         />
-        <main class="content" :class="{ 'mail-content': ['netmail', 'echo', 'drafts'].includes(page) }">
+        <main
+            class="content"
+            :class="{ 'mail-content': ['netmail', 'echo', 'drafts'].includes(page) }"
+        >
             <NetmailRoutingView
                 v-if="page === 'routing' && state.profile.value.role === 'ADMIN'"
                 :state="state"
@@ -195,6 +226,11 @@ function openEchoDraft(draft: MailDraft) {
                 ref="echomail"
                 :state="state"
                 :initial-draft="echoDraft"
+            />
+            <MailTemplateSettings
+                v-if="page === 'templates'"
+                ref="templatesView"
+                :state="state"
             />
             <NodeDirectory v-if="page === 'directory'" />
             <AccountSettings

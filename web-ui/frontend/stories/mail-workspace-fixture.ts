@@ -1,6 +1,7 @@
 import { provide, ref } from 'vue';
 import type { AppState } from '../src/state.ts';
 import { builtInMailThemes, createMailAppearance, mailAppearanceKey } from '../src/mail-themes.ts';
+import { createMailTemplates, mailTemplatesKey } from '../src/mail-templates.ts';
 import { profile } from './fixtures.ts';
 export function mailWorkspaceFixture(dark = false) {
     const state = {
@@ -31,7 +32,9 @@ export function mailWorkspaceFixture(dark = false) {
             colors: { ...builtInMailThemes[2]!.colors }
         }
     ];
+    const templates = createMailTemplates();
     provide(mailAppearanceKey, appearance);
-    return { state, appearance };
+    provide(mailTemplatesKey, templates);
+    return { state, appearance, templates };
 }
 export { styledMail } from './mail-text-fixture.ts';

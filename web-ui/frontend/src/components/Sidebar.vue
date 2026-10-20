@@ -25,6 +25,7 @@ const emit = defineEmits<{
             | 'echo'
             | 'drafts'
             | 'routing'
+            | 'templates'
     ];
 }>();
 </script>
@@ -73,6 +74,15 @@ const emit = defineEmits<{
                 @click="emit('navigate', 'drafts')"
             >
                 <span aria-hidden="true">▤</span><span class="nav-text">{{ t('Drafts') }}</span>
+            </button>
+            <button
+                :class="{ active: page === 'templates' }"
+                :aria-label="t('Mail templates')"
+                :title="collapsed ? t('Mail templates') : undefined"
+                @click="emit('navigate', 'templates')"
+            >
+                <span aria-hidden="true">&#9638;</span
+                ><span class="nav-text">{{ t('Mail templates') }}</span>
             </button>
             <button
                 v-if="collapsed"
