@@ -31,6 +31,14 @@ class ProfileDistributionTest {
     void startedHeadlessWithSqlAndWithoutBrowserClasses() throws Exception {
         Path home = unpack("headless");
         installConfiguration(home, "headless");
+        Files.writeString(home.resolve("jftn.conf"),
+                          Files.readString(home.resolve("jftn.conf"))
+                               .replace("FileEchoSource=files", "FileEchoSource=database"));
+        try (var plugins = Files.list(home.resolve("plugins"))) {
+            assertTrue(plugins.anyMatch(path -> path.getFileName()
+                                                    .toString()
+                                                    .startsWith("fileecho-storage-h2-")));
+        }
         try (var paths = Files.walk(home)) {
             assertFalse(paths.anyMatch(path -> path.getFileName()
                                                    .toString()
@@ -48,7 +56,7 @@ class ProfileDistributionTest {
         try (var paths = Files.walk(home)) {
             assertFalse(paths.anyMatch(path -> path.getFileName()
                                                    .toString()
-                                                   .matches("(fido-database|h2-|ormlite-|rpc-|web-ui-|storage-h2-|directory-storage-h2-|account-storage-h2-).*\\.jar")));
+                                                   .matches("(fido-database|h2-|ormlite-|rpc-|web-ui-|storage-h2-|directory-storage-h2-|account-storage-h2-|fileecho-storage-h2-).*\\.jar")));
         }
         installConfiguration(home, profile);
         Files.writeString(home.resolve("jftn.conf"),

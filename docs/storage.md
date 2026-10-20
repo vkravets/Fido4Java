@@ -16,6 +16,7 @@ is not evidence of PostgreSQL/MySQL compatibility.
 - `fido-database`: the H2/ORMLite mail implementation and database plugin.
   `MailRepository` and editable robot contracts are in `fido-tools`.
 - `directory-storage-h2`: directory SQL behind `DirectoryRepository`.
+- `fileecho-storage-h2`: area/access/creation-policy SQL behind `FileEchoStorage`.
 - `account-storage-h2`: account/passkey/profile and reader-state SQL behind
   `AccountRepository`, `AccountProfiles` and `UserMailRepository`.
 
@@ -90,15 +91,31 @@ schema changes need an explicit migration design; neither a new adapter nor a
 new plugin version silently upgrades/downgrades tables. H2 DDL and file publication
 are not advertised as one crash-atomic transaction.
 
-## Current remaining boundary
+## FileEcho storage
 
-Fileecho already shares the main mail database through `extensionDao` and
-`extensionTransaction`; it does not open an independent database. Its DAO queries
-and ORM-annotated records still live in the fileecho plugin. Moving these to a
-typed `FileEchoStorage` backend adapter remains a separate pending change. Until
-that is implemented, a different SQL backend must use file-managed fileecho or
-provide the existing implementation's requirements. Do not claim full backend
-portability for this legacy extension path.
+FileEcho obtains `FileEchoStorage` through the mail storage's `RepositoryAccess`.
+The functional plugin contains immutable area/access/creation-policy values and
+domain validation; it contains no SQL, ORM mappings or concrete mail-facade casts.
+Robot settings use the separate `EditableRobotRules` capability.
+
+`fileecho-storage-h2` registers the H2 implementation through repository SPI. It
+borrows the DB provider's existing source and does not open or close a separate
+database. Area creation and its initial access grant are one transaction; a
+changed creation policy rejects the operation. Existing areas never acquire
+additional grants through automatic creation. Configured initial areas remain
+insert-only, preserving UI edits and disabled records on restart.
+
+The original `fileecho_area`, `fileecho_access` and `fileecho_creation` tables,
+including their keys, are adopted in place at schema version 1. No export/import
+or reset is required. The old `extensionDao`/`extensionTransaction` API is removed.
+Only H2 has an implementation today; another SQL provider must supply an adapter
+for this contract. Missing capability/adapter errors stop initialization rather
+than silently changing the configured source.
+
+Full and Headless include the adapter JAR in `plugins/`. Legacy and Transit
+exclude it and retain `FileEchoSource=files`, without opening a SQL provider.
+Do not add the adapter to FileEcho's main runtime dependencies: that would bring
+SQL infrastructure into SQL-free distributions.
 
 Standalone ORM constructors remain available to isolated tests and offline tools.
 Their scoped extension bridge uses that ORM store's location. Normal node startup
@@ -113,6 +130,7 @@ Load the development environment, then run relevant checks:
 
 ```powershell
 .\gradlew.bat :storage-api:test :storage-h2:test :fido-config:test
+.\gradlew.bat :fileecho-storage-h2:test :fileecho:test
 .\gradlew.bat :fido-database:test :nodelist:test :rpc:test :rpc-node:test :web-ui:test
 .\gradlew.bat :jftn-bundle:test --tests '*ProfileDistributionTest' --tests '*ServicePluginDistributionTest'
 .\gradlew.bat spotlessCheck verifyJavaFormatting

@@ -13,7 +13,7 @@ profiles.findAll { it != 'full' }.each { profile ->
     def modules = [':node-runtime', ':fido-config', ':fido-tools', ':event-bus', ':script-api', ':plugin-manager',
                    ':scheduler', ':jtoss', ':mail-api', ':mail-files', ':fileecho', ':binkp-root:binkp-netty']
     if (profile == 'headless') {
-        modules += [':fido-database', ':jam-bridge', ':nodelist']
+        modules += [':fido-database', ':jam-bridge', ':nodelist', ':fileecho-storage-h2']
         dependencies.add(runtime.name, 'com.h2database:h2:2.5.252')
     }
     modules.each { dependencies.add(runtime.name, dependencies.project(path: it)) }

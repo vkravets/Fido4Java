@@ -43,8 +43,12 @@ originals, receipts and pending delivery jobs remain intact. The mail service
 does not load pending file delivery pairs while this provider is unavailable.
 An already active transfer is not cancelled by editing a configuration file.
 
-`FileEchoSource=database` is the default. The plugin owns area, access and
-automatic-creation tables in the node's SQL database. Declared `FileArea` entries
+`FileEchoSource=database` is the default. FileEcho obtains area, access and
+automatic-creation storage from the DB plugin through `FileEchoStorage`.
+The `fileecho-storage-h2` adapter uses the node's existing SQL source; FileEcho
+does not own a connection or contain SQL/ORM mappings. Existing tables are kept
+in place. See [storage adapters](storage.md#fileecho-storage).
+Declared `FileArea` entries
 seed missing initial records only; existing records and disabled areas are not
 overwritten on startup. FileFix subscriptions update SQL live.
 

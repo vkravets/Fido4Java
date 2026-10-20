@@ -13,10 +13,6 @@ Remaining implementation
   to external RPC editors. The current implementation has a fixed five-encoding
   list and a personal default; the editable list is requested but not implemented.
 
-- Move FileEcho DAO queries/mappings behind a typed backend adapter while preserving
-  existing area/access/creation tables and SQL-free file mode. It already shares
-  the main mail source; see docs/storage.md for the remaining portability boundary.
-
 - Add full archive/body search and optional trash for browser mail readers.
   Local filtering of loaded message headers/excerpts is already available.
 - Refine the mobile mail layout after desktop review; retain separate list,

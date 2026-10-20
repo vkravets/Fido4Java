@@ -420,8 +420,10 @@ runtime lock. Authorization remains at the existing `AuthenticatedUi` boundary.
 batch transitions and their synchronization remain together in `SessionContext`.
 `FileMetadata` is immutable; mutable progress is separate in `FileTransferState`,
 composed by `FileTransferInfo`. Only metadata participates in transfer identity.
-`FileEchoAreaService` owns domain operations and policy; `FileEchoRepository`
-owns SQL access and transactions. No database schema or wire protocol changed.
+`FileEchoAreaService` owns domain operations and policy; the typed
+`FileEchoStorage` contract delegates SQL access and transactions to the separate
+H2 adapter. The former `FileEchoRepository` DAO bridge has been removed.
+No fileecho table layout or wire protocol changed.
 
 These internal class/API names replace the earlier ambiguous names directly;
 external Java/Groovy integrations must rebuild/update imports. No binary alias
@@ -735,6 +737,9 @@ schemas instead of silently changing data. H2 is the only production SQL backend
 Existing physical database paths remain authoritative and are not automatically
 merged. File-only `StorageEndpoint` declarations live in `conf.d/05-storage.conf`;
 setup and normal runtime resolve the same account endpoint. SQL-free profiles
-retain no SQL backend. Fileecho's existing DAO extension is explicitly pending
-migration; it shares the primary source but is not yet a portable typed adapter.
+retain no SQL backend. FileEcho uses the typed `FileEchoStorage` capability and
+the separate `fileecho-storage-h2` adapter on the primary DB source. Its existing
+tables are preserved; creation and the first access grant commit atomically.
+The functional plugin has no ORM/SQL dependency. SQL-free bundles retain file mode
+and exclude the adapter. The former raw DAO/transaction extension API is removed.
 See [storage boundaries and extension guide](storage.md).
