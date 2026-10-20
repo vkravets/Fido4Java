@@ -1,8 +1,9 @@
 import { provide, ref } from 'vue';
+import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import NetmailView from '../src/components/NetmailView.vue';
-import { netmailClientKey } from '../src/netmail.ts';
+import { netmailClientKey, mailId } from '../src/netmail.ts';
 import type { AppState } from '../src/state.ts';
 import type { MailDraft } from '@rpc/bindings.mjs';
 import { profile } from './fixtures.ts';
@@ -16,11 +17,18 @@ const meta = {
     render: (args, context) => ({
         components: { NetmailView },
         setup() {
+            mailWorkspaceFixture(context.globals.theme === 'dark');
             const workspace = createWorkspace();
             workspace.value.value = workspacePreferences(context.parameters.workspace || {});
             provide(workspaceKey, workspace);
             const saved: MailDraft[] = [{ ...netmailDraft }];
             let deleted = false;
+            const messages = Array.from({ length: context.parameters.rows || 1 }, (_, index) => ({
+                ...netmailMessage,
+                id: (BigInt(mailId(netmailMessage.id)) + BigInt(index)).toString(),
+                subject: index ? 'Discussion ' + index : netmailMessage.subject,
+                toAddress: '1:500/100.1'
+            }));
             const state = {
                 profile: ref(profile('POINT')),
                 session: ref('storybook-session'),
@@ -37,11 +45,13 @@ const meta = {
             } as AppState;
             provide(netmailClientKey, {
                 messages: async () => ({
-                    items: deleted ? [] : [{ ...netmailMessage, toAddress: '1:500/100.1' }],
+                    items: deleted ? [] : messages,
                     nextId: netmailMessage.id,
                     hasMore: false
                 }),
-                message: async () => ({ ...netmailMessage, toAddress: '1:500/100.1' }),
+                message: async (_token, _box, _area, id) => ({
+                    ...messages.find((item) => mailId(item.id) === mailId(id))!
+                }),
                 markRead: async () => {},
                 deleteMessage: async () => {
                     deleted = true;
@@ -75,3 +85,5 @@ export const Separate: Story = {
     parameters: { workspace: { netmail: { preview: 'separate' } } },
     args: { initialMessage: String(netmailMessage.id) }
 };
+
+export const LongList: Story = { parameters: { rows: 100 } };

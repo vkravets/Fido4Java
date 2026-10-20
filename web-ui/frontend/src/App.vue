@@ -56,6 +56,7 @@ const mobileNavigation = ref(false);
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
 const echomail = ref<InstanceType<typeof EchomailView> | null>(null);
 const echoDraft = ref<MailDraft>();
+const netmailDraft = ref<MailDraft>();
 function canLeave() {
     return (
         (!netmail.value || netmail.value.canLeave()) &&
@@ -66,6 +67,7 @@ function canLeave() {
 function navigate(next: string) {
     if (!canLeave()) return;
     echoDraft.value = undefined;
+    netmailDraft.value = undefined;
     page.value = next;
     mobileNavigation.value = false;
     refreshQueue();
@@ -98,7 +100,11 @@ function openEchoDraft(draft: MailDraft) {
     echoDraft.value = draft;
     page.value = 'echo';
 }
-
+function openForward(draft: MailDraft) {
+    if (!canLeave()) return;
+    netmailDraft.value = draft;
+    page.value = 'netmail';
+}
 </script>
 
 <template>
@@ -218,6 +224,7 @@ function openEchoDraft(draft: MailDraft) {
                 ref="netmail"
                 :state="state"
                 :initial-folder="page === 'drafts' ? 'drafts' : 'inbox'"
+                :initial-draft="netmailDraft"
                 @queue-changed="refreshQueue"
                 @open-echo-draft="openEchoDraft"
             />
@@ -226,6 +233,7 @@ function openEchoDraft(draft: MailDraft) {
                 ref="echomail"
                 :state="state"
                 :initial-draft="echoDraft"
+                @forward="openForward"
             />
             <MailTemplateSettings
                 v-if="page === 'templates'"

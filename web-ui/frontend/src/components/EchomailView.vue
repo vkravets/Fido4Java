@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
 import { t } from '../i18n.ts';
+import { forwardDraft } from '../mail-drafts.ts';
 import { api, bindings } from '../api.ts';
 import { createEchomail, echoClientKey } from '../echomail.ts';
 import { mailId } from '../netmail.ts';
@@ -19,6 +20,7 @@ const props = defineProps<{
     initialMessage?: string;
     initialMode?: 'flat' | 'tree';
 }>();
+const emit = defineEmits<{ forward: [draft: MailDraft] }>();
 const reader = createEchomail(
     props.state,
     inject(echoClientKey, api.ui),
@@ -168,8 +170,8 @@ async function refresh() {
             v-if="reader.draft.value"
             v-model="reader.draft.value"
             :addresses="reader.authors.value"
-            :enhanced="true"
             :busy="state.busy.value"
+            @initialized="reader.initializeDraft"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
             @cancel="cancel"
@@ -217,6 +219,10 @@ async function refresh() {
                 :busy="state.busy.value"
                 :reply="!!reader.authors.value.length"
                 :removable="false"
+                :forwardable="!!state.profile.value?.allowedAkas.length"
+                @forward="
+                    emit('forward', forwardDraft(reader.selected.value!, state.profile.value!))
+                "
                 @reply="reader.edit(undefined, reader.selected.value!)"
             />
             <section

@@ -9,8 +9,7 @@ const meta = {
     args: {
         modelValue: netmailDraft,
         addresses: ['1:500/100', '1:500/100.1'],
-        busy: false,
-        enhanced: true
+        busy: false
     },
     render: (args, context) => ({
         components: { MailComposer },

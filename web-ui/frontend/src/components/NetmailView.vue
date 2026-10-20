@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { inject, onMounted, onBeforeUnmount } from 'vue';
 import { t } from '../i18n.ts';
+import { forwardDraft } from '../mail-drafts.ts';
 import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
 import { api, bindings } from '../api.ts';
 import type { AppState } from '../state.ts';
@@ -15,6 +16,7 @@ const props = defineProps<{
     state: AppState;
     initialFolder?: MailFolder;
     initialMessage?: string;
+    initialDraft?: MailDraft;
 }>();
 const emit = defineEmits<{ queueChanged: []; openEchoDraft: [draft: MailDraft] }>();
 const reader = createNetmail(
@@ -29,6 +31,10 @@ const labels = { inbox: 'Inbox', outbox: 'Outbox', drafts: 'Drafts' } as const;
 onMounted(() =>
     props.state.run(async () => {
         await reader.navigate(props.initialFolder || 'inbox');
+        if (props.initialDraft) {
+            reader.edit(props.initialDraft);
+            return;
+        }
         const item = reader.items.value.find((item) => mailId(item.id) === props.initialMessage);
         if (item) await reader.open(item);
     })
@@ -118,8 +124,8 @@ function editDraft(value: MailDraft) {
             v-if="reader.draft.value"
             v-model="reader.draft.value"
             :addresses="state.profile.value?.allowedAkas || []"
-            :enhanced="true"
             :busy="state.busy.value"
+            @initialized="reader.initializeDraft"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
             @cancel="cancel"
@@ -129,6 +135,8 @@ function editDraft(value: MailDraft) {
             :message="reader.selected.value"
             :busy="state.busy.value"
             :reply="reader.folder.value === 'inbox'"
+            :forwardable="!!state.profile.value?.allowedAkas.length"
+            @forward="reader.edit(forwardDraft(reader.selected.value!, state.profile.value!))"
             @reply="reader.edit(undefined, reader.selected.value!)"
             @remove="state.run(reader.removeMessage)"
         />

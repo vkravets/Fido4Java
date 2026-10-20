@@ -123,6 +123,16 @@ export function createNetmail(
             ? createDraft({ ...value })
             : createDraft({
                   id: crypto.randomUUID(),
+                  composeKind: reply ? 'quoted' : 'new',
+                  templateInitialized: false,
+                  ...(reply
+                      ? {
+                            originalBody: reply.body || '',
+                            originalDate: reply.date,
+                            originalName: reply.fromName,
+                            originalAddress: reply.fromAddress
+                        }
+                      : {}),
                   mailbox: 3,
                   area: '',
                   fromName: profile.login,
@@ -141,6 +151,9 @@ export function createNetmail(
         requestId = crypto.randomUUID();
     }
 
+    function initializeDraft() {
+        original = JSON.stringify(draft.value);
+    }
     async function save() {
         if (!draft.value) return;
         await client.saveDraft(state.session.value, draft.value);
@@ -194,6 +207,7 @@ export function createNetmail(
         navigate,
         open,
         edit,
+        initializeDraft,
         save,
         send,
         remove,

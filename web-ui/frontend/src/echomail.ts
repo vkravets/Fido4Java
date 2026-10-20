@@ -133,6 +133,16 @@ export function createEchomail(
                 ? { ...value }
                 : {
                       id: crypto.randomUUID(),
+                      composeKind: reply ? 'quoted' : 'new',
+                      templateInitialized: false,
+                      ...(reply
+                          ? {
+                                originalBody: reply.body || '',
+                                originalDate: reply.date,
+                                originalName: reply.fromName,
+                                originalAddress: reply.fromAddress
+                            }
+                          : {}),
                       mailbox: 1,
                       area: area.value,
                       fromName: profile.login,
@@ -150,6 +160,9 @@ export function createEchomail(
         );
         original = JSON.stringify(draft.value);
         requestId = crypto.randomUUID();
+    }
+    function initializeDraft() {
+        original = JSON.stringify(draft.value);
     }
     async function save() {
         if (!draft.value) return;
@@ -205,6 +218,7 @@ export function createEchomail(
         open,
         moreReplies,
         edit,
+        initializeDraft,
         save,
         send,
         loadDrafts,

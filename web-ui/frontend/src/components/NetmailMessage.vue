@@ -3,10 +3,16 @@ import { t } from '../i18n.ts';
 import FidoText from './FidoText.vue';
 import type { MailItem } from '@rpc/bindings.mjs';
 withDefaults(
-    defineProps<{ message: MailItem; busy: boolean; reply?: boolean; removable?: boolean }>(),
+    defineProps<{
+        message: MailItem;
+        busy: boolean;
+        reply?: boolean;
+        removable?: boolean;
+        forwardable?: boolean;
+    }>(),
     { removable: true }
 );
-defineEmits<{ reply: []; remove: [] }>();
+defineEmits<{ reply: []; remove: []; forward: [] }>();
 </script>
 <template>
     <article class="card mail-message">
@@ -20,6 +26,14 @@ defineEmits<{ reply: []; remove: [] }>();
                     @click="$emit('reply')"
                 >
                     {{ t('Reply') }}
+                </button>
+                <button
+                    v-if="forwardable"
+                    class="secondary"
+                    :disabled="busy"
+                    @click="$emit('forward')"
+                >
+                    {{ t('Forward') }}
                 </button>
                 <button
                     v-if="removable"

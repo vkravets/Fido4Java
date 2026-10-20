@@ -119,29 +119,25 @@ export function expandTemplate(template: MailTemplate, context: TemplateContext)
             line = line.slice(match[0].length);
         }
         if (!keep) continue;
+        let delta = 0;
         const expanded = line.replace(
             /@@|(?<![\w])@([a-z][a-z0-9_]*)/gi,
             (token, key: string, offset: number) => {
-                if (token === '@@') return '@';
-                const name = key.toLowerCase();
-                if (name === 'position') {
-                    if (cursor < 0) cursor = result.length + offset;
-                    return '';
+                let value: string;
+                if (token === '@@') value = '@';
+                else if (key.toLowerCase() === 'position') {
+                    if (cursor < 0) cursor = result.length + offset + delta;
+                    value = '';
+                } else {
+                    const name = key.toLowerCase();
+                    if (!Object.hasOwn(values, name) || conditions.has(name))
+                        throw new Error('Unsupported template token: ' + token);
+                    value = values[name]!;
                 }
-                if (!Object.hasOwn(values, name) || conditions.has(name))
-                    throw new Error('Unsupported template token: ' + token);
-                return values[name]!;
+                delta += value.length - token.length;
+                return value;
             }
         );
-        // Cursor offsets must use expanded preceding tokens, not source token lengths.
-        if (/@position/i.test(line)) {
-            const prefix = line.split(/@position/i)[0]!;
-            const before = prefix.replace(
-                /@@|(?<![\w])@([a-z][a-z0-9_]*)/gi,
-                (token, key: string) => (token === '@@' ? '@' : values[key.toLowerCase()] || '')
-            );
-            if (cursor >= result.length) cursor = result.length + before.length;
-        }
         result += expanded + '\n';
     }
     const body = result.endsWith('\n') ? result.slice(0, -1) : result;

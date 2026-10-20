@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { themeLabel } from '../mail-theme-labels.ts';
 import {
-    builtInMailThemes,
     mailColors,
     mailTheme,
     themeStyle,
@@ -14,9 +13,9 @@ import type { AppState } from '../state.ts';
 import FidoText from './FidoText.vue';
 const props = defineProps<{ state: AppState }>();
 const appearance = useMailAppearance();
-const reader = ref(appearance.reader.value);
-const editor = ref(appearance.editor.value);
-const selected = ref(appearance.editor.value);
+const reader = ref(appearance.find(appearance.reader.value).id);
+const editor = ref(appearance.find(appearance.editor.value).id);
+const selected = ref(editor.value);
 const draft = ref<MailTheme>(copy(appearance.find(selected.value)));
 const preview =
     'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thank you.\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';

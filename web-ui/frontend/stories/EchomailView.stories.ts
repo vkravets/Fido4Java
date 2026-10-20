@@ -1,4 +1,5 @@
 import { provide, ref } from 'vue';
+import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import EchomailView from '../src/components/EchomailView.vue';
@@ -15,6 +16,7 @@ const meta = {
     render: (args, context) => ({
         components: { EchomailView },
         setup() {
+            mailWorkspaceFixture(context.globals.theme === 'dark');
             const workspace = createWorkspace();
             workspace.value.value = workspacePreferences(context.parameters.workspace || {});
             provide(workspaceKey, workspace);
