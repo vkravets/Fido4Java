@@ -7,6 +7,7 @@ import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.Mailbox;
 
 import org.apache.thrift.TSerializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -14,18 +15,35 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.List;
 
 class UserMailStateStoreTest {
     @TempDir
     Path root;
+    private final List<UserMailStateStore> stores = new ArrayList<>();
+
+    private UserMailStateStore open(Path path) throws Exception {
+        UserMailStateStore store = new UserMailStateStore(path);
+        stores.add(store);
+        return store;
+    }
+
+    @AfterEach
+    void closeStores() throws Exception {
+        for (UserMailStateStore store : stores) {
+            store.close();
+        }
+    }
 
     @Test
     void submissionRetriesReuseTheReservedMessageIdAfterReopen() throws Exception {
         Path path = root.resolve("ui");
-        UserMailStateStore state = new UserMailStateStore(path);
+        UserMailStateStore state = open(path);
         assertEquals("1:500/100 1234abcd",
                      state.reserve("request", "body", () -> "1:500/100 1234abcd"));
-        UserMailStateStore reopened = new UserMailStateStore(path);
+        state.close();
+        UserMailStateStore reopened = open(path);
         assertEquals("1:500/100 1234abcd", reopened.reserve("request", "body", () -> {
             throw new AssertionError("A retry must not allocate another MSGID");
         }));
@@ -36,7 +54,7 @@ class UserMailStateStoreTest {
     @Test
     void draftQuotaAllowsReplacingAnExistingDraftAndDoesNotAffectOtherOwners() throws Exception {
         Path path = root.resolve("ui");
-        UserMailStateStore state = new UserMailStateStore(path);
+        UserMailStateStore state = open(path);
         seedDrafts(path, "sysop", 200);
         state.save("sysop", draft("0").setSubject("updated"));
         assertEquals(200, state.drafts("sysop").size());
@@ -57,8 +75,10 @@ class UserMailStateStoreTest {
                                         .setTemplateInitialized(true)
                                         .setReplyTo("1:500/101 1234abcd");
         new MailDraftValidator(null).fields(draft);
-        new UserMailStateStore(path).save("sysop", draft);
-        UserMailStateStore reopened = new UserMailStateStore(path);
+        UserMailStateStore original = open(path);
+        original.save("sysop", draft);
+        original.close();
+        UserMailStateStore reopened = open(path);
         assertEquals(draft, reopened.drafts("sysop").get(0));
         assertEquals(0, reopened.drafts("other").size());
     }

@@ -1,1 +1,2 @@
 org.fidonet.jftn.rpc.auth.H2AccountAdapter
+org.fidonet.jftn.ui.H2UserMailAdapter

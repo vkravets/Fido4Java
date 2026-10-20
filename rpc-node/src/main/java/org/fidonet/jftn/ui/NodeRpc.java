@@ -52,11 +52,11 @@ public final class NodeRpc implements AutoCloseable {
                                                       polls,
                                                       context,
                                                       identity.profiles()));
-            NodeUiServiceHandler backend = new NodeUiServiceHandler(config,
-                                                                    base,
-                                                                    mail,
-                                                                    polls,
-                                                                    identity.sessions());
+            NodeUiServiceHandler backend = resources.add(new NodeUiServiceHandler(config,
+                                                                                  base,
+                                                                                  mail,
+                                                                                  polls,
+                                                                                  identity.sessions()));
             mail.operate(tosser -> {
                 tosser.hostedMailboxes(() -> hostedAddresses(identity));
                 return null;

@@ -1,214 +1,73 @@
 package org.fidonet.jftn.ui;
 
 import org.fidonet.jftn.rpc.MailDraft;
+import org.fidonet.jftn.rpc.storage.UserMailRepository;
+import org.fidonet.storage.StorageServices;
+import org.fidonet.storage.StorageSession;
 
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TSerializer;
-
-import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-/** UI-owned draft/read/submission state, separate from the mail database. */
-final class UserMailStateStore {
-    private final String url;
+/** Reader state facade; its storage lease is closed with the RPC service. */
+final class UserMailStateStore implements AutoCloseable {
+    private final StorageSession storage;
+    private final UserMailRepository repository;
 
-    UserMailStateStore(Path path) throws Exception {
-        if (path.toString().contains(";")) {
-            throw new IllegalArgumentException("Invalid UI state path");
+    UserMailStateStore(Path path) throws IOException {
+        storage = StorageServices.file(path);
+        try {
+            repository = storage.require(UserMailRepository.class);
+        } catch (IOException | RuntimeException failure) {
+            try {
+                storage.close();
+            } catch (IOException cleanup) {
+                failure.addSuppressed(cleanup);
+            }
+            throw failure;
         }
-        Files.createDirectories(path.toAbsolutePath().getParent());
-        url = "jdbc:h2:" + path.toAbsolutePath();
-        try (Connection connection = open(); Statement sql = connection.createStatement()) {
-            sql.execute("CREATE TABLE IF NOT EXISTS drafts (owner VARCHAR(100), id VARCHAR(80), payload BLOB NOT NULL, PRIMARY KEY(owner,id))");
-            sql.execute("CREATE TABLE IF NOT EXISTS read_marks (owner VARCHAR(100), mailbox VARCHAR(10), area VARCHAR(255), id BIGINT, PRIMARY KEY(owner,mailbox,area,id))");
-            sql.execute("CREATE TABLE IF NOT EXISTS deleted_mail (owner VARCHAR(100), mailbox VARCHAR(10), area VARCHAR(255), id BIGINT, PRIMARY KEY(owner,mailbox,area,id))");
-            sql.execute("CREATE TABLE IF NOT EXISTS submissions (id VARCHAR(64) PRIMARY KEY, fingerprint VARCHAR(64) NOT NULL, message_id VARCHAR(255) NOT NULL)");
-        }
-    }
-
-    private Connection open() throws Exception {
-        return DriverManager.getConnection(url);
     }
 
     boolean isRead(String owner, String box, String area, long id) throws Exception {
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("SELECT 1 FROM read_marks WHERE owner=? AND mailbox=? AND area=? AND id=?")) {
-            sql.setString(1, owner);
-            sql.setString(2, box);
-            sql.setString(3, area);
-            sql.setLong(4, id);
-            try (ResultSet result = sql.executeQuery()) {
-                return result.next();
-            }
-        }
+        return repository.isRead(owner, box, area, id);
     }
 
     Set<Long> readIds(String owner, String box, String area, List<Long> ids) throws Exception {
-        return markedIds("read_marks", owner, box, area, ids);
+        return repository.readIds(owner, box, area, ids);
     }
 
     Set<Long> deletedIds(String owner, String box, List<Long> ids) throws Exception {
-        return markedIds("deleted_mail", owner, box, "", ids);
+        return repository.deletedIds(owner, box, ids);
     }
 
     void deleteMessage(String owner, String box, long id) throws Exception {
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("MERGE INTO deleted_mail(owner,mailbox,area,id) KEY(owner,mailbox,area,id) VALUES(?,?,?,?)")) {
-            sql.setString(1, owner);
-            sql.setString(2, box);
-            sql.setString(3, "");
-            sql.setLong(4, id);
-            sql.executeUpdate();
-        }
-    }
-
-    private Set<Long> markedIds(String table, String owner, String box, String area, List<Long> ids)
-            throws Exception {
-        Set<Long> result = new HashSet<>();
-        if (ids.isEmpty()) {
-            return result;
-        }
-        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("SELECT id FROM " + table
-                        + " WHERE owner=? AND mailbox=? AND area=? AND id IN (" + placeholders
-                        + ")")) {
-            sql.setString(1, owner);
-            sql.setString(2, box);
-            sql.setString(3, area);
-            for (int i = 0; i < ids.size(); i++) {
-                sql.setLong(i + 4, ids.get(i));
-            }
-            try (ResultSet rows = sql.executeQuery()) {
-                while (rows.next()) {
-                    result.add(rows.getLong(1));
-                }
-            }
-        }
-        return result;
+        repository.deleteMessage(owner, box, id);
     }
 
     void mark(String owner, String box, String area, long id, boolean read) throws Exception {
-        String query = read
-                ? "MERGE INTO read_marks(owner,mailbox,area,id) KEY(owner,mailbox,area,id) VALUES(?,?,?,?)"
-                : "DELETE FROM read_marks WHERE owner=? AND mailbox=? AND area=? AND id=?";
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement(query)) {
-            sql.setString(1, owner);
-            sql.setString(2, box);
-            sql.setString(3, area);
-            sql.setLong(4, id);
-            sql.executeUpdate();
-        }
+        repository.mark(owner, box, area, id, read);
     }
 
     List<MailDraft> drafts(String owner) throws Exception {
-        List<MailDraft> drafts = new ArrayList<>();
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("SELECT payload FROM drafts WHERE owner=? ORDER BY id LIMIT 200")) {
-            sql.setString(1, owner);
-            try (ResultSet result = sql.executeQuery()) {
-                while (result.next()) {
-                    MailDraft draft = new MailDraft();
-                    new TDeserializer().deserialize(draft, result.getBytes(1));
-                    drafts.add(draft);
-                }
-            }
-        }
-        return drafts;
+        return repository.drafts(owner);
     }
 
-    synchronized void save(String owner, MailDraft draft) throws Exception {
-        try (Connection connection = open()) {
-            if (countOtherDrafts(connection, owner, draft.getId()) >= 200) {
-                throw new IllegalArgumentException("At most 200 drafts are supported");
-            }
-            saveDraft(connection, owner, draft);
-        }
-    }
-
-    private long countOtherDrafts(Connection connection, String owner, String id) throws Exception {
-        try (PreparedStatement count = connection.prepareStatement("SELECT COUNT(*) FROM drafts WHERE owner=? AND id<>?")) {
-            count.setString(1, owner);
-            count.setString(2, id);
-            try (ResultSet result = count.executeQuery()) {
-                result.next();
-                return result.getLong(1);
-            }
-        }
-    }
-
-    private void saveDraft(Connection connection, String owner, MailDraft draft) throws Exception {
-        try (PreparedStatement sql = connection.prepareStatement("MERGE INTO drafts(owner,id,payload) KEY(owner,id) VALUES(?,?,?)")) {
-            sql.setString(1, owner);
-            sql.setString(2, draft.getId());
-            sql.setBytes(3, new TSerializer().serialize(draft));
-            sql.executeUpdate();
-        }
+    void save(String owner, MailDraft draft) throws Exception {
+        repository.save(owner, draft);
     }
 
     void delete(String owner, String id) throws Exception {
-        try (Connection connection = open();
-                PreparedStatement sql = connection.prepareStatement("DELETE FROM drafts WHERE owner=? AND id=?")) {
-            sql.setString(1, owner);
-            sql.setString(2, id);
-            sql.executeUpdate();
-        }
+        repository.delete(owner, id);
     }
 
     String reserve(String id, String fingerprint, Callable<String> allocateId) throws Exception {
-        try (Connection connection = open()) {
-            String existing = reservedMessageId(connection, id, fingerprint);
-            if (existing != null) {
-                return existing;
-            }
-            String messageId = allocateId.call();
-            insertSubmission(connection, id, fingerprint, messageId);
-            return messageId;
-        }
+        return repository.reserve(id, fingerprint, allocateId);
     }
 
-    private String reservedMessageId(Connection connection, String id, String fingerprint)
-            throws Exception {
-        try (PreparedStatement sql = connection.prepareStatement("SELECT fingerprint,message_id FROM submissions WHERE id=?")) {
-            sql.setString(1, id);
-            try (ResultSet result = sql.executeQuery()) {
-                if (!result.next()) {
-                    return null;
-                }
-                requireSameFingerprint(result.getString(1), fingerprint);
-                return result.getString(2);
-            }
-        }
-    }
-
-    private static void requireSameFingerprint(String existing, String fingerprint) {
-        if (!fingerprint.equals(existing)) {
-            throw new IllegalArgumentException("Request ID was used with different content");
-        }
-    }
-
-    private void insertSubmission(Connection connection,
-                                  String id,
-                                  String fingerprint,
-                                  String messageId)
-            throws Exception {
-        try (PreparedStatement insert = connection.prepareStatement("INSERT INTO submissions(id,fingerprint,message_id) VALUES(?,?,?)")) {
-            insert.setString(1, id);
-            insert.setString(2, fingerprint);
-            insert.setString(3, messageId);
-            insert.executeUpdate();
-        }
+    @Override
+    public void close() throws IOException {
+        storage.close();
     }
 }

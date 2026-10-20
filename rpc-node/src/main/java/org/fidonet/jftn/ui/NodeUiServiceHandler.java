@@ -56,7 +56,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Sysop UI adapter. Authentication is supplied by AuthenticatedUi at the RPC boundary. */
-public final class NodeUiServiceHandler implements UiService.Iface {
+public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(NodeUiServiceHandler.class);
     private final JFtnConfig config;
     private final MailDatabaseFacade base;
@@ -686,4 +686,8 @@ public final class NodeUiServiceHandler implements UiService.Iface {
         });
     }
 
+    @Override
+    public void close() throws Exception {
+        state.close();
+    }
 }
