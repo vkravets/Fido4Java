@@ -168,6 +168,7 @@ async function refresh() {
             v-if="reader.draft.value"
             v-model="reader.draft.value"
             :addresses="reader.authors.value"
+            :enhanced="true"
             :busy="state.busy.value"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
