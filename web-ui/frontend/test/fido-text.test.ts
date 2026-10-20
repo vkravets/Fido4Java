@@ -11,6 +11,33 @@ test('FIDO quotes and endings are classified without interpreting HTML', () => {
     );
     assert.equal(lines.at(-1)!.runs[0]!.text, '<script>x</script>');
 });
+test('quote colors repeat every three levels without changing message text', () => {
+    const text =
+        'A> one\nB>> two\nC>>> three\nD>>>> four\nE>>>>> five\nF>>>>>> six\n>>>>>>> seven\n>>>>>>>> eight\n>>>>>>>>> nine';
+    const expected = [
+        'quote1',
+        'quote2',
+        'quote3',
+        'quote1',
+        'quote2',
+        'quote3',
+        'quote1',
+        'quote2',
+        'quote3'
+    ];
+    for (const visual of [true, false]) {
+        const lines = fidoText(text, visual);
+        assert.deepEqual(
+            lines.map((line) => line.kind),
+            expected
+        );
+        assert.equal(
+            lines.map((line) => line.runs.map((run) => run.text).join('')).join('\n'),
+            text
+        );
+    }
+});
+
 test('visual marker styles do not confuse URLs, paths or change source mode', () => {
     const text = '*bold* /italic/ _under_ #reverse# https://example.test/a/b /usr/bin/file';
     const lines = fidoText(text);

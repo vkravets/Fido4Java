@@ -1,2 +1,2 @@
 export const styledMail =
-    'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thanks for the introduction.\nCE>>> See you online.\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\nPlain text: <script>alert("mail")</script>\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';
+    'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thanks for the introduction.\nCE>>> See you online.\nDE>>>> The fourth level uses the first color.\nEE>>>>> The fifth level uses the second color.\nFE>>>>>> The sixth level uses the third color.\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\nPlain text: <script>alert("mail")</script>\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';

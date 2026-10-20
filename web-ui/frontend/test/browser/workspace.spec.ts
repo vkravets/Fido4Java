@@ -1,6 +1,26 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('reader and editor cycle quote colors for levels four through six', async ({ page }) => {
+    for (const theme of ['light', 'dark'] as const) {
+        for (const name of [
+            'mail-fidotext--highlighted',
+            'mail-fidoeditor--writing',
+            'mail-fidotext--source',
+            'mail-fidoeditor--preview'
+        ]) {
+            await openStory(page, name, theme);
+            const quotes = page.locator('.quote1:visible, .quote2:visible, .quote3:visible');
+            await expect(quotes).toHaveCount(6);
+            const colors = await quotes.evaluateAll((lines) =>
+                lines.map((line) => getComputedStyle(line).color)
+            );
+            expect(new Set(colors.slice(0, 3)).size).toBe(3);
+            expect(colors.slice(3)).toEqual(colors.slice(0, 3));
+        }
+    }
+});
+
 test('mobile Back restores the previous list scroll position', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openStory(page, 'mail-netmailview--long-list');

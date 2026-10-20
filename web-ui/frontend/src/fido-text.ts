@@ -78,10 +78,10 @@ export function fidoText(text: string, visual = true): TextLine[] {
         .map((line) => {
             const quote = line.match(/^\s*(?:[^\s<>]{0,12}>)+/);
             let kind: TextLine['kind'] = 'text';
-            if (quote)
-                kind =
-                    `quote${Math.min(3, (quote[0].match(/>/g) || []).length)}` as TextLine['kind'];
-            else if (/^\s*\* Origin:/.test(line)) kind = 'origin';
+            if (quote) {
+                const depth = quote[0].match(/>/g)!.length;
+                kind = `quote${((depth - 1) % 3) + 1}` as TextLine['kind'];
+            } else if (/^\s*\* Origin:/.test(line)) kind = 'origin';
             else if (/^---(?: |$)/.test(line)) kind = 'tearline';
             else if (/^\.\.\.(?: |$)/.test(line)) kind = 'tagline';
             else if (line === '-- ') {

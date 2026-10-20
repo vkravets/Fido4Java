@@ -25,7 +25,7 @@ provide(mailAppearanceKey, {
     find: (id) => (id === previewTheme.value ? theme.value : appearance.find(id))
 });
 const body =
-    'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thank you.\nCS>>> See you here!\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';
+    'Hello Bob,\n\nAE> Welcome to the conference!\nBE>> Thank you.\nCS>>> See you here!\nDE>>>> The fourth level uses the first color.\nEE>>>>> The fifth level uses the second color.\nFE>>>>>> The sixth level uses the third color.\n\nThis is *bold*, /italic/, _underlined_ and #highlighted#.\nhttps://example.test\n\n-- \nAlex\n--- JFtn\n * Origin: Example station (1:500/100.1)';
 const message: MailItem = {
     id: '1',
     messageId: '1:500/100.1 12345678',
