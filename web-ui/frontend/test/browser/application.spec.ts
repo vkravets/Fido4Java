@@ -15,6 +15,26 @@ async function signIn(page: Page, username: string, password: string) {
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 }
 
+test('mobile application exposes navigation as a screen without horizontal overflow', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+    ).toBe(true);
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Echomail', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Echomail', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Echomail', exact: true })).toBeVisible();
+    await expect(page.locator('.workspace > .sidebar')).toBeHidden();
+    await page.getByRole('button', { name: /^Welcome to general/ }).click();
+    await expect(page.locator('.mail-body')).toBeVisible();
+    await page.getByRole('button', { name: 'Back to messages' }).click();
+    await expect(page.getByRole('treeitem').first()).toBeVisible();
+});
+
 test('registration suggests imported points before authentication', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'No account? Register' }).click();
@@ -45,8 +65,8 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await page.getByRole('button', { name: /^In reply to/ }).click();
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('Alice');
-    await expect(page.getByLabel('Message text', { exact: true })).toHaveValue(
-        /^> Hello everyone!/
+    await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(
+        '> Hello everyone!'
     );
     await page.getByLabel('Subject', { exact: true }).fill('Browser echo reply');
     await page.getByLabel('Message text', { exact: true }).fill('A reply from the browser.');
@@ -343,24 +363,4 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     }
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Sign in to JFtn' })).toBeVisible();
-});
-
-test('mobile application exposes navigation as a screen without horizontal overflow', async ({
-    page
-}) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/');
-    await signIn(page, 'admin', 'preview-admin-password');
-    expect(
-        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
-    ).toBe(true);
-    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Echomail', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Echomail', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Echomail', exact: true })).toBeVisible();
-    await expect(page.locator('.workspace > .sidebar')).toBeHidden();
-    await page.getByRole('button', { name: /^Welcome to general/ }).click();
-    await expect(page.locator('.mail-body')).toBeVisible();
-    await page.getByRole('button', { name: 'Back to messages' }).click();
-    await expect(page.getByRole('treeitem').first()).toBeVisible();
 });

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
+import FidoEditor from './FidoEditor.vue';
 import AddressInput from './AddressInput.vue';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const draft = defineModel<MailDraft>({ required: true });
-defineProps<{ addresses: string[]; busy: boolean }>();
+defineProps<{ addresses: string[]; busy: boolean; enhanced?: boolean }>();
 defineEmits<{ save: []; send: []; cancel: [] }>();
 </script>
 <template>
@@ -78,7 +79,8 @@ defineEmits<{ save: []; send: []; cancel: [] }>();
                     required
                     maxlength="71"
             /></label>
-            <label
+            <FidoEditor v-if="enhanced" :key="draft.id" v-model="draft.body" :disabled="busy" />
+            <label v-else
                 >{{ t('Message text')
                 }}<textarea
                     v-model="draft.body"

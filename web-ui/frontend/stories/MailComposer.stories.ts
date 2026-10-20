@@ -2,13 +2,20 @@ import { ref } from 'vue';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import MailComposer from '../src/components/MailComposer.vue';
 import { netmailDraft } from './netmail-fixture.ts';
+import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 const meta = {
     title: 'Mail/MailComposer',
     component: MailComposer,
-    args: { modelValue: netmailDraft, addresses: ['1:500/100', '1:500/100.1'], busy: false },
-    render: (args) => ({
+    args: {
+        modelValue: netmailDraft,
+        addresses: ['1:500/100', '1:500/100.1'],
+        busy: false,
+        enhanced: true
+    },
+    render: (args, context) => ({
         components: { MailComposer },
         setup() {
+            mailWorkspaceFixture(context.globals.theme === 'dark');
             return { args, draft: ref({ ...args.modelValue }) };
         },
         template: '<MailComposer v-bind="args" v-model="draft" />'

@@ -118,6 +118,7 @@ function editDraft(value: MailDraft) {
             v-if="reader.draft.value"
             v-model="reader.draft.value"
             :addresses="state.profile.value?.allowedAkas || []"
+            :enhanced="true"
             :busy="state.busy.value"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
