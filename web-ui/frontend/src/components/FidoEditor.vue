@@ -13,6 +13,7 @@ import {
     redo
 } from '@codemirror/commands';
 import { fidoStyleRanges, fidoText } from '../fido-text.ts';
+import { formatFidoLines } from '../editor-format.ts';
 import { themeStyle, useMailAppearance } from '../mail-themes.ts';
 import { t, locale } from '../i18n.ts';
 import FidoText from './FidoText.vue';
@@ -79,7 +80,31 @@ onMounted(() => {
                         ?.content || ''
                 ),
                 history(),
-                keymap.of([...defaultKeymap, ...historyKeymap]),
+                keymap.of([
+                    {
+                        key: 'Mod-b',
+                        run: () => {
+                            wrap('*');
+                            return true;
+                        }
+                    },
+                    {
+                        key: 'Mod-i',
+                        run: () => {
+                            wrap('/');
+                            return true;
+                        }
+                    },
+                    {
+                        key: 'Mod-u',
+                        run: () => {
+                            wrap('_');
+                            return true;
+                        }
+                    },
+                    ...defaultKeymap,
+                    ...historyKeymap
+                ]),
                 EditorView.lineWrapping,
                 accessibility.of(attributes()),
                 decorations.of(source.value ? [] : highlighted),
@@ -127,6 +152,42 @@ watch([locale, () => props.disabled], () =>
     editor?.dispatch({ effects: accessibility.reconfigure(attributes()) })
 );
 onBeforeUnmount(() => editor?.destroy());
+function wrap(marker: string) {
+    if (!editor || props.disabled) return;
+    const { from, to } = editor.state.selection.main;
+    const selected = editor.state.sliceDoc(from, to);
+    const surrounding = from > 0 && editor.state.sliceDoc(from - marker.length, from) === marker && editor.state.sliceDoc(to, to + marker.length) === marker;
+    const start = surrounding ? from - marker.length : from;
+    const end = surrounding ? to + marker.length : to;
+    const insert = surrounding ? selected : formatFidoLines(selected, marker);
+    editor.dispatch({ annotations: isolateHistory.of('full'), changes: { from: start, to: end, insert }, selection: { anchor: selected ? start : start + marker.length, head: selected ? start + insert.length : start + marker.length } });
+    editor.focus();
+}
+function quote() {
+    if (!editor || props.disabled) return;
+    const selection = editor.state.selection.main;
+    const from = editor.state.doc.lineAt(selection.from).from;
+    const to = editor.state.doc.lineAt(selection.to).to;
+    editor.dispatch({
+        annotations: isolateHistory.of('full'),
+        changes: {
+            from,
+            to,
+            insert: editor.state
+                .sliceDoc(from, to)
+                .split('\n')
+                .map((line) => '> ' + line)
+                .join('\n')
+        }
+    });
+    editor.focus();
+}
+function historyAction(action: typeof undo) {
+    if (editor && !props.disabled) {
+        action(editor);
+        editor.focus();
+    }
+}
 function setSource(value: boolean) {
     source.value = value;
     preview.value = false;
@@ -148,6 +209,59 @@ defineExpose({
             role="toolbar"
             :aria-label="t('Text formatting')"
         >
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                :aria-label="t('Bold')"
+                @click="wrap('*')"
+            >
+                <b>B</b>
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                :aria-label="t('Italic')"
+                @click="wrap('/')"
+            >
+                <i>I</i>
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                :aria-label="t('Underline')"
+                @click="wrap('_')"
+            >
+                <u>U</u>
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                :aria-label="t('Reverse')"
+                @click="wrap('#')"
+            >
+                #
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                @click="quote"
+            >
+                {{ t('Quote') }}
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                @click="historyAction(undo)"
+            >
+                {{ t('Undo') }}
+            </button>
+            <button
+                type="button"
+                :disabled="disabled || preview"
+                @click="historyAction(redo)"
+            >
+                {{ t('Redo') }}
+            </button>
             <button
                 type="button"
                 :aria-pressed="!source && !preview"
