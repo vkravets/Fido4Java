@@ -7,6 +7,12 @@ const query = defineModel<string>({ required: true });
 defineProps<{ preferences: MailLayout; busy?: boolean }>();
 defineEmits<{ update: [value: Partial<MailLayout>] }>();
 const desktop = useMedia('(min-width: 701px)');
+function closeOptions(event: KeyboardEvent) {
+    if (!desktop.value) return;
+    const details = event.currentTarget as HTMLDetailsElement;
+    details.open = false;
+    details.querySelector('summary')?.focus();
+}
 const positions = [
     ['right', 'Preview on the right'],
     ['below', 'Preview below'],
@@ -31,7 +37,7 @@ const positions = [
             <details
                 class="mail-view-options"
                 :open="!desktop"
-                @keydown.esc="($event.currentTarget as HTMLDetailsElement).open = false"
+                @keydown.esc="closeOptions"
             >
                 <summary
                     role="button"

@@ -209,3 +209,22 @@ test('desktop More menu supports short replies and dismisses with Escape', async
     await expect(text).not.toContainText('Your station is ready');
     await expect(page.locator('.mail-composer')).toContainText('Reply to message');
 });
+
+for (const width of [1280, 390]) {
+    test(`display options remain accessible after Escape at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await openStory(page, 'mail-netmailview--inbox');
+        const options = page.locator('.mail-view-options');
+        if (width > 700) await options.locator('summary').click();
+        const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
+        await position.press('Escape');
+        if (width > 700) {
+            await expect(options).not.toHaveAttribute('open');
+            await expect(options.locator('summary')).toBeFocused();
+            await options.locator('summary').click();
+        }
+        await expect(position).toBeVisible();
+        await position.selectOption('below');
+        await expect(page.locator('.split-pane')).toHaveClass(/below/);
+    });
+}
