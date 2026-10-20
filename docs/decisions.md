@@ -640,6 +640,11 @@ Service dependencies are validated before preparation or listener acquisition.
 Disabled services are filtered out before normal plugin dependency loading.
 Startup and shutdown preserve reverse resource ownership and cleanup failures.
 
+Application-owned H2 mail, account and directory stores disable `DB_CLOSE_ON_EXIT`.
+Their services close connections explicitly: H2's independent JVM shutdown hook
+must not close SQL while mail workers or RPC requests are still draining. This
+connection-lifetime option does not change the database file format or schema.
+
 `rpc-node` owns authenticated TCP/HTTP handlers, account/session lifetime and
 server-side settings. Web UI is separately optional and depends on RPC. It owns
 browser resources and initial setup. `RpcEnabled=false` disables the dependent

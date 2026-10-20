@@ -39,7 +39,7 @@ public final class RpcAccounts implements AutoCloseable {
             throw new IllegalArgumentException("Invalid authentication database path");
         }
         Files.createDirectories(absolute.getParent());
-        url = "jdbc:h2:" + absolute;
+        url = "jdbc:h2:" + absolute + ";DB_CLOSE_ON_EXIT=FALSE";
         try {
             keeper = open();
             try (Statement sql = keeper.createStatement()) {

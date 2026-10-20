@@ -33,7 +33,7 @@ public final class DirectoryCatalog implements AutoCloseable {
             throw new IllegalArgumentException("Directory database path cannot contain ';'");
         }
         Files.createDirectories(absolute.getParent());
-        jdbcUrl = "jdbc:h2:" + absolute;
+        jdbcUrl = "jdbc:h2:" + absolute + ";DB_CLOSE_ON_EXIT=FALSE";
         try (Connection connection = connect();
                 Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE IF NOT EXISTS directory_sources (source_id VARCHAR(80) PRIMARY KEY, definition CLOB NOT NULL, fingerprint VARCHAR(64) NOT NULL, record_count BIGINT NOT NULL, header CLOB NOT NULL)");

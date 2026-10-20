@@ -47,7 +47,8 @@ import java.sql.SQLException;
  * Time: 9:53 AM
  */
 public class DatabasePlugin implements Plugin<MailDatabaseFacade> {
-    public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10";
+    // The node stops mail workers before closing this connection; H2's parallel exit hook must not.
+    public static final String DEFAULT_DATABASE_URL = "jdbc:h2:./database/jftn10;DB_CLOSE_ON_EXIT=FALSE";
 
     private MailDatabaseFacade manager;
     private String databaseUrl;

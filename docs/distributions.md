@@ -72,6 +72,11 @@ Existing journal entries are preserved in their original format.
 PKT password mismatches identify the peer and destination without logging
 passwords. Exceptions include full stack traces in both outputs.
 
+Embedded mail, account and directory SQL stores use `DB_CLOSE_ON_EXIT=FALSE`.
+The node owns their shutdown order, so a Ctrl+C/JVM exit cannot let H2's separate
+exit hook close connections before the last mail scan finishes. This is a
+connection option, not a schema migration; existing database files are preserved.
+
 Launchers set the working directory to the installation root and load `scripts/`,
 `lib/*`, `lib/groovy/*` and `plugins/*` as the classpath. They prefer the bundled
 JRE, then `JAVA_HOME`, then Java on `PATH`. PowerShell uses the platform's classpath
