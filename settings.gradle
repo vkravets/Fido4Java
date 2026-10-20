@@ -43,3 +43,6 @@ project(':rpc').projectDir = "$rootDir/rpc" as File
 
 include ':node-runtime'
 include ':rpc-node'
+include ':storage-api'
+include ':storage-jdbc'
+include ':storage-h2'

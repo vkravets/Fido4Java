@@ -1,0 +1,3 @@
+apply plugin: 'java-library'
+
+description = 'Typed storage contracts and backend lifecycle, independent of JDBC'

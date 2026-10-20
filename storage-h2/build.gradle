@@ -1,0 +1,7 @@
+apply plugin: 'java-library'
+
+description = 'H2 backend with bounded shared connection pools'
+dependencies {
+    implementation project(':storage-jdbc')
+    implementation 'com.h2database:h2:2.5.252'
+}

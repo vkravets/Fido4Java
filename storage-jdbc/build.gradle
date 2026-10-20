@@ -1,0 +1,6 @@
+apply plugin: 'java-library'
+
+description = 'JDBC SPI shared only by storage backend adapters'
+dependencies {
+    api project(':storage-api')
+}
