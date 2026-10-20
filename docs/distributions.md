@@ -61,7 +61,8 @@ are escaped. File transfers show direction, name, size, resume offset, elapsed
 milliseconds and CPS (new bytes per second); successful sending is reported only
 after the peer's GOT acknowledgement. Idle inbound scans remain at DEBUG.
 The dedicated rotating `logs/binkp.log` contains incoming and outgoing binkp
-events too; administrators can read it in **Connections → Binkp log**. Individual
+events too; administrators can read it through **Logs** or
+**Polling → Binkp log** in the sidebar. Individual
 outgoing attempts also retain these safe INFO events in their poll journals.
 New log entries use `yyyy-MM-dd HH:mm:ss.SSSXXX`, for example
 `2026-10-20 11:43:17.307+03:00`: milliseconds and the JVM's local UTC offset.

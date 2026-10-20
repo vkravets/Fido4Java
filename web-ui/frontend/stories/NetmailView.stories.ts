@@ -1,5 +1,5 @@
 import MailApplicationFrame from './MailApplicationFrame.vue';
-import { provide, ref } from 'vue';
+import { nextTick, provide, ref } from 'vue';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
@@ -81,6 +81,7 @@ export const Reading: Story = { args: { initialMessage: String(netmailMessage.id
 export const DisplayOptions: Story = {
     ...Reading,
     play: async ({ canvasElement }) => {
+        await nextTick();
         canvasElement.querySelector<HTMLDetailsElement>('.mail-view-options')!.open = true;
     }
 };

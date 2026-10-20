@@ -82,3 +82,33 @@ scenarios and final full component run passed with two, without increasing test
 timeouts or adding retries. Mobile checks emulate viewports; they are not physical
 phone certification. See [Mail workspace](mail-workspace.md) for behavior, palette
 files, supported template tokens and the loaded-search/GoldED-subset limits.
+
+## Compact desktop follow-up on 2026-10-20
+
+Commit `1fe7968c` aligned the desktop implementation with the approved reference:
+flush panes, a 44px header, 216/56px navigation, shared outline SVGs, compact
+controls, sender/subject/date rows and a grouped reader action menu. Display
+options retain preview position and density; short replies preserve REPLY without
+the quote. Links and Logs shortcuts open existing admin panels directly. Mobile
+layout refinement remains a separate follow-up in TODO.
+
+Frontend unit tests (72), component/workspace checks (59), real HTTP application
+scenarios (13) and first-run setup (1) passed, as did application and Storybook
+type checks. New stories cover the populated desktop frame, reader actions,
+expanded More menu and display options. Representative Linux references were
+reviewed in both themes, EN/UK and desktop/mobile: 296 existing PNGs changed and 32 were added;
+24 other selected references remained unchanged.
+
+The first comparison caught a new popup story captured before Vue's media-query
+update. Its fixture now waits for Vue's queued updates, and VRT requires the
+expanded desktop panel to be visible before capture. Only that incorrect new
+reference was regenerated. No comparison threshold or timeout was relaxed.
+Commit `7384d8ab` also preserves mobile display controls after Escape and restores
+desktop focus to the opener; two additional focused browser checks passed on
+the refreshed production/Storybook build, along with both type checks.
+
+The final independent comparison without snapshot updates passed all 352
+selected Linux scenarios on the refreshed build, with zero pixel differences.
+The complete catalogue now contains 976 PNG references; unrelated images were
+not refreshed. The main comparison report is
+`web-ui/build/reports/playwright/visual/index.html`.

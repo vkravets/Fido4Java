@@ -4,6 +4,18 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'echo-focused-desktop', story: 'mail-echomailview--focused-desktop' },
+    { name: 'mail-reader-actions', story: 'mail-netmailmessage--reader-actions' },
+    {
+        name: 'mail-reader-more',
+        story: 'mail-netmailmessage--more-actions',
+        disclosure: '.reader-more-panel'
+    },
+    {
+        name: 'mail-display-options',
+        story: 'mail-netmailview--display-options',
+        disclosure: '.mail-options-panel'
+    },
     { name: 'netmail-application', story: 'mail-netmailview--application-workspace' },
     { name: 'echo-application', story: 'mail-echomailview--application-workspace' },
     { name: 'application-header', story: 'navigation-applicationheader--signed-in' },
@@ -153,6 +165,8 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.disclosure && info.project.name === 'desktop')
+                    await expect(page.locator(screen.disclosure)).toBeVisible();
                 if (screen.suggestions)
                     await expect(page.getByRole('option').first()).toBeVisible();
                 if (screen.unavailable)

@@ -91,7 +91,8 @@ eight batches; focused runs do not narrow the CI test matrix.
 ## Echomail reader
 
 **Echomail** provides a searchable conference list, a message list and a reading
-pane. Switch between **Tree** and **Flat** views. Unread messages are highlighted;
+pane. Switch between **Threads** and **Flat** on desktop; the mobile selector
+offers **Conversation tree** and **Flat list**. Unread messages are highlighted;
 opening a message saves a read mark for the current account. Other readers' marks
 are independent. Tree rows support arrow-key navigation and branch collapse.
 
@@ -224,8 +225,9 @@ configuration remain in `conf.d`; see [robot access](robot-access.md).
 
 ## Connections and binkp logs
 
-Administrators have a **Connections** page with active/waiting attempts, paged
-history and a **Poll now** action for configured links. Scheduled and manual
+Administrators open the **Connections** page through **Polling** in the sidebar.
+It shows active/waiting attempts, paged history and a **Poll now** action for
+configured links. Scheduled and manual
 attempts use the same queue and duplicate active requests select the existing
 job. Attempts can be cancelled or retried; cancellation closes the connection
 without deleting queued outgoing files. The **Outgoing polls** tab lists these
@@ -243,7 +245,8 @@ and stops on navigation away. Auto refresh and following the journal can be togg
 The browser retains only one history page and the last 1000 loaded log lines.
 
 The **Binkp log** tab shows the same safe INFO format for both incoming and outgoing
-connections from `logs/binkp.log`. It starts with the latest 200 complete lines
+connections from `logs/binkp.log`; **Logs** in the sidebar opens this tab directly.
+It starts with the latest 200 complete lines
 within the final 64 KiB, then reads new events every two seconds while visible.
 Use **Show latest events** to reset the cursor. Following the log can be toggled;
 the browser keeps at most 1000 loaded lines. A detected file truncation clears the

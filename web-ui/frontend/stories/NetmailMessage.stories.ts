@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { nextTick } from 'vue';
 import NetmailMessage from '../src/components/NetmailMessage.vue';
 import { netmailMessage } from './netmail-fixture.ts';
 const meta = {
@@ -23,6 +24,7 @@ export const ReaderActions: Story = { args: { navigation: true, forwardable: tru
 export const MoreActions: Story = {
     ...ReaderActions,
     play: async ({ canvasElement }) => {
+        await nextTick();
         canvasElement.querySelector<HTMLDetailsElement>('.reader-more')!.open = true;
     }
 };
