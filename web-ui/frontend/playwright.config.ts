@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
     testDir: './test/browser',
-    testMatch: ['components.spec.ts', 'workspace.spec.ts'],
+    testMatch: ['components.spec.ts', 'workspace.spec.ts', 'typography.spec.ts'],
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     workers: 2,

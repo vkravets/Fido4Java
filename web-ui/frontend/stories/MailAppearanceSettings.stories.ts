@@ -13,6 +13,10 @@ const meta = {
         components: { MailAppearanceSettings, NotificationBanner },
         setup() {
             const { state, appearance } = mailWorkspaceFixture(context.globals.theme === 'dark');
+            if (context.parameters.boxDrawing) {
+                appearance.readerTypography.value = { font: 'dejavu', size: 16, lineHeight: 1 };
+                appearance.editorTypography.value = { font: 'liberation', size: 18, lineHeight: 1 };
+            }
             state.busy.value = context.parameters.busy || false;
             if (context.parameters.file) appearance.editor.value = 'operator-green';
             if (context.parameters.error) state.error.value = 'Invalid mail theme color';
@@ -26,6 +30,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Themes: Story = {};
 export const Busy: Story = { parameters: { busy: true } };
+export const BoxDrawing: Story = { parameters: { boxDrawing: true } };
+export const BoxDrawingEditor: Story = {
+    parameters: { boxDrawing: true },
+    play: async ({ canvasElement }) => {
+        const buttons = canvasElement.querySelectorAll<HTMLButtonElement>(
+            '.appearance-preview .tabs button'
+        );
+        buttons[1]!.click();
+        await nextTick();
+    }
+};
 
 export const FileTheme: Story = { parameters: { file: true } };
 export const InvalidImport: Story = { parameters: { error: true } };

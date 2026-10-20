@@ -994,7 +994,7 @@ footer.actions {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     font-family: var(--font-mono, monospace);
-    line-height: 1.65;
+    line-height: var(--mail-line-height, 1.65);
     max-height: 70vh;
     overflow: auto;
 }

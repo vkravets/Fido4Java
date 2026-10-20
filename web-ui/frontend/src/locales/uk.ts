@@ -725,5 +725,14 @@ export const ukrainian = {
     ACCOUNT: 'ОБЛІКОВИЙ ЗАПИС',
     'My settings': 'Мої налаштування',
     'FidoNet · Connected': 'FidoNet · На зв’язку',
-    'Your address. Your voice.': 'Ваша адреса. Ваш голос.'
+    'Your address. Your voice.': 'Ваша адреса. Ваш голос.',
+    'Reading font': 'Шрифт перегляду',
+    'Editor font': 'Шрифт редактора',
+    'Font family': 'Гарнітура',
+    'Font size (px)': 'Розмір шрифту (px)',
+    'Line height': 'Висота рядка',
+    Automatic: 'Автоматично',
+    'System monospace': 'Системний моноширинний',
+    'For continuous box drawing, use a monospace font and line height 1.0. Fonts must be installed on your device.':
+        'Для суцільних рамок виберіть моноширинний шрифт і висоту рядка 1,0. Шрифт має бути встановлений на вашому пристрої.'
 } as const;

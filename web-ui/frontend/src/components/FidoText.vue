@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { typographyStyle } from '../mail-typography.ts';
+import type { MailTypography } from '../mail-typography.ts';
 import { fidoText } from '../fido-text.ts';
 import { useMailSearch } from '../mail-search.ts';
 import FidoRun from './FidoRun.vue';
@@ -10,6 +12,7 @@ const props = defineProps<{
     source?: boolean;
     themeId?: string;
     theme?: MailTheme;
+    typography?: MailTypography;
 }>();
 const appearance = useMailAppearance();
 const colors = computed(() =>
@@ -21,7 +24,7 @@ const lines = computed(() => fidoText(props.text, !props.source));
 <template>
     <div
         class="fido-text mail-body"
-        :style="colors"
+        :style="[colors, typographyStyle(typography || appearance.readerTypography.value)]"
     >
         <div
             v-for="(line, index) in lines"
@@ -43,7 +46,9 @@ const lines = computed(() => fidoText(props.text, !props.source));
 .fido-text {
     background: var(--mail-background, var(--surface));
     color: var(--mail-text, var(--text));
-    font-family: var(--font-mono, monospace);
+    font-family: var(--mail-font-family, var(--font-mono, monospace));
+    font-size: var(--mail-font-size, inherit);
+    font-variant-ligatures: none;
     white-space: pre-wrap;
     padding: 16px;
     border-radius: 6px;

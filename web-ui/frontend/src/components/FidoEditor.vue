@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Compartment, EditorState, StateField } from '@codemirror/state';
 import type { Range } from '@codemirror/state';
 import { Decoration, EditorView, keymap } from '@codemirror/view';
@@ -14,6 +14,7 @@ import {
 } from '@codemirror/commands';
 import { fidoStyleRanges, fidoText } from '../fido-text.ts';
 import { formatFidoLines } from '../editor-format.ts';
+import { typographyStyle } from '../mail-typography.ts';
 import { themeStyle, useMailAppearance } from '../mail-themes.ts';
 import { t, locale } from '../i18n.ts';
 import FidoText from './FidoText.vue';
@@ -28,7 +29,18 @@ const host = ref<HTMLElement>();
 const source = ref(props.initialMode === 'source');
 const preview = ref(props.initialMode === 'preview');
 const appearance = useMailAppearance();
-const colors = computed(() => themeStyle(appearance.find(appearance.editor.value)));
+const colors = computed(() => ({
+    ...themeStyle(appearance.find(appearance.editor.value)),
+    ...typographyStyle(appearance.editorTypography.value)
+}));
+watch(
+    appearance.editorTypography,
+    async () => {
+        await nextTick();
+        editor?.requestMeasure();
+    },
+    { deep: true }
+);
 const bytes = computed(() => new TextEncoder().encode(model.value).length);
 const decorations = new Compartment();
 const editable = new Compartment();
@@ -119,11 +131,16 @@ onMounted(() => {
                 ]),
                 EditorView.theme({
                     '&': {
-                        fontSize: '14px',
+                        fontSize: 'var(--mail-font-size, 14px)',
                         backgroundColor: 'var(--mail-background)',
                         color: 'var(--mail-text)'
                     },
-                    '.cm-content': { fontFamily: 'monospace', minHeight: '300px' },
+                    '.cm-scroller': {
+                        fontFamily: 'var(--mail-font-family, monospace)',
+                        lineHeight: 'var(--mail-line-height, 1.4)',
+                        fontVariantLigatures: 'none'
+                    },
+                    '.cm-content': { minHeight: '300px' },
                     '.cm-cursor': { borderLeftColor: 'var(--mail-caret)' },
                     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
                         backgroundColor: 'var(--mail-selection)'
@@ -327,6 +344,7 @@ defineExpose({
         <FidoText
             v-if="preview"
             :theme-id="appearance.editor.value"
+            :typography="appearance.editorTypography.value"
             :text="model"
         />
         <p

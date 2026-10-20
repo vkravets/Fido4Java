@@ -640,8 +640,8 @@ summary:has(> .app-icon) {
         padding: 14px;
         margin: 0;
         border-radius: 0;
-        font-size: 14px;
-        line-height: 1.6;
+        font-size: var(--mail-font-size, 14px);
+        line-height: var(--mail-line-height, 1.6);
     }
     .reader-footer {
         display: flex;

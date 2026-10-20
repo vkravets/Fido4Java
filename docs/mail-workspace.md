@@ -173,6 +173,19 @@ database in `rpc_ui_documents`, isolated by authenticated account. Back up that
 database along with normal mail/UI state. Operator palette files belong to the
 installation and should be backed up separately.
 
+## Typography
+
+Mail appearance includes independent reader and editor font families, sizes
+(10–32 px) and line heights (1.0–2.0). These personal preferences live in the
+account's `mail-themes` UI document, alongside palette selections; no installation
+configuration or message encoding changes. Automatic metrics retain the existing
+layout defaults. Changes preview immediately and persist with Save preferences.
+Font choices use installed monospace families with a generic monospace fallback;
+the application does not download fonts. For box drawing and block graphics,
+start with DejaVu Sans Mono and line height 1.0. The sample includes a frame and
+blocks. Actual glyph joins also depend on the installed font and browser rendering.
+Changing typography does not replace editor text, cursor selection or undo history.
+
 ## Verification
 
 Parser, formatting, template expansion, preference races and ownership have

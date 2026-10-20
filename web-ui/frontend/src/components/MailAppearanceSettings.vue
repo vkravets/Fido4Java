@@ -5,6 +5,7 @@ import { themeLabel } from '../mail-theme-labels.ts';
 import { mailColors, mailEncodings, mailTheme, useMailAppearance } from '../mail-themes.ts';
 import type { MailTheme } from '../mail-themes.ts';
 import type { AppState } from '../state.ts';
+import MailTypographyFields from './MailTypographyFields.vue';
 import MailAppearancePreview from './MailAppearancePreview.vue';
 import type { AppearancePreviewMode } from './MailAppearancePreview.vue';
 const props = defineProps<{ state: AppState }>();
@@ -12,6 +13,8 @@ const appearance = useMailAppearance();
 const reader = ref(appearance.find(appearance.reader.value).id);
 const editor = ref(appearance.find(appearance.editor.value).id);
 const encoding = ref(appearance.encoding.value);
+const readerTypography = ref({ ...appearance.readerTypography.value });
+const editorTypography = ref({ ...appearance.editorTypography.value });
 const selected = ref(editor.value);
 const draft = ref<MailTheme>(copy(appearance.find(selected.value)));
 const previewMode = ref<AppearancePreviewMode>('reader');
@@ -24,14 +27,28 @@ function choose() {
     previewMode.value = 'custom';
 }
 async function save() {
-    await appearance.save(reader.value, editor.value, appearance.custom.value, encoding.value);
+    await appearance.save(
+        reader.value,
+        editor.value,
+        appearance.custom.value,
+        encoding.value,
+        readerTypography.value,
+        editorTypography.value
+    );
     props.state.notice.value = t('Settings saved.');
 }
 async function saveTheme() {
     const id = custom.value ? selected.value : 'custom-' + crypto.randomUUID().slice(0, 12);
     const theme = mailTheme({ ...draft.value, id });
     const themes = [...appearance.custom.value.filter((value) => value.id !== id), theme];
-    await appearance.save(reader.value, id, themes, encoding.value);
+    await appearance.save(
+        reader.value,
+        id,
+        themes,
+        encoding.value,
+        readerTypography.value,
+        editorTypography.value
+    );
     editor.value = id;
     selected.value = id;
     choose();
@@ -65,7 +82,14 @@ async function remove() {
     const next = appearance.custom.value.filter((theme) => theme.id !== selected.value);
     reader.value = reader.value === selected.value ? 'paper' : reader.value;
     editor.value = editor.value === selected.value ? 'paper' : editor.value;
-    await appearance.save(reader.value, editor.value, next, encoding.value);
+    await appearance.save(
+        reader.value,
+        editor.value,
+        next,
+        encoding.value,
+        readerTypography.value,
+        editorTypography.value
+    );
     selected.value = editor.value;
     choose();
 }
@@ -119,6 +143,23 @@ const labels = {
                         </select></label
                     >
                 </div>
+                <MailTypographyFields
+                    v-model="readerTypography"
+                    :label="t('Reading font')"
+                    @update:model-value="previewMode = 'reader'"
+                />
+                <MailTypographyFields
+                    v-model="editorTypography"
+                    :label="t('Editor font')"
+                    @update:model-value="previewMode = 'editor'"
+                />
+                <p class="muted">
+                    {{
+                        t(
+                            'For continuous box drawing, use a monospace font and line height 1.0. Fonts must be installed on your device.'
+                        )
+                    }}
+                </p>
                 <label
                     >{{ t('Default outgoing encoding') }}
                     <select
@@ -214,6 +255,8 @@ const labels = {
                 :editor="appearance.find(editor)"
                 :custom="draft"
                 :encoding="encoding"
+                :reader-typography="readerTypography"
+                :editor-typography="editorTypography"
             />
         </div>
     </section>

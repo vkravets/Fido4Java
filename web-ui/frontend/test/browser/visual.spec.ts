@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'mail-typography-reader', story: 'mail-mailappearancesettings--box-drawing' },
+    { name: 'mail-typography-editor', story: 'mail-mailappearancesettings--box-drawing-editor' },
     { name: 'collapsed-list-echo-tree', story: 'layout-maillistworkspace--echo-tree' },
     { name: 'collapsed-list-echo-flat', story: 'layout-maillistworkspace--echo-flat' },
     { name: 'collapsed-list-echo-compact', story: 'layout-maillistworkspace--echo-compact' },
