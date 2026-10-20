@@ -61,6 +61,9 @@ The formatting/mode toolbar uses icons with translated tooltips and accessible
 labels. Undo (Ctrl/Cmd+Z) reverts the last text edit; Redo
 (Ctrl/Cmd+Shift+Z) restores an undone edit. The template selector and **Apply
 template** button share an aligned row above the toolbar.
+The message reader's header actions also use icons with translated tooltips and
+accessible labels, including the live appearance preview. The More menu retains
+text labels for its choices.
 Mail appearance settings place controls beside a live preview on desktop. Choosing
 a reading/editor theme or changing a custom color immediately updates the real
 message reader/composer components in that preview, without changing saved

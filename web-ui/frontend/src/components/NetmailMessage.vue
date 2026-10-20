@@ -44,50 +44,61 @@ function closeMenu(event: Event) {
                     <dt>{{ t('Date') }}</dt>
                     <dd>{{ message.date }}</dd>
                 </dl>
-                <div class="actions reader-actions">
+                <div
+                    class="actions reader-actions"
+                    role="toolbar"
+                    :aria-label="t('Message actions')"
+                >
                     <button
                         v-if="reply"
                         class="secondary"
                         :disabled="busy"
+                        :aria-label="t('Reply')"
+                        :title="t('Reply')"
                         @click="$emit('reply', 'quoted')"
                     >
-                        <AppIcon name="reply" />{{ t('Reply') }}
+                        <AppIcon name="reply" />
                     </button>
                     <button
                         v-if="navigation"
                         class="secondary"
                         :aria-label="t('Previous message')"
+                        :title="t('Previous message')"
                         :disabled="busy || previousDisabled"
                         @click="$emit('previous')"
                     >
-                        <AppIcon name="left" /><span>{{ t('Previous') }}</span>
+                        <AppIcon name="left" />
                     </button>
                     <button
                         v-if="navigation"
                         class="secondary"
                         :aria-label="t('Next message')"
+                        :title="t('Next message')"
                         :disabled="busy || nextDisabled"
                         @click="$emit('next')"
                     >
-                        <span>{{ t('Next') }}</span
-                        ><AppIcon name="right" />
+                        <AppIcon name="right" />
                     </button>
                     <div class="reader-direct-actions">
                         <button
                             v-if="forwardable"
                             class="secondary"
                             :disabled="busy"
+                            :aria-label="t('Forward')"
+                            :title="t('Forward')"
                             @click="$emit('forward')"
                         >
-                            <AppIcon name="forward" />{{ t('Forward') }}
+                            <AppIcon name="forward" />
                         </button>
                         <button
                             v-if="removable"
                             class="danger"
                             :disabled="busy"
+                            :aria-label="t('Delete message')"
+                            :title="t('Delete message')"
                             @click="$emit('remove')"
                         >
-                            <AppIcon name="trash" />{{ t('Delete message') }}
+                            <AppIcon name="trash" />
                         </button>
                     </div>
                     <details
@@ -96,7 +107,13 @@ function closeMenu(event: Event) {
                         @click="closeMenu"
                         @keydown.esc="($event.currentTarget as HTMLDetailsElement).open = false"
                     >
-                        <summary role="button">{{ t('More') }}<AppIcon name="down" /></summary>
+                        <summary
+                            role="button"
+                            :aria-label="t('More')"
+                            :title="t('More')"
+                        >
+                            <AppIcon name="more" />
+                        </summary>
                         <div class="reader-more-panel">
                             <button
                                 v-if="reply"
@@ -164,3 +181,28 @@ function closeMenu(event: Event) {
         </footer>
     </article>
 </template>
+<style scoped>
+.reader-actions > button,
+.reader-direct-actions > button,
+.reader-more > summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 6px;
+    flex-shrink: 0;
+}
+@media (min-width: 701px) {
+    .reader-actions > button,
+    .reader-direct-actions > button,
+    .reader-more > summary {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        padding: 4px;
+    }
+}
+</style>

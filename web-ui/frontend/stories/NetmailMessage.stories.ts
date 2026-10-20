@@ -20,7 +20,16 @@ export const LongText: Story = {
     }
 };
 
-export const ReaderActions: Story = { args: { navigation: true, forwardable: true } };
+export const ReaderActions: Story = {
+    args: { navigation: true, forwardable: true },
+    parameters: {
+        docs: {
+            description: {
+                story: 'The message header uses compact icon actions with translated tooltips. Additional actions retain labels inside the More menu.'
+            }
+        }
+    }
+};
 export const MoreActions: Story = {
     ...ReaderActions,
     play: async ({ canvasElement }) => {

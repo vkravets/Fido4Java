@@ -1,4 +1,5 @@
 export const ukrainian = {
+    'Message actions': 'Дії з листом',
     'Live mail preview': 'Живий перегляд листа',
     'Preview changes are not saved or sent.': 'Зміни у прикладі не зберігаються й не надсилаються.',
     'Preview mode': 'Режим перегляду',

@@ -140,6 +140,36 @@ test('station content fills the released sidebar width when navigation collapses
     }
 });
 
+test('message header actions use icons and translated tooltips in the reader and appearance preview', async ({
+    page
+}) => {
+    for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const theme of ['light', 'dark'] as const) {
+            for (const language of ['en', 'uk'] as const) {
+                for (const name of [
+                    'mail-netmailmessage--reader-actions',
+                    'mail-mailappearancesettings--themes'
+                ]) {
+                    await openStory(page, name, theme, language);
+                    const toolbar = page.locator('.reader-actions');
+                    await expect(toolbar).toBeVisible();
+                    const controls = toolbar.locator(
+                        ':scope > button:visible, .reader-direct-actions > button:visible, .reader-more > summary:visible'
+                    );
+                    expect(await controls.count()).toBeGreaterThanOrEqual(3);
+                    for (const control of await controls.all()) {
+                        await expect(control).toHaveText('');
+                        await expect(control).toHaveAttribute('aria-label', /.+/);
+                        await expect(control).toHaveAttribute('title', /.+/);
+                        await expect(control.locator('svg')).toBeVisible();
+                    }
+                }
+            }
+        }
+    }
+});
+
 test('reader and editor cycle quote colors for levels four through six', async ({ page }) => {
     for (const theme of ['light', 'dark'] as const) {
         for (const name of [
