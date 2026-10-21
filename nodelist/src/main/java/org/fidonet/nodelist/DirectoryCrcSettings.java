@@ -62,30 +62,7 @@ final class DirectoryCrcSettings implements SettingsExtension {
                                      exceptions,
                                      false));
         }
-        Map<String, String> ukrainian = Map.of("Node directory",
-                                               "Каталог вузлів",
-                                               "CRC checks",
-                                               "Перевірка CRC",
-                                               "Source",
-                                               "Джерело",
-                                               "Filename mask",
-                                               "Маска імені файлу",
-                                               "CRC mode",
-                                               "Режим CRC",
-                                               "XMODEM-CRC",
-                                               "XMODEM-CRC",
-                                               "ARC-CRC",
-                                               "ARC-CRC",
-                                               "Legacy CRC exceptions",
-                                               "Старі винятки перевірки CRC");
-        return new View(id(),
-                        "Node directory",
-                        "conf.d/30-nodelist.conf",
-                        sections,
-                        Map.of("uk",
-                               ukrainian,
-                               "en",
-                               Map.of("XMODEM-CRC", "XMODEM-CRC", "ARC-CRC", "ARC-CRC")));
+        return new View(id(), "Node directory", "conf.d/30-nodelist.conf", sections);
     }
 
     @Override

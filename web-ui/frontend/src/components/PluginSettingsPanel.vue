@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, useId } from 'vue';
-import { locale, t } from '../i18n.ts';
+import { t } from '../i18n.ts';
+import { pluginSettingsLabel, pluginSettingsChoice } from '../plugin-settings-i18n.ts';
 import type { ExtensionSettings } from '@rpc/bindings.mjs';
 
 const props = defineProps<{
@@ -33,7 +34,10 @@ watch(
 );
 
 function label(value: string): string {
-    return extension.value?.translations[locale.value]?.[value] || value;
+    return pluginSettingsLabel(extension.value?.id || '', value);
+}
+function choice(field: string, value: string): string {
+    return pluginSettingsChoice(extension.value?.id || '', field, value);
 }
 function reset() {
     for (const key of Object.keys(model)) delete model[key];
@@ -74,7 +78,7 @@ function save() {
                     :key="item.id"
                     :value="item.id"
                 >
-                    {{ item.translations[locale]?.[item.title] || item.title }}
+                    {{ pluginSettingsLabel(item.id, item.title) }}
                 </option>
             </select>
             <p class="muted">{{ t('Configuration source') }}: {{ extension.source }}</p>
@@ -136,7 +140,7 @@ function save() {
                             >
                                 {{
                                     field.type === 'select'
-                                        ? label(row[field.name] || '')
+                                        ? choice(field.name, row[field.name] || '')
                                         : row[field.name] || ''
                                 }}
                             </td>
@@ -178,7 +182,7 @@ function save() {
                                 :key="value"
                                 :value="value"
                             >
-                                {{ label(value) }}
+                                {{ choice(field.name, value) }}
                             </option>
                         </select>
                         <input

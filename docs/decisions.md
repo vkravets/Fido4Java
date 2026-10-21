@@ -754,3 +754,12 @@ tables are preserved; creation and the first access grant commit atomically.
 The functional plugin has no ORM/SQL dependency. SQL-free bundles retain file mode
 and exclude the adapter. The former raw DAO/transaction extension API is removed.
 See [storage boundaries and extension guide](storage.md).
+
+## UI-owned plugin localization (2026-10-21)
+
+Settings providers expose neutral metadata and machine values without language
+selection or translation dictionaries. The web UI owns plugin label and enum
+localization. User-defined choices (area names, source IDs and addresses) remain
+verbatim. Unknown extensions fall back to their supplied metadata. The deprecated
+RPC translations field remains empty for compatibility with older clients; the
+current UI ignores it, including responses from older servers.

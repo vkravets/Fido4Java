@@ -6,7 +6,8 @@ export default defineConfig({
         'components.spec.ts',
         'workspace.spec.ts',
         'typography.spec.ts',
-        'directory-settings.spec.ts'
+        'directory-settings.spec.ts',
+        'plugin-localization.spec.ts'
     ],
     fullyParallel: true,
     forbidOnly: !!process.env.CI,

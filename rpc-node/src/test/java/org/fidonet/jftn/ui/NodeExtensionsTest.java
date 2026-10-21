@@ -23,7 +23,7 @@ class NodeExtensionsTest {
 
             @Override
             public View describe() {
-                return new View("example", "Example", "database", List.of(), Map.of());
+                return new View("example", "Example", "database", List.of());
             }
 
             @Override
@@ -32,6 +32,7 @@ class NodeExtensionsTest {
             }
         };
         assertEquals("example", NodeExtensions.describe(List.of(provider)).get(0).getId());
+        assertEquals(Map.of(), NodeExtensions.describe(List.of(provider)).get(0).getTranslations());
         assertThrows(IllegalArgumentException.class,
                      () -> NodeExtensions.save(List.of(provider), "absent", "settings", Map.of()));
         assertThrows(IllegalArgumentException.class,

@@ -34,11 +34,8 @@ final class NodeExtensions {
                                                   section.rows,
                                                   section.writable));
             }
-            result.add(new ExtensionSettings(view.id,
-                                             view.title,
-                                             view.source,
-                                             sections,
-                                             view.translations));
+            // Older clients require this wire field. Providers no longer supply translations.
+            result.add(new ExtensionSettings(view.id, view.title, view.source, sections, Map.of()));
         }
         return result;
     }

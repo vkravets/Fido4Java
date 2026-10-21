@@ -14,38 +14,7 @@ export function fileEchoExtensions(): ExtensionSettings[] {
             id: 'fileecho',
             title: 'File echoes',
             source: 'database',
-            translations: {
-                en: {
-                    true: 'Yes',
-                    false: 'No',
-                    READ: 'Receives from us',
-                    WRITE: 'Sends to us',
-                    BOTH: 'Both directions',
-                    NONE: 'No access'
-                },
-                uk: {
-                    'File echoes': 'Файлові конференції',
-                    'File areas': 'Файлові області',
-                    'File area access': 'Доступ до файлових областей',
-                    'Automatic file area creation': 'Автоматичне створення файлових областей',
-                    'FileFix and TIC access': 'Доступ до FileFix і TIC',
-                    Area: 'Область',
-                    Directory: 'Каталог',
-                    Description: 'Опис',
-                    Enabled: 'Увімкнено',
-                    Link: 'Лінк',
-                    Access: 'Доступ',
-                    'Area masks': 'Маски областей',
-                    Service: 'Служба',
-                    Password: 'Пароль',
-                    true: 'Так',
-                    false: 'Ні',
-                    READ: 'Отримує від нас',
-                    WRITE: 'Надсилає нам',
-                    BOTH: 'Обидва напрямки',
-                    NONE: 'Без доступу'
-                }
-            },
+            translations: {},
             sections: [
                 {
                     id: 'areas',

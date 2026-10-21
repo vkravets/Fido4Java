@@ -6,21 +6,7 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
             id: 'nodelist',
             title: 'Node directory',
             source: 'conf.d/30-nodelist.conf',
-            translations: {
-                en: {
-                    'XMODEM-CRC': 'XMODEM-CRC',
-                    'ARC-CRC': 'ARC-CRC'
-                },
-                uk: {
-                    'Node directory': 'Каталог вузлів',
-                    'CRC checks': 'Перевірка CRC',
-                    Source: 'Джерело',
-                    'Filename mask': 'Маска імені файлу',
-                    'CRC mode': 'Режим CRC',
-                    'XMODEM-CRC': 'XMODEM-CRC',
-                    'ARC-CRC': 'ARC-CRC'
-                }
-            },
+            translations: {},
             sections: [
                 {
                     id: 'crc',

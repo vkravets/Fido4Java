@@ -69,7 +69,7 @@ class DirectoryCrcSettingsTest {
             assertTrue(view.sections.get(0).writable);
             assertEquals(List.of("XMODEM-CRC", "ARC-CRC"),
                          view.sections.get(0).fields.get(2).choices);
-            assertEquals("Перевірка CRC", view.translations.get("uk").get("CRC checks"));
+            assertEquals("CRC checks", view.sections.get(0).title);
             String definition = service.sourceDefinition("points");
             settings.apply("crc", command("ARC-CRC"));
             assertFalse(definition.equals(service.sourceDefinition("points")));

@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Declarative admin settings. Providers validate and atomically apply each command. */
+/**
+ * Declarative admin settings. Providers validate and atomically apply each command.
+ * Labels are fallback metadata; clients own localization and language selection.
+ */
 public interface SettingsExtension {
     String id();
 
@@ -52,21 +55,12 @@ public interface SettingsExtension {
         public final String title;
         public final String source;
         public final List<Section> sections;
-        public final Map<String, Map<String, String>> translations;
 
-        public View(String id,
-                    String title,
-                    String source,
-                    List<Section> sections,
-                    Map<String, Map<String, String>> translations) {
+        public View(String id, String title, String source, List<Section> sections) {
             this.id = id;
             this.title = title;
             this.source = source;
             this.sections = List.copyOf(sections);
-            this.translations = translations.entrySet()
-                                            .stream()
-                                            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey,
-                                                                                  entry -> Map.copyOf(entry.getValue())));
         }
     }
 }
