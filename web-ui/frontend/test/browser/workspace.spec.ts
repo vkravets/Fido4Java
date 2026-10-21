@@ -336,6 +336,25 @@ test('collapsed navigation retains accessible names and point restrictions', asy
     await expect(page.getByRole('button', { name: 'Expand menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Echomail', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Station', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Polling', exact: true })).toHaveCount(0);
+});
+
+test('polling is a main navigation destination in expanded and collapsed menus', async ({
+    page
+}) => {
+    for (const language of ['en', 'uk']) {
+        const name = language === 'en' ? 'Polling' : 'Пулінг';
+        await openStory(page, 'navigation-sidebar--switching-pages', 'dark', language);
+        const button = page.getByRole('button', { name, exact: true });
+        await button.click();
+        await expect(button).toHaveClass(/active/);
+        await openStory(page, 'navigation-sidebar--collapsed-polling', 'dark', language);
+        const collapsed = page.getByRole('button', { name, exact: true });
+        await expect(collapsed).toHaveClass(/active/);
+        await expect(collapsed).toHaveAttribute('title', name);
+        await expect(collapsed.locator('svg')).toBeVisible();
+        await expect(collapsed.locator('.nav-text')).toBeHidden();
+    }
 });
 
 test('forwarding copies original text into a new draft without reusing reply identifiers', async ({

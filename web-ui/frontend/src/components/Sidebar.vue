@@ -14,7 +14,10 @@ defineProps<{
 const emit = defineEmits<{
     sendMail: [];
     collapse: [];
-    navigate: [page: 'settings' | 'node' | 'directory' | 'netmail' | 'echo' | 'drafts' | 'links'];
+    navigate: [
+        page:
+            'settings' | 'node' | 'directory' | 'netmail' | 'echo' | 'drafts' | 'links' | 'polling'
+    ];
 }>();
 </script>
 
@@ -106,6 +109,14 @@ const emit = defineEmits<{
                     @click="emit('navigate', 'links')"
                 >
                     <AppIcon name="link" /><span class="nav-text">{{ t('Links') }}</span>
+                </button>
+                <button
+                    :class="{ active: page === 'polling' }"
+                    :aria-label="t('Polling')"
+                    :title="collapsed ? t('Polling') : undefined"
+                    @click="emit('navigate', 'polling')"
+                >
+                    <AppIcon name="clock" /><span class="nav-text">{{ t('Polling') }}</span>
                 </button>
             </template>
         </nav>

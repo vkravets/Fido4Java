@@ -90,7 +90,7 @@ function select(attempt: PollInfo) {
 <template>
     <div class="page-heading">
         <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t('Connections') }}</h1>
+        <h1>{{ t(initialTab === 'log' ? 'Connections' : 'Polling') }}</h1>
         <p>{{ t('Outgoing polls: one queue for scheduled and manual attempts.') }}</p>
     </div>
     <ConnectionTabs v-model="tab">

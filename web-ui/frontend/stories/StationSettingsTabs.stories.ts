@@ -3,7 +3,6 @@ import { provide, reactive, ref } from 'vue';
 import { robotAccessClientKey, accountModerationClientKey } from '../src/station-clients.ts';
 import type { AppState } from '../src/state.ts';
 import NetmailRoutingPolicyForm from '../src/components/NetmailRoutingPolicyForm.vue';
-import PollAttempts from '../src/components/PollAttempts.vue';
 import BinkpLogPanel from '../src/components/BinkpLogPanel.vue';
 import RobotAccess from '../src/components/RobotAccess.vue';
 import AccountModeration from '../src/components/AccountModeration.vue';
@@ -19,7 +18,7 @@ import EchoAccessPanel from '../src/components/EchoAccessPanel.vue';
 import QuarantinePanel from '../src/components/QuarantinePanel.vue';
 import PluginSettingsPanel from '../src/components/PluginSettingsPanel.vue';
 import { fileEchoExtensions } from './plugin-fixtures.ts';
-import { station, uplinks, attempt, profile } from './fixtures.ts';
+import { station, uplinks, profile } from './fixtures.ts';
 import { t } from '../src/i18n.ts';
 
 const meta = {
@@ -37,7 +36,6 @@ const meta = {
             QuarantinePanel,
             PluginSettingsPanel,
             NetmailRoutingPolicyForm,
-            PollAttempts,
             BinkpLogPanel,
             RobotAccess,
             AccountModeration
@@ -68,7 +66,6 @@ const meta = {
                 args,
                 t,
                 state,
-                attempts: [attempt()],
                 protocolLines,
                 policy: reactive({
                     mode: 'database',
@@ -91,7 +88,6 @@ const meta = {
         template: `<StationSettingsHeader :busy="args.busy" />
             <StationSettingsTabs v-bind="args" v-slot="{ group }">
                 <NetmailRoutingPolicyForm v-if="group === 'routing'" v-model="policy" :peers="['1:500/101.0']" :busy="args.busy" />
-                <section v-if="group === 'polling'" class="card"><h2>{{ t('Polling') }}</h2><PollAttempts :attempts="attempts" :busy="args.busy" /></section>
                 <BinkpLogPanel v-if="group === 'logs'" :lines="protocolLines" :busy="args.busy" :more="false" :clipped="false" :rotated="false" />
                 <RobotAccess v-if="group === 'robots'" :state="state" />
                 <AccountModeration v-if="group === 'accounts'" :state="state" />
@@ -127,7 +123,6 @@ export const Quarantine: Story = { args: { modelValue: 'quarantine' } };
 export const Busy: Story = { args: { busy: true } };
 export const Plugins: Story = { args: { modelValue: 'plugins' } };
 export const Routing: Story = { args: { modelValue: 'routing' } };
-export const Polling: Story = { args: { modelValue: 'polling' } };
 export const Logs: Story = { args: { modelValue: 'logs' } };
 export const Robots: Story = { args: { modelValue: 'robots' } };
 export const Accounts: Story = { args: { modelValue: 'accounts' } };

@@ -548,8 +548,8 @@ test('station groups open operational panels without losing general configuratio
     await story(page, 'settings-stationsettingstabs--general');
     await page.getByLabel('Station name', { exact: true }).fill('Unsaved station');
     const navigation = page.getByRole('tablist', { name: 'Station settings', exact: true });
+    await expect(navigation.getByRole('tab', { name: 'Polling', exact: true })).toHaveCount(0);
     for (const [tab, heading] of [
-        ['Polling', 'Polling'],
         ['Logs', 'Binkp log'],
         ['Mail robots', 'Mail robots'],
         ['Accounts and requests', 'Accounts and requests']

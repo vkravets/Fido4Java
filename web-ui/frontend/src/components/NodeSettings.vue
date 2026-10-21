@@ -76,9 +76,8 @@ async function reload() {
             :state="state"
         />
         <Connections
-            v-if="group === 'polling' || group === 'logs'"
-            :key="group"
-            :initial-tab="group === 'logs' ? 'log' : 'polls'"
+            v-if="group === 'logs'"
+            initial-tab="log"
             :state="state"
         />
         <RobotAccess

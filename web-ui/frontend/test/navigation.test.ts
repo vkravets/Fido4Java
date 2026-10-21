@@ -60,28 +60,18 @@ test('point navigation contains mail placeholders and personal settings without 
     assert.ok(html.includes('disabled'));
 });
 
-test('administrator navigation groups management under Station with a links shortcut', async () => {
+test('administrator navigation exposes polling and links outside station configuration', async () => {
     const html = await renderToString(h(sidebar, { profile: profile('ADMIN'), page: 'node' }));
     assert.ok(html.includes('Settings'));
     assert.ok(html.includes('Station'));
     assert.ok(html.includes('Mail links'));
-    for (const label of [
-        'Accounts and requests',
-        'Mail robots',
-        'Polling',
-        'Logs',
-        'Netmail routing'
-    ]) {
+    assert.ok(html.includes('Polling'));
+    for (const label of ['Accounts and requests', 'Mail robots', 'Logs', 'Netmail routing']) {
         assert.ok(!html.includes(label));
     }
     const station = await renderToString(h(stationTabs));
-    for (const label of [
-        'Accounts and requests',
-        'Mail robots',
-        'Polling',
-        'Logs',
-        'Netmail routing'
-    ]) {
+    assert.ok(!station.includes('Polling'));
+    for (const label of ['Accounts and requests', 'Mail robots', 'Logs', 'Netmail routing']) {
         assert.ok(station.includes(label));
     }
 });

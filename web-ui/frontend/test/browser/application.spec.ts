@@ -141,7 +141,11 @@ test('administrator browses paged lists and searches addresses names and IPs thr
 test('administrator sees incoming and outgoing binkp logs through HTTP RPC', async ({ page }) => {
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
-    await stationSection(page, 'Polling');
+    await page.locator('.sidebar').getByRole('button', { name: 'Polling', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Polling', exact: true })).toBeVisible();
+    await expect(page.getByRole('tablist', { name: 'Station settings', exact: true })).toHaveCount(
+        0
+    );
     await page.getByRole('tab', { name: 'Binkp log', exact: true }).click();
     const log = page.locator('pre[aria-label="Binkp log"]');
     await expect(log).toContainText('role=SERVER');

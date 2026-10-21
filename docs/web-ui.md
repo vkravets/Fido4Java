@@ -123,10 +123,10 @@ write access hides the affected drafts without deleting them.
 
 ## Station settings groups
 
-The administrator's **Station** screen groups configuration, routing, polling,
+The administrator's **Station** screen groups configuration, routing,
 logs, mail robots, account approval and plugin settings. Its tabs are **General**,
 **Mail links**, **Netmail routing**, **Tosser settings**, **Echo areas and link
-access**, **Packet quarantine**, **Polling**, **Logs**, **Mail robots**,
+access**, **Packet quarantine**, **Logs**, **Mail robots**,
 **Accounts and requests** and **Plugins**. **Links** in the main sidebar remains
 a shortcut to **Station → Mail links** (Ukrainian: **Лінки**).
 The shared node directory stays available to points and administrators; personal
@@ -238,7 +238,8 @@ configuration remain in `conf.d`; see [robot access](robot-access.md).
 
 ## Connections and binkp logs
 
-Administrators open the **Connections** page through **Station → Polling**.
+Administrators open **Polling** directly from the main menu beside **Links**.
+It has its own clock icon in the collapsed menu and is no longer a station tab.
 It shows active/waiting attempts, paged history and a **Poll now** action for
 configured links. Scheduled and manual
 attempts use the same queue and duplicate active requests select the existing

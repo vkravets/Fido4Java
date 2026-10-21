@@ -11,6 +11,7 @@ import AuthScreen from './components/AuthScreen.vue';
 import SetupWizard from './components/SetupWizard.vue';
 import AccountSettings from './components/AccountSettings.vue';
 import NodeSettings from './components/NodeSettings.vue';
+import Connections from './components/Connections.vue';
 import Sidebar from './components/Sidebar.vue';
 import NodeDirectory from './components/NodeDirectory.vue';
 import NotificationBanner from './components/NotificationBanner.vue';
@@ -200,6 +201,10 @@ function openForward(draft: MailDraft) {
                 @forward="openForward"
             />
             <NodeDirectory v-if="page === 'directory'" />
+            <Connections
+                v-if="page === 'polling' && state.profile.value.role === 'ADMIN'"
+                :state="state"
+            />
             <AccountSettings
                 v-if="page === 'settings'"
                 ref="settingsView"

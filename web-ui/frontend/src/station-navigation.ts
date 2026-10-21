@@ -5,7 +5,6 @@ export const stationSections = [
     { id: 'tosser', label: 'Tosser settings' },
     { id: 'echoes', label: 'Echo areas and link access' },
     { id: 'quarantine', label: 'Packet quarantine' },
-    { id: 'polling', label: 'Polling' },
     { id: 'logs', label: 'Logs' },
     { id: 'robots', label: 'Mail robots' },
     { id: 'accounts', label: 'Accounts and requests' },

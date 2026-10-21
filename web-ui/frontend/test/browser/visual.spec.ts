@@ -62,6 +62,8 @@ const screens = [
     { name: 'navigation-collapsed-point', story: 'navigation-sidebar--collapsed-point' },
     { name: 'navigation-station', story: 'navigation-sidebar--station' },
     { name: 'navigation-station-collapsed', story: 'navigation-sidebar--collapsed-station' },
+    { name: 'navigation-polling', story: 'navigation-sidebar--polling' },
+    { name: 'navigation-polling-collapsed', story: 'navigation-sidebar--collapsed-polling' },
     { name: 'echo-tree', story: 'mail-echomailview--tree' },
     { name: 'echo-flat', story: 'mail-echomailview--flat' },
     { name: 'echo-reading', story: 'mail-echomailview--reading' },
@@ -109,7 +111,6 @@ const screens = [
     { name: 'plugin-empty', story: 'plugins-pluginsettingspanel--empty' },
     { name: 'station-tabs-plugins', story: 'settings-stationsettingstabs--plugins' },
     { name: 'station-tabs-routing', story: 'settings-stationsettingstabs--routing' },
-    { name: 'station-tabs-polling', story: 'settings-stationsettingstabs--polling' },
     { name: 'station-tabs-logs', story: 'settings-stationsettingstabs--logs' },
     { name: 'station-workspace-logs', story: 'settings-stationsettingstabs--workspace-logs' },
     {

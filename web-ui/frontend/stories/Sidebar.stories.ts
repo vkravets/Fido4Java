@@ -30,3 +30,5 @@ export const Collapsed: Story = { args: { collapsed: true } };
 export const CollapsedPoint: Story = { args: { collapsed: true, profile: profile('POINT') } };
 export const Station: Story = { args: { page: 'node' } };
 export const CollapsedStation: Story = { args: { page: 'node', collapsed: true } };
+export const Polling: Story = { args: { page: 'polling' } };
+export const CollapsedPolling: Story = { args: { page: 'polling', collapsed: true } };
