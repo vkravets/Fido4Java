@@ -86,6 +86,13 @@ validates representability before queuing, and writes matching CHRS/PKT bytes.
 An RPC draft without an explicit encoding uses UTF-8. Incoming decoding and
 JAM/directory fallback settings remain independent.
 
+Mail template selection, variable expansion, generated editor text and initial
+cursor placement are client/UI responsibilities. RPC persists account-owned
+template documents and draft context; a server-side template rendering endpoint
+is not part of the current scope. External editors apply the documented template
+rules themselves. This decision does not move submission validation, permissions
+or packet encoding out of the backend.
+
 Supported UI configuration changes are applied live after validation/staging.
 An explicit administrator RPC/UI reload rereads main-file and fragment edits;
 there is no file watcher. The coordinator serializes with mail processing,
