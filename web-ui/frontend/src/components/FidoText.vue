@@ -24,7 +24,7 @@ const lines = computed(() => fidoText(props.text, !props.source));
 <template>
     <div
         class="fido-text mail-body"
-        :style="[colors, typographyStyle(typography || appearance.readerTypography.value)]"
+        :style="[colors, typographyStyle(typography || appearance.typography.value)]"
     >
         <div
             v-for="(line, index) in lines"

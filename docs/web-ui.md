@@ -121,6 +121,14 @@ does not disclose stored messages or message counts. These checks run on the
 server for both HTTP and TCP and are refreshed when permissions change. Revoked
 write access hides the affected drafts without deleting them.
 
+## Mail font
+
+Under **My settings → Mail appearance**, **Mail font** sets the font family, size
+and line height for both reading and composing messages. These preferences are
+personal to the current account. Existing separate font preferences initialize
+the shared setting from the reading font; subsequent saves store one typography
+value. Reading and editor color themes remain independently selectable.
+
 ## Station settings groups
 
 The administrator's **Station** screen groups configuration, routing,

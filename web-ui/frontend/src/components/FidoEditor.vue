@@ -31,10 +31,10 @@ const preview = ref(props.initialMode === 'preview');
 const appearance = useMailAppearance();
 const colors = computed(() => ({
     ...themeStyle(appearance.find(appearance.editor.value)),
-    ...typographyStyle(appearance.editorTypography.value)
+    ...typographyStyle(appearance.typography.value)
 }));
 watch(
-    appearance.editorTypography,
+    appearance.typography,
     async () => {
         await nextTick();
         editor?.requestMeasure();
@@ -344,7 +344,7 @@ defineExpose({
         <FidoText
             v-if="preview"
             :theme-id="appearance.editor.value"
-            :typography="appearance.editorTypography.value"
+            :typography="appearance.typography.value"
             :text="model"
         />
         <p

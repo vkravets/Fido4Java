@@ -13,8 +13,7 @@ const appearance = useMailAppearance();
 const reader = ref(appearance.find(appearance.reader.value).id);
 const editor = ref(appearance.find(appearance.editor.value).id);
 const encoding = ref(appearance.encoding.value);
-const readerTypography = ref({ ...appearance.readerTypography.value });
-const editorTypography = ref({ ...appearance.editorTypography.value });
+const typography = ref({ ...appearance.typography.value });
 const selected = ref(editor.value);
 const draft = ref<MailTheme>(copy(appearance.find(selected.value)));
 const previewMode = ref<AppearancePreviewMode>('reader');
@@ -32,8 +31,7 @@ async function save() {
         editor.value,
         appearance.custom.value,
         encoding.value,
-        readerTypography.value,
-        editorTypography.value
+        typography.value
     );
     props.state.notice.value = t('Settings saved.');
 }
@@ -41,14 +39,7 @@ async function saveTheme() {
     const id = custom.value ? selected.value : 'custom-' + crypto.randomUUID().slice(0, 12);
     const theme = mailTheme({ ...draft.value, id });
     const themes = [...appearance.custom.value.filter((value) => value.id !== id), theme];
-    await appearance.save(
-        reader.value,
-        id,
-        themes,
-        encoding.value,
-        readerTypography.value,
-        editorTypography.value
-    );
+    await appearance.save(reader.value, id, themes, encoding.value, typography.value);
     editor.value = id;
     selected.value = id;
     choose();
@@ -82,14 +73,7 @@ async function remove() {
     const next = appearance.custom.value.filter((theme) => theme.id !== selected.value);
     reader.value = reader.value === selected.value ? 'paper' : reader.value;
     editor.value = editor.value === selected.value ? 'paper' : editor.value;
-    await appearance.save(
-        reader.value,
-        editor.value,
-        next,
-        encoding.value,
-        readerTypography.value,
-        editorTypography.value
-    );
+    await appearance.save(reader.value, editor.value, next, encoding.value, typography.value);
     selected.value = editor.value;
     choose();
 }
@@ -144,14 +128,8 @@ const labels = {
                     >
                 </div>
                 <MailTypographyFields
-                    v-model="readerTypography"
-                    :label="t('Reading font')"
-                    @update:model-value="previewMode = 'reader'"
-                />
-                <MailTypographyFields
-                    v-model="editorTypography"
-                    :label="t('Editor font')"
-                    @update:model-value="previewMode = 'editor'"
+                    v-model="typography"
+                    :label="t('Mail font')"
                 />
                 <p class="muted">
                     {{
@@ -255,8 +233,7 @@ const labels = {
                 :editor="appearance.find(editor)"
                 :custom="draft"
                 :encoding="encoding"
-                :reader-typography="readerTypography"
-                :editor-typography="editorTypography"
+                :typography="typography"
             />
         </div>
     </section>

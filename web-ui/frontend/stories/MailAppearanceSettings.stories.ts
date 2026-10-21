@@ -14,8 +14,7 @@ const meta = {
         setup() {
             const { state, appearance } = mailWorkspaceFixture(context.globals.theme === 'dark');
             if (context.parameters.boxDrawing) {
-                appearance.readerTypography.value = { font: 'dejavu', size: 16, lineHeight: 1 };
-                appearance.editorTypography.value = { font: 'liberation', size: 18, lineHeight: 1 };
+                appearance.typography.value = { font: 'dejavu', size: 16, lineHeight: 1 };
             }
             state.busy.value = context.parameters.busy || false;
             if (context.parameters.file) appearance.editor.value = 'operator-green';

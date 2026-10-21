@@ -15,8 +15,7 @@ const props = defineProps<{
     editor: MailTheme;
     custom: MailTheme;
     encoding: MailEncoding;
-    readerTypography: MailTypography;
-    editorTypography: MailTypography;
+    typography: MailTypography;
 }>();
 const appearance = useMailAppearance();
 const theme = computed(() => props[mode.value]);
@@ -25,8 +24,7 @@ provide(mailAppearanceKey, {
     ...appearance,
     reader: previewTheme,
     editor: previewTheme,
-    readerTypography: computed(() => props.readerTypography),
-    editorTypography: computed(() => props.editorTypography),
+    typography: computed(() => props.typography),
     find: (id) => (id === previewTheme.value ? theme.value : appearance.find(id))
 });
 const body =

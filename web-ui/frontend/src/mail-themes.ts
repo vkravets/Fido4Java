@@ -103,8 +103,7 @@ export function createMailAppearance(client?: Client) {
     const reader = ref(initial);
     const editor = ref(initial);
     const encoding = ref<MailEncoding>('UTF-8');
-    const readerTypography = ref(defaultMailTypography());
-    const editorTypography = ref(defaultMailTypography());
+    const typography = ref(defaultMailTypography());
     const custom = ref<MailTheme[]>([]);
     const operator = ref<MailTheme[]>([]);
     const themes = computed(() => [...builtInMailThemes, ...operator.value, ...custom.value]);
@@ -117,8 +116,7 @@ export function createMailAppearance(client?: Client) {
         const ticket = ++generation;
         custom.value = [];
         encoding.value = 'UTF-8';
-        readerTypography.value = defaultMailTypography();
-        editorTypography.value = defaultMailTypography();
+        typography.value = defaultMailTypography();
         reader.value = editor.value =
             typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
                 ? 'graphite'
@@ -130,8 +128,9 @@ export function createMailAppearance(client?: Client) {
         if (typeof row.reader === 'string') reader.value = row.reader;
         if (typeof row.editor === 'string') editor.value = row.editor;
         encoding.value = encodingValue(row.encoding);
-        readerTypography.value = loadMailTypography(row.readerTypography);
-        editorTypography.value = loadMailTypography(row.editorTypography);
+        typography.value = loadMailTypography(
+            row.typography ?? row.readerTypography ?? row.editorTypography
+        );
     }
     async function files() {
         const response = await fetch('/ui/mail-themes.json');
@@ -158,8 +157,7 @@ export function createMailAppearance(client?: Client) {
         nextEditor: string,
         nextCustom: MailTheme[],
         nextEncoding: MailEncoding = encoding.value,
-        nextReaderTypography: MailTypography = readerTypography.value,
-        nextEditorTypography: MailTypography = editorTypography.value
+        nextTypography: MailTypography = typography.value
     ) {
         const ticket = generation;
         const values = nextCustom.map(mailTheme);
@@ -175,8 +173,7 @@ export function createMailAppearance(client?: Client) {
             throw new Error('Unsupported outgoing mail encoding');
         const row = {
             version: 1,
-            readerTypography: mailTypography(nextReaderTypography),
-            editorTypography: mailTypography(nextEditorTypography),
+            typography: mailTypography(nextTypography),
             reader: nextReader,
             editor: nextEditor,
             encoding: nextEncoding,
@@ -188,15 +185,13 @@ export function createMailAppearance(client?: Client) {
         editor.value = nextEditor;
         custom.value = values;
         encoding.value = nextEncoding;
-        readerTypography.value = row.readerTypography;
-        editorTypography.value = row.editorTypography;
+        typography.value = row.typography;
     }
     return {
         reader,
         editor,
         encoding,
-        readerTypography,
-        editorTypography,
+        typography,
         custom,
         operator,
         themes,
