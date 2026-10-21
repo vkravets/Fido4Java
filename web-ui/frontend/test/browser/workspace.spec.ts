@@ -14,6 +14,11 @@ test('send queue icon has the same box and centering in both desktop menu states
         await openStory(page, story);
         const button = page.getByRole('button', { name: 'Send queued mail', exact: true });
         await expect(button).toBeEnabled();
+        expect(
+            await page
+                .locator('.sidebar > nav')
+                .evaluate((nav) => nav.scrollWidth - nav.clientWidth)
+        ).toBe(0);
         const box = (await button.boundingBox())!;
         const icon = (await button.locator('.app-icon').boundingBox())!;
         expect(Math.abs(icon.x + icon.width / 2 - box.x - box.width / 2)).toBeLessThanOrEqual(1);
@@ -21,6 +26,38 @@ test('send queue icon has the same box and centering in both desktop menu states
         dimensions.push({ width: box.width, height: box.height, icon: icon.width });
     }
     expect(dimensions[0]).toEqual(dimensions[1]);
+});
+
+test('collapsed menu keeps horizontal overflow out at high pixel density and short heights', async ({
+    browser,
+    baseURL
+}) => {
+    for (const height of [600, 280]) {
+        const context = await browser.newContext({
+            baseURL,
+            viewport: { width: 854, height },
+            deviceScaleFactor: 1.5
+        });
+        try {
+            const page = await context.newPage();
+            await openStory(page, 'layout-maillistworkspace--netmail');
+            const nav = page.locator('.sidebar > nav');
+            await expect(nav).toBeVisible();
+            expect(await nav.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(
+                0
+            );
+            if (height === 280)
+                expect(
+                    await nav.evaluate((element) => element.scrollHeight > element.clientHeight)
+                ).toBe(true);
+            const toggle = page.locator('.sidebar-toggle');
+            await expect(toggle).toBeInViewport();
+            await toggle.click();
+            await expect(page.locator('.sidebar')).not.toHaveClass(/collapsed/);
+        } finally {
+            await context.close();
+        }
+    }
 });
 
 test('login form fits short screens with password, passkey and registration controls', async ({
