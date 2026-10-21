@@ -110,20 +110,30 @@ onBeforeUnmount(cleanup);
     padding: 4px;
 }
 .split-handle {
-    background: var(--line);
-    border-radius: 4px;
+    position: relative;
+    background: transparent;
+    outline: none;
     cursor: col-resize;
     touch-action: none;
-    margin: 0 3px;
+}
+.split-handle::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 50%;
+    width: 1px;
+    background: var(--line);
 }
 .below .split-handle {
     cursor: row-resize;
-    margin: 3px 0;
 }
-.split-handle:hover,
-.split-handle:focus-visible {
+.below .split-handle::after {
+    inset: 50% 0 auto;
+    width: auto;
+    height: 1px;
+}
+.split-handle:hover::after,
+.split-handle:focus-visible::after {
     background: var(--accent);
-    outline: 2px solid var(--accent);
 }
 @media (max-width: 700px) {
     .split-pane,

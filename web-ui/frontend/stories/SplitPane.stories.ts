@@ -14,3 +14,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Right: Story = {};
 export const Below: Story = { args: { direction: 'below' } };
+export const FocusedRight: Story = {
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLElement>('[role="separator"]')!.focus();
+    }
+};
+export const FocusedBelow: Story = {
+    ...FocusedRight,
+    args: { direction: 'below' }
+};

@@ -63,6 +63,8 @@ const screens = [
 
     { name: 'split-right', story: 'layout-splitpane--right' },
     { name: 'split-below', story: 'layout-splitpane--below' },
+    { name: 'split-focused-right', story: 'layout-splitpane--focused-right' },
+    { name: 'split-focused-below', story: 'layout-splitpane--focused-below' },
     { name: 'navigation-collapsed', story: 'navigation-sidebar--collapsed' },
     { name: 'navigation-collapsed-point', story: 'navigation-sidebar--collapsed-point' },
     { name: 'navigation-station', story: 'navigation-sidebar--station' },

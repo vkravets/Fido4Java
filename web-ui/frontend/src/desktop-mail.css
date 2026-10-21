@@ -244,15 +244,7 @@ summary:has(> .app-icon) {
     :root .mail-layout .split-handle {
         margin: 0;
         background: transparent;
-        border-left: 1px solid var(--line);
-        border-radius: 0;
-    }
-    :root .mail-layout .below .split-handle {
-        border-top: 1px solid var(--line);
-        border-left: 0;
-    }
-    :root .mail-layout .split-handle:hover {
-        background: var(--accent-soft);
+        border: 0;
     }
     :root .mail-layout .card {
         border-radius: 0;
