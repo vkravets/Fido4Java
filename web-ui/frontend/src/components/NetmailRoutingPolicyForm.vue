@@ -48,10 +48,16 @@ function masks(event: Event): string[] {
                     type="checkbox"
                 />{{ t('Allow netmail transit') }}</label
             >
-            <p class="muted">
+            <p
+                v-show="policy.allowTransit"
+                class="muted"
+            >
                 {{ t('Empty transit masks allow every configured link when transit is enabled.') }}
             </p>
-            <div class="form-grid">
+            <div
+                v-show="policy.allowTransit"
+                class="form-grid"
+            >
                 <label
                     >{{ t('Transit sender masks (one per line)')
                     }}<textarea

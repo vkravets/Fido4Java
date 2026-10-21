@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import SettingsRefreshButton from './SettingsRefreshButton.vue';
 import { t } from '../i18n.ts';
 import { inject, onMounted } from 'vue';
 import { robotAccessClientKey } from '../station-clients.ts';
@@ -33,18 +35,18 @@ function remove() {
 </script>
 
 <template>
-    <div class="page-heading">
-        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t('Mail robots') }}</h1>
-        <p>{{ t('Link access to AreaFix, FileFix and TIC file exchange.') }}</p>
-    </div>
-    <button
-        class="secondary refresh"
-        :disabled="state.busy.value"
-        @click="state.run(editor.refresh)"
+    <SettingsSectionHeader
+        :title="t('Mail robots')"
+        :description="t('Link access to AreaFix, FileFix and TIC file exchange.')"
+        page
     >
-        {{ t('Refresh') }}
-    </button>
+        <template #actions
+            ><SettingsRefreshButton
+                :busy="state.busy.value"
+                :context="t('Mail robots')"
+                @refresh="state.run(editor.refresh)"
+        /></template>
+    </SettingsSectionHeader>
     <template v-if="configuration">
         <NotificationBanner
             v-if="configuration.source !== 'database'"

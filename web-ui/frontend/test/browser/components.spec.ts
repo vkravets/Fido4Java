@@ -235,6 +235,9 @@ test('routing rules are read-only in file mode and edit only configured next hop
     await story(page, 'routing-netmailroutespanel--file-managed');
     await expect(page.getByRole('button', { name: 'Save rule', exact: true })).toHaveCount(0);
     await story(page, 'routing-netmailroutespanel--database');
+    await expect(page.getByRole('textbox', { name: 'Rule ID', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Add routing rule', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Rule ID', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Edit rule', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Rule ID', exact: true })).toHaveValue(
         'regional'
@@ -257,6 +260,10 @@ test('routing policy exposes explicit transit controls and prevents edits while 
     const masks = page.getByLabel('Transit sender masks (one per line)', { exact: true });
     await masks.fill('1:500/101\n1:500/102');
     await masks.press('Tab');
+    await expect(masks).toHaveValue('1:500/101\n1:500/102');
+    await page.getByLabel('Allow netmail transit', { exact: true }).uncheck();
+    await expect(masks).toBeHidden();
+    await page.getByLabel('Allow netmail transit', { exact: true }).check();
     await expect(masks).toHaveValue('1:500/101\n1:500/102');
     await story(page, 'routing-netmailroutingpolicyform--busy');
     await expect(

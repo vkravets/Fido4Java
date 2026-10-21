@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import SettingsRefreshButton from './SettingsRefreshButton.vue';
 import { t } from '../i18n.ts';
 import { computed, ref, watch } from 'vue';
 import { pollTime } from '../polling.ts';
@@ -59,8 +61,18 @@ function setPeer(id: string, value: string) {
 }
 </script>
 <template>
-    <section class="card">
-        <h2>{{ t('Packet quarantine') }}</h2>
+    <section
+        id="packet-quarantine"
+        class="card"
+    >
+        <SettingsSectionHeader :title="t('Packet quarantine')">
+            <template #actions
+                ><SettingsRefreshButton
+                    :busy="busy"
+                    :context="t('Packet quarantine')"
+                    @refresh="$emit('refresh')"
+            /></template>
+        </SettingsSectionHeader>
         <p>
             {{
                 t(
@@ -77,14 +89,7 @@ function setPeer(id: string, value: string) {
             >
                 {{ t('Restore selected') }} ({{ checked.length }})
             </button>
-            <button
-                type="button"
-                class="secondary"
-                :disabled="busy"
-                @click="$emit('refresh')"
-            >
-                {{ t('Refresh') }}
-            </button>
+
             <button
                 v-if="page.hasMore"
                 type="button"

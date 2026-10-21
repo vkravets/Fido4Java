@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-defineProps<{ busy: boolean }>();
+import type { MessageKey } from '../i18n.ts';
+import SettingsPageHeader from './SettingsPageHeader.vue';
+import ConfigurationReloadButton from './ConfigurationReloadButton.vue';
+withDefaults(defineProps<{ busy: boolean; section?: MessageKey }>(), { section: 'General' });
 defineEmits<{ reload: [] }>();
 </script>
-
 <template>
-    <div class="page-heading">
-        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t('Station settings') }}</h1>
-        <p>{{ t('Station identity, mail links and tosser processing settings.') }}</p>
-        <button
-            type="button"
-            class="secondary"
-            :disabled="busy"
-            @click="$emit('reload')"
-        >
-            {{ t('Reload configuration files') }}
-        </button>
-    </div>
+    <SettingsPageHeader
+        :context="t('Station')"
+        :title="t(section)"
+    >
+        <ConfigurationReloadButton
+            :busy="busy"
+            @reload="$emit('reload')"
+        />
+    </SettingsPageHeader>
 </template>

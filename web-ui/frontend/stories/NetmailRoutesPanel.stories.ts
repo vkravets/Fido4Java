@@ -23,3 +23,8 @@ type Story = StoryObj<typeof meta>;
 export const Database: Story = {};
 export const FileManaged: Story = { args: { writable: false } };
 export const Empty: Story = { args: { rules: [] } };
+export const Adding: Story = {
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLButtonElement>('.routing-add')!.click();
+    }
+};

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { onMounted } from 'vue';
 import { api } from '../api.ts';
 import { createQuarantine } from '../quarantine.ts';
@@ -44,7 +45,7 @@ onMounted(() =>
         v-else
         class="card"
     >
-        <h2>{{ t('Packet quarantine') }}</h2>
+        <SettingsSectionHeader :title="t('Packet quarantine')" />
         <button
             type="button"
             class="secondary"

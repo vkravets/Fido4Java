@@ -193,7 +193,12 @@ test('administrator grants, edits and revokes echo access through the station sc
     await page.getByRole('button', { name: /Station/, exact: false }).click();
     const panel = page.locator('#echo-access');
     await page.getByRole('tab', { name: 'Echo areas and link access', exact: true }).click();
-    await expect(panel.getByRole('heading', { name: 'Echo areas and link access' })).toBeVisible();
+    await expect(
+        page
+            .locator('.settings-page-header')
+            .getByRole('heading', { name: 'Echo areas and link access' })
+    ).toBeVisible();
+    await expect(panel).toBeVisible();
     await panel.getByLabel('Echo area', { exact: true }).fill('NEW.ECHO');
     await panel.getByRole('button', { name: 'Save echo access', exact: true }).click();
     const row = panel
@@ -226,9 +231,7 @@ test('administrator releases a legacy quarantine packet through HTTP RPC after c
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
     await page.getByRole('button', { name: /Station/, exact: false }).click();
-    const panel = page
-        .locator('section')
-        .filter({ has: page.getByRole('heading', { name: 'Packet quarantine', exact: true }) });
+    const panel = page.locator('#packet-quarantine');
     await page.getByRole('tab', { name: 'Packet quarantine', exact: true }).click();
     await expect(panel.getByText('legacy.bad', { exact: true })).toBeVisible();
     await panel.getByRole('button', { name: 'Release and retry' }).click();

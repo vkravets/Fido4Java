@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { provide, reactive, ref } from 'vue';
 import { robotAccessClientKey, accountModerationClientKey } from '../src/station-clients.ts';
 import type { AppState } from '../src/state.ts';
+import NetmailRoutesPanel from '../src/components/NetmailRoutesPanel.vue';
+import NetmailRoutePreviewForm from '../src/components/NetmailRoutePreviewForm.vue';
 import NetmailRoutingPolicyForm from '../src/components/NetmailRoutingPolicyForm.vue';
 import BinkpLogPanel from '../src/components/BinkpLogPanel.vue';
 import RobotAccess from '../src/components/RobotAccess.vue';
 import AccountModeration from '../src/components/AccountModeration.vue';
 import { protocolLines } from './protocol-fixture.ts';
 import StationSettingsTabs from '../src/components/StationSettingsTabs.vue';
-import StationSettingsHeader from '../src/components/StationSettingsHeader.vue';
 import Sidebar from '../src/components/Sidebar.vue';
 import ApplicationHeader from '../src/components/ApplicationHeader.vue';
 import NodeForm from '../src/components/NodeForm.vue';
@@ -28,7 +29,6 @@ const meta = {
     render: (args) => ({
         components: {
             StationSettingsTabs,
-            StationSettingsHeader,
             NodeForm,
             MailLinksEditor,
             TosserForm,
@@ -36,6 +36,8 @@ const meta = {
             QuarantinePanel,
             PluginSettingsPanel,
             NetmailRoutingPolicyForm,
+            NetmailRoutesPanel,
+            NetmailRoutePreviewForm,
             BinkpLogPanel,
             RobotAccess,
             AccountModeration
@@ -75,6 +77,15 @@ const meta = {
                     transitTo: []
                 }),
                 extensions: fileEchoExtensions(),
+                routes: [
+                    {
+                        id: 'regional',
+                        priority: 10,
+                        pattern: '1:500/*',
+                        nextHop: '1:500/101.0',
+                        enabled: true
+                    }
+                ],
                 model: reactive(station()),
                 links: reactive(uplinks()),
                 tosser: reactive({
@@ -85,9 +96,12 @@ const meta = {
                 })
             };
         },
-        template: `<StationSettingsHeader :busy="args.busy" />
-            <StationSettingsTabs v-bind="args" v-slot="{ group }">
-                <NetmailRoutingPolicyForm v-if="group === 'routing'" v-model="policy" :peers="['1:500/101.0']" :busy="args.busy" />
+        template: `<StationSettingsTabs v-bind="args" v-slot="{ group }">
+                <template v-if="group === 'routing'">
+                    <NetmailRoutingPolicyForm v-model="policy" :peers="['1:500/101.0']" :busy="args.busy" />
+                    <NetmailRoutesPanel :rules="routes" :peers="['1:500/101.0']" :writable="true" :busy="args.busy" />
+                    <NetmailRoutePreviewForm :peers="['1:500/101.0']" :busy="args.busy" />
+                </template>
                 <BinkpLogPanel v-if="group === 'logs'" :lines="protocolLines" :busy="args.busy" :more="false" :clipped="false" :rotated="false" />
                 <RobotAccess v-if="group === 'robots'" :state="state" />
                 <AccountModeration v-if="group === 'accounts'" :state="state" />

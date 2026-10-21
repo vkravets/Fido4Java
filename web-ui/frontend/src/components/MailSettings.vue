@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { onMounted, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import { t } from '../i18n.ts';
@@ -75,7 +76,7 @@ function saveTosser() {
             v-show="group === 'links'"
             class="card"
         >
-            <h2>{{ t('Mail links') }}</h2>
+            <SettingsSectionHeader :title="t('Mail links')" />
             <p>
                 {{
                     t(
@@ -113,7 +114,7 @@ function saveTosser() {
             v-show="group === 'tosser'"
             class="card"
         >
-            <h2>{{ t('Tosser settings') }}</h2>
+            <SettingsSectionHeader :title="t('Tosser settings')" />
             <form @submit.prevent="saveTosser">
                 <TosserForm :model="tosser" />
                 <footer class="actions">

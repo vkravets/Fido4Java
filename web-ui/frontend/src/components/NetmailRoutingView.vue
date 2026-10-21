@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { computed, onMounted, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import { t } from '../i18n.ts';
@@ -61,10 +62,10 @@ async function preview(destination: string, sender: string, direct: boolean) {
 onMounted(() => props.state.run(load));
 </script>
 <template>
-    <header class="page-heading">
-        <p class="eyebrow">{{ t('NODE MANAGEMENT') }}</p>
-        <h1>{{ t('Netmail routing') }}</h1>
-    </header>
+    <SettingsSectionHeader
+        :title="t('Netmail routing')"
+        page
+    />
     <template v-if="configuration">
         <NetmailRoutingPolicyForm
             v-model="configuration.policy"

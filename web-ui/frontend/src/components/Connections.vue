@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { t } from '../i18n.ts';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { api } from '../api.ts';
@@ -88,11 +89,10 @@ function select(attempt: PollInfo) {
 </script>
 
 <template>
-    <div class="page-heading">
-        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t(initialTab === 'log' ? 'Connections' : 'Polling') }}</h1>
-        <p>{{ t('Outgoing polls: one queue for scheduled and manual attempts.') }}</p>
-    </div>
+    <SettingsSectionHeader
+        :title="t(initialTab === 'log' ? 'Connections' : 'Polling')"
+        page
+    />
     <ConnectionTabs v-model="tab">
         <template #log>
             <BinkpLogSettings

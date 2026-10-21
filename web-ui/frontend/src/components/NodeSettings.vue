@@ -3,7 +3,6 @@ import { t } from '../i18n.ts';
 import { onMounted, reactive, ref } from 'vue';
 import { api, bindings } from '../api.ts';
 import NodeForm from './NodeForm.vue';
-import StationSettingsHeader from './StationSettingsHeader.vue';
 import StationSettingsTabs from './StationSettingsTabs.vue';
 import MailSettings from './MailSettings.vue';
 import EchoSettings from './EchoSettings.vue';
@@ -53,24 +52,21 @@ async function reload() {
 </script>
 
 <template>
-    <StationSettingsHeader
-        :busy="state.busy.value"
-        @reload="reload"
-    />
-    <NotificationBanner
-        v-if="saved"
-        kind="info"
-        :message="
-            t(
-                'Configuration applied. New operations use the new settings; existing connections keep their session settings.'
-            )
-        "
-    />
     <StationSettingsTabs
         v-model="section"
         v-slot="{ group }"
         :busy="state.busy.value"
+        @reload="reload"
     >
+        <NotificationBanner
+            v-if="saved"
+            kind="info"
+            :message="
+                t(
+                    'Configuration applied. New operations use the new settings; existing connections keep their session settings.'
+                )
+            "
+        />
         <NetmailRoutingView
             v-if="group === 'routing'"
             :state="state"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { onMounted } from 'vue';
 import { api } from '../api.ts';
 import { createEchoEditor } from '../echo-access.ts';
@@ -40,7 +41,7 @@ function remove() {
         v-if="!configuration"
         class="card"
     >
-        <h2>{{ t('Echo areas and link access') }}</h2>
+        <SettingsSectionHeader :title="t('Echo areas and link access')" />
         <button
             type="button"
             class="secondary"

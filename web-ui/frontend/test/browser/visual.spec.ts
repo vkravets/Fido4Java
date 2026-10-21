@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'routing-rules-adding', story: 'routing-netmailroutespanel--adding' },
     { name: 'directory-sources', story: 'plugins-pluginsettingspanel--directory-sources' },
     {
         name: 'directory-sources-read-only',

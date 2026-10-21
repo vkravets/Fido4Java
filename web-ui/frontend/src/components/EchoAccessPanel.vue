@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import SettingsRefreshButton from './SettingsRefreshButton.vue';
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import NotificationBanner from './NotificationBanner.vue';
@@ -32,7 +34,14 @@ const rows = computed(() =>
         id="echo-access"
         class="card"
     >
-        <h2>{{ t('Echo areas and link access') }}</h2>
+        <SettingsSectionHeader :title="t('Echo areas and link access')">
+            <template #actions
+                ><SettingsRefreshButton
+                    :busy="busy"
+                    :context="t('Echo areas and link access')"
+                    @refresh="$emit('refresh')"
+            /></template>
+        </SettingsSectionHeader>
         <p>
             {{
                 t(
@@ -56,14 +65,7 @@ const rows = computed(() =>
                 )
             "
         />
-        <button
-            type="button"
-            class="secondary"
-            :disabled="busy"
-            @click="$emit('refresh')"
-        >
-            {{ t('Refresh') }}
-        </button>
+
         <details v-if="configuration.areas.length">
             <summary>{{ t('Known echo areas') }} ({{ configuration.areas.length }})</summary>
             <ul>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { computed, reactive, ref, watch, useId } from 'vue';
 import { t } from '../i18n.ts';
 import { pluginSettingsLabel, pluginSettingsChoice } from '../plugin-settings-i18n.ts';
@@ -59,7 +60,10 @@ function save() {
 
 <template>
     <section class="card plugin-settings">
-        <h2>{{ t('Plugin settings') }}</h2>
+        <SettingsSectionHeader
+            :title="t('Plugin settings')"
+            page
+        />
         <p
             v-if="!extensions.length"
             role="status"

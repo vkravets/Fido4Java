@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import SettingsRefreshButton from './SettingsRefreshButton.vue';
 import { t } from '../i18n.ts';
 import { inject, onMounted, ref } from 'vue';
 import { accountModerationClientKey } from '../station-clients.ts';
@@ -24,18 +26,18 @@ function decide(owner: string, address: string, approve: boolean) {
 </script>
 
 <template>
-    <div class="page-heading">
-        <span class="eyebrow">{{ t('NODE MANAGEMENT') }}</span>
-        <h1>{{ t('Accounts and requests') }}</h1>
-        <p>{{ t('Verify that the user owns the address before approving it.') }}</p>
-    </div>
-    <button
-        class="secondary refresh"
-        :disabled="state.busy.value"
-        @click="state.run(refresh)"
+    <SettingsSectionHeader
+        :title="t('Accounts and requests')"
+        :description="t('Verify that the user owns the address before approving it.')"
+        page
     >
-        {{ t('Refresh') }}
-    </button>
+        <template #actions
+            ><SettingsRefreshButton
+                :busy="state.busy.value"
+                :context="t('Accounts and requests')"
+                @refresh="state.run(refresh)"
+        /></template>
+    </SettingsSectionHeader>
     <section
         v-for="account in accounts"
         :key="account.login"

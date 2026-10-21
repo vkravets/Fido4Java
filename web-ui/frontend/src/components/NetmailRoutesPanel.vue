@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue';
 import { ref } from 'vue';
 import { t } from '../i18n.ts';
 import type { NetmailRouteInfo } from '@rpc/bindings.mjs';
@@ -14,14 +15,29 @@ function empty(): NetmailRouteInfo {
 }
 const rule = ref(empty());
 const editing = ref(false);
+const formOpen = ref(!props.rules.length);
 function edit(value?: NetmailRouteInfo) {
     rule.value = value ? { ...value } : empty();
     editing.value = !!value;
+    formOpen.value = true;
 }
 </script>
 <template>
     <section class="card">
-        <h2>{{ t('Routing rules') }}</h2>
+        <div class="section-title routing-section-title">
+            <h2>{{ t('Routing rules') }}</h2>
+            <button
+                v-if="writable"
+                type="button"
+                class="secondary settings-icon-action routing-add"
+                :disabled="busy"
+                :title="t('Add routing rule')"
+                :aria-label="t('Add routing rule')"
+                @click="edit()"
+            >
+                <AppIcon name="add" />
+            </button>
+        </div>
         <p>{{ t('Lower priority numbers are evaluated first; rule ID breaks ties.') }}</p>
         <p
             v-if="!writable"
@@ -61,17 +77,21 @@ function edit(value?: NetmailRouteInfo) {
                                 class="actions"
                             >
                                 <button
-                                    class="secondary"
+                                    class="secondary settings-icon-action"
+                                    :title="t('Edit rule')"
+                                    :aria-label="t('Edit rule')"
                                     :disabled="busy"
                                     @click="edit(item)"
                                 >
-                                    {{ t('Edit rule') }}</button
+                                    <AppIcon name="edit" /></button
                                 ><button
-                                    class="text-button"
+                                    class="secondary danger settings-icon-action"
+                                    :title="t('Delete rule')"
+                                    :aria-label="t('Delete rule')"
                                     :disabled="busy"
                                     @click="$emit('remove', item.id)"
                                 >
-                                    {{ t('Delete rule') }}
+                                    <AppIcon name="trash" />
                                 </button>
                             </div>
                         </td>
@@ -81,7 +101,7 @@ function edit(value?: NetmailRouteInfo) {
         </div>
         <p v-if="!rules.length">{{ t('No routing rules.') }}</p>
         <form
-            v-if="writable"
+            v-if="writable && formOpen"
             @submit.prevent="$emit('save', { ...rule })"
         >
             <h3>{{ editing ? t('Edit rule') : t('Add routing rule') }}</h3>
@@ -157,3 +177,12 @@ function edit(value?: NetmailRouteInfo) {
         </form>
     </section>
 </template>
+<style scoped>
+.routing-section-title {
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.routing-section-title h2 {
+    margin: 0;
+}
+</style>
