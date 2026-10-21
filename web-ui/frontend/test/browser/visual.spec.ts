@@ -4,6 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'directory-sources', story: 'plugins-pluginsettingspanel--directory-sources' },
+    {
+        name: 'directory-sources-read-only',
+        story: 'plugins-pluginsettingspanel--directory-sources-read-only'
+    },
     { name: 'directory-crc-settings', story: 'plugins-pluginsettingspanel--directory-crc' },
     {
         name: 'directory-crc-read-only',

@@ -38,3 +38,9 @@ export const FileManaged: Story = { args: { extensions: files } };
 export const Empty: Story = { args: { extensions: [] } };
 export const DirectoryCrc: Story = { args: { extensions: directoryExtensions() } };
 export const DirectoryCrcReadOnly: Story = { args: { extensions: directoryExtensions(false) } };
+export const DirectorySources: Story = {
+    args: { extensions: directoryExtensions(), initialSection: 'sources' }
+};
+export const DirectorySourcesReadOnly: Story = {
+    args: { extensions: directoryExtensions(false), initialSection: 'sources' }
+};

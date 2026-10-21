@@ -34,11 +34,23 @@ export const pluginSettingsTranslations: Record<string, Record<string, Record<st
     },
     nodelist: {
         en: {
+            true: 'Yes',
+            false: 'No',
             'XMODEM-CRC': 'XMODEM-CRC',
             'ARC-CRC': 'ARC-CRC'
         },
         uk: {
             'Node directory': 'Каталог вузлів',
+            'List sources': 'Джерела списків',
+            'Source ID': 'ID джерела',
+            'List format': 'Формат списку',
+            'List file': 'Файл списку',
+            'Default zone': 'Типова зона',
+            'Default net': 'Типова мережа',
+            'List encoding': 'Кодування списку',
+            'Require header CRC': 'Вимагати CRC заголовка',
+            true: 'Так',
+            false: 'Ні',
             'CRC checks': 'Перевірка CRC',
             'Legacy CRC exceptions': 'Старі винятки перевірки CRC',
             Source: 'Джерело',

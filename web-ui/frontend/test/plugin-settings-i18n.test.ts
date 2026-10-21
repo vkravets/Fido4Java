@@ -30,6 +30,7 @@ test('only known enum fields are translated; user-defined choices remain unchang
         assert.equal(pluginSettingsChoice('fileecho', 'name', 'READ'), 'READ');
         assert.equal(pluginSettingsChoice('nodelist', 'source', 'Source'), 'Source');
         assert.equal(pluginSettingsChoice('nodelist', 'mode', 'ARC-CRC'), 'ARC-CRC');
+        assert.equal(pluginSettingsChoice('nodelist', 'requireChecksum', 'true'), 'Так');
         assert.equal(pluginSettingsChoice('external', 'enabled', 'true'), 'true');
     } finally {
         locale.value = 'en';
