@@ -66,10 +66,11 @@ class DirectoryCrcSettingsTest {
             SettingsExtension.View view = settings.describe();
             assertEquals("nodelist", view.id);
             assertEquals("conf.d/30-nodelist.conf", view.source);
-            assertTrue(view.sections.get(0).writable);
+            assertEquals("sources", view.sections.get(0).id);
+            assertTrue(view.sections.get(1).writable);
             assertEquals(List.of("XMODEM-CRC", "ARC-CRC"),
-                         view.sections.get(0).fields.get(2).choices);
-            assertEquals("CRC checks", view.sections.get(0).title);
+                         view.sections.get(1).fields.get(2).choices);
+            assertEquals("CRC checks", view.sections.get(1).title);
             String definition = service.sourceDefinition("points");
             settings.apply("crc", command("ARC-CRC"));
             assertFalse(definition.equals(service.sourceDefinition("points")));
@@ -93,7 +94,7 @@ class DirectoryCrcSettingsTest {
             assertEquals("XMODEM-CRC",
                          service.getSettingsExtensions()
                                 .get(0)
-                                .describe().sections.get(0).rows.get(0).get("mode"));
+                                .describe().sections.get(1).rows.get(0).get("mode"));
             assertThrows(IOException.class,
                          () -> service.importFile("points", incoming, "PNT46REG.289", false));
         }
@@ -170,7 +171,7 @@ class DirectoryCrcSettingsTest {
             String definition = service.sourceDefinition("points");
             String manual = Files.readString(fragment) + "# Manual change\n";
             Files.writeString(fragment, manual);
-            assertFalse(settings.describe().sections.get(0).writable);
+            assertFalse(settings.describe().sections.get(1).writable);
             assertThrows(IOException.class, () -> settings.apply("crc", command("ARC-CRC")));
             assertEquals(manual, Files.readString(fragment));
             assertEquals(definition, service.sourceDefinition("points"));
@@ -208,7 +209,7 @@ class DirectoryCrcSettingsTest {
     void oldUiModeValuesAreAcceptedAndSavedWithAlgorithmNames() throws Exception {
         try (DirectoryService service = DirectoryService.open(config("DirectoryCRCCompatibility=points|PNT46REG.*|new-point-keeper\n"))) {
             SettingsExtension settings = service.getSettingsExtensions().get(0);
-            assertEquals("ARC-CRC", settings.describe().sections.get(0).rows.get(0).get("mode"));
+            assertEquals("ARC-CRC", settings.describe().sections.get(1).rows.get(0).get("mode"));
             settings.apply("crc", command("standard"));
             assertTrue(Files.readString(fragment).contains("|XMODEM-CRC"));
             settings.apply("crc", command("new-point-keeper"));
@@ -224,8 +225,8 @@ class DirectoryCrcSettingsTest {
         Files.writeString(other, "DirectoryCRCCompatibility=points|PNT46REG.*|ARC-CRC\n");
         try (DirectoryService service = DirectoryService.open(JFtnConfig.bootstrap(main))) {
             SettingsExtension settings = service.getSettingsExtensions().get(0);
-            assertFalse(settings.describe().sections.get(0).writable);
-            assertEquals(1, settings.describe().sections.get(0).rows.size());
+            assertFalse(settings.describe().sections.get(1).writable);
+            assertEquals(1, settings.describe().sections.get(1).rows.size());
             assertThrows(IOException.class, () -> settings.apply("crc", command("XMODEM-CRC")));
             assertTrue(Files.readString(other).contains("ARC-CRC"));
         }

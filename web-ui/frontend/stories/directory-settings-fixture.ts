@@ -8,27 +8,6 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
             source: 'conf.d/30-nodelist.conf',
             sections: [
                 {
-                    id: 'crc',
-                    title: 'CRC checks',
-                    writable,
-                    fields: [
-                        {
-                            name: 'source',
-                            label: 'Source',
-                            type: 'select',
-                            choices: ['nodes', 'points']
-                        },
-                        { name: 'mask', label: 'Filename mask', type: 'text', choices: [] },
-                        {
-                            name: 'mode',
-                            label: 'CRC mode',
-                            type: 'select',
-                            choices: ['XMODEM-CRC', 'ARC-CRC']
-                        }
-                    ],
-                    rows: [{ source: 'points', mask: 'PNT46REG.*', mode: 'ARC-CRC' }]
-                },
-                {
                     id: 'sources',
                     title: 'List sources',
                     writable,
@@ -79,6 +58,27 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
                             requireChecksum: 'true'
                         }
                     ]
+                },
+                {
+                    id: 'crc',
+                    title: 'CRC checks',
+                    writable,
+                    fields: [
+                        {
+                            name: 'source',
+                            label: 'Source',
+                            type: 'select',
+                            choices: ['nodes', 'points']
+                        },
+                        { name: 'mask', label: 'Filename mask', type: 'text', choices: [] },
+                        {
+                            name: 'mode',
+                            label: 'CRC mode',
+                            type: 'select',
+                            choices: ['XMODEM-CRC', 'ARC-CRC']
+                        }
+                    ],
+                    rows: [{ source: 'points', mask: 'PNT46REG.*', mode: 'ARC-CRC' }]
                 }
             ]
         }

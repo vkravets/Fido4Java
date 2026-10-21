@@ -36,11 +36,15 @@ files[0]!.sections.forEach((section) => {
 });
 export const FileManaged: Story = { args: { extensions: files } };
 export const Empty: Story = { args: { extensions: [] } };
-export const DirectoryCrc: Story = { args: { extensions: directoryExtensions() } };
-export const DirectoryCrcReadOnly: Story = { args: { extensions: directoryExtensions(false) } };
+export const DirectoryCrc: Story = {
+    args: { extensions: directoryExtensions(), initialSection: 'crc' }
+};
+export const DirectoryCrcReadOnly: Story = {
+    args: { extensions: directoryExtensions(false), initialSection: 'crc' }
+};
 export const DirectorySources: Story = {
-    args: { extensions: directoryExtensions(), initialSection: 'sources' }
+    args: { extensions: directoryExtensions() }
 };
 export const DirectorySourcesReadOnly: Story = {
-    args: { extensions: directoryExtensions(false), initialSection: 'sources' }
+    args: { extensions: directoryExtensions(false) }
 };

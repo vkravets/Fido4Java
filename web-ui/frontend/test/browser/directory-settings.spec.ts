@@ -43,6 +43,11 @@ test('directory source edits send paths format encoding and addressing as plugin
 }) => {
     for (const language of ['en', 'uk']) {
         await openStory(page, 'plugins-pluginsettingspanel--directory-sources', 'dark', language);
+        const tabs = page.locator('.tabs button');
+        await expect(tabs.first()).toContainText(
+            language === 'en' ? 'List sources' : 'Джерела списків'
+        );
+        await expect(tabs.first()).toHaveClass(/selected/);
         await page
             .getByRole('button', { name: language === 'en' ? 'Edit' : 'Редагувати', exact: true })
             .nth(1)

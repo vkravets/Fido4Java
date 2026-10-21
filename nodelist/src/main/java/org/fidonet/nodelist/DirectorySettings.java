@@ -27,8 +27,9 @@ final class DirectorySettings implements SettingsExtension {
     @Override
     public synchronized View describe() throws IOException {
         View checksum = crc.describe();
-        List<Section> sections = new ArrayList<>(checksum.sections);
+        List<Section> sections = new ArrayList<>();
         sections.add(sources.describe());
+        sections.addAll(checksum.sections);
         return new View(id(), checksum.title, checksum.source, sections);
     }
 
