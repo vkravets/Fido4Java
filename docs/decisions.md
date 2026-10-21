@@ -55,6 +55,12 @@ storage or authorization. Text entry, native editing, modal dialogs and isolated
 appearance previews retain their own behavior. Unsupported browser/OS chords are
 not promised. See [keyboard shortcuts](keyboard-shortcuts.md).
 
+Browser authentication survives reload through a tab-scoped `sessionStorage`
+token. Startup validates it through the existing profile RPC before publishing an
+authenticated session; logout and authorization failures remove it. Network
+failures retain the saved token for retry. This replaces memory-only browser
+sessions and does not extend server expiry or store passwords/passkey assertions.
+
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement
 decorations rather than rewriting its document, so editing, undo and outgoing

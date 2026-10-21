@@ -7,6 +7,27 @@ import type { LoginResponse, UserProfile } from '@rpc/bindings.mjs';
 export type Theme = 'light' | 'dark';
 export type AppState = ReturnType<typeof createState>;
 
+const sessionKey = 'jftn-session';
+function storedSession(): string {
+    try {
+        return sessionStorage.getItem(sessionKey) || '';
+    } catch {
+        return '';
+    }
+}
+function rememberSession(token: string) {
+    try {
+        if (token) sessionStorage.setItem(sessionKey, token);
+        else sessionStorage.removeItem(sessionKey);
+    } catch {
+        // Storage can be disabled; the current in-memory session still works.
+    }
+}
+function authenticationFailure(failure: unknown): boolean {
+    const code = (failure as { code?: string } | null)?.code;
+    return code === 'UNAUTHORIZED' || code === 'SESSION_EXPIRED';
+}
+
 export function createState() {
     initializeLocale();
     const profile = ref<UserProfile | null>(null);
@@ -27,6 +48,12 @@ export function createState() {
     }
     setTheme(theme.value);
 
+    function clearSession() {
+        session.value = '';
+        profile.value = null;
+        rememberSession('');
+    }
+
     async function toggleTheme(): Promise<void> {
         const next = theme.value === 'dark' ? 'light' : 'dark';
         if (profile.value) {
@@ -45,10 +72,7 @@ export function createState() {
         } catch (failure) {
             const reason = failure as { message?: string; code?: string } | null;
             error.value = reason?.message || t('The request failed. Please try again.');
-            if (reason?.code === 'UNAUTHORIZED' || reason?.code === 'SESSION_EXPIRED') {
-                session.value = '';
-                profile.value = null;
-            }
+            if (authenticationFailure(failure)) clearSession();
         } finally {
             busy.value = false;
         }
@@ -63,9 +87,24 @@ export function createState() {
         session.value = loginSession(response);
         try {
             await refreshProfile();
+            rememberSession(session.value);
         } catch (failure) {
-            session.value = '';
+            clearSession();
             throw failure;
+        }
+    }
+
+    async function restoreSession() {
+        const token = storedSession();
+        if (!token) return;
+        try {
+            const restored = await api.profile.me(token);
+            profile.value = restored;
+            setTheme(restored.theme === 'dark' ? 'dark' : 'light');
+            session.value = token;
+        } catch (failure) {
+            if (!authenticationFailure(failure)) throw failure;
+            clearSession();
         }
     }
 
@@ -75,7 +114,8 @@ export function createState() {
             if (!setup.value) {
                 Object.assign(methods, await api.auth.methods());
                 registration.value = await api.profile.registrationEnabled();
-            }
+                await restoreSession();
+            } else clearSession();
             return true;
         });
         if (started) ready.value = true;
@@ -83,8 +123,7 @@ export function createState() {
 
     async function logout() {
         const token = session.value;
-        session.value = '';
-        profile.value = null;
+        clearSession();
         if (token) await api.login.logout(token);
     }
 

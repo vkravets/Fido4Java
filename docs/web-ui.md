@@ -126,8 +126,12 @@ enable `RpcEnabled`, `RpcHttpEnabled` and `WebUiEnabled`, then open
 `http://localhost:9091/` (or the configured HTTP port/origin). HTTP serves both the
 SPA and `/rpc/` endpoints. Light and dark themes can be changed in appearance
 settings or with the header toggle and are saved in the signed-in profile.
-Session tokens remain in browser memory: reloading the page requires signing in
-again. Public registration submits a point AKA claim for administrator approval.
+Session tokens use tab-scoped `sessionStorage` (`jftn-session`). Reloading validates
+the saved token with `ProfileService.me` before restoring the account. Logout,
+expiry, revocation or a node restart clear invalid tokens; temporary connection
+failures retain them for Retry. Reloading does not renew the server-side session
+lifetime. Passwords and passkey assertions are not stored. Public registration
+submits a point AKA claim for administrator approval.
 The sidebar opens netmail, echomail and saved drafts from both mail types.
 
 English is the default language; Ukrainian is the other supported language.

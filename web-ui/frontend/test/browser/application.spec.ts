@@ -1,6 +1,28 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+test('page reload restores the validated session while stale tokens return to sign-in', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    const original = await page.evaluate(() => sessionStorage.getItem('jftn-session'));
+    expect(!!original).toBe(true);
+    await page.reload();
+    await expectSignedIn(page);
+    expect(
+        await page.evaluate((token) => sessionStorage.getItem('jftn-session') === token, original)
+    ).toBe(true);
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    expect(await page.evaluate(() => sessionStorage.getItem('jftn-session') === null)).toBe(true);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Sign in to JFtn' })).toBeVisible();
+    await page.evaluate(() => sessionStorage.setItem('jftn-session', 'invalid-old-session'));
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Sign in to JFtn' })).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem('jftn-session') === null)).toBe(true);
+});
+
 test('personal keyboard assignments survive a new login and invoke the echomail reply action', async ({
     page
 }) => {
@@ -51,6 +73,10 @@ async function signIn(page: Page, username: string, password: string) {
     await page.getByRole('textbox', { name: 'Username', exact: true }).fill(username);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expectSignedIn(page);
+}
+
+async function expectSignedIn(page: Page) {
     await expect(
         page.locator('.settings-page-header').getByRole('heading', { name: 'Profile', exact: true })
     ).toBeVisible();
@@ -253,7 +279,7 @@ test('administrator grants, edits and revokes echo access through the station sc
     await panel.getByRole('button', { name: 'Save echo access', exact: true }).click();
     await expect(row).toContainText('BOTH');
     await page.reload();
-    await signIn(page, 'admin', 'preview-admin-password');
+    await expectSignedIn(page);
     await page.getByRole('button', { name: /Station/, exact: false }).click();
     await page.getByRole('tab', { name: 'Echo areas and link access', exact: true }).click();
     await expect(row).toContainText('BOTH');
@@ -313,7 +339,7 @@ test('administrator persists separate PKT passwords and tosser options through r
         page.getByRole('button', { name: 'Save tosser settings', exact: true })
     ).toBeEnabled();
     await page.reload();
-    await signIn(page, 'admin', 'preview-admin-password');
+    await expectSignedIn(page);
     await page.getByRole('button', { name: /Station/, exact: false }).click();
     await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     await expect(page.getByLabel('PKT password mode')).toHaveValue('SEPARATE');
@@ -354,7 +380,7 @@ test('administrator adds multiple uplinks and preserves them when saving station
     await page.getByRole('button', { name: 'Save configuration', exact: true }).click();
     await expect(notification(page)).toContainText('Configuration applied.');
     await page.reload();
-    await signIn(page, 'admin', 'preview-admin-password');
+    await expectSignedIn(page);
     await page.getByRole('button', { name: /Station/, exact: false }).click();
     await page.getByRole('tab', { name: 'Mail links', exact: true }).click();
     await expect(page.locator('fieldset.mail-link-settings')).toHaveCount(3);
