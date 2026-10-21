@@ -4,6 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'auth-login', story: 'authentication-authscreen--login' },
+    { name: 'auth-login-short', story: 'authentication-authscreen--login', short: true },
+    { name: 'auth-password', story: 'authentication-authscreen--password-only' },
+    { name: 'auth-busy', story: 'authentication-authscreen--busy' },
+    { name: 'auth-registration', story: 'authentication-authscreen--registration' },
     { name: 'polling-page', story: 'connections-connections--queue' },
     { name: 'polling-page-empty', story: 'connections-connections--empty' },
     { name: 'directory-page', story: 'directory-nodedirectory--results' },
@@ -223,6 +228,12 @@ for (const theme of ['light', 'dark']) {
         for (const screen of screens) {
             test(`${theme}/${locale}/${screen.name}`, async ({ page }, info) => {
                 const filename = `${screen.name}-${theme}-${locale}.png`;
+                if (screen.short)
+                    await page.setViewportSize(
+                        info.project.name === 'desktop'
+                            ? { width: 1130, height: 540 }
+                            : { width: 375, height: 740 }
+                    );
                 await attachBaseline(info, filename);
                 await page.clock.setFixedTime(new Date('2026-10-16T12:00:00Z'));
                 await openStory(page, screen.story, theme, locale);

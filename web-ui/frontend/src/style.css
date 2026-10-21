@@ -270,18 +270,18 @@ code {
 }
 .auth-layout {
     display: grid;
-    grid-template-columns: 1fr 440px;
-    gap: 90px;
-    max-width: 1120px;
-    padding: 80px 40px 40px;
+    grid-template-columns: 1fr 400px;
+    gap: 64px;
+    max-width: 1040px;
+    padding: 24px 32px;
     margin: auto;
     align-items: start;
 }
 .intro {
-    padding-top: 35px;
+    padding-top: 16px;
 }
 .intro h1 {
-    font-size: 51px;
+    font-size: 44px;
     line-height: 1.15;
     letter-spacing: -2px;
 }
@@ -290,13 +290,47 @@ code {
     font-size: 16px;
 }
 .auth-card {
-    padding: 36px;
+    padding: 20px 24px;
+}
+.auth-layout .eyebrow {
+    margin-bottom: 12px;
+}
+.auth-card h2 {
+    margin-bottom: 8px;
+}
+.auth-card p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.auth-card label {
+    gap: 5px;
+    margin-bottom: 12px;
+}
+.auth-card input {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 14px;
+}
+.auth-card button:not(.text-button) {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 14px;
+}
+.auth-card .full {
+    margin-top: 8px;
+}
+.auth-card .center {
+    margin: 12px 0 0;
+}
+.auth-card .text-button {
+    line-height: 1.4;
 }
 .auth-card .primary {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    margin-top: 24px;
+    margin-top: 8px;
 }
 .center {
     text-align: center;
@@ -831,9 +865,8 @@ footer.actions {
 }
 @media (max-width: 1000px) {
     .auth-layout {
-        gap: 40px;
-        padding-top: 45px;
-        grid-template-columns: 1fr 400px;
+        gap: 32px;
+        grid-template-columns: 1fr 360px;
     }
     .intro h1 {
         font-size: 40px;
@@ -858,14 +891,15 @@ footer.actions {
     }
     .auth-layout {
         display: block;
-        padding: 30px 20px;
+        padding: 16px;
         max-width: 490px;
     }
     .intro {
         padding-top: 0;
     }
     .intro h1 {
-        font-size: 33px;
+        font-size: 28px;
+        margin-bottom: 8px;
     }
     .intro .network-art,
     .intro > small {
@@ -873,6 +907,7 @@ footer.actions {
     }
     .intro p {
         font-size: 14px;
+        margin-bottom: 16px;
     }
     .workspace {
         display: block;

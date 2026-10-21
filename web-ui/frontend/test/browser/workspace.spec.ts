@@ -2,6 +2,29 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('login form fits short screens with password, passkey and registration controls', async ({
+    page
+}) => {
+    for (const viewport of [
+        { width: 1130, height: 540 },
+        { width: 1366, height: 768 },
+        { width: 390, height: 740 }
+    ]) {
+        await page.setViewportSize(viewport);
+        for (const language of ['en', 'uk']) {
+            await openStory(page, 'authentication-authscreen--login', 'dark', language);
+            const card = page.locator('.auth-card');
+            const bounds = (await card.boundingBox())!;
+            expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+            await expect(card.locator('input')).toHaveCount(2);
+            await expect(card.locator('button')).toHaveCount(3);
+            expect(
+                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
+            ).toBe(true);
+        }
+    }
+});
+
 test('polling and directory use the compact full-width page with icon refresh', async ({
     page
 }) => {

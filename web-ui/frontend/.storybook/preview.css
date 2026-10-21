@@ -3,6 +3,10 @@
     max-width: 1120px;
     margin: auto;
 }
+.storybook-stage:has(.auth-preview) {
+    padding: 0;
+    max-width: none;
+}
 .storybook-sidebar {
     width: 248px;
     min-height: 650px;
