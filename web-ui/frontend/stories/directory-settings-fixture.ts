@@ -6,7 +6,6 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
             id: 'nodelist',
             title: 'Node directory',
             source: 'conf.d/30-nodelist.conf',
-            translations: {},
             sections: [
                 {
                     id: 'crc',

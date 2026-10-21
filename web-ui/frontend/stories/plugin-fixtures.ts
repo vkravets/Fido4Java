@@ -14,7 +14,6 @@ export function fileEchoExtensions(): ExtensionSettings[] {
             id: 'fileecho',
             title: 'File echoes',
             source: 'database',
-            translations: {},
             sections: [
                 {
                     id: 'areas',

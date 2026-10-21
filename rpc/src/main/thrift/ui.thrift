@@ -27,9 +27,7 @@ struct ExtensionSettings {
     1: required string id,
     2: required string title,
     3: required string source,
-    4: required list<ExtensionSection> sections,
-    // Deprecated: empty for compatibility with older clients. UI owns all localization.
-    5: required map<string,map<string,string>> translations
+    4: required list<ExtensionSection> sections
 }
 
 struct MailItem {

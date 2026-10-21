@@ -32,7 +32,6 @@ class NodeExtensionsTest {
             }
         };
         assertEquals("example", NodeExtensions.describe(List.of(provider)).get(0).getId());
-        assertEquals(Map.of(), NodeExtensions.describe(List.of(provider)).get(0).getTranslations());
         assertThrows(IllegalArgumentException.class,
                      () -> NodeExtensions.save(List.of(provider), "absent", "settings", Map.of()));
         assertThrows(IllegalArgumentException.class,

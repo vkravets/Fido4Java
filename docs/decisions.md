@@ -371,8 +371,8 @@ creation requires a permitted sender, valid TIC authentication and a validated
 payload, and grants rights only to that sender. Existing rights are not expanded.
 
 Plugin settings use the transport-independent `SettingsExtension` contract.
-Providers own fields, translations, validation and writes; the shared admin-only
-RPC and Vue renderer have no dependency on fileecho implementation classes.
+Providers own fields, validation and writes; the UI owns translations. The shared
+admin-only RPC and Vue renderer have no dependency on fileecho implementation classes.
 No executable plugin JavaScript is loaded by the browser. See
 [file echoes](fileecho.md) and [plugin settings](plugin-settings.md).
 
@@ -760,6 +760,6 @@ See [storage boundaries and extension guide](storage.md).
 Settings providers expose neutral metadata and machine values without language
 selection or translation dictionaries. The web UI owns plugin label and enum
 localization. User-defined choices (area names, source IDs and addresses) remain
-verbatim. Unknown extensions fall back to their supplied metadata. The deprecated
-RPC translations field remains empty for compatibility with older clients; the
-current UI ignores it, including responses from older servers.
+verbatim. Unknown extensions fall back to their supplied metadata. The RPC contract
+has no translations field. The API is still establishing its initial release
+baseline, so no compatibility field is retained for unreleased clients.
