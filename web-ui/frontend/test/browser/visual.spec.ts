@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'navigation-collapsed-waiting', story: 'navigation-sidebar--collapsed-awaiting-send' },
     { name: 'auth-login', story: 'authentication-authscreen--login' },
     { name: 'auth-login-short', story: 'authentication-authscreen--login', short: true },
     { name: 'auth-password', story: 'authentication-authscreen--password-only' },

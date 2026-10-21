@@ -27,6 +27,9 @@ export const AwaitingSend: Story = { args: { pendingCount: 12, page: 'netmail' }
 export const PreparingMail: Story = { args: { pendingCount: 12, busy: true, page: 'netmail' } };
 
 export const Collapsed: Story = { args: { collapsed: true } };
+export const CollapsedAwaitingSend: Story = {
+    args: { collapsed: true, pendingCount: 12, page: 'netmail' }
+};
 export const CollapsedPoint: Story = { args: { collapsed: true, profile: profile('POINT') } };
 export const Station: Story = { args: { page: 'node' } };
 export const CollapsedStation: Story = { args: { page: 'node', collapsed: true } };

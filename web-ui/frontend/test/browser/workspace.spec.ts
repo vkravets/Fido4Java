@@ -2,6 +2,27 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('send queue icon has the same box and centering in both desktop menu states', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const dimensions = [];
+    for (const story of [
+        'navigation-sidebar--awaiting-send',
+        'navigation-sidebar--collapsed-awaiting-send'
+    ]) {
+        await openStory(page, story);
+        const button = page.getByRole('button', { name: 'Send queued mail', exact: true });
+        await expect(button).toBeEnabled();
+        const box = (await button.boundingBox())!;
+        const icon = (await button.locator('.app-icon').boundingBox())!;
+        expect(Math.abs(icon.x + icon.width / 2 - box.x - box.width / 2)).toBeLessThanOrEqual(1);
+        expect(Math.abs(icon.y + icon.height / 2 - box.y - box.height / 2)).toBeLessThanOrEqual(1);
+        dimensions.push({ width: box.width, height: box.height, icon: icon.width });
+    }
+    expect(dimensions[0]).toEqual(dimensions[1]);
+});
+
 test('login form fits short screens with password, passkey and registration controls', async ({
     page
 }) => {

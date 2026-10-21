@@ -11,6 +11,8 @@ defineEmits<{ send: [] }>();
     >
         <p role="status">{{ t('Awaiting send: {count}', { count }) }}</p>
         <button
+            class="queue-send-button"
+            :aria-label="t('Send queued mail')"
             :disabled="busy || count === 0"
             :title="t('Send queued mail')"
             @click="$emit('send')"

@@ -788,8 +788,32 @@ summary:has(> .app-icon) {
     }
     .sidebar nav .mail-queue-control button {
         font-size: 0;
-        flex: 0 0 28px;
-        width: 28px;
-        height: 28px;
+    }
+    .sidebar nav .queue-send-button,
+    .sidebar nav .mail-queue-control .queue-send-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 36px;
+        min-height: 36px;
+        margin: 0 0 4px;
+        padding: 7px 5px;
+        gap: 0;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--surface-raised);
+        color: var(--text);
+    }
+    .sidebar nav .queue-send-button small,
+    .sidebar.collapsed nav .queue-send-button small {
+        position: absolute;
+        bottom: 1px;
+        right: 4px;
+        margin: 0;
+        font-size: 9px;
+        line-height: 10px;
     }
 }

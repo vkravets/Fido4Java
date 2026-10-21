@@ -58,7 +58,7 @@ const emit = defineEmits<{
             </button>
             <button
                 v-if="collapsed"
-                class="secondary"
+                class="secondary queue-send-button"
                 :disabled="busy || !pendingCount"
                 :aria-label="t('Send queued mail')"
                 :title="t('Send queued mail')"
