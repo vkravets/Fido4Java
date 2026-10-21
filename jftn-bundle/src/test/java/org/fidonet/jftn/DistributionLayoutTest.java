@@ -38,14 +38,24 @@ class DistributionLayoutTest {
                 var groovy = Files.list(home.resolve("lib/groovy"))) {
             List<String> names = plugins.map(path -> path.getFileName().toString())
                                         .collect(Collectors.toList());
-            assertEquals(11, names.size());
-            assertTrue(names.stream().anyMatch(name -> name.startsWith("rpc-node-")));
-            assertTrue(names.stream().anyMatch(name -> name.startsWith("web-ui-")));
-            for (String adapter : List.of("storage-h2-",
-                                          "directory-storage-h2-",
-                                          "account-storage-h2-")) {
-                assertTrue(names.stream().anyMatch(name -> name.startsWith(adapter)));
-            }
+            List<String> expected = List.of("account-storage-h2-",
+                                            "binkp-netty-",
+                                            "directory-storage-h2-",
+                                            "fido-database-",
+                                            "fileecho-",
+                                            "fileecho-storage-h2-",
+                                            "jam-bridge-",
+                                            "nodelist-",
+                                            "rpc-node-",
+                                            "scheduler-",
+                                            "storage-h2-",
+                                            "web-ui-");
+            String suffix = System.getProperty("distribution.version") + ".jar";
+            assertEquals(expected.stream()
+                                 .map(plugin -> plugin + suffix)
+                                 .sorted()
+                                 .collect(Collectors.toList()),
+                         names.stream().sorted().collect(Collectors.toList()));
             assertTrue(groovy.count() > 1);
         }
         try (var files = Files.list(home.resolve("lib"))) {

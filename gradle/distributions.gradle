@@ -102,5 +102,6 @@ tasks.named('test', Test) {
     dependsOn zipWithoutJre
     inputs.file(zipWithoutJre.flatMap { it.archiveFile })
     systemProperty 'distribution.zip', zipWithoutJre.get().archiveFile.get().asFile.absolutePath
+    systemProperty 'distribution.version', project.version.toString()
     systemProperty 'distribution.probe', sourceSets.test.output.classesDirs.asPath
 }
