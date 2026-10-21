@@ -361,6 +361,39 @@ the directory service is active, independently of external scripts. The runner
 uses a generic provider interface and imports no directory class. Existing import
 jobs and retained catalogs are not automatically rerun or removed.
 
+## Editing list sources through plugin settings
+
+Administrators can add or edit sources under **Station → Plugins → Node directory
+→ List sources**. The same operation is available over TCP or HTTP RPC as
+`UiService.saveExtension(session, "nodelist", "sources", values)`:
+
+```json
+{
+  "id": "points",
+  "format": "BOSS",
+  "path": "./lists/points.lst",
+  "zone": "0",
+  "net": "0",
+  "charset": "CP866",
+  "requireChecksum": "true"
+}
+```
+
+All seven fields are required strings. Formats and addressing/encoding validation
+are the same as `DirectorySource`. Saving atomically replaces that source's
+declaration in `conf.d/30-nodelist.conf`, preserves other sources and CRC rules,
+and updates the active registry, including existing local-refresh ownership.
+It does not import files, move retained bases, delete catalog records, subscribe
+new local-refresh sources, enable delivery feeds or create trusted links.
+
+IDs and normalized base paths must remain unique. Editing an existing source
+keeps its ID; another ID adds another source. Removing sources and changing the
+base path of a delivery-managed source require a controlled restart. Sources
+declared in the main file or another fragment are read-only here. External edits
+to the owned fragment also make it read-only until restart. Subsequent general
+configuration reloads accept options already applied by this provider, while
+unapplied manual source changes still require restart.
+
 ## Scoped header CRC exceptions
 
 Automatic header CRC checking remains the default. For a known publisher with

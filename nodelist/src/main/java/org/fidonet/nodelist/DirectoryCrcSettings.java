@@ -13,16 +13,15 @@ import java.util.Set;
 /** Declarative settings exposed only by the active directory service. */
 final class DirectoryCrcSettings implements SettingsExtension {
     private final DirectoryService service;
-    private final DirectoryCrcConfiguration file;
+    private final DirectoryConfiguration file;
     private List<String> compatibility;
     private List<String> ignored;
 
-    DirectoryCrcSettings(DirectoryService service, IConfig config, DirectoryCrcConfiguration file) {
+    DirectoryCrcSettings(DirectoryService service, IConfig config, DirectoryConfiguration file) {
         this.service = service;
         this.file = file;
-        compatibility = DirectoryCrcConfiguration.values(config,
-                                                         DirectoryCrcConfiguration.COMPATIBILITY);
-        ignored = DirectoryCrcConfiguration.values(config, DirectoryCrcConfiguration.IGNORE);
+        compatibility = DirectoryConfiguration.values(config, DirectoryConfiguration.COMPATIBILITY);
+        ignored = DirectoryConfiguration.values(config, DirectoryConfiguration.IGNORE);
     }
 
     @Override
@@ -84,15 +83,15 @@ final class DirectoryCrcSettings implements SettingsExtension {
         List<String> remaining = new ArrayList<>(ignored);
         remaining.removeIf(rule -> samePair(rule, id, mask));
         StringBuilder declarations = new StringBuilder();
-        next.forEach(rule -> declarations.append(DirectoryCrcConfiguration.COMPATIBILITY)
+        next.forEach(rule -> declarations.append(DirectoryConfiguration.COMPATIBILITY)
                                          .append('=')
                                          .append(rule)
                                          .append('\n'));
-        remaining.forEach(rule -> declarations.append(DirectoryCrcConfiguration.IGNORE)
+        remaining.forEach(rule -> declarations.append(DirectoryConfiguration.IGNORE)
                                               .append('=')
                                               .append(rule)
                                               .append('\n'));
-        DirectoryChecksumExceptions policy = new DirectoryChecksumExceptions(DirectoryCrcConfiguration.parse(declarations.toString()),
+        DirectoryChecksumExceptions policy = new DirectoryChecksumExceptions(DirectoryConfiguration.parse(declarations.toString()),
                                                                              Set.copyOf(service.sourceIds()));
         file.save(next, remaining);
         service.setChecksumPolicy(policy);
@@ -103,6 +102,11 @@ final class DirectoryCrcSettings implements SettingsExtension {
     private static boolean samePair(String rule, String id, String mask) {
         String[] fields = rule.split("\\|", -1);
         return fields[0].trim().equals(id) && fields[1].trim().equalsIgnoreCase(mask);
+    }
+
+    @Override
+    public synchronized Map<String, List<String>> appliedConfiguration() {
+        return Map.of("directorycrccompatibility", compatibility, "directoryignorecrc", ignored);
     }
 
 }

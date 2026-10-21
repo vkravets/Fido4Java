@@ -3,6 +3,7 @@ package org.fidonet.jftn;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.MailRepository;
+import org.fidonet.jftn.plugins.ui.SettingsExtension;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.auth.ProfileHandler;
 import org.fidonet.jftn.tosser.Tosser;
@@ -134,6 +135,7 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
         for (String key : keys) {
             if (!Objects.equals(before.get(key), after.get(key)) && !LIVE.contains(key)
                     && !(key.equals("rpcpassword") && !after.containsKey(key))
+                    && !alreadyAppliedByPlugin(key, after.getOrDefault(key, List.of()))
                     && !sameEffectiveMetadata(candidate, key)) {
                 throw new IllegalArgumentException("Configuration option requires a controlled restart: "
                         + key);
@@ -175,6 +177,21 @@ public final class LiveConfiguration implements NodeConfigurationService.Applica
         if (!List.of("0", "1").contains(candidate.getValue("Deletetossed", "1"))) {
             throw new IllegalArgumentException("Deletetossed must be 0 or 1");
         }
+    }
+
+    private boolean alreadyAppliedByPlugin(String key, List<String> values) {
+        boolean claimed = false;
+        for (SettingsExtension extension : mail.getSettingsExtensions()) {
+            Map<String, List<String>> applied = extension.appliedConfiguration();
+            if (!applied.containsKey(key)) {
+                continue;
+            }
+            if (!Objects.equals(applied.get(key), values)) {
+                return false;
+            }
+            claimed = true;
+        }
+        return claimed;
     }
 
     private boolean sameEffectiveMetadata(JFtnConfig candidate, String key) {

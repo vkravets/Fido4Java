@@ -54,6 +54,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 class UiRpcIntegrationTest {
     @TempDir
@@ -94,6 +95,73 @@ class UiRpcIntegrationTest {
 
     private void connect() throws Exception {
         connect("ui-secret");
+    }
+
+    @Test
+    void editsDirectorySourcesAndCrcAcrossTransportsWithoutBreakingConfigurationReload()
+            throws Exception {
+        close();
+        Path fragment = root.resolve("conf.d/30-nodelist.conf");
+        Files.createDirectories(fragment.getParent());
+        Files.writeString(fragment,
+                          "NodeDirectoryEnabled=true\nDirectoryRefreshEnabled=false\n"
+                          + "NodeDirectoryPath="
+                          + root.resolve("catalog")
+                          + "\n"
+                          + "DirectorySource=points|BOSS|"
+                          + root.resolve("points.lst")
+                          + "|0|0|CP866|true\n");
+        open("database");
+        Map<String, String> command = Map.of("id",
+                                             "points",
+                                             "format",
+                                             "BOSS",
+                                             "path",
+                                             root.resolve("next-points.lst").toString(),
+                                             "zone",
+                                             "0",
+                                             "net",
+                                             "0",
+                                             "charset",
+                                             "KOI8-R",
+                                             "requireChecksum",
+                                             "true");
+        ui.saveExtension(token,
+                         "nodelist",
+                         "crc",
+                         Map.of("source", "points", "mask", "POINTS.*", "mode", "XMODEM-CRC"));
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            browser.saveExtension(token, "nodelist", "sources", command);
+            var directory = browser.extensions(token)
+                                   .stream()
+                                   .filter(extension -> extension.getId().equals("nodelist"))
+                                   .findFirst()
+                                   .orElseThrow();
+            var sources = directory.getSections()
+                                   .stream()
+                                   .filter(section -> section.getId().equals("sources"))
+                                   .findFirst()
+                                   .orElseThrow();
+            assertEquals(List.of(command), sources.getRows());
+        }
+        assertTrue(Files.readString(fragment).contains("KOI8-R|true"));
+        assertTrue(settingsClient().reload(token));
+        assertEquals("UNAUTHORIZED",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveExtension("invalid", "nodelist", "sources", command))
+                                                                                                    .getCode());
+        ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                            "profile"));
+        String point = approvedPoint(profiles, "directory-point", "1:500/100.1");
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveExtension(point, "nodelist", "sources", command))
+                                                                                                .getCode());
+        Files.writeString(fragment, Files.readString(fragment).replace("KOI8-R", "UTF-8"));
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class, () -> settingsClient().reload(token)).getCode());
     }
 
     @Test

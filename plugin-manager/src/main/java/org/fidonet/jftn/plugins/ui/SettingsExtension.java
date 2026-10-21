@@ -16,6 +16,11 @@ public interface SettingsExtension {
 
     void apply(String section, Map<String, String> values) throws IOException;
 
+    /** Lowercase option names whose values this provider has already applied to its runtime. */
+    default Map<String, List<String>> appliedConfiguration() {
+        return Map.of();
+    }
+
     final class Field {
         public final String name;
         public final String label;

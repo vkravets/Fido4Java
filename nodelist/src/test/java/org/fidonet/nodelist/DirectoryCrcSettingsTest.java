@@ -77,7 +77,7 @@ class DirectoryCrcSettingsTest {
             assertTrue(saved.contains("# Operator comment\r\nNodeDirectoryEnabled=true\r\n"));
             assertTrue(saved.contains("DirectoryCRCCompatibility=points|PNT46REG.*|ARC-CRC\r\n"));
             assertFalse(saved.contains("DirectoryIgnoreCRC="));
-            assertEquals(1, settings.describe().sections.size());
+            assertEquals(2, settings.describe().sections.size());
             assertEquals(originalMain, Files.readString(main));
             assertEquals(1,
                          service.importFile("points", incoming, "PNT46REG.289", false)

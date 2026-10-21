@@ -28,6 +28,13 @@ fileecho areas, permissions, creation policies and robot credentials takes
 effect for subsequent operations without restart. Enabling/disabling or removing
 the plugin itself requires restart; no hot class unloading is implemented.
 
+The directory provider also edits list sources and CRC rules in its owned
+fragment; see [source settings](nodelist.md#editing-list-sources-through-plugin-settings).
+Providers can report lowercase keys and already applied option values through
+`appliedConfiguration()`. General configuration reload accepts those exact
+values without reapplying plugin changes. Conflicting claims or different manual
+values are rejected; this metadata is internal and is not a translated UI payload.
+
 To add another settings provider, implement the interface and register it from
 the service owning that provider. Add its UI labels to
 `web-ui/frontend/src/locales/plugin-settings.ts`; keep user-defined choices

@@ -32,10 +32,10 @@ public final class DirectoryService
             SettingsExtensionProvider {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryService.class);
     private final DirectoryCatalog catalog;
-    private final List<DirectorySource> sources;
+    private List<DirectorySource> sources;
     private final long interval;
     private final boolean refreshEnabled;
-    private final Map<String, DirectorySource> registry;
+    private volatile Map<String, DirectorySource> registry;
     private final List<DirectorySource> localSources;
     private final Set<String> deliverySources = new HashSet<>();
     private DirectoryChecksumExceptions checksumExceptions;
@@ -49,13 +49,13 @@ public final class DirectoryService
                              Set<String> localIds,
                              DirectoryChecksumExceptions checksumExceptions,
                              IConfig config,
-                             DirectoryCrcConfiguration crcFile) {
+                             DirectoryConfiguration crcFile) {
         this.catalog = catalog;
         this.sources = List.copyOf(sources);
         interval = TimeUnit.SECONDS.toNanos(seconds);
         this.refreshEnabled = refreshEnabled;
         this.checksumExceptions = checksumExceptions;
-        settings = new DirectoryCrcSettings(this, config, crcFile);
+        settings = new DirectorySettings(this, config, crcFile);
         Map<String, DirectorySource> definitions = new LinkedHashMap<>();
         sources.forEach(source -> definitions.put(source.getId(), source));
         registry = Map.copyOf(definitions);
@@ -117,7 +117,7 @@ public final class DirectoryService
         }
         DirectoryChecksumExceptions checksumExceptions = new DirectoryChecksumExceptions(config,
                                                                                          names);
-        DirectoryCrcConfiguration crcFile = new DirectoryCrcConfiguration(config);
+        DirectoryConfiguration crcFile = new DirectoryConfiguration(config);
         return new DirectoryService(new DirectoryCatalog(StorageConfiguration.open(config,
                                                                                    "directory",
                                                                                    Path.of(config.getValue("NodeDirectoryPath",
@@ -146,6 +146,39 @@ public final class DirectoryService
 
     List<String> sourceIds() {
         return registry.keySet().stream().sorted().collect(Collectors.toList());
+    }
+
+    synchronized void validateSourceChange(List<DirectorySource> next) {
+        Set<String> ids = new HashSet<>();
+        Set<Path> paths = new HashSet<>();
+        for (DirectorySource source : next) {
+            if (!ids.add(source.getId()) || !paths.add(source.getPath())) {
+                throw new IllegalArgumentException("Directory source IDs and base paths must be unique");
+            }
+            DirectorySource previous = registry.get(source.getId());
+            if (deliverySources.contains(source.getId())
+                    && !previous.getPath().equals(source.getPath())) {
+                throw new IllegalArgumentException("Changing a delivery-managed base path requires a restart");
+            }
+        }
+        if (!ids.containsAll(registry.keySet())) {
+            throw new IllegalArgumentException("Removing directory sources requires a restart");
+        }
+    }
+
+    synchronized void replaceSources(List<DirectorySource> next) {
+        Set<String> localIds = localSources.stream()
+                                           .map(DirectorySource::getId)
+                                           .collect(Collectors.toSet());
+        Map<String, DirectorySource> definitions = new LinkedHashMap<>();
+        next.forEach(source -> definitions.put(source.getId(), source));
+        sources = List.copyOf(next);
+        registry = Map.copyOf(definitions);
+        localSources.clear();
+        next.stream()
+            .filter(source -> localIds.contains(source.getId()))
+            .forEach(localSources::add);
+        lastAttempt = 0;
     }
 
     synchronized void setChecksumPolicy(DirectoryChecksumExceptions policy) {
