@@ -232,6 +232,78 @@ Periodic local imports additionally need `DirectoryRefreshEnabled=true` and
 one or more `DirectoryLocalSource=id` entries. CLI `importDirectory` explicitly
 imports all declared sources regardless of automatic refresh selection.
 
+## New Point Keeper R46 checksum investigation (2026-10-21)
+
+The apparent bad CRC in the inspected `PNT46REG.*` publications is explained by
+a different checksum algorithm and different line-ending input. All **75** local
+received publications and the previously downloaded public 2024 sample match
+**CRC-16/ARC over the original LF body bytes**, excluding the first header line.
+They do not match JFtn's canonical-CRLF CRC-16/XMODEM calculation.
+
+| Calculation (decimal) | PNT46REG.289, 2026-10-16 | PNT46REG.320, 2024-11-15 |
+| --- | ---: | ---: |
+| Header value | 45257 | 15865 |
+| ARC, original LF body | **45257** | **15865** |
+| ARC, canonical CRLF body | 30642 | 12928 |
+| XMODEM, original LF body | 46346 | 42971 |
+| XMODEM, canonical CRLF body | 40818 | 54054 |
+
+Both headers identify `New Point Keeper v.0.0.0.7`. ARC uses polynomial `0x8005`
+(reflected implementation `0xA001`), initial value zero, reflected input/output,
+and no final XOR. XMODEM uses polynomial `0x1021`, initial value zero,
+unreflected input/output and no final XOR. For ASCII `123456789`, their check
+values are `0xBB3D` and `0x31C3`, respectively. See the
+[CRC catalogue](https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-arc)
+and [Husky's CRC implementation](https://github.com/huskyproject/nltools/blob/b1c1c0df031ad4957c1f157ff8b1aef794918eed/src/crc16.c).
+Changing only LF to CRLF cannot fix this discrepancy: the polynomial differs too.
+
+Evidence and limits:
+
+- The 75 local publications match their received archives byte-for-byte and
+  have matching TIC CRC32/size fields. The mismatch is therefore explained by
+  the observed publisher checksum convention, rather than a change during local
+  fileecho processing.
+- A separate bitwise C implementation, compiled and run in a network-disabled
+  Linux container with `podman run` and read-only inputs, matched **76/76** headers
+  and passed the `123456789` check vector. The Python diagnostic independently
+  reproduced all 76 matches; canonical XMODEM matched **0/76**.
+- Earlier unmodified historical Husky `nlcrc` accepted a valid control and the
+  normal nodelist, but rejected these pointlists. For `.289`, it reported 46346
+  on the received LF file and 40818 on a CRLF copy, agreeing with the table.
+- The public sample came from
+  [this mirror](https://netbsd.paket.ua/pub/FIDO/R46_PNT/PNT46REG.320).
+  Its earlier download bypassed an expired TLS certificate; it corroborates the
+  algorithm on those saved bytes, not an authenticated original from the publisher.
+- The generator's source was not located. This identifies the behavior of the
+  inspected output, not a specific faulty source line or every release of NPK.
+
+Input fingerprints:
+
+```text
+PNT46REG.289 (2469 bytes)
+SHA256 69ea927b0f07750c773f313ed4cf29e73c9bef734f6b368abdf569aa9ce9e946
+PNT46REG.320, public 2024 sample (2470 bytes)
+SHA256 b03dcf903fba33167d3b5df78624d316e2652e5c7861719136c118be93844bda
+```
+
+Reproduce the four calculations with Python's standard library:
+
+```shell
+python tools/directory_crc.py "path/to/PNT46REG.*"
+```
+
+The diagnostic prints JSON with SHA-256, line-ending counts, header value,
+calculated CRCs and matching variants. It never rewrites files. Exit zero means
+the report was generated, **not** that a publication is authorized or importable.
+It does not validate directory structure or replace the runtime parser.
+
+Runtime acceptance remains unchanged: strict XMODEM validation is the default,
+and the existing explicit filename-scoped ignore rule is still an exception.
+A possible follow-up is an explicit source/filename-scoped ARC verification mode
+for full publications, replacing broad checksum skipping with actual verification.
+Such a mode is **not implemented**; it must not be selected merely by trusting a
+`Created by` comment or enabled globally.
+
 ## Scoped header CRC exceptions
 
 Automatic header CRC checking remains the default. For a known publisher with
