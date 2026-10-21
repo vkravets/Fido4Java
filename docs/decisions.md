@@ -40,6 +40,13 @@ and a subsequent comparison without updates, and cover both themes/languages and
 desktop/mobile. Functional tests do not replace VRT. If the environment prevents
 verification, report that gap explicitly instead of treating it as completed.
 
+Station and personal settings use one compact workspace heading for the selected
+section, with contextual actions at the upper right. Embedded panels share group
+heading components and do not repeat page titles or management eyebrows. The
+configuration reload action remains distinct from refreshing a list and keeps its
+existing RPC semantics. Hidden panels must not contribute toolbar actions; tab
+changes retain the existing unsaved-edit guards and form state.
+
 Mail appearance uses an isolated live preview of the real reader/composer;
 unsaved palette changes do not mutate account preferences or outgoing mail.
 The personal `mail-themes` document also stores the editor's default outgoing

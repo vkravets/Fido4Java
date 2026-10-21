@@ -1,0 +1,317 @@
+/* Settings pages share one compact workspace; mail and setup retain their own layouts. */
+.content:has(> .settings-page) {
+    padding: 0;
+}
+.settings-page {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    min-height: calc(100dvh - var(--app-header-height));
+    min-width: 0;
+    background: var(--bg);
+}
+.settings-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 56px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    box-sizing: border-box;
+}
+.settings-page > .settings-page-header {
+    grid-column: 2;
+    position: sticky;
+    top: 0;
+    z-index: 12;
+}
+.settings-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    line-height: 1.3;
+}
+.settings-breadcrumb h1,
+.settings-context,
+.settings-divider {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+}
+.settings-context,
+.settings-divider {
+    color: var(--muted);
+    font-weight: 400;
+}
+.settings-header-actions,
+.settings-action-outlet,
+.settings-local-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.settings-navigation {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    border-right: 1px solid var(--line);
+    background: var(--surface);
+    min-width: 0;
+}
+.settings-navigation .tabs {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 6px 0;
+    border: 0;
+    overflow-x: visible;
+}
+.settings-navigation .tabs button {
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 16px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: left;
+    white-space: normal;
+    box-shadow: none;
+}
+.settings-navigation .tabs button.selected {
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: inset 3px 0 var(--accent);
+}
+.settings-navigation .tabs button:not(:disabled):hover {
+    background: var(--accent-soft);
+}
+.settings-body {
+    grid-column: 2;
+    min-width: 0;
+    padding: 20px;
+}
+.settings-section-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.settings-section-header:has(> div:empty):not(:has(.settings-local-actions)) {
+    margin: 0;
+}
+.settings-section-header h1,
+.settings-section-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.2px;
+}
+.settings-section-header p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.settings-page .card {
+    border-radius: 5px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: none;
+}
+.settings-page .card > h2:first-child,
+.settings-page .card > .section-title:first-child {
+    border: 0;
+    padding-left: 0;
+}
+.settings-page h2 {
+    font-size: 18px;
+    letter-spacing: -0.2px;
+    margin-bottom: 12px;
+}
+.settings-page h3 {
+    font-size: 15px;
+    margin: 16px 0 12px;
+}
+.settings-page p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.settings-page label {
+    font-size: 13px;
+    margin-bottom: 12px;
+    gap: 6px;
+}
+.settings-page input:not([type='checkbox']):not([type='radio']):not([type='color']),
+.settings-page select,
+.settings-page textarea {
+    padding: 7px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+}
+.settings-page input:not([type='checkbox']):not([type='radio']):not([type='color']),
+.settings-page select {
+    min-height: 34px;
+}
+.settings-page button,
+.settings-page summary {
+    font-size: 13px;
+}
+.settings-page button:not(.text-button):not(.theme-preview) {
+    min-height: 32px;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+.settings-page .settings-navigation .tabs button {
+    padding: 10px 16px;
+    border-radius: 0;
+}
+.settings-page .settings-icon-action,
+.settings-page-header .settings-icon-action,
+.settings-local-actions .settings-icon-action {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 4px;
+}
+.settings-icon-action .app-icon {
+    width: 18px;
+    height: 18px;
+}
+.settings-page .form-grid {
+    gap: 0 16px;
+}
+.settings-page footer.actions {
+    margin-top: 16px;
+    padding-top: 12px;
+    gap: 8px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.settings-page .rows > li {
+    padding-block: 10px;
+}
+.settings-page .quarantine-table {
+    overflow-x: auto;
+    margin-block: 12px;
+}
+.settings-page table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.settings-page th,
+.settings-page td {
+    padding: 9px 10px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+}
+.settings-page th {
+    background: var(--surface-raised, var(--surface));
+    color: var(--muted);
+    font-weight: 500;
+}
+.settings-page td .actions {
+    gap: 6px;
+}
+.settings-page .plugin-table table {
+    min-width: 760px;
+}
+.settings-page .plugin-table button {
+    white-space: nowrap;
+}
+.settings-page dl {
+    gap: 10px 20px;
+    padding: 0;
+    font-size: 13px;
+}
+.settings-page .hint {
+    margin-top: 16px;
+}
+.settings-page .tabs:not(.station-tabs):not(.personal-tabs) {
+    margin-bottom: 16px;
+    gap: 16px;
+}
+.settings-page .refresh {
+    margin-bottom: 12px;
+}
+.workspace .settings-page > .settings-page-header,
+.workspace .settings-navigation .tabs {
+    top: var(--app-header-height);
+}
+@media (max-width: 900px) and (min-width: 701px) {
+    .settings-page {
+        grid-template-columns: 190px minmax(0, 1fr);
+    }
+    .settings-body {
+        padding: 16px;
+    }
+}
+@media (max-width: 700px) {
+    .settings-page {
+        display: flex;
+        flex-direction: column;
+    }
+    .settings-page-header {
+        padding: 10px 16px;
+        gap: 10px;
+    }
+    .settings-breadcrumb h1,
+    .settings-context,
+    .settings-divider {
+        font-size: 17px;
+    }
+    .settings-breadcrumb {
+        gap: 6px;
+    }
+    .settings-navigation {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .settings-navigation .tabs {
+        position: static;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 0;
+    }
+    .settings-page .settings-navigation .tabs button {
+        width: auto;
+        flex-shrink: 0;
+        padding: 10px 12px;
+        white-space: nowrap;
+        border-bottom: 0;
+    }
+    .settings-body {
+        padding: 16px;
+    }
+    .settings-page .card {
+        padding: 16px;
+    }
+    .settings-section-header {
+        flex-wrap: wrap;
+    }
+}
+@media (max-width: 640px) {
+    .settings-page .plugin-table table {
+        min-width: 0;
+    }
+}

@@ -33,6 +33,8 @@ const paths = {
     expand: 'M4 6l6 6-6 6 M10 6l6 6-6 6',
     search: 'M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0 M15 15l6 6',
     refresh: 'M20 7A9 9 0 1 0 21 15 M20 2v6h-6',
+    reloadConfig: 'M4 3h10l4 4v4 M14 3v5h4 M4 3v18h6 M21 16a5 5 0 1 0-1 5 M22 12v5h-5',
+    add: 'M12 4v16 M4 12h16',
     edit: 'M4 16l12-12 4 4L8 20H4z M14 6l4 4',
     send: 'M3 3l19 9-19 9 4-9z M7 12h15',
     trash: 'M3 6h18 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7',
