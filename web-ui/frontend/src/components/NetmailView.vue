@@ -87,6 +87,7 @@ const index = computed(() =>
                     <button
                         class="primary"
                         :disabled="state.busy.value || !state.profile.value?.allowedAkas.length"
+                        v-shortcut="'mail.new'"
                         @click="reader.edit()"
                     >
                         <AppIcon name="edit" />{{ t('New netmail') }}
@@ -96,6 +97,7 @@ const index = computed(() =>
                         :aria-label="t('Refresh')"
                         :title="t('Refresh')"
                         :disabled="state.busy.value"
+                        v-shortcut="'page.refresh'"
                         @click="state.run(() => reader.load())"
                     >
                         <AppIcon name="refresh" /><span class="desktop-hidden">{{

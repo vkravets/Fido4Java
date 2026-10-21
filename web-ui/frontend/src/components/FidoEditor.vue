@@ -97,31 +97,7 @@ onMounted(() => {
                         ?.content || ''
                 ),
                 history(),
-                keymap.of([
-                    {
-                        key: 'Mod-b',
-                        run: () => {
-                            wrap('*');
-                            return true;
-                        }
-                    },
-                    {
-                        key: 'Mod-i',
-                        run: () => {
-                            wrap('/');
-                            return true;
-                        }
-                    },
-                    {
-                        key: 'Mod-u',
-                        run: () => {
-                            wrap('_');
-                            return true;
-                        }
-                    },
-                    ...defaultKeymap,
-                    ...historyKeymap
-                ]),
+                keymap.of([...defaultKeymap, ...historyKeymap]),
                 EditorView.lineWrapping,
                 accessibility.of(attributes()),
                 decorations.of(source.value ? [] : highlighted),
@@ -245,7 +221,8 @@ defineExpose({
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Bold')"
-                :title="`${t('Bold')} (Ctrl/⌘+B)`"
+                :title="t('Bold')"
+                v-shortcut="'editor.bold'"
                 @click="wrap('*')"
             >
                 <AppIcon name="bold" />
@@ -254,7 +231,8 @@ defineExpose({
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Italic')"
-                :title="`${t('Italic')} (Ctrl/⌘+I)`"
+                :title="t('Italic')"
+                v-shortcut="'editor.italic'"
                 @click="wrap('/')"
             >
                 <AppIcon name="italic" />
@@ -263,7 +241,8 @@ defineExpose({
                 type="button"
                 :disabled="disabled || preview"
                 :aria-label="t('Underline')"
-                :title="`${t('Underline')} (Ctrl/⌘+U)`"
+                :title="t('Underline')"
+                v-shortcut="'editor.underline'"
                 @click="wrap('_')"
             >
                 <AppIcon name="underline" />
@@ -273,6 +252,7 @@ defineExpose({
                 :disabled="disabled || preview"
                 :aria-label="t('Reverse')"
                 :title="t('Reverse')"
+                v-shortcut="'editor.reverse'"
                 @click="wrap('#')"
             >
                 <AppIcon name="reverse" />
@@ -283,6 +263,7 @@ defineExpose({
                 class="icon-action"
                 :aria-label="t('Quote')"
                 :title="t('Quote')"
+                v-shortcut="'editor.quote'"
                 @click="quote"
             >
                 <AppIcon name="quote" />
@@ -292,7 +273,8 @@ defineExpose({
                 :disabled="disabled || preview"
                 class="icon-action"
                 :aria-label="t('Undo')"
-                :title="`${t('Undo')} (Ctrl/⌘+Z)`"
+                :title="t('Undo')"
+                v-shortcut="'editor.undo'"
                 @click="historyAction(undo)"
             >
                 <AppIcon name="undo" />
@@ -302,7 +284,8 @@ defineExpose({
                 :disabled="disabled || preview"
                 class="icon-action"
                 :aria-label="t('Redo')"
-                :title="`${t('Redo')} (Ctrl/⌘+Shift+Z)`"
+                :title="t('Redo')"
+                v-shortcut="'editor.redo'"
                 @click="historyAction(redo)"
             >
                 <AppIcon name="redo" />
@@ -321,6 +304,7 @@ defineExpose({
                 :aria-pressed="source && !preview"
                 :aria-label="t('Source text')"
                 :title="t('Source text')"
+                v-shortcut="'editor.source'"
                 @click="setSource(true)"
             >
                 <AppIcon name="source" />
@@ -331,6 +315,7 @@ defineExpose({
                 class="icon-action"
                 :aria-label="t('Preview')"
                 :title="t('Preview')"
+                v-shortcut="'editor.preview'"
                 @click="preview = !preview"
             >
                 <AppIcon name="eye" />

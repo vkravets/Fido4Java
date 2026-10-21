@@ -93,6 +93,7 @@ const nextUnread = computed(() =>
                     <button
                         class="primary"
                         :disabled="state.busy.value || !reader.authors.value.length"
+                        v-shortcut="'mail.new'"
                         @click="reader.edit()"
                     >
                         <AppIcon name="edit" />{{ t('New echomail') }}
@@ -113,6 +114,7 @@ const nextUnread = computed(() =>
                         :disabled="state.busy.value"
                         :aria-label="t('Refresh')"
                         :title="t('Refresh')"
+                        v-shortcut="'page.refresh'"
                         @click="state.run(refresh)"
                     >
                         <AppIcon name="refresh" /><span class="desktop-hidden">{{

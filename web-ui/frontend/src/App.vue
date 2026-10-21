@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { t } from './i18n.ts';
+import { useShortcuts } from './shortcuts.ts';
 import { onMounted, onBeforeUnmount, ref, watch, provide } from 'vue';
 import { api } from './api.ts';
 import { createWorkspace, workspaceKey } from './workspace.ts';
@@ -20,6 +21,7 @@ import NetmailView from './components/NetmailView.vue';
 import EchomailView from './components/EchomailView.vue';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
+const shortcuts = useShortcuts();
 const workspace = createWorkspace(api.profile);
 provide(workspaceKey, workspace);
 const mailAppearance = createMailAppearance(api.profile);
@@ -38,7 +40,8 @@ watch([state.session, () => state.profile.value?.login], async ([token, owner]) 
         await Promise.all([
             workspace.load(token),
             mailAppearance.load(token),
-            templates.load(token)
+            templates.load(token),
+            shortcuts.load(token)
         ]);
     } catch {
         if (token === state.session.value)

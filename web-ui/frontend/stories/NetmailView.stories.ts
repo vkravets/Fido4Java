@@ -85,6 +85,10 @@ export const EmptyDrafts: Story = {
 };
 
 export const Reading: Story = { args: { initialMessage: String(netmailMessage.id) } };
+export const GoldedReading: Story = {
+    ...Reading,
+    parameters: { shortcutsProfile: 'golded', rows: 3 }
+};
 export const DisplayOptions: Story = {
     ...Reading,
     play: async ({ canvasElement }) => {

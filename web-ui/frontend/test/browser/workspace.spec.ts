@@ -507,7 +507,7 @@ test('polling is a main navigation destination in expanded and collapsed menus',
         await openStory(page, 'navigation-sidebar--collapsed-polling', 'dark', language);
         const collapsed = page.getByRole('button', { name, exact: true });
         await expect(collapsed).toHaveClass(/active/);
-        await expect(collapsed).toHaveAttribute('title', name);
+        await expect(collapsed).toHaveAttribute('title', `${name} (Alt+8)`);
         await expect(collapsed.locator('svg')).toBeVisible();
         await expect(collapsed.locator('.nav-text')).toBeHidden();
     }

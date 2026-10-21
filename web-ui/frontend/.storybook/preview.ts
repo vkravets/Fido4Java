@@ -2,13 +2,17 @@ import type { Preview } from '@storybook/vue3-vite';
 import { setup } from '@storybook/vue3-vite';
 import { directorySearchKey } from '../src/directory.ts';
 import { setLocale } from '../src/i18n.ts';
+import { createShortcuts, shortcutPreferences } from '../src/shortcuts.ts';
+import { installShortcuts } from '../src/shortcut-runtime.ts';
 import '../src/style.css';
 import '../src/desktop-mail.css';
 import '../src/settings.css';
 import './preview.css';
-setup((app) =>
-    app.provide(directorySearchKey, async () => ({ items: [], nextOffset: 0, hasMore: false }))
-);
+const shortcuts = createShortcuts();
+setup((app) => {
+    app.provide(directorySearchKey, async () => ({ items: [], nextOffset: 0, hasMore: false }));
+    installShortcuts(app, shortcuts);
+});
 
 const preview: Preview = {
     initialGlobals: { theme: 'light', locale: 'en' },
@@ -32,6 +36,9 @@ const preview: Preview = {
     parameters: { layout: 'fullscreen' },
     decorators: [
         (story, context) => {
+            shortcuts.value.value = shortcutPreferences({
+                profile: context.parameters.shortcutsProfile
+            });
             document.documentElement.dataset.theme =
                 context.globals.theme === 'dark' ? 'dark' : 'light';
             setLocale(context.globals.locale === 'uk' ? 'uk' : 'en');

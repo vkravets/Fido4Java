@@ -1,4 +1,33 @@
 export const ukrainian = {
+    'Keyboard shortcuts': 'Гарячі клавіші',
+    'Enable keyboard shortcuts': 'Увімкнути гарячі клавіші',
+    'Shortcut preset': 'Набір клавіш',
+    'JFtn default': 'Типовий JFtn',
+    'GoldED+ (web)': 'GoldED+ (веб)',
+    'Changing the preset resets your unsaved key assignments.':
+        'Зміна набору скидає незбережені призначення клавіш.',
+    'Click a shortcut field and press the new combination. Escape cancels recording; Clear disables an action.':
+        'Натисніть поле та нове поєднання клавіш. Escape скасовує запис; «Очистити» вимикає дію.',
+    'Browser and system shortcuts cannot all be intercepted. GoldED+ uses the supported equivalents; Ctrl+L, Ctrl+R and Ctrl+Z keep their browser or editing meaning.':
+        'Не всі клавіші браузера й системи можна перехопити. GoldED+ використовує доступні відповідники; Ctrl+L, Ctrl+R і Ctrl+Z зберігають призначення браузера або редактора.',
+    'Navigation and page': 'Навігація та сторінка',
+    'Reading mail': 'Читання листів',
+    'Writing mail': 'Написання листів',
+    'Text editor': 'Текстовий редактор',
+    Shortcut: 'Клавіші',
+    Action: 'Дія',
+    'Press a key combination': 'Натисніть поєднання клавіш',
+    'Not assigned': 'Не призначено',
+    'Clear shortcut': 'Очистити клавіші',
+    'Restore shortcut': 'Відновити клавіші',
+    'Restore preset': 'Відновити набір',
+    'Discard changes': 'Скасувати зміни',
+    'Unsaved keyboard shortcuts. Discard changes?':
+        'Є незбережені гарячі клавіші. Скасувати зміни?',
+    'Shortcut is reserved or conflicts with another action: {key}':
+        'Клавіші зарезервовано або вже призначено іншій дії: {key}',
+    'Unsupported key combination.': 'Це поєднання клавіш не підтримується.',
+    'Submit message': 'Підтвердити надсилання листа',
     'Message actions': 'Дії з листом',
     'Live mail preview': 'Живий перегляд листа',
     'Preview changes are not saved or sent.': 'Зміни у прикладі не зберігаються й не надсилаються.',

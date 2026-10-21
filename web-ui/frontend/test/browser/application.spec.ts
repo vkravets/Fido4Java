@@ -1,6 +1,48 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+test('personal keyboard assignments survive a new login and invoke the echomail reply action', async ({
+    page
+}) => {
+    page.on('dialog', (dialog) => dialog.accept());
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
+    const field = page.getByRole('textbox', { name: 'Quoted reply', exact: true });
+    await field.click();
+    await field.press('Alt+Shift+q');
+    await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Save preferences', exact: true })
+    ).toBeDisabled();
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
+    await expect(field).toHaveValue('Alt+Shift+Q');
+    await page.locator('.sidebar').getByRole('button', { name: 'Echomail', exact: true }).click();
+    await page.locator('.echo-message-open').first().click();
+    const reply = page
+        .locator('.reader-actions')
+        .getByRole('button', { name: 'Reply', exact: true });
+    await expect(reply).toBeEnabled();
+    await expect(reply).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+Q');
+    await page.keyboard.press('r');
+    await expect(page.locator('.mail-composer')).toHaveCount(0);
+    await page.keyboard.press('Alt+Shift+q');
+    await expect(page.locator('.mail-composer')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true })
+        .click();
+    await page.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
+    await page.getByRole('button', { name: 'Restore preset', exact: true }).click();
+    await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Save preferences', exact: true })
+    ).toBeDisabled();
+});
+
 function notification(page: Page) {
     return page.getByRole('region', { name: 'Notifications' }).getByRole('status');
 }

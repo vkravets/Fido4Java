@@ -37,6 +37,8 @@ defineEmits<{ open: [item: MailItem]; more: [] }>();
             v-for="item in visibleItems"
             :key="mailId(item.id)"
             class="mail-row"
+            data-shortcut-row
+            :data-shortcut-selected="selected === mailId(item.id) ? '' : undefined"
             :class="{ active: selected === mailId(item.id), unread: !item.read }"
             :disabled="busy"
             @click="$emit('open', item)"

@@ -94,6 +94,7 @@ function chooseTemplate() {
 <template>
     <form
         class="card mail-composer"
+        :data-shortcuts-disabled="previewOnly ? '' : undefined"
         @submit.prevent="!previewOnly && canSubmit && $emit('send')"
     >
         <h2>
@@ -184,6 +185,7 @@ function chooseTemplate() {
                     type="button"
                     class="secondary"
                     :disabled="!selectedTemplate"
+                    v-shortcut="'compose.template'"
                     @click="chooseTemplate"
                 >
                     <AppIcon name="templates" />{{ t('Apply template') }}
@@ -200,6 +202,7 @@ function chooseTemplate() {
                 <button
                     class="primary"
                     type="submit"
+                    v-shortcut="'compose.send'"
                     :disabled="!canSubmit || previewOnly"
                 >
                     <AppIcon name="send" />{{
@@ -209,6 +212,7 @@ function chooseTemplate() {
                 <button
                     class="secondary"
                     type="button"
+                    v-shortcut="'compose.save'"
                     @click="$emit('save')"
                     :disabled="previewOnly"
                 >
@@ -217,6 +221,7 @@ function chooseTemplate() {
                 <button
                     class="text-button"
                     type="button"
+                    v-shortcut="'compose.cancel'"
                     @click="$emit('cancel')"
                     :disabled="previewOnly"
                 >

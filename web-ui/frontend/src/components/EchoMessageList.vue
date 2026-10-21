@@ -178,6 +178,8 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                 </button>
                 <button
                     class="echo-message-open"
+                    data-shortcut-row
+                    :data-shortcut-selected="selected === mailId(row.item.id) ? '' : undefined"
                     :disabled="busy"
                     @click="emit('open', row.item)"
                 >

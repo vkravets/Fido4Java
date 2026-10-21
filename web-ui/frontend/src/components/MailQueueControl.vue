@@ -11,6 +11,7 @@ defineEmits<{ send: [] }>();
     >
         <p role="status">{{ t('Awaiting send: {count}', { count }) }}</p>
         <button
+            v-shortcut="'nav.sendQueue'"
             class="queue-send-button"
             :aria-label="t('Send queued mail')"
             :disabled="busy || count === 0"

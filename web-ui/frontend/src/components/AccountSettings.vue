@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SettingsWorkspace from './SettingsWorkspace.vue';
 import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import KeyboardSettings from './KeyboardSettings.vue';
 import { useMedia } from '../media.ts';
 import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
@@ -17,7 +18,8 @@ const tabs = [
     { id: 'security', label: 'Security' },
     { id: 'theme', label: 'Appearance' },
     { id: 'mail-appearance', label: 'Mail appearance' },
-    { id: 'templates', label: 'Mail templates' }
+    { id: 'templates', label: 'Mail templates' },
+    { id: 'keyboard', label: 'Keyboard shortcuts' }
 ] as const;
 type PersonalTab = (typeof tabs)[number]['id'];
 const props = defineProps<{ state: AppState; initialTab?: PersonalTab }>();
@@ -46,8 +48,12 @@ function navigate(event: KeyboardEvent) {
             [next]?.focus();
 }
 const templateSettings = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
+const keyboardSettings = ref<InstanceType<typeof KeyboardSettings> | null>(null);
 function canLeave() {
-    return !templateSettings.value || templateSettings.value.canLeave();
+    return (
+        (!templateSettings.value || templateSettings.value.canLeave()) &&
+        (!keyboardSettings.value || keyboardSettings.value.canLeave())
+    );
 }
 function selectTab(next: PersonalTab) {
     if (next === tab.value || !canLeave()) return;
@@ -116,6 +122,11 @@ function claimLabel(state: string): string {
                 :aria-labelledby="`personal-tab-${tab}`"
                 tabindex="0"
             >
+                <KeyboardSettings
+                    v-if="tab === 'keyboard'"
+                    ref="keyboardSettings"
+                    :state="state"
+                />
                 <MailTemplateSettings
                     v-if="tab === 'templates'"
                     ref="templateSettings"

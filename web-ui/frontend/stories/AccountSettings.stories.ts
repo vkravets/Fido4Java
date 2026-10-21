@@ -35,3 +35,8 @@ export const Addresses: Story = { args: { initialTab: 'aka' } };
 export const Security: Story = { args: { initialTab: 'security' } };
 export const Appearance: Story = { args: { initialTab: 'theme' } };
 export const MailAppearance: Story = { args: { initialTab: 'mail-appearance' } };
+export const Keyboard: Story = { args: { initialTab: 'keyboard' } };
+export const GoldedKeyboard: Story = {
+    args: { initialTab: 'keyboard' },
+    parameters: { shortcutsProfile: 'golded' }
+};

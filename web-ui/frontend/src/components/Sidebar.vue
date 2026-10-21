@@ -36,6 +36,7 @@ const emit = defineEmits<{
                 :class="{ active: page === 'netmail' }"
                 :aria-label="t('Netmail')"
                 :title="collapsed ? t('Netmail') : undefined"
+                v-shortcut="'nav.netmail'"
                 @click="emit('navigate', 'netmail')"
             >
                 <AppIcon name="mail" /><span class="nav-text">{{ t('Netmail') }}</span>
@@ -44,6 +45,7 @@ const emit = defineEmits<{
                 :class="{ active: page === 'echo' }"
                 :aria-label="t('Echomail')"
                 :title="collapsed ? t('Echomail') : undefined"
+                v-shortcut="'nav.echo'"
                 @click="emit('navigate', 'echo')"
             >
                 <AppIcon name="echo" /><span class="nav-text">{{ t('Echomail') }}</span>
@@ -52,6 +54,7 @@ const emit = defineEmits<{
                 :class="{ active: page === 'drafts' }"
                 :aria-label="t('Drafts')"
                 :title="collapsed ? t('Drafts') : undefined"
+                v-shortcut="'nav.drafts'"
                 @click="emit('navigate', 'drafts')"
             >
                 <AppIcon name="file" /><span class="nav-text">{{ t('Drafts') }}</span>
@@ -62,6 +65,7 @@ const emit = defineEmits<{
                 :disabled="busy || !pendingCount"
                 :aria-label="t('Send queued mail')"
                 :title="t('Send queued mail')"
+                v-shortcut="'nav.sendQueue'"
                 @click="emit('sendMail')"
             >
                 <AppIcon name="send" /><small>{{ pendingCount || 0 }}</small>
@@ -77,6 +81,7 @@ const emit = defineEmits<{
                 :class="{ active: page === 'directory' }"
                 :aria-label="t('Node directory')"
                 :title="collapsed ? t('Node directory') : undefined"
+                v-shortcut="'nav.directory'"
                 @click="emit('navigate', 'directory')"
             >
                 <AppIcon name="directory" />
@@ -87,6 +92,7 @@ const emit = defineEmits<{
                 :class="{ active: page === 'settings' }"
                 :aria-label="t('My settings')"
                 :title="collapsed ? t('My settings') : undefined"
+                v-shortcut="'nav.settings'"
                 @click="emit('navigate', 'settings')"
             >
                 <AppIcon name="settings" />
@@ -97,6 +103,7 @@ const emit = defineEmits<{
                     :class="{ active: page === 'node' }"
                     :aria-label="t('Station')"
                     :title="collapsed ? t('Station') : undefined"
+                    v-shortcut="'nav.station'"
                     @click="emit('navigate', 'node')"
                 >
                     <AppIcon name="station" />
@@ -106,6 +113,7 @@ const emit = defineEmits<{
                     :class="{ active: page === 'links' }"
                     :aria-label="t('Mail links')"
                     :title="collapsed ? t('Mail links') : undefined"
+                    v-shortcut="'nav.links'"
                     @click="emit('navigate', 'links')"
                 >
                     <AppIcon name="link" /><span class="nav-text">{{ t('Links') }}</span>
@@ -114,6 +122,7 @@ const emit = defineEmits<{
                     :class="{ active: page === 'polling' }"
                     :aria-label="t('Polling')"
                     :title="collapsed ? t('Polling') : undefined"
+                    v-shortcut="'nav.polling'"
                     @click="emit('navigate', 'polling')"
                 >
                     <AppIcon name="clock" /><span class="nav-text">{{ t('Polling') }}</span>
@@ -130,6 +139,7 @@ const emit = defineEmits<{
             :aria-label="collapsed ? t('Expand menu') : t('Collapse menu')"
             :aria-expanded="!collapsed"
             :disabled="busy"
+            v-shortcut="'nav.collapse'"
             @click="emit('collapse')"
         >
             <AppIcon :name="collapsed ? 'expand' : 'collapse'" /><span class="nav-text">{{

@@ -42,6 +42,9 @@ hidden. Hiding these controls does not clear saved configuration.
 
 ## Mail operations
 
+Configurable JFtn and GoldED+ web keyboard presets are described in
+[Keyboard shortcuts](keyboard-shortcuts.md).
+
 Netmail composition uses **Add to send queue**. The MAIL navigation panel shows
 the current account's **Awaiting send** count and a separate **Send queued mail**
 button. Waiting messages survive restart but are not packed by the background

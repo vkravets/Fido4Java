@@ -64,6 +64,7 @@ watch(
 <template>
     <aside
         class="appearance-preview"
+        data-shortcuts-disabled
         :aria-label="t('Live mail preview')"
     >
         <h3>{{ t('Live mail preview') }}</h3>

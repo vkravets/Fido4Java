@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
-import { h } from 'vue';
-import type { Component } from 'vue';
-import { renderToString } from 'vue/server-renderer';
+import { createSSRApp, h } from 'vue';
+import type { Component, VNode } from 'vue';
+import { renderToString as renderVue } from 'vue/server-renderer';
+import { installShortcuts } from '../src/shortcut-runtime.ts';
+import { createShortcuts } from '../src/shortcuts.ts';
 import type { UserProfile } from '../../build/frontend-generated/bindings.mjs';
 
 let server: ViteDevServer;
@@ -14,6 +16,11 @@ let stationTabs: Component;
 let pollDetails: Component;
 let languageSelector: Component;
 let changeLocale: (locale: string) => void;
+function renderToString(node: VNode) {
+    const app = createSSRApp({ render: () => node });
+    installShortcuts(app, createShortcuts());
+    return renderVue(app);
+}
 
 before(async () => {
     server = await createServer({

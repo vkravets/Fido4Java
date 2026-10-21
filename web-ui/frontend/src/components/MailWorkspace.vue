@@ -90,6 +90,8 @@ async function update(patch: Partial<MailLayout>) {
                 v-if="opened"
                 class="secondary mail-back"
                 :disabled="busy"
+                v-shortcut="'mail.back'"
+                data-shortcut-hidden="layout"
                 @click="$emit('back')"
             >
                 <AppIcon name="left" />{{ t('Back to messages') }}
@@ -120,6 +122,8 @@ async function update(patch: Partial<MailLayout>) {
                 <button
                     class="secondary mail-back"
                     :disabled="busy"
+                    v-shortcut="'mail.back'"
+                    data-shortcut-hidden="layout"
                     @click="$emit('back')"
                 >
                     <AppIcon name="left" />{{ t('Back to messages') }}</button

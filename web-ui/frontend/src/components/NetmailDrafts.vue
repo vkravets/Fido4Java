@@ -20,6 +20,7 @@ defineEmits<{ edit: [draft: MailDraft]; remove: [draft: MailDraft] }>();
                 class="text-button"
                 :disabled="busy"
                 @click="$emit('edit', draft)"
+                data-shortcut-row
             >
                 {{ draft.subject || t('(No subject)') }} ·
                 {{ draft.mailbox === 1 ? draft.area : draft.toAddress }}

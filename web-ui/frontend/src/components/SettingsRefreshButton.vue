@@ -6,6 +6,7 @@ defineEmits<{ refresh: [] }>();
 </script>
 <template>
     <button
+        v-shortcut="'page.refresh'"
         type="button"
         class="secondary settings-icon-action"
         :disabled="busy"

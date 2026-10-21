@@ -28,6 +28,7 @@ const positions = [
                 <span class="control-label">{{ t('Search loaded messages') }}</span>
                 <AppIcon name="search" />
                 <input
+                    v-shortcut="'mail.search'"
                     v-model="query"
                     type="search"
                     maxlength="120"

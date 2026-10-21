@@ -47,6 +47,14 @@ configuration reload action remains distinct from refreshing a list and keeps it
 existing RPC semantics. Hidden panels must not contribute toolbar actions; tab
 changes retain the existing unsaved-edit guards and form state.
 
+Browser shortcuts are user preferences stored in the account-owned `keyboard`
+UI document through the existing profile RPC facade. JFtn and GoldED+ web presets
+resolve to shared action identifiers and invoke existing controls, including their
+availability and confirmation guards. They never introduce a second path to mail
+storage or authorization. Text entry, native editing, modal dialogs and isolated
+appearance previews retain their own behavior. Unsupported browser/OS chords are
+not promised. See [keyboard shortcuts](keyboard-shortcuts.md).
+
 Mail appearance uses an isolated live preview of the real reader/composer;
 unsaved palette changes do not mutate account preferences or outgoing mail.
 The personal `mail-themes` document also stores the editor's default outgoing

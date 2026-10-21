@@ -55,6 +55,7 @@ function closeMenu(event: Event) {
                         :disabled="busy"
                         :aria-label="t('Reply')"
                         :title="t('Reply')"
+                        v-shortcut="'mail.reply'"
                         @click="$emit('reply', 'quoted')"
                     >
                         <AppIcon name="reply" />
@@ -65,6 +66,7 @@ function closeMenu(event: Event) {
                         :aria-label="t('Previous message')"
                         :title="t('Previous message')"
                         :disabled="busy || previousDisabled"
+                        v-shortcut="'mail.previous'"
                         @click="$emit('previous')"
                     >
                         <AppIcon name="left" />
@@ -75,6 +77,7 @@ function closeMenu(event: Event) {
                         :aria-label="t('Next message')"
                         :title="t('Next message')"
                         :disabled="busy || nextDisabled"
+                        v-shortcut="'mail.next'"
                         @click="$emit('next')"
                     >
                         <AppIcon name="right" />
@@ -86,6 +89,7 @@ function closeMenu(event: Event) {
                             :disabled="busy"
                             :aria-label="t('Forward')"
                             :title="t('Forward')"
+                            v-shortcut="'mail.forward'"
                             @click="$emit('forward')"
                         >
                             <AppIcon name="forward" />
@@ -96,6 +100,7 @@ function closeMenu(event: Event) {
                             :disabled="busy"
                             :aria-label="t('Delete message')"
                             :title="t('Delete message')"
+                            v-shortcut="'mail.delete'"
                             @click="$emit('remove')"
                         >
                             <AppIcon name="trash" />
@@ -114,10 +119,14 @@ function closeMenu(event: Event) {
                         >
                             <AppIcon name="more" />
                         </summary>
-                        <div class="reader-more-panel">
+                        <div
+                            class="reader-more-panel"
+                            data-shortcut-menu
+                        >
                             <button
                                 v-if="reply"
                                 :disabled="busy"
+                                v-shortcut="'mail.reply'"
                                 @click="$emit('reply', 'quoted')"
                             >
                                 <AppIcon name="file" />{{ t('Quoted reply') }}
@@ -125,6 +134,7 @@ function closeMenu(event: Event) {
                             <button
                                 v-if="reply"
                                 :disabled="busy"
+                                v-shortcut="'mail.shortReply'"
                                 @click="$emit('reply', 'reply')"
                             >
                                 <AppIcon name="file" />{{ t('Short reply') }}
@@ -132,6 +142,7 @@ function closeMenu(event: Event) {
                             <button
                                 v-if="reply"
                                 :disabled="busy"
+                                v-shortcut="'mail.new'"
                                 @click="$emit('compose')"
                             >
                                 <AppIcon name="edit" />{{ t('New message') }}
@@ -139,6 +150,7 @@ function closeMenu(event: Event) {
                             <button
                                 v-if="forwardable"
                                 :disabled="busy"
+                                v-shortcut="'mail.forward'"
                                 @click="$emit('forward')"
                             >
                                 <AppIcon name="forward" />{{ t('Forward') }}
@@ -147,6 +159,7 @@ function closeMenu(event: Event) {
                                 v-if="removable"
                                 class="danger"
                                 :disabled="busy"
+                                v-shortcut="'mail.delete'"
                                 @click="$emit('remove')"
                             >
                                 <AppIcon name="trash" />{{ t('Delete message') }}
@@ -166,6 +179,7 @@ function closeMenu(event: Event) {
                 class="primary"
                 :aria-label="t('Reply to message')"
                 :disabled="busy"
+                v-shortcut="'mail.reply'"
                 @click="$emit('reply', 'quoted')"
             >
                 <AppIcon name="reply" />{{ t('Reply') }}
@@ -174,6 +188,7 @@ function closeMenu(event: Event) {
                 v-if="navigation"
                 class="text-button next-unread"
                 :disabled="busy || unreadDisabled"
+                v-shortcut="'mail.unread'"
                 @click="$emit('unread')"
             >
                 {{ t('Next unread') }}<AppIcon name="right" />
