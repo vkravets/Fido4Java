@@ -27,7 +27,7 @@ public final class DirectoryUpdate {
                                                 boolean diff)
             throws IOException {
         if (diff) {
-            source = source.withIgnoredChecksum(false);
+            source = source.withIgnoredChecksum(false).withNewPointKeeperChecksum(false);
         }
         Path base = source.getPath();
         if (base.equals(incoming.toAbsolutePath().normalize())) {

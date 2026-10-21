@@ -17,9 +17,20 @@ import java.util.Set;
 /** Explicit per-source exceptions for full-publication header CRCs, never for diffs. */
 final class DirectoryChecksumExceptions {
     private static final Logger LOG = LoggerFactory.getLogger(DirectoryChecksumExceptions.class);
+    private final Map<String, List<String>> compatibility = new LinkedHashMap<>();
     private final Map<String, List<String>> masks = new LinkedHashMap<>();
 
     DirectoryChecksumExceptions(IConfig config, Set<String> sources) {
+        List<String> modes = config.getValuesAsList("DirectoryCRCCompatibility");
+        if (modes != null) {
+            for (String rule : modes) {
+                String[] fields = rule.split("\\|", -1);
+                if (fields.length != 3 || !fields[2].trim().equals("new-point-keeper")) {
+                    throw new IllegalArgumentException("Expected DirectoryCRCCompatibility=known-source-id|filename-mask|new-point-keeper");
+                }
+                add(compatibility, fields[0].trim(), fields[1].trim(), sources);
+            }
+        }
         List<String> rules = config.getValuesAsList("DirectoryIgnoreCRC");
         if (rules == null) {
             return;
@@ -41,6 +52,28 @@ final class DirectoryChecksumExceptions {
         }
     }
 
+    private static void add(Map<String, List<String>> rules,
+                            String id,
+                            String pattern,
+                            Set<String> sources) {
+        if (!sources.contains(id)) {
+            throw new IllegalArgumentException("Unknown CRC compatibility source: " + id);
+        }
+        String mask = pattern.toUpperCase(Locale.ROOT);
+        if (!mask.matches("[A-Za-z0-9_.*?+-]{1,128}") || !mask.matches(".*[A-Za-z0-9].*")) {
+            throw new IllegalArgumentException("CRC compatibility requires a filename mask with literal letters/digits, without directories");
+        }
+        List<String> values = rules.computeIfAbsent(id, key -> new ArrayList<>());
+        if (values.contains(mask)) {
+            throw new IllegalArgumentException("Duplicate DirectoryCRCCompatibility rule");
+        }
+        values.add(mask);
+    }
+
+    String compatibilityDefinition(String id) {
+        return String.join(",", compatibility.getOrDefault(id, List.of()));
+    }
+
     String definition(String id) {
         return String.join(",", masks.getOrDefault(id, List.of()));
     }
@@ -51,6 +84,11 @@ final class DirectoryChecksumExceptions {
         }
         if (diff) {
             return source;
+        }
+        for (String mask : compatibility.getOrDefault(source.getId(), List.of())) {
+            if (RobotRequest.matches(mask, originalName)) {
+                return source.withIgnoredChecksum(false).withNewPointKeeperChecksum(true);
+            }
         }
         for (String mask : masks.getOrDefault(source.getId(), List.of())) {
             if (RobotRequest.matches(mask, originalName)) {

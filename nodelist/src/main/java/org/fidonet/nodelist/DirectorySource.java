@@ -20,6 +20,7 @@ public final class DirectorySource {
     private final Charset charset;
     private final boolean requireChecksum;
     private final boolean ignoreChecksum;
+    private final boolean newPointKeeperChecksum;
 
     public DirectorySource(String id,
                            Format format,
@@ -28,7 +29,7 @@ public final class DirectorySource {
                            int net,
                            Charset charset,
                            boolean requireChecksum) {
-        this(id, format, path, zone, net, charset, requireChecksum, false);
+        this(id, format, path, zone, net, charset, requireChecksum, false, false);
     }
 
     private DirectorySource(String id,
@@ -38,7 +39,8 @@ public final class DirectorySource {
                             int net,
                             Charset charset,
                             boolean requireChecksum,
-                            boolean ignoreChecksum) {
+                            boolean ignoreChecksum,
+                            boolean newPointKeeperChecksum) {
         if (id == null || !id.matches("[A-Za-z0-9_-]{1,80}")) {
             throw new IllegalArgumentException("Directory source ID must contain 1..80 letters, digits, _ or -");
         }
@@ -53,6 +55,7 @@ public final class DirectorySource {
         this.charset = Objects.requireNonNull(charset);
         this.requireChecksum = requireChecksum;
         this.ignoreChecksum = ignoreChecksum;
+        this.newPointKeeperChecksum = newPointKeeperChecksum;
     }
 
     /** id|format|file[|zone|net|charset|requireChecksum]. */
@@ -115,7 +118,31 @@ public final class DirectorySource {
     }
 
     DirectorySource withIgnoredChecksum(boolean ignored) {
-        return new DirectorySource(id, format, path, zone, net, charset, requireChecksum, ignored);
+        return new DirectorySource(id,
+                                   format,
+                                   path,
+                                   zone,
+                                   net,
+                                   charset,
+                                   requireChecksum,
+                                   ignored,
+                                   newPointKeeperChecksum);
+    }
+
+    boolean isNewPointKeeperChecksum() {
+        return newPointKeeperChecksum;
+    }
+
+    DirectorySource withNewPointKeeperChecksum(boolean enabled) {
+        return new DirectorySource(id,
+                                   format,
+                                   path,
+                                   zone,
+                                   net,
+                                   charset,
+                                   requireChecksum,
+                                   ignoreChecksum,
+                                   enabled);
     }
 
     DirectorySource atPath(Path candidate, boolean required) {
@@ -126,7 +153,8 @@ public final class DirectorySource {
                                    net,
                                    charset,
                                    required,
-                                   ignoreChecksum);
+                                   ignoreChecksum,
+                                   newPointKeeperChecksum);
     }
 
     String definition() {
@@ -141,6 +169,7 @@ public final class DirectorySource {
                + charset.name()
                + "|"
                + requireChecksum
-               + (ignoreChecksum ? "|ignored-header-crc" : "");
+               + (ignoreChecksum ? "|ignored-header-crc" : "")
+               + (newPointKeeperChecksum ? "|new-point-keeper-crc" : "");
     }
 }

@@ -31,7 +31,7 @@ public final class DirectoryService implements MailProcessingExtension, Director
     private final Map<String, DirectorySource> registry;
     private final List<DirectorySource> localSources;
     private final Set<String> deliverySources = new HashSet<>();
-    private final DirectoryChecksumExceptions checksumExceptions;
+    private DirectoryChecksumExceptions checksumExceptions;
     private long lastAttempt;
 
     private DirectoryService(DirectoryCatalog catalog,
@@ -157,9 +157,11 @@ public final class DirectoryService implements MailProcessingExtension, Director
     }
 
     @Override
-    public String sourceDefinition(String id) {
+    public synchronized String sourceDefinition(String id) {
         String masks = checksumExceptions.definition(id);
-        return source(id).definition() + (masks.isEmpty() ? "" : "|ignore-crc-masks=" + masks);
+        String compatibility = checksumExceptions.compatibilityDefinition(id);
+        return source(id).definition() + (masks.isEmpty() ? "" : "|ignore-crc-masks=" + masks)
+               + (compatibility.isEmpty() ? "" : "|crc-compatibility=" + compatibility);
     }
 
     @Override

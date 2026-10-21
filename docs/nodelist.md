@@ -297,12 +297,42 @@ calculated CRCs and matching variants. It never rewrites files. Exit zero means
 the report was generated, **not** that a publication is authorized or importable.
 It does not validate directory structure or replace the runtime parser.
 
-Runtime acceptance remains unchanged: strict XMODEM validation is the default,
-and the existing explicit filename-scoped ignore rule is still an exception.
-A possible follow-up is an explicit source/filename-scoped ARC verification mode
-for full publications, replacing broad checksum skipping with actual verification.
-Such a mode is **not implemented**; it must not be selected merely by trusting a
-`Created by` comment or enabled globally.
+Strict XMODEM validation remains the default. The explicit compatibility rule
+below now verifies this publisher's checksum instead of skipping it. No automatic
+global generator detection is enabled.
+
+## Scoped CRC compatibility
+
+Configure an explicit source and original filename mask in `conf.d/30-nodelist.conf`:
+
+```ini
+DirectoryCRCCompatibility=points|PNT46REG.*|new-point-keeper
+```
+
+Rules are repeatable, validated before opening storage, and use the same safe
+case-insensitive filename glob syntax as `DirectoryIgnoreCRC`. Unknown source IDs,
+unknown modes, bare `*`, paths and duplicate source/mask pairs are rejected.
+
+For matching **full publications**, canonical-CRLF XMODEM is checked first. Only
+if it fails may ARC over the original body bytes be used, and only when the second
+line exactly equals `;S Created by New Point Keeper v.0.0.0.7.`. A missing checksum,
+an altered marker, or a mismatch of both CRCs is rejected. The marker alone is
+never sufficient. ARC excludes the first line and DOS EOF, preserving actual body
+line endings and the presence/absence of a final newline. Successful fallback
+validation is logged at INFO. Stored originals are never normalized or rewritten.
+
+Compatibility takes precedence over a matching old ignore rule so that the
+verified mode cannot accidentally fall back to skipping CRC. Remove the old
+`DirectoryIgnoreCRC` entry for the same source/mask when migrating. Structural,
+address, duplicate-record, archive and TIC checks remain in effect. Diff imports
+always clear both compatibility and ignore modes: their base and output must
+pass standard XMODEM. Direct `DirectoryUpdate` callers have the same restriction.
+
+The mask uses the original outer delivery filename for archives and the source
+basename for explicit local imports. A rule for `PNT46REG.*` does not match
+`points.lst`; a deliberate local import needs its own narrow rule. Changing rules
+changes source/receipt identities and removing a rule causes strict revalidation
+on the next import. Existing catalog data is retained if revalidation fails.
 
 ## Scoped header CRC exceptions
 
