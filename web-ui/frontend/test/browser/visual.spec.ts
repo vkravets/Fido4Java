@@ -5,6 +5,11 @@ import { openStory } from './story.ts';
 
 const screens = [
     { name: 'routing-rules-adding', story: 'routing-netmailroutespanel--adding' },
+    { name: 'personal-profile', story: 'settings-accountsettings--profile' },
+    { name: 'personal-addresses', story: 'settings-accountsettings--addresses' },
+    { name: 'personal-security', story: 'settings-accountsettings--security' },
+    { name: 'personal-appearance', story: 'settings-accountsettings--appearance' },
+    { name: 'personal-mail-appearance', story: 'settings-accountsettings--mail-appearance' },
     { name: 'directory-sources', story: 'plugins-pluginsettingspanel--directory-sources' },
     {
         name: 'directory-sources-read-only',

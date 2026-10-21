@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import SettingsWorkspace from './SettingsWorkspace.vue';
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import { useMedia } from '../media.ts';
 import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
 import { computed, ref } from 'vue';
@@ -19,6 +22,29 @@ const tabs = [
 type PersonalTab = (typeof tabs)[number]['id'];
 const props = defineProps<{ state: AppState; initialTab?: PersonalTab }>();
 const tab = ref<PersonalTab>(props.initialTab || 'profile');
+const narrow = useMedia('(max-width: 700px)');
+const title = computed(() => t(tabs.find((item) => item.id === tab.value)!.label));
+function navigate(event: KeyboardEvent) {
+    const index = tabs.findIndex((item) => item.id === tab.value);
+    const delta = ['ArrowRight', 'ArrowDown'].includes(event.key)
+        ? 1
+        : ['ArrowLeft', 'ArrowUp'].includes(event.key)
+          ? -1
+          : 0;
+    if (!delta && !['Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next =
+        event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? tabs.length - 1
+              : (index + delta + tabs.length) % tabs.length;
+    selectTab(tabs[next]!.id);
+    if (tab.value === tabs[next]!.id)
+        (event.currentTarget as HTMLElement)
+            .querySelectorAll<HTMLButtonElement>('[role=tab]')
+            [next]?.focus();
+}
 const templateSettings = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
 function canLeave() {
     return !templateSettings.value || templateSettings.value.canLeave();
@@ -57,134 +83,165 @@ function claimLabel(state: string): string {
 
 <template>
     <template v-if="state.profile.value">
-        <div class="page-heading">
-            <span class="eyebrow">{{ t('MY ACCOUNT') }}</span>
-            <h1>{{ t('Settings') }}</h1>
-            <p>{{ t('Your account, addresses and security.') }}</p>
-        </div>
-        <nav
-            class="tabs"
-            :aria-label="t('Personal settings')"
+        <SettingsWorkspace
+            :context="t('Personal settings')"
+            :title="title"
         >
-            <button
-                v-for="item in tabs"
-                :key="item.id"
-                :class="{ selected: tab === item.id }"
-                @click="selectTab(item.id)"
-            >
-                {{ t(item.label) }}
-            </button>
-        </nav>
-        <MailTemplateSettings
-            v-if="tab === 'templates'"
-            ref="templateSettings"
-            :state="state"
-        />
-        <MailAppearanceSettings
-            v-if="tab === 'mail-appearance'"
-            :state="state"
-        />
-        <section
-            v-if="tab === 'profile'"
-            class="card"
-        >
-            <h2>{{ t('Profile') }}</h2>
-            <dl>
-                <dt>{{ t('Username') }}</dt>
-                <dd>{{ state.profile.value.login }}</dd>
-                <dt>{{ t('Access') }}</dt>
-                <dd>
-                    {{ state.profile.value.role === 'ADMIN' ? t('Administrator') : t('Point') }}
-                </dd>
-                <dt>{{ t('Default AKA') }}</dt>
-                <dd>{{ state.profile.value.defaultAka || t('Not selected') }}</dd>
-            </dl>
-            <p class="hint">{{ t('Each point address requires administrator approval.') }}</p>
-        </section>
-        <section
-            v-if="tab === 'aka'"
-            class="card"
-        >
-            <h2>{{ t('My addresses') }}</h2>
-            <p>
-                {{ t('Choose an approved default AKA for the future mail reader.') }}
-            </p>
-            <div class="aka-list">
-                <label
-                    v-for="aka in state.profile.value.allowedAkas"
-                    :key="aka"
-                    class="choice"
-                    ><input
-                        type="radio"
-                        name="aka"
-                        :checked="state.profile.value.defaultAka === aka"
-                        :disabled="state.busy.value"
-                        @change="preferences(state.theme.value, aka)"
-                    /><span>{{ aka }}</span
-                    ><span class="badge">{{ t('Available') }}</span></label
+            <template #navigation>
+                <nav
+                    class="tabs personal-tabs"
+                    role="tablist"
+                    :aria-orientation="narrow ? 'horizontal' : 'vertical'"
+                    :aria-label="t('Personal settings')"
+                    @keydown="navigate"
                 >
-            </div>
-            <ul class="rows">
-                <li
-                    v-for="claim in state.profile.value.claims"
-                    :key="claim.address"
-                >
-                    <span>{{ claim.address }}</span
-                    ><span
-                        class="badge"
-                        :class="claim.state.toLowerCase()"
-                        >{{ claimLabel(claim.state) }}</span
+                    <button
+                        v-for="item in tabs"
+                        :key="item.id"
+                        :id="`personal-tab-${item.id}`"
+                        role="tab"
+                        :aria-selected="tab === item.id"
+                        :tabindex="tab === item.id ? 0 : -1"
+                        aria-controls="personal-settings-panel"
+                        :class="{ selected: tab === item.id }"
+                        @click="selectTab(item.id)"
                     >
-                </li>
-            </ul>
-            <form
-                class="inline-form"
-                @submit.prevent="requestAka"
+                        {{ t(item.label) }}
+                    </button>
+                </nav>
+            </template>
+            <div
+                id="personal-settings-panel"
+                role="tabpanel"
+                :aria-labelledby="`personal-tab-${tab}`"
+                tabindex="0"
             >
-                <label
-                    >{{ t('Add a point AKA')
-                    }}<AddressInput
-                        v-model="requested"
-                        :aria-label="t('Add a point AKA')"
-                        required
-                        placeholder="1:500/100.1" /></label
-                ><button
-                    class="secondary"
-                    :disabled="state.busy.value"
+                <MailTemplateSettings
+                    v-if="tab === 'templates'"
+                    ref="templateSettings"
+                    :state="state"
+                />
+                <MailAppearanceSettings
+                    v-if="tab === 'mail-appearance'"
+                    :state="state"
+                />
+                <section
+                    v-if="tab === 'profile'"
+                    class="card"
                 >
-                    {{ t('Submit request') }}
-                </button>
-            </form>
-        </section>
-        <SecuritySettings
-            v-if="tab === 'security'"
-            :state="state"
-        />
-        <section
-            v-if="tab === 'theme'"
-            class="card"
-        >
-            <h2>{{ t('Appearance') }}</h2>
-            <p>{{ t('Your selected theme is saved in your profile.') }}</p>
-            <div class="theme-options">
-                <button
-                    v-for="theme in themes"
-                    :key="theme"
-                    :class="['theme-preview', theme, { chosen: state.theme.value === theme }]"
-                    :aria-pressed="state.theme.value === theme"
-                    :disabled="state.busy.value"
-                    @click="preferences(theme, state.profile.value.defaultAka)"
+                    <SettingsSectionHeader :title="t('Profile')" />
+                    <dl>
+                        <dt>{{ t('Username') }}</dt>
+                        <dd>{{ state.profile.value.login }}</dd>
+                        <dt>{{ t('Access') }}</dt>
+                        <dd>
+                            {{
+                                state.profile.value.role === 'ADMIN'
+                                    ? t('Administrator')
+                                    : t('Point')
+                            }}
+                        </dd>
+                        <dt>{{ t('Default AKA') }}</dt>
+                        <dd>{{ state.profile.value.defaultAka || t('Not selected') }}</dd>
+                    </dl>
+                    <p class="hint">
+                        {{ t('Each point address requires administrator approval.') }}
+                    </p>
+                </section>
+                <section
+                    v-if="tab === 'aka'"
+                    class="card"
                 >
-                    <span
-                        class="preview-window"
-                        aria-hidden="true"
+                    <SettingsSectionHeader :title="t('My addresses')" />
+                    <p>
+                        {{ t('Choose an approved default AKA for the future mail reader.') }}
+                    </p>
+                    <div class="aka-list">
+                        <label
+                            v-for="aka in state.profile.value.allowedAkas"
+                            :key="aka"
+                            class="choice"
+                            ><input
+                                type="radio"
+                                name="aka"
+                                :checked="state.profile.value.defaultAka === aka"
+                                :disabled="state.busy.value"
+                                @change="preferences(state.theme.value, aka)"
+                            /><span>{{ aka }}</span
+                            ><span class="badge">{{ t('Available') }}</span></label
+                        >
+                    </div>
+                    <ul class="rows">
+                        <li
+                            v-for="claim in state.profile.value.claims"
+                            :key="claim.address"
+                        >
+                            <span>{{ claim.address }}</span
+                            ><span
+                                class="badge"
+                                :class="claim.state.toLowerCase()"
+                                >{{ claimLabel(claim.state) }}</span
+                            >
+                        </li>
+                    </ul>
+                    <form
+                        class="inline-form"
+                        @submit.prevent="requestAka"
                     >
-                        <span class="preview-header"></span>
-                        <span class="preview-sidebar"></span>
-                        <span class="preview-sections"><i></i><i></i></span> </span
-                    >{{ theme === 'light' ? t('Light · Day station') : t('Dark · Night shift') }}
-                </button>
+                        <label
+                            >{{ t('Add a point AKA')
+                            }}<AddressInput
+                                v-model="requested"
+                                :aria-label="t('Add a point AKA')"
+                                required
+                                placeholder="1:500/100.1" /></label
+                        ><button
+                            class="secondary"
+                            :disabled="state.busy.value"
+                        >
+                            {{ t('Submit request') }}
+                        </button>
+                    </form>
+                </section>
+                <SecuritySettings
+                    v-if="tab === 'security'"
+                    :state="state"
+                />
+                <section
+                    v-if="tab === 'theme'"
+                    class="card"
+                >
+                    <SettingsSectionHeader :title="t('Appearance')" />
+                    <p>{{ t('Your selected theme is saved in your profile.') }}</p>
+                    <div class="theme-options">
+                        <button
+                            v-for="theme in themes"
+                            :key="theme"
+                            :class="[
+                                'theme-preview',
+                                theme,
+                                { chosen: state.theme.value === theme }
+                            ]"
+                            :aria-pressed="state.theme.value === theme"
+                            :disabled="state.busy.value"
+                            @click="preferences(theme, state.profile.value.defaultAka)"
+                        >
+                            <span
+                                class="preview-window"
+                                aria-hidden="true"
+                            >
+                                <span class="preview-header"></span>
+                                <span class="preview-sidebar"></span>
+                                <span class="preview-sections"><i></i><i></i></span> </span
+                            >{{
+                                theme === 'light'
+                                    ? t('Light · Day station')
+                                    : t('Dark · Night shift')
+                            }}
+                        </button>
+                    </div>
+                </section>
             </div>
-        </section>
+        </SettingsWorkspace>
     </template>
 </template>

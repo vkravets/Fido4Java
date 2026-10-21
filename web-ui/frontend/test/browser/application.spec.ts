@@ -12,7 +12,9 @@ async function signIn(page: Page, username: string, password: string) {
         .locator('form')
         .getByRole('button', { name: /^Sign in/ })
         .click();
-    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(
+        page.locator('.settings-page-header').getByRole('heading', { name: 'Profile', exact: true })
+    ).toBeVisible();
 }
 
 async function stationSection(page: Page, name: string) {
@@ -336,7 +338,7 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     await expect(page.getByRole('heading', { name: 'Вхід до JFtn' })).toBeVisible();
     await page.getByRole('combobox', { name: 'Мова' }).selectOption('en');
     await signIn(page, 'admin', 'preview-admin-password');
-    await page.getByRole('button', { name: 'Appearance', exact: true }).click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
     await page.getByRole('button', { name: 'Dark · Night shift' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(notification(page)).toContainText('Settings saved.');

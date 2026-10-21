@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { themeLabel } from '../mail-theme-labels.ts';
@@ -92,7 +93,7 @@ const labels = {
 </script>
 <template>
     <section class="card mail-appearance">
-        <h2>{{ t('Mail appearance') }}</h2>
+        <SettingsSectionHeader :title="t('Mail appearance')" />
         <p>{{ t('Mail themes are independent of the application theme.') }}</p>
         <div class="appearance-layout">
             <fieldset :disabled="state.busy.value">

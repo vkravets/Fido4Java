@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { onMounted, ref } from 'vue';
+import { inject, onMounted, ref } from 'vue';
+import { passkeyListKey } from '../security-client.ts';
 import { api } from '../api.ts';
 import type { PasskeyInfo } from '@rpc/bindings.mjs';
 import { credentialJson, publicKeyOptions } from '../webauthn.ts';
 import type { AppState } from '../state.ts';
 const props = defineProps<{ state: AppState }>();
+const listPasskeys = inject(passkeyListKey, (session) => api.auth.passkeys(session));
 const current = ref('');
 const password = ref('');
 const confirmation = ref('');
@@ -14,7 +16,7 @@ const label = ref('');
 const keys = ref<PasskeyInfo[]>([]);
 const supported = window.isSecureContext && !!navigator.credentials;
 async function refresh() {
-    keys.value = await api.auth.passkeys(props.state.session.value);
+    keys.value = await listPasskeys(props.state.session.value);
 }
 onMounted(() => props.state.run(refresh));
 

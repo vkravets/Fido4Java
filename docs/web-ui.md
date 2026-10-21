@@ -7,6 +7,33 @@ The application header stays at the top of the viewport while pages scroll.
 Desktop navigation stays directly below it; on mobile, the header keeps the menu
 button accessible.
 
+## Settings workspace
+
+Station and personal settings share a compact workspace with a section menu and
+one breadcrumb heading (`Station / General`, for example). The current section
+owns the page heading; embedded panels do not repeat it or display management
+eyebrows. Groups use smaller headings, compact cards and consistent form spacing.
+On narrow screens, the section menu becomes a horizontally scrollable tab strip
+that reveals the selected section when opened or changed.
+
+The station heading stays below the application header while scrolling.
+**Reload configuration files** is an icon button at the upper right. It rereads
+configuration through the existing authorized RPC operation; it does not restart
+the node. Panel refresh actions use a separate icon and contextual tooltip and
+appear beside it only while their panel is selected. Hover titles and accessible
+names remain available when button text is hidden.
+
+`SettingsWorkspace`, `SettingsPageHeader` and `SettingsSectionHeader` own this
+presentation. `SettingsPageActions` places active-panel actions in the workspace
+toolbar and leaves standalone panel actions local. Personal template leave guards,
+station form drafts, RPC authorization and configuration persistence are unchanged.
+
+Routing rule creation opens from **Add routing rule**; editing opens the same form.
+Transit mask fields appear when transit is enabled and retain their values when
+hidden. Hiding these controls does not clear saved configuration.
+
+## Mail operations
+
 Netmail composition uses **Add to send queue**. The MAIL navigation panel shows
 the current account's **Awaiting send** count and a separate **Send queued mail**
 button. Waiting messages survive restart but are not packed by the background

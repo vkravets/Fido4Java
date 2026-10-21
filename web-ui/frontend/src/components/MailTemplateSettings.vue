@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import { computed, ref } from 'vue';
 import { t } from '../i18n.ts';
 import { templateLabel, templateError } from '../mail-template-labels.ts';
@@ -130,10 +131,11 @@ async function removeRule(index: number) {
 }
 </script>
 <template>
-    <header class="page-heading">
-        <h1>{{ t('Mail templates') }}</h1>
-        <p>{{ t('Templates change message text, never posting permissions.') }}</p>
-    </header>
+    <SettingsSectionHeader
+        :title="t('Mail templates')"
+        :description="t('Templates change message text, never posting permissions.')"
+        page
+    />
     <div class="template-workspace">
         <section class="card">
             <label

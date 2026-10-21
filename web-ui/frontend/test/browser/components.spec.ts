@@ -68,16 +68,16 @@ test('personal template settings are editable by points and administrators and p
 }) => {
     for (const role of ['point', 'administrator']) {
         await story(page, `settings-accountsettings--${role}-templates`);
-        const navigation = page.getByRole('navigation', { name: 'Personal settings', exact: true });
+        const navigation = page.getByRole('tablist', { name: 'Personal settings', exact: true });
         const body = page.getByRole('textbox', { name: 'Template body', exact: true });
         await body.fill('Personal greeting @tname.\n@position');
         page.once('dialog', (dialog) => dialog.dismiss());
-        await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+        await navigation.getByRole('tab', { name: 'Profile', exact: true }).click();
         await expect(body).toHaveValue('Personal greeting @tname.\n@position');
         await page.getByRole('button', { name: 'Save template', exact: true }).click();
-        await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+        await navigation.getByRole('tab', { name: 'Profile', exact: true }).click();
         await expect(body).toHaveCount(0);
-        await navigation.getByRole('button', { name: 'Mail templates', exact: true }).click();
+        await navigation.getByRole('tab', { name: 'Mail templates', exact: true }).click();
         const choices = page.getByRole('combobox', { name: 'Template', exact: true }).first();
         const personal = await choices.locator('option[value^="custom-"]').getAttribute('value');
         await choices.selectOption(personal!);

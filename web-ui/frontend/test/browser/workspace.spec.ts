@@ -2,6 +2,69 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('settings use one compact heading and keep only active page actions in its toolbar', async ({
+    page
+}) => {
+    for (const language of ['en', 'uk']) {
+        await openStory(page, 'settings-stationsettingstabs--accounts', 'dark', language);
+        const header = page.locator('.settings-page-header');
+        await expect(header.locator('h1')).toHaveCount(1);
+        await expect(page.locator('.settings-body h1')).toHaveCount(0);
+        await expect(page.locator('.settings-page .eyebrow')).toHaveCount(0);
+        await expect(header.getByRole('button')).toHaveCount(2);
+        for (const action of await header.getByRole('button').all()) {
+            await expect(action).toHaveAttribute('title', /.+/);
+            expect(await action.innerText()).toBe('');
+        }
+        const navigation = page.locator('.station-tabs');
+        await navigation.getByRole('tab').first().click();
+        await expect(header.getByRole('button')).toHaveCount(1);
+        await navigation
+            .getByRole('tab')
+            .filter({ hasText: language === 'en' ? 'Mail robots' : 'Поштові роботи' })
+            .click();
+        await expect(header.getByRole('button')).toHaveCount(2);
+        await expect(page.locator('.settings-body h1')).toHaveCount(0);
+    }
+});
+
+test('personal settings share the compact workspace and support keyboard navigation', async ({
+    page
+}) => {
+    await openStory(page, 'settings-accountsettings--profile');
+    const navigation = page.getByRole('tablist', { name: 'Personal settings' });
+    await navigation.getByRole('tab', { name: 'Profile', exact: true }).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(navigation.getByRole('tab', { name: 'My AKAs' })).toBeFocused();
+    await expect(page.locator('.settings-page-header h1')).toHaveText('My AKAs');
+    await expect(page.locator('.settings-body h1')).toHaveCount(0);
+});
+
+test('narrow settings navigation reveals the selected section when opened and changed', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const story of [
+        'settings-stationsettingstabs--routing',
+        'settings-accountsettings--point-templates'
+    ]) {
+        await openStory(page, story, 'dark', 'uk');
+        const tabs = page.locator('.settings-navigation .tabs');
+        const selected = tabs.getByRole('tab', { selected: true });
+        const assertVisible = async () => {
+            const viewport = (await tabs.boundingBox())!;
+            const item = (await selected.boundingBox())!;
+            expect(item.x).toBeGreaterThanOrEqual(viewport.x - 1);
+            expect(item.x + item.width).toBeLessThanOrEqual(viewport.x + viewport.width + 1);
+        };
+        await assertVisible();
+        await selected.press('Home');
+        await assertVisible();
+        await selected.press('End');
+        await assertVisible();
+    }
+});
+
 async function checkMailBoundary(page: Page) {
     const sidebar = (await page.locator('.workspace > .sidebar').boundingBox())!;
     const list = page.locator('.split-list');
