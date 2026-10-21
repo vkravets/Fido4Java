@@ -185,6 +185,19 @@ class DirectoryCrcCompatibilityTest {
     }
 
     @Test
+    void localRefreshMatchesTheRetainedBasenameRatherThanTheDeliveryName() throws Exception {
+        Files.writeString(root.resolve("points.lst"), publication(body("Local"), true));
+        String local = "DirectoryLocalSource=points\nDirectoryRefreshEnabled=true\n";
+        try (DirectoryService service = DirectoryService.open(config(RULE + local))) {
+            assertThrows(IOException.class, service::refreshLocal);
+        }
+        String rule = "DirectoryCRCCompatibility=points|points.lst|new-point-keeper\n";
+        try (DirectoryService service = DirectoryService.open(config(rule + local))) {
+            assertEquals(1, service.refreshLocal().get(0).getRecords());
+        }
+    }
+
+    @Test
     void rejectsInvalidRulesBeforeOpeningStorage() throws Exception {
         for (String rule : List.of("unknown|PNT46REG.*|new-point-keeper",
                                    "points|*|new-point-keeper",

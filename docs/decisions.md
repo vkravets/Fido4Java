@@ -464,6 +464,14 @@ and outputs. Originals are not rewritten. Rule definitions participate in script
 receipt identity, and relaxed/strict parsing have different catalog definitions,
 preventing a previous relaxed import from bypassing a later strict reimport.
 
+`DirectoryCRCCompatibility=source-id|filename-mask|new-point-keeper` instead
+verifies ARC over original body bytes after standard XMODEM fails, gated by the
+exact second-line New Point Keeper v0.0.0.7 marker. It takes precedence over
+matching ignore rules and never applies to diffs. Active directory services expose
+CRC settings through the generic settings-provider contract. Admin edits atomically
+update only CRC directives in `conf.d/30-nodelist.conf`; external declarations or
+manual edits are left read-only. Details and evidence: [node directory](nodelist.md).
+
 ## 27. Web netmail uses approved account identities
 
 Node administration and echomail access remain administrator-only. The full node's

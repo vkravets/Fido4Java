@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { ref } from 'vue';
 import PluginSettingsPanel from '../src/components/PluginSettingsPanel.vue';
 import { fileEchoExtensions } from './plugin-fixtures.ts';
+import { directoryExtensions } from './directory-settings-fixture.ts';
 
 const meta = {
     title: 'Plugins/PluginSettingsPanel',
@@ -35,3 +36,5 @@ files[0]!.sections.forEach((section) => {
 });
 export const FileManaged: Story = { args: { extensions: files } };
 export const Empty: Story = { args: { extensions: [] } };
+export const DirectoryCrc: Story = { args: { extensions: directoryExtensions() } };
+export const DirectoryCrcReadOnly: Story = { args: { extensions: directoryExtensions(false) } };

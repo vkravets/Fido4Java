@@ -65,6 +65,9 @@ class DirectoryMailIntegrationTest {
         assertTrue(base.open());
         try (MailRuntime service = new MailRuntime(config(source), base)) {
             assertNotNull(service.getTosser());
+            assertTrue(service.getSettingsExtensions()
+                              .stream()
+                              .anyMatch(extension -> extension.id().equals("nodelist")));
             assertImported();
             assertEquals(1, orm.getDao(ConfigurationLink.class).countOf());
         } finally {

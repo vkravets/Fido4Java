@@ -4,6 +4,7 @@ import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
+import org.fidonet.jftn.plugins.ui.SettingsExtensionProvider;
 import org.fidonet.jftn.script.DirectoryImportService;
 import org.fidonet.jftn.script.MailAutomationRuntime;
 import org.fidonet.jftn.script.MailScriptExtension;
@@ -179,8 +180,8 @@ public final class MailRuntime implements AutoCloseable {
     public List<SettingsExtension> getSettingsExtensions() {
         List<SettingsExtension> result = new ArrayList<>();
         for (MailProcessingExtension extension : extensions) {
-            if (extension instanceof MailAutomationRuntime) {
-                result.addAll(((MailAutomationRuntime) extension).getSettingsExtensions());
+            if (extension instanceof SettingsExtensionProvider) {
+                result.addAll(((SettingsExtensionProvider) extension).getSettingsExtensions());
             }
         }
         return List.copyOf(result);

@@ -334,6 +334,24 @@ basename for explicit local imports. A rule for `PNT46REG.*` does not match
 changes source/receipt identities and removing a rule causes strict revalidation
 on the next import. Existing catalog data is retained if revalidation fails.
 
+Administrators can edit these rules through **Station → Plugins → Node directory
+→ CRC checks**, using the existing extension-settings RPC as well. Select a
+source, enter a filename mask and choose **New Point Keeper (XMODEM / ARC)**.
+Saving atomically updates the two CRC directive sets in `conf.d/30-nodelist.conf`,
+preserves its other settings/comments, removes an exact matching legacy ignore
+entry, and applies the new policy to the active directory service. Selecting
+**Standard XMODEM** removes that pair's compatibility/ignore entries. It is refused
+if another remaining rule overlaps that source/mask, avoiding a silent fallback
+to a broader exception. Other sources and masks are preserved.
+
+Legacy ignore entries are shown separately, read-only. If CRC rules are declared
+in the main file/another fragment, or `30-nodelist.conf` was edited externally
+since startup, the UI becomes read-only rather than overwriting those declarations.
+Edit the relevant files and restart in that case. The settings provider exists
+only while the directory service is active, independently of external scripts;
+the runner consumes a generic provider interface and imports no directory class.
+Existing import jobs and retained catalogs are not automatically rerun or removed.
+
 ## Scoped header CRC exceptions
 
 Automatic header CRC checking remains the default. For a known publisher with

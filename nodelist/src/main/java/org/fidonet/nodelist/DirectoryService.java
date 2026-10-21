@@ -2,6 +2,8 @@ package org.fidonet.nodelist;
 
 import org.fidonet.config.IConfig;
 import org.fidonet.config.StorageConfiguration;
+import org.fidonet.jftn.plugins.ui.SettingsExtension;
+import org.fidonet.jftn.plugins.ui.SettingsExtensionProvider;
 import org.fidonet.jftn.script.DirectoryImportService;
 import org.fidonet.jftn.tosser.MailProcessingExtension;
 import org.fidonet.jftn.tosser.Tosser;
@@ -20,9 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /** Owns a catalog and periodically refreshes configured files under the mail processing lock. */
-public final class DirectoryService implements MailProcessingExtension, DirectoryImportService {
+public final class DirectoryService
+        implements
+            MailProcessingExtension,
+            DirectoryImportService,
+            SettingsExtensionProvider {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryService.class);
     private final DirectoryCatalog catalog;
     private final List<DirectorySource> sources;
@@ -32,6 +39,7 @@ public final class DirectoryService implements MailProcessingExtension, Director
     private final List<DirectorySource> localSources;
     private final Set<String> deliverySources = new HashSet<>();
     private DirectoryChecksumExceptions checksumExceptions;
+    private final SettingsExtension settings;
     private long lastAttempt;
 
     private DirectoryService(DirectoryCatalog catalog,
@@ -39,12 +47,15 @@ public final class DirectoryService implements MailProcessingExtension, Director
                              long seconds,
                              boolean refreshEnabled,
                              Set<String> localIds,
-                             DirectoryChecksumExceptions checksumExceptions) {
+                             DirectoryChecksumExceptions checksumExceptions,
+                             IConfig config,
+                             DirectoryCrcConfiguration crcFile) {
         this.catalog = catalog;
         this.sources = List.copyOf(sources);
         interval = TimeUnit.SECONDS.toNanos(seconds);
         this.refreshEnabled = refreshEnabled;
         this.checksumExceptions = checksumExceptions;
+        settings = new DirectoryCrcSettings(this, config, crcFile);
         Map<String, DirectorySource> definitions = new LinkedHashMap<>();
         sources.forEach(source -> definitions.put(source.getId(), source));
         registry = Map.copyOf(definitions);
@@ -106,6 +117,7 @@ public final class DirectoryService implements MailProcessingExtension, Director
         }
         DirectoryChecksumExceptions checksumExceptions = new DirectoryChecksumExceptions(config,
                                                                                          names);
+        DirectoryCrcConfiguration crcFile = new DirectoryCrcConfiguration(config);
         return new DirectoryService(new DirectoryCatalog(StorageConfiguration.open(config,
                                                                                    "directory",
                                                                                    Path.of(config.getValue("NodeDirectoryPath",
@@ -114,7 +126,9 @@ public final class DirectoryService implements MailProcessingExtension, Director
                                     seconds,
                                     refreshEnabled,
                                     localIds,
-                                    checksumExceptions);
+                                    checksumExceptions,
+                                    config,
+                                    crcFile);
     }
 
     static boolean flag(IConfig config, String key, boolean fallback) {
@@ -123,6 +137,19 @@ public final class DirectoryService implements MailProcessingExtension, Director
             throw new IllegalArgumentException(key + " must be true or false");
         }
         return Boolean.parseBoolean(value);
+    }
+
+    @Override
+    public List<SettingsExtension> getSettingsExtensions() {
+        return List.of(settings);
+    }
+
+    List<String> sourceIds() {
+        return registry.keySet().stream().sorted().collect(Collectors.toList());
+    }
+
+    synchronized void setChecksumPolicy(DirectoryChecksumExceptions policy) {
+        checksumExceptions = policy;
     }
 
     public boolean isRefreshEnabled() {

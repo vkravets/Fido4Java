@@ -4,6 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'directory-crc-settings', story: 'plugins-pluginsettingspanel--directory-crc' },
+    {
+        name: 'directory-crc-read-only',
+        story: 'plugins-pluginsettingspanel--directory-crc-read-only'
+    },
     { name: 'mail-typography-reader', story: 'mail-mailappearancesettings--box-drawing' },
     { name: 'mail-typography-editor', story: 'mail-mailappearancesettings--box-drawing-editor' },
     { name: 'collapsed-list-echo-tree', story: 'layout-maillistworkspace--echo-tree' },

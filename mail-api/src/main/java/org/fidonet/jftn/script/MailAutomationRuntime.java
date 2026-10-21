@@ -4,6 +4,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.echobase.MailStorage;
 import org.fidonet.jftn.engine.script.ScriptApi;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
+import org.fidonet.jftn.plugins.ui.SettingsExtensionProvider;
 import org.fidonet.jftn.share.CommandCollection;
 import org.fidonet.jftn.share.CommandRegistry;
 import org.fidonet.jftn.share.ScriptHookRegistry;
@@ -20,7 +21,10 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /** A node-owned script runtime, created and closed under the mail processing lock. */
-public final class MailAutomationRuntime extends ScriptApi implements MailProcessingExtension {
+public final class MailAutomationRuntime extends ScriptApi
+        implements
+            MailProcessingExtension,
+            SettingsExtensionProvider {
     @FunctionalInterface
     public interface FileEchoHandler {
         void accept(FileEchoEvent event) throws IOException;
@@ -69,6 +73,7 @@ public final class MailAutomationRuntime extends ScriptApi implements MailProces
     private FileEchoService fileEcho;
     private final List<SettingsExtension> settingsExtensions = new ArrayList<>();
 
+    @Override
     public List<SettingsExtension> getSettingsExtensions() {
         return List.copyOf(settingsExtensions);
     }
