@@ -50,10 +50,7 @@ function notification(page: Page) {
 async function signIn(page: Page, username: string, password: string) {
     await page.getByRole('textbox', { name: 'Username', exact: true }).fill(username);
     await page.getByLabel('Password', { exact: true }).fill(password);
-    await page
-        .locator('form')
-        .getByRole('button', { name: /^Sign in/ })
-        .click();
+    await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(
         page.locator('.settings-page-header').getByRole('heading', { name: 'Profile', exact: true })
     ).toBeVisible();

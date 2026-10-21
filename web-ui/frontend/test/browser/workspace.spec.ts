@@ -36,9 +36,20 @@ test('login form fits short screens with password, passkey and registration cont
             await openStory(page, 'authentication-authscreen--login', 'dark', language);
             const card = page.locator('.auth-card');
             const bounds = (await card.boundingBox())!;
+            expect(bounds.width).toBeCloseTo(310, 0);
             expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
             await expect(card.locator('input')).toHaveCount(2);
             await expect(card.locator('button')).toHaveCount(3);
+            const submit = card.locator('button[type="submit"]');
+            const passkey = card.locator('.auth-passkey');
+            await expect(submit).toHaveCSS('justify-content', 'center');
+            await expect(passkey).toHaveAttribute('type', 'button');
+            await expect(passkey).toHaveAccessibleName(/passkey|ключа доступу/);
+            const submitBox = (await submit.boundingBox())!;
+            const passkeyBox = (await passkey.boundingBox())!;
+            expect(passkeyBox.width).toBeCloseTo(38, 0);
+            expect(passkeyBox.height).toBeCloseTo(submitBox.height, 0);
+            expect(passkeyBox.y).toBeCloseTo(submitBox.y, 0);
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
             ).toBe(true);

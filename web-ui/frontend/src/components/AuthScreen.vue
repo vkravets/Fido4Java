@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AddressInput from './AddressInput.vue';
+import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { ref } from 'vue';
 import { api } from '../api.ts';
@@ -112,21 +113,27 @@ function submit() {
                                 spellcheck="false"
                         /></label>
                     </template>
-                    <button
-                        class="primary"
-                        :disabled="state.busy.value"
-                    >
-                        {{ mode === 'login' ? t('Sign in') : t('Submit request') }} <span>→</span>
-                    </button>
+                    <div class="auth-actions">
+                        <button
+                            type="submit"
+                            class="primary"
+                            :disabled="state.busy.value"
+                        >
+                            {{ mode === 'login' ? t('Sign in') : t('Submit request') }}
+                        </button>
+                        <button
+                            v-if="mode === 'login' && state.methods.passkey"
+                            type="button"
+                            class="secondary auth-passkey"
+                            :disabled="state.busy.value"
+                            :aria-label="t('Sign in with a passkey')"
+                            :title="t('Sign in with a passkey')"
+                            @click="state.run(state.passkeyLogin)"
+                        >
+                            <AppIcon name="fingerprint" />
+                        </button>
+                    </div>
                 </form>
-                <button
-                    v-if="mode === 'login' && state.methods.passkey"
-                    class="secondary full"
-                    :disabled="state.busy.value"
-                    @click="state.run(state.passkeyLogin)"
-                >
-                    {{ t('Sign in with a passkey') }}
-                </button>
                 <p
                     v-if="state.registration.value"
                     class="center"

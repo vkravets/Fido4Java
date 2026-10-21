@@ -270,7 +270,7 @@ code {
 }
 .auth-layout {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: minmax(0, 1fr) 310px;
     gap: 64px;
     max-width: 1040px;
     padding: 24px 32px;
@@ -290,7 +290,11 @@ code {
     font-size: 16px;
 }
 .auth-card {
-    padding: 20px 24px;
+    width: 100%;
+    max-width: 310px;
+    min-width: 0;
+    padding: 20px;
+    margin-inline: auto;
 }
 .auth-layout .eyebrow {
     margin-bottom: 12px;
@@ -317,20 +321,38 @@ code {
     padding: 7px 12px;
     font-size: 14px;
 }
-.auth-card .full {
-    margin-top: 8px;
-}
 .auth-card .center {
     margin: 12px 0 0;
 }
 .auth-card .text-button {
     line-height: 1.4;
+    white-space: normal;
+    text-align: center;
+}
+.auth-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
 }
 .auth-card .primary {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.auth-card .auth-actions button {
+    min-height: 38px;
+}
+.auth-card .auth-actions .auth-passkey {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    min-width: 38px;
+    width: 38px;
+    padding: 0;
 }
 .center {
     text-align: center;
@@ -866,7 +888,7 @@ footer.actions {
 @media (max-width: 1000px) {
     .auth-layout {
         gap: 32px;
-        grid-template-columns: 1fr 360px;
+        grid-template-columns: minmax(0, 1fr) 310px;
     }
     .intro h1 {
         font-size: 40px;
