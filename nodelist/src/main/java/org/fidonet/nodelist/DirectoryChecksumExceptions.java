@@ -17,18 +17,32 @@ import java.util.Set;
 /** Explicit per-source exceptions for full-publication header CRCs, never for diffs. */
 final class DirectoryChecksumExceptions {
     private static final Logger LOG = LoggerFactory.getLogger(DirectoryChecksumExceptions.class);
-    private final Map<String, List<String>> compatibility = new LinkedHashMap<>();
+    private final Map<String, List<Rule>> compatibility = new LinkedHashMap<>();
     private final Map<String, List<String>> masks = new LinkedHashMap<>();
+
+    private static final class Rule {
+        final String mask;
+        final DirectoryCrcMode mode;
+
+        Rule(String mask, DirectoryCrcMode mode) {
+            this.mask = mask;
+            this.mode = mode;
+        }
+    }
 
     DirectoryChecksumExceptions(IConfig config, Set<String> sources) {
         List<String> modes = config.getValuesAsList("DirectoryCRCCompatibility");
         if (modes != null) {
             for (String rule : modes) {
                 String[] fields = rule.split("\\|", -1);
-                if (fields.length != 3 || !fields[2].trim().equals("new-point-keeper")) {
-                    throw new IllegalArgumentException("Expected DirectoryCRCCompatibility=known-source-id|filename-mask|new-point-keeper");
+                if (fields.length != 3) {
+                    throw new IllegalArgumentException("Expected DirectoryCRCCompatibility=known-source-id|filename-mask|XMODEM-CRC or ARC-CRC");
                 }
-                add(compatibility, fields[0].trim(), fields[1].trim(), sources);
+                add(compatibility,
+                    fields[0].trim(),
+                    fields[1].trim(),
+                    DirectoryCrcMode.parse(fields[2]),
+                    sources);
             }
         }
         List<String> rules = config.getValuesAsList("DirectoryIgnoreCRC");
@@ -52,9 +66,10 @@ final class DirectoryChecksumExceptions {
         }
     }
 
-    private static void add(Map<String, List<String>> rules,
+    private static void add(Map<String, List<Rule>> rules,
                             String id,
                             String pattern,
+                            DirectoryCrcMode mode,
                             Set<String> sources) {
         if (!sources.contains(id)) {
             throw new IllegalArgumentException("Unknown CRC compatibility source: " + id);
@@ -63,15 +78,24 @@ final class DirectoryChecksumExceptions {
         if (!mask.matches("[A-Za-z0-9_.*?+-]{1,128}") || !mask.matches(".*[A-Za-z0-9].*")) {
             throw new IllegalArgumentException("CRC compatibility requires a filename mask with literal letters/digits, without directories");
         }
-        List<String> values = rules.computeIfAbsent(id, key -> new ArrayList<>());
-        if (values.contains(mask)) {
-            throw new IllegalArgumentException("Duplicate DirectoryCRCCompatibility rule");
+        List<Rule> values = rules.computeIfAbsent(id, key -> new ArrayList<>());
+        for (Rule rule : values) {
+            if (rule.mask.equals(mask)) {
+                throw new IllegalArgumentException("Duplicate DirectoryCRCCompatibility rule");
+            }
+            if (rule.mode != mode && DirectoryFilenameMasks.overlaps(rule.mask, mask)) {
+                throw new IllegalArgumentException("Overlapping filename masks select different CRC algorithms");
+            }
         }
-        values.add(mask);
+        values.add(new Rule(mask, mode));
     }
 
     String compatibilityDefinition(String id) {
-        return String.join(",", compatibility.getOrDefault(id, List.of()));
+        List<String> values = new ArrayList<>();
+        for (Rule rule : compatibility.getOrDefault(id, List.of())) {
+            values.add(rule.mask + "=" + rule.mode.value);
+        }
+        return String.join(",", values);
     }
 
     String definition(String id) {
@@ -85,9 +109,11 @@ final class DirectoryChecksumExceptions {
         if (diff) {
             return source;
         }
-        for (String mask : compatibility.getOrDefault(source.getId(), List.of())) {
-            if (RobotRequest.matches(mask, originalName)) {
-                return source.withIgnoredChecksum(false).withNewPointKeeperChecksum(true);
+        for (Rule rule : compatibility.getOrDefault(source.getId(), List.of())) {
+            if (RobotRequest.matches(rule.mask, originalName)) {
+                return source.atPath(source.getPath(), true)
+                             .withIgnoredChecksum(false)
+                             .withArcChecksum(rule.mode == DirectoryCrcMode.ARC_CRC);
             }
         }
         for (String mask : masks.getOrDefault(source.getId(), List.of())) {

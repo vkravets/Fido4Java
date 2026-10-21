@@ -301,56 +301,65 @@ Strict XMODEM validation remains the default. The explicit compatibility rule
 below now verifies this publisher's checksum instead of skipping it. No automatic
 global generator detection is enabled.
 
-## Scoped CRC compatibility
+## Scoped CRC algorithms
 
-Configure an explicit source and original filename mask in `conf.d/30-nodelist.conf`:
+Select an algorithm explicitly for a source and original filename mask in
+`conf.d/30-nodelist.conf`:
 
 ```ini
-DirectoryCRCCompatibility=points|PNT46REG.*|new-point-keeper
+DirectoryCRCCompatibility=points|PNT46REG.*|ARC-CRC
+DirectoryCRCCompatibility=nodes|NODELIST.*|XMODEM-CRC
 ```
 
-Rules are repeatable, validated before opening storage, and use the same safe
+- **XMODEM-CRC**: CRC-16/XMODEM over canonical CRLF body lines. This is also the
+  default when no rule matches.
+- **ARC-CRC**: CRC-16/ARC over original body bytes, preserving line endings and
+  the presence/absence of a final newline. It does not inspect application names,
+  versions or generator comments.
+
+Both algorithms exclude the first header line and DOS EOF. A matching explicit
+rule requires a header checksum even if the source's `requireChecksum` is false.
+Only the selected algorithm is checked: ARC does not fall back to XMODEM, or vice
+versa. A missing or mismatched checksum is rejected. Successful ARC verification
+is logged at INFO. Originals are never normalized or rewritten.
+
+Rules are repeatable and validated before opening storage. They use the same safe
 case-insensitive filename glob syntax as `DirectoryIgnoreCRC`. Unknown source IDs,
-unknown modes, bare `*`, paths and duplicate source/mask pairs are rejected.
+unknown algorithms, bare `*`, paths and duplicate source/mask pairs are rejected.
+Overlapping masks for the same source may not select different algorithms.
+Modes are case-insensitive. The old `new-point-keeper` mode remains a readable alias
+for **ARC-CRC**, now without a generator-marker requirement; `standard` aliases
+**XMODEM-CRC**. New UI saves use the canonical algorithm names.
 
-For matching **full publications**, canonical-CRLF XMODEM is checked first. Only
-if it fails may ARC over the original body bytes be used, and only when the second
-line exactly equals `;S Created by New Point Keeper v.0.0.0.7.`. A missing checksum,
-an altered marker, or a mismatch of both CRCs is rejected. The marker alone is
-never sufficient. ARC excludes the first line and DOS EOF, preserving actual body
-line endings and the presence/absence of a final newline. Successful fallback
-validation is logged at INFO. Stored originals are never normalized or rewritten.
-
-Compatibility takes precedence over a matching old ignore rule so that the
-verified mode cannot accidentally fall back to skipping CRC. Remove the old
-`DirectoryIgnoreCRC` entry for the same source/mask when migrating. Structural,
-address, duplicate-record, archive and TIC checks remain in effect. Diff imports
-always clear both compatibility and ignore modes: their base and output must
-pass standard XMODEM. Direct `DirectoryUpdate` callers have the same restriction.
+Explicit algorithm rules take precedence over matching legacy ignore rules, so a
+bad checksum cannot fall back to skipping validation. Structural, address,
+duplicate-record, archive and TIC checks remain in effect. Rules apply to **full
+publications only**. Diff imports always clear ARC and ignore modes: their base
+and output must pass XMODEM-CRC. Direct `DirectoryUpdate` callers have the same
+restriction.
 
 The mask uses the original outer delivery filename for archives and the source
 basename for explicit local imports. A rule for `PNT46REG.*` does not match
 `points.lst`; a deliberate local import needs its own narrow rule. Changing rules
-changes source/receipt identities and removing a rule causes strict revalidation
-on the next import. Existing catalog data is retained if revalidation fails.
+changes source/receipt identities. Existing catalog data is retained if a later
+import fails checksum validation.
 
-Administrators can edit these rules through **Station → Plugins → Node directory
-→ CRC checks**, using the existing extension-settings RPC as well. Select a
-source, enter a filename mask and choose **New Point Keeper (XMODEM / ARC)**.
-Saving atomically updates the two CRC directive sets in `conf.d/30-nodelist.conf`,
-preserves its other settings/comments, removes an exact matching legacy ignore
-entry, and applies the new policy to the active directory service. Selecting
-**Standard XMODEM** removes that pair's compatibility/ignore entries. It is refused
-if another remaining rule overlaps that source/mask, avoiding a silent fallback
-to a broader exception. Other sources and masks are preserved.
+Administrators can edit rules through **Station → Plugins → Node directory → CRC
+checks**, or the existing extension-settings RPC. Select a source, filename mask
+and **XMODEM-CRC** or **ARC-CRC**. Saving atomically updates CRC directives in
+`conf.d/30-nodelist.conf`, preserves other settings/comments, removes the exact
+matching legacy ignore entry and applies the selected algorithm to the active
+service. Selecting XMODEM-CRC stores an explicit XMODEM rule; it therefore also
+overrides broader legacy ignore masks. Conflicting algorithm rules are rejected
+without changing the file or live policy.
 
 Legacy ignore entries are shown separately, read-only. If CRC rules are declared
 in the main file/another fragment, or `30-nodelist.conf` was edited externally
 since startup, the UI becomes read-only rather than overwriting those declarations.
-Edit the relevant files and restart in that case. The settings provider exists
-only while the directory service is active, independently of external scripts;
-the runner consumes a generic provider interface and imports no directory class.
-Existing import jobs and retained catalogs are not automatically rerun or removed.
+Edit the relevant files and restart in that case. The provider exists only while
+the directory service is active, independently of external scripts. The runner
+uses a generic provider interface and imports no directory class. Existing import
+jobs and retained catalogs are not automatically rerun or removed.
 
 ## Scoped header CRC exceptions
 

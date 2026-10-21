@@ -47,7 +47,8 @@ Optional future scope (not committed features)
 - Locate New Point Keeper v0.0.0.7 source if source-line attribution is needed.
   The checksum discrepancy is resolved: 76/76 samples match ARC over original LF
   body bytes. Explicit DirectoryCRCCompatibility source/mask rules now verify that
-  format, with an exact generator marker and strict XMODEM first; diffs stay strict.
+  format as ARC-CRC without generator detection; XMODEM-CRC is the default and
+  remains mandatory for diffs.
   Evidence/reproduction: docs/nodelist.md, tools/directory_crc.py.
 
 - Select additional binkp/TIC extensions or services only with explicit protocol

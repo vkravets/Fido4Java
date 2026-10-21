@@ -4,9 +4,7 @@ import org.fidonet.config.IConfig;
 import org.fidonet.jftn.plugins.ui.SettingsExtension;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,14 +40,14 @@ final class DirectoryCrcSettings implements SettingsExtension {
                             "mask",
                             fields[1].trim(),
                             "mode",
-                            fields[2].trim()));
+                            DirectoryCrcMode.parse(fields[2]).value));
         }
         List<Field> fields = List.of(new Field("source", "Source", "select", service.sourceIds()),
                                      new Field("mask", "Filename mask", "text", List.of()),
                                      new Field("mode",
                                                "CRC mode",
                                                "select",
-                                               List.of("standard", "new-point-keeper")));
+                                               List.of("XMODEM-CRC", "ARC-CRC")));
         List<Section> sections = new ArrayList<>();
         sections.add(new Section("crc", "CRC checks", fields, rows, file.writable()));
         if (!ignored.isEmpty()) {
@@ -74,10 +72,10 @@ final class DirectoryCrcSettings implements SettingsExtension {
                                                "Маска імені файлу",
                                                "CRC mode",
                                                "Режим CRC",
-                                               "standard",
-                                               "Стандартний XMODEM",
-                                               "new-point-keeper",
-                                               "New Point Keeper (XMODEM / ARC)",
+                                               "XMODEM-CRC",
+                                               "XMODEM-CRC",
+                                               "ARC-CRC",
+                                               "ARC-CRC",
                                                "Legacy CRC exceptions",
                                                "Старі винятки перевірки CRC");
         return new View(id(),
@@ -87,10 +85,7 @@ final class DirectoryCrcSettings implements SettingsExtension {
                         Map.of("uk",
                                ukrainian,
                                "en",
-                               Map.of("standard",
-                                      "Standard XMODEM",
-                                      "new-point-keeper",
-                                      "New Point Keeper (XMODEM / ARC)")));
+                               Map.of("XMODEM-CRC", "XMODEM-CRC", "ARC-CRC", "ARC-CRC")));
     }
 
     @Override
@@ -104,25 +99,13 @@ final class DirectoryCrcSettings implements SettingsExtension {
                 || !mask.matches(".*[A-Za-z0-9].*")) {
             throw new IllegalArgumentException("Expected a known source and a safe filename mask");
         }
-        String mode = values.get("mode");
-        if (!Set.of("standard", "new-point-keeper").contains(mode)) {
-            throw new IllegalArgumentException("Unknown directory CRC mode");
-        }
+        String mode = DirectoryCrcMode.parse(values.get("mode")).value;
         String pair = id + "|" + mask;
-        // Always validate the source and mask, including removal/standard commands.
-        new DirectoryChecksumExceptions(DirectoryCrcConfiguration.parse(DirectoryCrcConfiguration.COMPATIBILITY
-                + "=" + pair + "|new-point-keeper\n"), Set.copyOf(service.sourceIds()));
         List<String> next = new ArrayList<>(compatibility);
         next.removeIf(rule -> samePair(rule, id, mask));
-        if (mode.equals("new-point-keeper")) {
-            next.add(pair + "|new-point-keeper");
-        }
+        next.add(pair + "|" + mode);
         List<String> remaining = new ArrayList<>(ignored);
         remaining.removeIf(rule -> samePair(rule, id, mask));
-        if (mode.equals("standard")) {
-            requireStrictScope(next, id, mask);
-            requireStrictScope(remaining, id, mask);
-        }
         StringBuilder declarations = new StringBuilder();
         next.forEach(rule -> declarations.append(DirectoryCrcConfiguration.COMPATIBILITY)
                                          .append('=')
@@ -145,44 +128,4 @@ final class DirectoryCrcSettings implements SettingsExtension {
         return fields[0].trim().equals(id) && fields[1].trim().equalsIgnoreCase(mask);
     }
 
-    private static void requireStrictScope(List<String> rules, String id, String mask) {
-        for (String rule : rules) {
-            String[] fields = rule.split("\\|", -1);
-            if (fields[0].trim().equals(id) && overlaps(fields[1].trim(), mask)) {
-                throw new IllegalArgumentException("Another CRC rule overlaps this mask; resolve overlapping rules before selecting Standard XMODEM");
-            }
-        }
-    }
-
-    /** Whether two validated '*'/'?' filename globs can select the same name. */
-    static boolean overlaps(String first, String second) {
-        String a = first.toUpperCase(Locale.ROOT);
-        String b = second.toUpperCase(Locale.ROOT);
-        ArrayDeque<int[]> pending = new ArrayDeque<>();
-        Set<Integer> seen = new HashSet<>();
-        pending.add(new int[]{0, 0});
-        while (!pending.isEmpty()) {
-            int[] state = pending.remove();
-            int i = state[0];
-            int j = state[1];
-            if (!seen.add(i * (b.length() + 1) + j)) {
-                continue;
-            }
-            if (i == a.length() && j == b.length()) {
-                return true;
-            }
-            char x = i < a.length() ? a.charAt(i) : 0;
-            char y = j < b.length() ? b.charAt(j) : 0;
-            if (x == '*') {
-                pending.add(new int[]{i + 1, j});
-            }
-            if (y == '*') {
-                pending.add(new int[]{i, j + 1});
-            }
-            if (x != 0 && y != 0 && (x == '*' || y == '*' || x == '?' || y == '?' || x == y)) {
-                pending.add(new int[]{x == '*' ? i : i + 1, y == '*' ? j : j + 1});
-            }
-        }
-        return false;
-    }
 }

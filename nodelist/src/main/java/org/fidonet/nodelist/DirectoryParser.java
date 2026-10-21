@@ -13,7 +13,6 @@ import java.io.PushbackInputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -50,9 +49,7 @@ public final class DirectoryParser {
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(DirectoryParser.class);
-    private static final byte[] NEW_POINT_KEEPER = ";S Created by New Point Keeper v.0.0.0.7.".getBytes(StandardCharsets.US_ASCII);
     private int arc;
-    private boolean newPointKeeper;
     private static final Pattern CHECKSUM = Pattern.compile(":\\s*(\\d+)\\s*$");
     private static final Pattern ADDRESS = Pattern.compile("(?:(\\d+):)?(\\d+)/(\\d+)(?:\\.(\\d+))?");
     private static final Pattern USER_ADDRESS = Pattern.compile("(?:\\d+:)?\\d+/\\d+(?:\\.\\d+)?\\s*$");
@@ -100,24 +97,21 @@ public final class DirectoryParser {
                 }
                 crc = crc16(crc16(crc, 13), 10);
             }
-            if (line == 2) {
-                newPointKeeper = Arrays.equals(bytes, NEW_POINT_KEEPER);
-            }
             readRecord(bytes);
         }
         if (line == 0 || records == 0) {
             throw failure("No directory records; refusing an empty replacement", null);
         }
-        if (!source.isChecksumIgnored()
-                && (source.isChecksumRequired() || source.isNewPointKeeperChecksum())
+        if (!source.isChecksumIgnored() && (source.isChecksumRequired() || source.isArcChecksum())
                 && expected == null) {
             throw failure("Missing header CRC", null);
         }
-        if (!source.isChecksumIgnored() && expected != null && expected != crc) {
-            if (!source.isNewPointKeeperChecksum() || !newPointKeeper || expected != arc) {
-                throw failure("CRC mismatch: expected " + expected + ", computed " + crc, null);
-            }
-            LOG.info("Validated directory header CRC using new-point-keeper compatibility: source={}, CRC-16/ARC={}",
+        int computed = source.isArcChecksum() ? arc : crc;
+        if (!source.isChecksumIgnored() && expected != null && expected != computed) {
+            throw failure("CRC mismatch: expected " + expected + ", computed " + computed, null);
+        }
+        if (!source.isChecksumIgnored() && source.isArcChecksum()) {
+            LOG.info("Validated directory header using ARC-CRC: source={}, checksum={}",
                      source.getId(),
                      arc);
         }
@@ -158,13 +152,13 @@ public final class DirectoryParser {
                 }
                 break;
             }
-            if (line > 0 && source.isNewPointKeeperChecksum()) {
+            if (line > 0 && source.isArcChecksum()) {
                 arc = crc16Arc(arc, value);
             }
             if (value == 13 || value == 10) {
                 if (value == 13) {
                     int next = input.read();
-                    if (next == 10 && line > 0 && source.isNewPointKeeperChecksum()) {
+                    if (next == 10 && line > 0 && source.isArcChecksum()) {
                         arc = crc16Arc(arc, next);
                     }
                     if (next != 10 && next != -1) {

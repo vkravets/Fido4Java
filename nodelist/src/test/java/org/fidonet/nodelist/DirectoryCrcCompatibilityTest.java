@@ -17,12 +17,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 class DirectoryCrcCompatibilityTest {
     private static final String MARKER = ";S Created by New Point Keeper v.0.0.0.7.";
-    private static final String RULE = "DirectoryCRCCompatibility=points|PNT46REG.*|new-point-keeper\n";
+    private static final String RULE = "DirectoryCRCCompatibility=points|PNT46REG.*|ARC-CRC\n";
     @TempDir
     Path root;
 
@@ -111,7 +112,7 @@ class DirectoryCrcCompatibilityTest {
     }
 
     @Test
-    void neverUsesMarkerAsPermissionToSkipValidationEvenWithAnOldIgnoreRule() throws Exception {
+    void selectedAlgorithmNeverSkipsValidationEvenWithAnOldIgnoreRule() throws Exception {
         String original = publication(body("Original"), true);
         Path incoming = input(original);
         try (DirectoryService service = DirectoryService.open(config(RULE
@@ -119,9 +120,6 @@ class DirectoryCrcCompatibilityTest {
             service.importFile("points", incoming, "PNT46REG.289", false);
             for (String bad : List.of(original.replace("Original", "Tampered"),
                                       original.replace("v.0.0.0.7.", "v.0.0.0.8."),
-                                      publication(body("Original").replace(MARKER,
-                                                                           ";Wrong generator"),
-                                                  true),
                                       original.replaceAll(": \\d+\\n", " : \n"),
                                       original.replace("\n", "\r\n"),
                                       publication(body("Invalid").replace(",1,", ",70000,"), true),
@@ -141,7 +139,7 @@ class DirectoryCrcCompatibilityTest {
     }
 
     @Test
-    void acceptsStandardXmodemFirstAndArcIncludesActualTerminators() throws Exception {
+    void selectedArcUsesActualTerminatorsAndDoesNotFallBackToXmodem() throws Exception {
         try (DirectoryService service = DirectoryService.open(config(RULE))) {
             for (String body : List.of(body("LF"),
                                        body("CRLF").replace("\n", "\r\n"),
@@ -154,8 +152,36 @@ class DirectoryCrcCompatibilityTest {
             String standard = publication(body("Standard").replace(MARKER, ";Different program")
                                                           .replace("\n", "\r\n"),
                                           false);
-            assertTrue(service.importFile("points", input(standard), "PNT46REG.290", false)
+            Path standardFile = input(standard);
+            assertThrows(IOException.class,
+                         () -> service.importFile("points", standardFile, "PNT46REG.290", false));
+        }
+        try (DirectoryService service = DirectoryService.open(config(RULE.replace("ARC-CRC",
+                                                                                  "XMODEM-CRC")))) {
+            Path arcFile = input(publication(body("Arc"), true));
+            assertThrows(IOException.class,
+                         () -> service.importFile("points", arcFile, "PNT46REG.289", false));
+            Path standardFile = input(publication(body("Standard").replace("\n", "\r\n"), false));
+            assertTrue(service.importFile("points", standardFile, "PNT46REG.290", false)
                               .isChanged());
+        }
+    }
+
+    @Test
+    void arcDoesNotDependOnGeneratorNameOrVersionAndReadsTheLegacyAlias() throws Exception {
+        String alias = RULE.replace("ARC-CRC", "new-point-keeper");
+        try (DirectoryService service = DirectoryService.open(config(alias))) {
+            for (String text : List.of(body("Other").replace(MARKER,
+                                                             ";Created by another application"),
+                                       body("Version").replace("v.0.0.0.7.", "v.9.0."),
+                                       body("NoMarker").replace(MARKER + "\n", ""))) {
+                assertEquals(1,
+                             service.importFile("points",
+                                                input(publication(text, true)),
+                                                "PNT46REG.289",
+                                                false)
+                                    .getRecords());
+            }
         }
     }
 
@@ -176,8 +202,9 @@ class DirectoryCrcCompatibilityTest {
                          () -> service.importFile("points", diff, "PNT46REG.290", true));
             assertEquals(text, Files.readString(root.resolve("points.lst")));
         }
-        DirectorySource opted = DirectorySource.parse("points|BOSS|" + root.resolve("points.lst")
-                + "|0|0|UTF-8|true").withNewPointKeeperChecksum(true);
+        DirectorySource opted = DirectorySource.parse("points|BOSS|"
+                                                      + root.resolve("points.lst")
+                                                      + "|0|0|UTF-8|true").withArcChecksum(true);
         try (DirectoryCatalog catalog = new DirectoryCatalog(root.resolve("direct-catalog"))) {
             assertThrows(IOException.class,
                          () -> DirectoryUpdate.install(catalog, opted, input(text), true));
@@ -191,17 +218,37 @@ class DirectoryCrcCompatibilityTest {
         try (DirectoryService service = DirectoryService.open(config(RULE + local))) {
             assertThrows(IOException.class, service::refreshLocal);
         }
-        String rule = "DirectoryCRCCompatibility=points|points.lst|new-point-keeper\n";
+        String rule = "DirectoryCRCCompatibility=points|points.lst|ARC-CRC\n";
         try (DirectoryService service = DirectoryService.open(config(rule + local))) {
             assertEquals(1, service.refreshLocal().get(0).getRecords());
         }
     }
 
     @Test
+    void explicitXmodemRequiresAChecksumEvenForAnOtherwiseOptionalSource() throws Exception {
+        DirectorySource optional = DirectorySource.parse("points|BOSS|"
+                                                         + root.resolve("points.lst")
+                                                         + "|0|0|UTF-8|false");
+        DirectoryChecksumExceptions policy = new DirectoryChecksumExceptions(config(RULE.replace("ARC-CRC",
+                                                                                                 "XMODEM-CRC")),
+                                                                             Set.of("points"));
+        DirectorySource selected = policy.select(optional, "PNT46REG.289", false);
+        byte[] bytes = (";A Pointlist without CRC\n"
+                + body("Optional")).getBytes(StandardCharsets.UTF_8);
+        assertEquals(1, DirectoryParser.parse(new ByteArrayInputStream(bytes), optional, entry -> {
+        }).getRecords());
+        assertThrows(IOException.class,
+                     () -> DirectoryParser.parse(new ByteArrayInputStream(bytes),
+                                                 selected,
+                                                 entry -> {
+                                                 }));
+    }
+
+    @Test
     void rejectsInvalidRulesBeforeOpeningStorage() throws Exception {
-        for (String rule : List.of("unknown|PNT46REG.*|new-point-keeper",
-                                   "points|*|new-point-keeper",
-                                   "points|../PNT46REG.*|new-point-keeper",
+        for (String rule : List.of("unknown|PNT46REG.*|ARC-CRC",
+                                   "points|*|ARC-CRC",
+                                   "points|../PNT46REG.*|ARC-CRC",
                                    "points|PNT46REG.*|auto",
                                    "true")) {
             assertThrows(IllegalArgumentException.class,

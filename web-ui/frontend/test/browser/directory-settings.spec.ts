@@ -13,19 +13,19 @@ test('directory CRC settings send scoped compatibility and strict-mode commands'
             name: language === 'en' ? 'CRC mode' : 'Режим CRC',
             exact: true
         });
-        await expect(mode).toHaveValue('new-point-keeper');
-        await mode.selectOption('standard');
+        await expect(mode).toHaveValue('ARC-CRC');
+        await mode.selectOption('XMODEM-CRC');
         await page.locator('.plugin-form button[type="submit"]').click();
         let command = JSON.parse(await page.locator('output').innerText());
         expect(command).toEqual({
             id: 'nodelist',
             section: 'crc',
-            values: { source: 'points', mask: 'PNT46REG.*', mode: 'standard' }
+            values: { source: 'points', mask: 'PNT46REG.*', mode: 'XMODEM-CRC' }
         });
-        await mode.selectOption('new-point-keeper');
+        await mode.selectOption('ARC-CRC');
         await page.locator('.plugin-form button[type="submit"]').click();
         command = JSON.parse(await page.locator('output').innerText());
-        expect(command.values.mode).toBe('new-point-keeper');
+        expect(command.values.mode).toBe('ARC-CRC');
     }
 });
 
@@ -35,5 +35,5 @@ test('externally managed directory CRC settings have no write form', async ({ pa
         page.getByText('This section is managed through configuration files.')
     ).toBeVisible();
     await expect(page.locator('.plugin-form')).toHaveCount(0);
-    await expect(page.getByText('New Point Keeper (XMODEM / ARC)', { exact: true })).toBeVisible();
+    await expect(page.getByText('ARC-CRC', { exact: true })).toBeVisible();
 });

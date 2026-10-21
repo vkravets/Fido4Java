@@ -20,7 +20,7 @@ public final class DirectorySource {
     private final Charset charset;
     private final boolean requireChecksum;
     private final boolean ignoreChecksum;
-    private final boolean newPointKeeperChecksum;
+    private final boolean arcChecksum;
 
     public DirectorySource(String id,
                            Format format,
@@ -40,7 +40,7 @@ public final class DirectorySource {
                             Charset charset,
                             boolean requireChecksum,
                             boolean ignoreChecksum,
-                            boolean newPointKeeperChecksum) {
+                            boolean arcChecksum) {
         if (id == null || !id.matches("[A-Za-z0-9_-]{1,80}")) {
             throw new IllegalArgumentException("Directory source ID must contain 1..80 letters, digits, _ or -");
         }
@@ -55,7 +55,7 @@ public final class DirectorySource {
         this.charset = Objects.requireNonNull(charset);
         this.requireChecksum = requireChecksum;
         this.ignoreChecksum = ignoreChecksum;
-        this.newPointKeeperChecksum = newPointKeeperChecksum;
+        this.arcChecksum = arcChecksum;
     }
 
     /** id|format|file[|zone|net|charset|requireChecksum]. */
@@ -126,14 +126,14 @@ public final class DirectorySource {
                                    charset,
                                    requireChecksum,
                                    ignored,
-                                   newPointKeeperChecksum);
+                                   arcChecksum);
     }
 
-    boolean isNewPointKeeperChecksum() {
-        return newPointKeeperChecksum;
+    boolean isArcChecksum() {
+        return arcChecksum;
     }
 
-    DirectorySource withNewPointKeeperChecksum(boolean enabled) {
+    DirectorySource withArcChecksum(boolean enabled) {
         return new DirectorySource(id,
                                    format,
                                    path,
@@ -154,7 +154,7 @@ public final class DirectorySource {
                                    charset,
                                    required,
                                    ignoreChecksum,
-                                   newPointKeeperChecksum);
+                                   arcChecksum);
     }
 
     String definition() {
@@ -170,6 +170,6 @@ public final class DirectorySource {
                + "|"
                + requireChecksum
                + (ignoreChecksum ? "|ignored-header-crc" : "")
-               + (newPointKeeperChecksum ? "|new-point-keeper-crc" : "");
+               + (arcChecksum ? "|arc-crc" : "");
     }
 }

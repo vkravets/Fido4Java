@@ -8,8 +8,8 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
             source: 'conf.d/30-nodelist.conf',
             translations: {
                 en: {
-                    standard: 'Standard XMODEM',
-                    'new-point-keeper': 'New Point Keeper (XMODEM / ARC)'
+                    'XMODEM-CRC': 'XMODEM-CRC',
+                    'ARC-CRC': 'ARC-CRC'
                 },
                 uk: {
                     'Node directory': 'Каталог вузлів',
@@ -17,8 +17,8 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
                     Source: 'Джерело',
                     'Filename mask': 'Маска імені файлу',
                     'CRC mode': 'Режим CRC',
-                    standard: 'Стандартний XMODEM',
-                    'new-point-keeper': 'New Point Keeper (XMODEM / ARC)'
+                    'XMODEM-CRC': 'XMODEM-CRC',
+                    'ARC-CRC': 'ARC-CRC'
                 }
             },
             sections: [
@@ -38,10 +38,10 @@ export function directoryExtensions(writable = true): ExtensionSettings[] {
                             name: 'mode',
                             label: 'CRC mode',
                             type: 'select',
-                            choices: ['standard', 'new-point-keeper']
+                            choices: ['XMODEM-CRC', 'ARC-CRC']
                         }
                     ],
-                    rows: [{ source: 'points', mask: 'PNT46REG.*', mode: 'new-point-keeper' }]
+                    rows: [{ source: 'points', mask: 'PNT46REG.*', mode: 'ARC-CRC' }]
                 }
             ]
         }
