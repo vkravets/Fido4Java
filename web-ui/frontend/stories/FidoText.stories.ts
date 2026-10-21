@@ -3,6 +3,7 @@ import FidoText from '../src/components/FidoText.vue';
 import { provide } from 'vue';
 import { createMailAppearance, mailAppearanceKey } from '../src/mail-themes.ts';
 import { styledMail } from './mail-text-fixture.ts';
+import { dosMail } from './dos-mail-fixture.ts';
 const meta = {
     title: 'Mail/FidoText',
     component: FidoText,
@@ -22,3 +23,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Highlighted: Story = {};
 export const Source: Story = { args: { source: true } };
+export const DosGraphics: Story = { args: { text: dosMail } };

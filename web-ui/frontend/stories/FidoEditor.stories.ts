@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import FidoEditor from '../src/components/FidoEditor.vue';
 import { mailWorkspaceFixture, styledMail } from './mail-workspace-fixture.ts';
+import { dosMail } from './dos-mail-fixture.ts';
 const meta = {
     title: 'Mail/FidoEditor',
     component: FidoEditor,
@@ -22,3 +23,15 @@ export const ReadOnly: Story = { args: { disabled: true } };
 
 export const Source: Story = { args: { initialMode: 'source' } };
 export const Preview: Story = { args: { initialMode: 'preview' } };
+export const DosGraphics: Story = {
+    args: { modelValue: dosMail },
+    render: (args, context) => ({
+        components: { FidoEditor },
+        setup() {
+            mailWorkspaceFixture(context.globals.theme === 'dark');
+            return { args, value: ref(args.modelValue) };
+        },
+        template:
+            '<FidoEditor v-bind="args" v-model="value" /><textarea hidden data-testid="dos-original" :value="value" />'
+    })
+};

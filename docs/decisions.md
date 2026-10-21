@@ -55,6 +55,12 @@ storage or authorization. Text entry, native editing, modal dialogs and isolated
 appearance previews retain their own behavior. Unsupported browser/OS chords are
 not promised. See [keyboard shortcuts](keyboard-shortcuts.md).
 
+Legacy DOS graphic control positions are mapped only for browser display, using
+IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement
+decorations rather than rewriting its document, so editing, undo and outgoing
+drafts retain the original control codes. Reader display and local search use the
+same mapping; original mail and RPC strings are not transcoded for this feature.
+
 Mail appearance uses an isolated live preview of the real reader/composer;
 unsaved palette changes do not mutate account preferences or outgoing mail.
 The personal `mail-themes` document also stores the editor's default outgoing

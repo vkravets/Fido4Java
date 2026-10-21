@@ -45,6 +45,15 @@ hidden. Hiding these controls does not clear saved configuration.
 Configurable JFtn and GoldED+ web keyboard presets are described in
 [Keyboard shortcuts](keyboard-shortcuts.md).
 
+Readers, editor visual/source modes and previews display IBM PC DOS graphic
+positions `0x01..0x1F` and `0x7F` as their Unicode glyphs, for example `0x04` as
+`♦`. TAB, LF and CR retain their layout meaning; NUL is not mapped. This follows
+the [IBM PC graphics mapping](https://www.unicode.org/Public/MAPPINGS/VENDORS/MISC/IBMGRAPH.TXT).
+The conversion is display-only: editor documents, drafts, RPC payloads and link
+targets retain their original characters. Loaded-message search also recognizes
+the visible glyphs. Existing Unicode box drawing and shading stay unchanged.
+This does not interpret ANSI terminal escape sequences.
+
 Netmail composition uses **Add to send queue**. The MAIL navigation panel shows
 the current account's **Awaiting send** count and a separate **Send queued mail**
 button. Waiting messages survive restart but are not packed by the background

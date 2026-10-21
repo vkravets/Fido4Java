@@ -1,10 +1,11 @@
 import { inject, ref } from 'vue';
 import type { InjectionKey, Ref } from 'vue';
 import type { MailItem } from '@rpc/bindings.mjs';
+import { dosGraphicsText } from './dos-graphics.ts';
 export const mailSearchKey: InjectionKey<Ref<string>> = Symbol('mail-search');
 export const useMailSearch = () => inject(mailSearchKey, () => ref(''), true);
 export function matchesMail(item: MailItem, query: string) {
-    const value = query.trim().toLocaleLowerCase();
+    const value = dosGraphicsText(query).trim().toLocaleLowerCase();
     return (
         !value ||
         [
@@ -14,7 +15,7 @@ export function matchesMail(item: MailItem, query: string) {
             item.fromAddress,
             item.toAddress,
             item.excerpt || item.body || ''
-        ].some((text) => text.toLocaleLowerCase().includes(value))
+        ].some((text) => dosGraphicsText(text).toLocaleLowerCase().includes(value))
     );
 }
 export function highlightText(text: string, query: string) {

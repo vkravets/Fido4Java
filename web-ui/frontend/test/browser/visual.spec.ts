@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'dos-graphics-reader', story: 'mail-fidotext--dos-graphics' },
+    { name: 'dos-graphics-editor', story: 'mail-fidoeditor--dos-graphics' },
     { name: 'keyboard-settings', story: 'settings-accountsettings--keyboard' },
     { name: 'keyboard-settings-golded', story: 'settings-accountsettings--golded-keyboard' },
     { name: 'navigation-collapsed-waiting', story: 'navigation-sidebar--collapsed-awaiting-send' },

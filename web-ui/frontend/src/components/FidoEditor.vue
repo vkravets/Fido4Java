@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Compartment, EditorState, StateField } from '@codemirror/state';
 import type { Range } from '@codemirror/state';
-import { Decoration, EditorView, keymap } from '@codemirror/view';
+import { Decoration, EditorView, keymap, WidgetType } from '@codemirror/view';
 import type { DecorationSet } from '@codemirror/view';
 import {
     defaultKeymap,
@@ -14,6 +14,7 @@ import {
 } from '@codemirror/commands';
 import { fidoStyleRanges, fidoText } from '../fido-text.ts';
 import { formatFidoLines } from '../editor-format.ts';
+import { dosGraphic, dosGraphicPattern } from '../dos-graphics.ts';
 import { typographyStyle } from '../mail-typography.ts';
 import { themeStyle, useMailAppearance } from '../mail-themes.ts';
 import { t, locale } from '../i18n.ts';
@@ -55,15 +56,32 @@ const attributes = () =>
         'aria-disabled': String(!!props.disabled)
     });
 let editor: EditorView | undefined;
-function highlight(state: EditorState): DecorationSet {
+class DosGraphicWidget extends WidgetType {
+    constructor(readonly character: string) {
+        super();
+    }
+    eq(other: DosGraphicWidget) {
+        return this.character === other.character;
+    }
+    toDOM(view: EditorView) {
+        const span = view.dom.ownerDocument.createElement('span');
+        span.className = 'dos-graphic';
+        span.textContent = dosGraphic(this.character);
+        return span;
+    }
+    ignoreEvent() {
+        return false;
+    }
+}
+function highlight(state: EditorState, visual = true): DecorationSet {
     const ranges: Range<Decoration>[] = [];
     const text = state.doc.toString();
     const lines = fidoText(text, false);
-    for (let number = 1; number <= state.doc.lines; number++) {
+    for (let number = 1; visual && number <= state.doc.lines; number++) {
         const line = state.doc.line(number);
         ranges.push(Decoration.line({ class: lines[number - 1]!.kind }).range(line.from));
     }
-    for (const range of fidoStyleRanges(text)) {
+    for (const range of visual ? fidoStyleRanges(text) : []) {
         if (range.markers === false) {
             ranges.push(Decoration.mark({ class: range.style }).range(range.from, range.to));
             continue;
@@ -78,12 +96,26 @@ function highlight(state: EditorState): DecorationSet {
         ranges.push(Decoration.replace({}).range(range.from, range.from + 1));
         ranges.push(Decoration.replace({}).range(range.to - 1, range.to));
     }
+    for (const match of text.matchAll(dosGraphicPattern())) {
+        ranges.push(
+            Decoration.replace({ widget: new DosGraphicWidget(match[0]) }).range(
+                match.index!,
+                match.index! + 1
+            )
+        );
+    }
     return Decoration.set(ranges, true);
 }
 const highlighted = StateField.define<DecorationSet>({
     create: highlight,
     update: (value, transaction) =>
         transaction.docChanged || transaction.selection ? highlight(transaction.state) : value,
+    provide: (field) => EditorView.decorations.from(field)
+});
+const sourceGraphics = StateField.define<DecorationSet>({
+    create: (state) => highlight(state, false),
+    update: (value, transaction) =>
+        transaction.docChanged ? highlight(transaction.state, false) : value,
     provide: (field) => EditorView.decorations.from(field)
 });
 onMounted(() => {
@@ -100,7 +132,7 @@ onMounted(() => {
                 keymap.of([...defaultKeymap, ...historyKeymap]),
                 EditorView.lineWrapping,
                 accessibility.of(attributes()),
-                decorations.of(source.value ? [] : highlighted),
+                decorations.of(source.value ? sourceGraphics : highlighted),
                 editable.of([
                     EditorState.readOnly.of(!!props.disabled),
                     EditorView.editable.of(!props.disabled)
@@ -117,6 +149,12 @@ onMounted(() => {
                         fontVariantLigatures: 'none'
                     },
                     '.cm-content': { minHeight: '300px' },
+                    '.dos-graphic': {
+                        display: 'inline-block',
+                        width: '1ch',
+                        textAlign: 'center',
+                        fontVariantEmoji: 'text'
+                    },
                     '.cm-cursor': { borderLeftColor: 'var(--mail-caret)' },
                     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
                         backgroundColor: 'var(--mail-selection)'
@@ -134,7 +172,7 @@ watch(model, (value) => {
     editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: value } });
 });
 watch(source, (value) =>
-    editor?.dispatch({ effects: decorations.reconfigure(value ? [] : highlighted) })
+    editor?.dispatch({ effects: decorations.reconfigure(value ? sourceGraphics : highlighted) })
 );
 watch(
     () => props.disabled,

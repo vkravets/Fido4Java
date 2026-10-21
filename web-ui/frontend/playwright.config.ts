@@ -6,6 +6,7 @@ export default defineConfig({
         'components.spec.ts',
         'workspace.spec.ts',
         'shortcuts.spec.ts',
+        'dos-graphics.spec.ts',
         'typography.spec.ts',
         'directory-settings.spec.ts',
         'plugin-localization.spec.ts'

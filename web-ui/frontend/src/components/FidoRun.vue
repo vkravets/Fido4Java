@@ -2,8 +2,11 @@
 import { computed } from 'vue';
 import type { TextRun } from '../fido-text.ts';
 import { highlightText } from '../mail-search.ts';
+import { dosGraphicsText } from '../dos-graphics.ts';
 const props = defineProps<{ run: TextRun; query: string }>();
-const parts = computed(() => highlightText(props.run.text, props.query));
+const parts = computed(() =>
+    highlightText(dosGraphicsText(props.run.text), dosGraphicsText(props.query))
+);
 </script>
 <template>
     <component

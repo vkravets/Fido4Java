@@ -49,6 +49,7 @@ const lines = computed(() => fidoText(props.text, !props.source));
     font-family: var(--mail-font-family, var(--font-mono, monospace));
     font-size: var(--mail-font-size, inherit);
     font-variant-ligatures: none;
+    font-variant-emoji: text;
     white-space: pre-wrap;
     padding: 16px;
     border-radius: 6px;
