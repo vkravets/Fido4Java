@@ -571,7 +571,9 @@ test('station groups support keyboard navigation and keep unsaved form values', 
     await page.getByLabel('Station name', { exact: true }).fill('Unsaved station');
     await general.focus();
     await general.press('ArrowRight');
-    await expect(page.getByRole('tab', { name: 'Mail links', exact: true })).toBeFocused();
+    await expect(
+        page.getByRole('tab', { name: 'Accounts and requests', exact: true })
+    ).toBeFocused();
     await expect(page.getByLabel('Station name', { exact: true })).toBeHidden();
     await page.getByRole('tab', { selected: true }).press('End');
     await expect(page.getByRole('tab', { name: 'Plugins', exact: true })).toHaveAttribute(
