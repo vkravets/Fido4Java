@@ -10,7 +10,9 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(value.netmail.ratio, 75);
     assert.equal(value.echo.preview, 'right');
     assert.equal(value.echo.ratio, 20);
-    assert.equal(parseWorkspace('broken').collapsed, false);
+    assert.equal(parseWorkspace('broken').collapsed, true);
+    assert.equal(parseWorkspace('{}').collapsed, true);
+    assert.equal(parseWorkspace('{"collapsed":false}').collapsed, false);
 });
 test('late loads cannot replace another account and failed saves retain previous settings', async () => {
     let finish!: (value: string) => void;
@@ -27,10 +29,10 @@ test('late loads cannot replace another account and failed saves retain previous
     const pending = workspace.load('first');
     const resolve = finish;
     const second = workspace.load('second');
-    resolve('{"collapsed":true}');
+    resolve('{"collapsed":false}');
     await pending;
-    assert.equal(workspace.value.value.collapsed, false);
-    finish('{}');
+    assert.equal(workspace.value.value.collapsed, true);
+    finish('{"collapsed":false}');
     await second;
     await assert.rejects(workspace.update({ collapsed: true }), /offline/);
     assert.equal(workspace.value.value.collapsed, false);

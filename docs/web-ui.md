@@ -7,6 +7,9 @@ The application header stays at the top of the viewport while pages scroll.
 Desktop navigation stays directly below it; on mobile, the header keeps the menu
 button accessible.
 
+Desktop navigation starts collapsed when an account has no saved workspace
+preference. An explicitly saved expanded or collapsed choice is retained.
+
 ## Settings workspace
 
 Station and personal settings share a compact workspace with a section menu and

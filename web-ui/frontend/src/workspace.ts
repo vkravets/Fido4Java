@@ -31,7 +31,7 @@ export function workspacePreferences(value: unknown): WorkspacePreferences {
     const row = value && typeof value === 'object' ? (value as Partial<WorkspacePreferences>) : {};
     return {
         version: 1,
-        collapsed: row.collapsed === true,
+        collapsed: row.collapsed !== false,
         netmail: layout(row.netmail),
         echo: layout(row.echo)
     };
