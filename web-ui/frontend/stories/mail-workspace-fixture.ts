@@ -1,5 +1,5 @@
 import { provide, ref } from 'vue';
-import type { AppState } from '../src/state.ts';
+import type { AppState, RunOptions } from '../src/state.ts';
 import { builtInMailThemes, createMailAppearance, mailAppearanceKey } from '../src/mail-themes.ts';
 import { createMailTemplates, mailTemplatesKey } from '../src/mail-templates.ts';
 import { profile } from './fixtures.ts';
@@ -10,15 +10,15 @@ export function mailWorkspaceFixture(dark = false) {
         busy: ref(false),
         notice: ref(''),
         error: ref(''),
-        async run(operation: () => Promise<unknown>) {
-            this.busy.value = true;
+        async run(operation: () => Promise<unknown>, options: RunOptions = {}) {
+            if (!options.background) this.busy.value = true;
             this.error.value = '';
             try {
                 return await operation();
             } catch (failure) {
                 this.error.value = (failure as Error).message;
             } finally {
-                this.busy.value = false;
+                if (!options.background) this.busy.value = false;
             }
         }
     } as AppState;

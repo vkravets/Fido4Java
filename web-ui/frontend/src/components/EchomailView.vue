@@ -3,6 +3,7 @@ import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
+import { useMailReading } from '../mail-reading.ts';
 import { api, bindings } from '../api.ts';
 import { createEchomail, echoClientKey } from '../echomail.ts';
 import { mailId } from '../netmail.ts';
@@ -37,6 +38,12 @@ const index = computed(() =>
     reader.items.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
 );
 defineExpose({ canLeave: reader.discard });
+const {
+    pending: opening,
+    open: openMessage,
+    cancel: cancelRead,
+    run: read
+} = useMailReading(props.state, reader, reader.area);
 onMounted(() =>
     props.state.run(async () => {
         await reader.start(props.initialDraft);
@@ -52,6 +59,7 @@ onMounted(() => window.addEventListener('beforeunload', beforeUnload));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 function back() {
     if (!reader.discard()) return;
+    cancelRead();
     reader.draft.value = null;
     reader.selected.value = null;
     reader.context.value = null;
@@ -188,7 +196,7 @@ const nextUnread = computed(() =>
                 :busy="state.busy.value"
                 :has-more="reader.hasMore.value"
                 :initial-mode="initialMode"
-                @open="(item) => state.run(() => reader.open(item))"
+                @open="openMessage"
                 @more="state.run(() => reader.load(true))"
             />
         </template>
@@ -197,7 +205,7 @@ const nextUnread = computed(() =>
             :key="reader.draft.value.id"
             v-model="reader.draft.value"
             :addresses="reader.authors.value"
-            :busy="state.busy.value"
+            :busy="state.busy.value || opening"
             @initialized="reader.initializeDraft"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
@@ -222,7 +230,7 @@ const nextUnread = computed(() =>
         >
             <NetmailMessage
                 :message="reader.selected.value"
-                :busy="state.busy.value"
+                :busy="state.busy.value || opening"
                 :reply="!!reader.authors.value.length"
                 :removable="false"
                 :forwardable="!!state.profile.value?.allowedAkas.length"
@@ -235,9 +243,9 @@ const nextUnread = computed(() =>
                 :previous-disabled="index <= 0"
                 :next-disabled="index < 0 || index >= reader.items.value.length - 1"
                 :unread-disabled="!nextUnread"
-                @previous="state.run(() => reader.open(reader.items.value[index - 1]!))"
-                @next="state.run(() => reader.open(reader.items.value[index + 1]!))"
-                @unread="nextUnread && state.run(() => reader.open(nextUnread!))"
+                @previous="openMessage(reader.items.value[index - 1]!)"
+                @next="openMessage(reader.items.value[index + 1]!)"
+                @unread="nextUnread && openMessage(nextUnread)"
             />
             <details
                 role="region"
@@ -251,8 +259,8 @@ const nextUnread = computed(() =>
                 <button
                     v-if="reader.context.value.parent"
                     class="secondary"
-                    :disabled="state.busy.value"
-                    @click="state.run(() => reader.open(reader.context.value!.parent!))"
+                    :disabled="state.busy.value || opening"
+                    @click="openMessage(reader.context.value!.parent!)"
                 >
                     {{ t('In reply to') }}: {{ reader.context.value.parent.fromName }} —
                     {{ reader.context.value.parent.subject }}
@@ -284,8 +292,8 @@ const nextUnread = computed(() =>
                     >
                         <button
                             class="text-button"
-                            :disabled="state.busy.value"
-                            @click="state.run(() => reader.open(reply))"
+                            :disabled="state.busy.value || opening"
+                            @click="openMessage(reply)"
                         >
                             {{ reply.fromName }} — {{ reply.subject }}
                         </button>
@@ -296,7 +304,7 @@ const nextUnread = computed(() =>
                     v-if="reader.context.value.replies.hasMore"
                     class="secondary"
                     :disabled="state.busy.value"
-                    @click="state.run(reader.moreReplies)"
+                    @click="read(reader.moreReplies)"
                 >
                     {{ t('More replies') }}
                 </button>

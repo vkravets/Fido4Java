@@ -1,6 +1,33 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('keyboard message changes keep the list enabled and previous preview mounted during a slow read', async ({
+    page
+}) => {
+    for (const story of [
+        'mail-netmailview--switching-message',
+        'mail-echomailview--switching-message'
+    ]) {
+        await openStory(page, story);
+        const next = page.locator('[data-shortcut="mail.next"]');
+        await expect(next).toBeEnabled();
+        const body = page.locator('.mail-body');
+        const original = await body.textContent();
+        const list = page.locator('.split-list');
+        const listNode = (await list.elementHandle())!;
+        await page.keyboard.press('j');
+        await expect(next).toBeDisabled();
+        await expect(list.locator('button:disabled')).toHaveCount(0);
+        await expect(body).toHaveText(original!);
+        expect(await listNode.evaluate((element) => element.isConnected)).toBe(true);
+        await page.keyboard.press('c');
+        await expect(page.locator('.mail-composer')).toBeVisible();
+        await expect(
+            page.getByRole('textbox', { name: 'Message text', exact: true })
+        ).toHaveAttribute('aria-readonly', 'false');
+    }
+});
+
 test('deleting from a shortcut keeps the existing confirmation guard', async ({ page }) => {
     await openStory(page, 'mail-netmailview--reading');
     const remove = page.locator('[data-shortcut="mail.delete"]').first();

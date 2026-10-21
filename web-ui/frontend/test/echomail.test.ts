@@ -132,6 +132,28 @@ test('late message responses cannot replace another area or another session', as
     assert.deepEqual(read, []);
 });
 
+test('cancelled echo reads cannot replace a new composer or restore the closed preview', async () => {
+    const { reader, first, client, read } = fixture();
+    await reader.start();
+    let finish!: (item: MailItem) => void;
+    client.message = () =>
+        new Promise((resolve) => {
+            finish = resolve;
+        });
+    const pending = reader.open(first);
+    reader.cancelOpen();
+    finish(first);
+    await pending;
+    assert.equal(reader.selected.value, null);
+    const composing = reader.open(first);
+    reader.edit();
+    finish(first);
+    await composing;
+    assert.equal(reader.selected.value, null);
+    assert.ok(reader.draft.value);
+    assert.deepEqual(read, []);
+});
+
 test('saved echo drafts keep their conference and recipients and are separate from netmail', async () => {
     const { reader, client } = fixture();
     const draft: MailDraft = {

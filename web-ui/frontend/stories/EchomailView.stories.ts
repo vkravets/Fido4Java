@@ -5,7 +5,7 @@ import { createWorkspace, workspaceKey, workspacePreferences } from '../src/work
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import EchomailView from '../src/components/EchomailView.vue';
 import { echoClientKey } from '../src/echomail.ts';
-import type { AppState } from '../src/state.ts';
+import type { AppState, RunOptions } from '../src/state.ts';
 import { profile } from './fixtures.ts';
 import { echoClient, echoDraft } from './echo-fixture.ts';
 
@@ -26,16 +26,24 @@ const meta = {
                 profile: ref(profile('POINT')),
                 busy: ref(false),
                 notice: ref(''),
-                async run(operation: () => Promise<unknown>) {
-                    this.busy.value = true;
+                async run(operation: () => Promise<unknown>, options: RunOptions = {}) {
+                    if (!options.background) this.busy.value = true;
                     try {
                         return await operation();
                     } finally {
-                        this.busy.value = false;
+                        if (!options.background) this.busy.value = false;
                     }
                 }
             } as AppState;
-            provide(echoClientKey, echoClient(context.parameters.echo || {}));
+            const client = echoClient(context.parameters.echo || {});
+            const message = client.message;
+            let messageRequests = 0;
+            client.message = async (token, mailbox, area, id) => {
+                if (context.parameters.pauseNavigation && messageRequests++ > 0)
+                    await new Promise(() => {});
+                return message(token, mailbox, area, id);
+            };
+            provide(echoClientKey, client);
             return { args, state };
         },
         template: '<EchomailView v-bind="args" :state="state" />'
@@ -46,6 +54,10 @@ type Story = StoryObj<typeof meta>;
 export const Tree: Story = {};
 export const Flat: Story = { args: { initialMode: 'flat' } };
 export const Reading: Story = { args: { initialMessage: '9007199254740994' } };
+export const SwitchingMessage: Story = {
+    ...Reading,
+    parameters: { pauseNavigation: true }
+};
 export const Conversation: Story = {
     ...Reading,
     parameters: { workspace: { echo: { preview: 'separate' } } }

@@ -56,6 +56,11 @@ export function createNetmail(
     let requestId = '';
     let original = '';
     let generation = 0;
+    let opening = 0;
+
+    function cancelOpen() {
+        opening++;
+    }
 
     function mailbox(): Mailbox {
         return folder.value === 'outbox' ? 3 : 2;
@@ -88,6 +93,7 @@ export function createNetmail(
 
     async function navigate(value: MailFolder) {
         if (!discard()) return;
+        cancelOpen();
         folder.value = value;
         draft.value = null;
         selected.value = null;
@@ -99,12 +105,13 @@ export function createNetmail(
 
     async function open(item: MailItem) {
         if (!discard()) return;
+        const ticket = ++opening;
         const token = state.session.value;
         const box = mailbox();
         const message = await client.message(token, box, '', item.id);
-        if (token !== state.session.value) return;
+        if (ticket !== opening || token !== state.session.value) return;
         await client.markRead(token, box, '', item.id, true);
-        if (token !== state.session.value) return;
+        if (ticket !== opening || token !== state.session.value) return;
         message.read = true;
         item.read = true;
         selected.value = message;
@@ -113,6 +120,7 @@ export function createNetmail(
 
     function edit(value?: MailDraft, reply?: MailItem) {
         if (!discard()) return;
+        cancelOpen();
         const profile = state.profile.value!;
         const addresses = profile.allowedAkas;
         const from =
@@ -206,6 +214,7 @@ export function createNetmail(
         load,
         navigate,
         open,
+        cancelOpen,
         edit,
         initializeDraft,
         save,

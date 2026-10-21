@@ -97,6 +97,51 @@ test('setup can load its configuration as soon as startup becomes ready', async 
     assert.equal(failed.error.value, 'Server unavailable');
 });
 
+test('background reads do not dim global controls or release foreground work and ignore old-session failures', async (context) => {
+    const server = await createStartupServer();
+    context.after(() => server.close());
+    browserGlobals(context);
+    const { createState } = await server.ssrLoadModule('/src/state.ts');
+    const state = createState();
+    state.session.value = 'first';
+    let finishRead!: () => void;
+    const reading = state.run(
+        () =>
+            new Promise<void>((resolve) => {
+                finishRead = resolve;
+            }),
+        { background: true }
+    );
+    assert.equal(state.busy.value, false);
+    let finishWrite!: () => void;
+    const writing = state.run(
+        () =>
+            new Promise<void>((resolve) => {
+                finishWrite = resolve;
+            })
+    );
+    assert.equal(state.busy.value, true);
+    finishRead();
+    await reading;
+    assert.equal(state.busy.value, true);
+    finishWrite();
+    await writing;
+    assert.equal(state.busy.value, false);
+    let rejectRead!: (failure: unknown) => void;
+    const stale = state.run(
+        () =>
+            new Promise((_resolve, reject) => {
+                rejectRead = reject;
+            }),
+        { background: true }
+    );
+    state.session.value = 'second';
+    rejectRead({ code: 'UNAUTHORIZED', message: 'Old session' });
+    await stale;
+    assert.equal(state.session.value, 'second');
+    assert.equal(state.error.value, '');
+});
+
 test('validated sessions survive reload, clear on logout or expiry, and survive temporary startup failures', async (context) => {
     const server = await createStartupServer();
     context.after(() => server.close());

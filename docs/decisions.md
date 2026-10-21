@@ -61,6 +61,12 @@ authenticated session; logout and authorization failures remove it. Network
 failures retain the saved token for retry. This replaces memory-only browser
 sessions and does not extend server expiry or store passwords/passkey assertions.
 
+Opening another message is a background read, with pending state confined to its
+reader controls. It must not toggle the application's progress indicator or
+disable/dim the list, navigation or header. Keep the previous reader mounted until
+the new message is ready; folder/area changes, closing and composing invalidate
+pending opens. Late failures from an old session cannot clear a newer login.
+
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement
 decorations rather than rewriting its document, so editing, undo and outgoing

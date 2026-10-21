@@ -6,6 +6,9 @@ import type { LoginResponse, UserProfile } from '@rpc/bindings.mjs';
 
 export type Theme = 'light' | 'dark';
 export type AppState = ReturnType<typeof createState>;
+export interface RunOptions {
+    background?: boolean;
+}
 
 const sessionKey = 'jftn-session';
 function storedSession(): string {
@@ -62,19 +65,24 @@ export function createState() {
         setTheme(next);
     }
 
-    async function run<T>(operation: () => Promise<T>): Promise<T | undefined> {
+    async function run<T>(
+        operation: () => Promise<T>,
+        options: RunOptions = {}
+    ): Promise<T | undefined> {
         if (busy.value) return;
-        busy.value = true;
+        const token = session.value;
+        if (!options.background) busy.value = true;
         error.value = '';
-        notice.value = '';
+        if (!options.background) notice.value = '';
         try {
             return await operation();
         } catch (failure) {
+            if (options.background && token !== session.value) return;
             const reason = failure as { message?: string; code?: string } | null;
             error.value = reason?.message || t('The request failed. Please try again.');
             if (authenticationFailure(failure)) clearSession();
         } finally {
-            busy.value = false;
+            if (!options.background) busy.value = false;
         }
     }
 

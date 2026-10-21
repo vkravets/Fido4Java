@@ -1,6 +1,69 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+test('keyboard reading updates the preview without dimming the list or starting global progress', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await page.getByRole('button', { name: 'Echomail', exact: true }).click();
+    await page.getByRole('button', { name: /^Welcome to general/ }).click();
+    await expect(page.locator('.reader-heading h2')).toBeVisible();
+    await expect(page.locator('.progress')).toHaveCount(0);
+    const title = await page.locator('.reader-heading h2').textContent();
+    const list = (await page.locator('.split-list').elementHandle())!;
+    const body = (await page.locator('.mail-body').elementHandle())!;
+    const requests: string[] = [];
+    await page.route('**/rpc/ui', async (route) => {
+        const method = (route.request().postDataJSON() as unknown[])[1] as string;
+        requests.push(method);
+        if (['message', 'echoContext', 'markRead'].includes(method))
+            await new Promise((resolve) => setTimeout(resolve, 120));
+        await route.continue();
+    });
+    await page.evaluate(() => {
+        const report = { progress: false, globalDisabled: false };
+        const observer = new MutationObserver((records) => {
+            if (document.querySelector('.progress')) report.progress = true;
+            if (
+                records.some(
+                    (record) =>
+                        record.attributeName === 'disabled' &&
+                        (record.target as Element).closest('.split-list, .sidebar, .topbar')
+                )
+            )
+                report.globalDisabled = true;
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['disabled']
+        });
+        Object.assign(window, { navigationCheck: { report, observer } });
+    });
+    await page.keyboard.press('k');
+    await expect(page.locator('.reader-heading h2')).not.toHaveText(title!);
+    await expect(page.locator('[data-shortcut="mail.reply"]').first()).toBeEnabled();
+    const report = await page.evaluate(() => {
+        const check = (
+            window as unknown as {
+                navigationCheck: {
+                    report: { progress: boolean; globalDisabled: boolean };
+                    observer: MutationObserver;
+                };
+            }
+        ).navigationCheck;
+        check.observer.disconnect();
+        return check.report;
+    });
+    expect(report).toEqual({ progress: false, globalDisabled: false });
+    expect(await list.evaluate((element) => element.isConnected)).toBe(true);
+    expect(await body.evaluate((element) => element.isConnected)).toBe(true);
+    expect(requests).not.toContain('echoMessages');
+    expect(requests).not.toContain('areas');
+});
+
 test('page reload restores the validated session while stale tokens return to sign-in', async ({
     page
 }) => {

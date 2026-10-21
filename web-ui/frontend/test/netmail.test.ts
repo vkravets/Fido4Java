@@ -120,6 +120,36 @@ test('deletes only after confirmation and keeps the selected letter on failure',
     }
 });
 
+test('pending reads cannot reopen a cancelled message, another folder or a composer', async () => {
+    const { reader, client } = fixture();
+    let finish!: (item: MailItem) => void;
+    let marked = 0;
+    client.message = () =>
+        new Promise((resolve) => {
+            finish = resolve;
+        });
+    client.markRead = async () => {
+        marked++;
+    };
+    const first = reader.open(message());
+    reader.cancelOpen();
+    finish(message());
+    await first;
+    assert.equal(reader.selected.value, null);
+    const second = reader.open(message());
+    await reader.navigate('outbox');
+    finish(message());
+    await second;
+    assert.equal(reader.selected.value, null);
+    const third = reader.open(message());
+    reader.edit();
+    finish(message());
+    await third;
+    assert.equal(reader.selected.value, null);
+    assert.ok(reader.draft.value);
+    assert.equal(marked, 0);
+});
+
 test('queue count clears after explicit send and ignores a response from the old session', async () => {
     const state = { session: ref('token'), notice: ref('') };
     let pending = 3;

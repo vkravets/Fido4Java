@@ -105,6 +105,9 @@ export function createEchomail(
         draft.value = null;
         showDrafts.value = false;
     }
+    function cancelOpen() {
+        opening++;
+    }
     async function moreReplies() {
         if (!selected.value || !context.value) return;
         const ticket = opening;
@@ -124,6 +127,7 @@ export function createEchomail(
     }
     function edit(value?: MailDraft, reply?: MailItem) {
         if (!discard() || !authors.value.length) return;
+        cancelOpen();
         const profile = state.profile.value!;
         const author = authors.value.includes(profile.defaultAka)
             ? profile.defaultAka
@@ -182,6 +186,7 @@ export function createEchomail(
     }
     async function loadDrafts() {
         if (!discard()) return;
+        cancelOpen();
         const ticket = ++generation;
         const token = state.session.value;
         const rows = await client.drafts(token);
@@ -216,6 +221,7 @@ export function createEchomail(
         load,
         selectArea,
         open,
+        cancelOpen,
         moreReplies,
         edit,
         initializeDraft,

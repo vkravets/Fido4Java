@@ -5,7 +5,7 @@ import { createWorkspace, workspaceKey, workspacePreferences } from '../src/work
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import NetmailView from '../src/components/NetmailView.vue';
 import { netmailClientKey, mailId } from '../src/netmail.ts';
-import type { AppState } from '../src/state.ts';
+import type { AppState, RunOptions } from '../src/state.ts';
 import type { MailDraft } from '@rpc/bindings.mjs';
 import { profile } from './fixtures.ts';
 import { netmailDraft, netmailMessage } from './netmail-fixture.ts';
@@ -24,6 +24,7 @@ const meta = {
             provide(workspaceKey, workspace);
             const saved: MailDraft[] = [{ ...netmailDraft }];
             let deleted = false;
+            let messageRequests = 0;
             const messages = Array.from({ length: context.parameters.rows || 1 }, (_, index) => ({
                 ...netmailMessage,
                 id: (BigInt(mailId(netmailMessage.id)) + BigInt(index)).toString(),
@@ -35,12 +36,12 @@ const meta = {
                 session: ref('storybook-session'),
                 busy: ref(false),
                 notice: ref(''),
-                async run(operation: () => Promise<unknown>) {
-                    this.busy.value = true;
+                async run(operation: () => Promise<unknown>, options: RunOptions = {}) {
+                    if (!options.background) this.busy.value = true;
                     try {
                         return await operation();
                     } finally {
-                        this.busy.value = false;
+                        if (!options.background) this.busy.value = false;
                     }
                 }
             } as AppState;
@@ -50,9 +51,11 @@ const meta = {
                     nextId: netmailMessage.id,
                     hasMore: false
                 }),
-                message: async (_token, _box, _area, id) => ({
-                    ...messages.find((item) => mailId(item.id) === mailId(id))!
-                }),
+                message: async (_token, _box, _area, id) => {
+                    if (context.parameters.pauseNavigation && messageRequests++ > 0)
+                        await new Promise(() => {});
+                    return { ...messages.find((item) => mailId(item.id) === mailId(id))! };
+                },
                 markRead: async () => {},
                 deleteMessage: async () => {
                     deleted = true;
@@ -75,6 +78,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Inbox: Story = { args: { initialFolder: 'inbox' } };
+export const SwitchingMessage: Story = {
+    args: { initialMessage: '9007199254740993' },
+    parameters: { rows: 3, pauseNavigation: true }
+};
 export const EmptyReaderBelow: Story = {
     parameters: { workspace: { netmail: { preview: 'below' } } }
 };

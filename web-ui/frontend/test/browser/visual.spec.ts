@@ -4,6 +4,16 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    {
+        name: 'netmail-switching-message',
+        story: 'mail-netmailview--switching-message',
+        switching: true
+    },
+    {
+        name: 'echo-switching-message',
+        story: 'mail-echomailview--switching-message',
+        switching: true
+    },
     { name: 'dos-graphics-reader', story: 'mail-fidotext--dos-graphics' },
     { name: 'dos-graphics-editor', story: 'mail-fidoeditor--dos-graphics' },
     { name: 'keyboard-settings', story: 'settings-accountsettings--keyboard' },
@@ -244,6 +254,12 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.switching) {
+                    const next = page.locator('[data-shortcut="mail.next"]');
+                    await expect(next).toBeEnabled();
+                    await next.click();
+                    await expect(next).toBeDisabled();
+                }
                 if (screen.disclosure && info.project.name === 'desktop')
                     await expect(page.locator(screen.disclosure)).toBeVisible();
                 if (screen.suggestions)

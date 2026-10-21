@@ -3,6 +3,7 @@ import { computed, inject, onMounted, onBeforeUnmount } from 'vue';
 import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
+import { useMailReading } from '../mail-reading.ts';
 import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
 import { api, bindings } from '../api.ts';
 import type { AppState } from '../state.ts';
@@ -27,6 +28,11 @@ const reader = createNetmail(
     () => emit('queueChanged')
 );
 defineExpose({ canLeave: reader.discard, refresh: reader.load });
+const {
+    pending: opening,
+    open: openMessage,
+    cancel: cancelRead
+} = useMailReading(props.state, reader, reader.folder);
 const folders = ['inbox', 'outbox', 'drafts'] as const;
 const labels = { inbox: 'Inbox', outbox: 'Outbox', drafts: 'Drafts' } as const;
 onMounted(() =>
@@ -47,6 +53,7 @@ onMounted(() => window.addEventListener('beforeunload', beforeUnload));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 function back() {
     if (!reader.discard()) return;
+    cancelRead();
     reader.draft.value = null;
     reader.selected.value = null;
 }
@@ -138,7 +145,7 @@ const index = computed(() =>
                 :busy="state.busy.value"
                 :has-more="reader.hasMore.value"
                 :outgoing="reader.folder.value === 'outbox'"
-                @open="(item) => state.run(() => reader.open(item))"
+                @open="openMessage"
                 @more="state.run(() => reader.load(true))"
             />
         </template>
@@ -147,7 +154,7 @@ const index = computed(() =>
             :key="reader.draft.value.id"
             v-model="reader.draft.value"
             :addresses="state.profile.value?.allowedAkas || []"
-            :busy="state.busy.value"
+            :busy="state.busy.value || opening"
             @initialized="reader.initializeDraft"
             @save="state.run(reader.save)"
             @send="state.run(reader.send)"
@@ -156,7 +163,7 @@ const index = computed(() =>
         <NetmailMessage
             v-else-if="reader.selected.value"
             :message="reader.selected.value"
-            :busy="state.busy.value"
+            :busy="state.busy.value || opening"
             :reply="reader.folder.value === 'inbox'"
             :forwardable="!!state.profile.value?.allowedAkas.length"
             @forward="reader.edit(forwardDraft(reader.selected.value!, state.profile.value!))"
@@ -166,9 +173,9 @@ const index = computed(() =>
             :previous-disabled="index <= 0"
             :next-disabled="index < 0 || index >= reader.items.value.length - 1"
             :unread-disabled="!nextUnread"
-            @previous="state.run(() => reader.open(reader.items.value[index - 1]!))"
-            @next="state.run(() => reader.open(reader.items.value[index + 1]!))"
-            @unread="nextUnread && state.run(() => reader.open(nextUnread!))"
+            @previous="openMessage(reader.items.value[index - 1]!)"
+            @next="openMessage(reader.items.value[index + 1]!)"
+            @unread="nextUnread && openMessage(nextUnread)"
             @remove="state.run(reader.removeMessage)"
         />
         <section
