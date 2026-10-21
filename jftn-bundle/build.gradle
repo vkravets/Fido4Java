@@ -12,6 +12,18 @@ tasks.named('jar') {
 apply from: rootProject.file('gradle/distributions.gradle')
 apply from: rootProject.file('gradle/profile-distributions.gradle')
 
+tasks.register('benchmarkScriptStartup', JavaExec) {
+    group = 'verification'
+    description = 'Measures mail script startup in a fresh JVM using isolated scratch state.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.fidonet.jftn.ScriptStartupProbe'
+    maxHeapSize = '512m'
+    args layout.buildDirectory.dir('script-startup-probe').get().asFile.absolutePath,
+            providers.gradleProperty('scriptCache').orElse('false').get(),
+            providers.gradleProperty('scriptThreads').orElse('1').get()
+}
+
 tasks.register('importJamArchive', JavaExec) {
     group = 'application'
     description = 'Imports a historical JAM area into SQL without scheduling delivery.'

@@ -93,8 +93,14 @@ public abstract class AbstractScriptManager implements ScriptEngine {
                 ? engine
                 : createConfiguredEngine();
         try {
+            long started = System.nanoTime();
             scriptEngine.eval(script);
+            long evaluated = System.nanoTime();
             scriptCallFunctions(scriptEngine, REGISTER_FUNC_NAME, params);
+            logger.info("Script startup: name={}, evaluateMs={}, registerMs={}",
+                        name,
+                        (evaluated - started) / 1_000_000,
+                        (System.nanoTime() - evaluated) / 1_000_000);
         } catch (Exception failure) {
             // A failed registration must not retain closures or pollute the next script.
             if (scriptEngine == engine) {
