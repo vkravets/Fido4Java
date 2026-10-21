@@ -23,6 +23,91 @@ MailRuntime loads scripts before its first inbound scan. Each script supplies
 fails. Scripts unload in reverse order after processing stops. Automatic hot
 reload is deliberately not enabled while messages are being processed.
 
+## Startup measurements, bytecode cache and compilation workers
+
+Startup logs separate automation setup, each Java extension, source reads,
+compilation/cache loading, script body evaluation and `register(api)`. The summary
+reports wall time; per-script compilation times overlap with multiple workers and
+must not be added to estimate startup time. These are startup-only settings in
+`40-mail-scripts.conf`:
+
+```ini
+MailScriptCache=true
+MailScriptCompileThreads=auto
+```
+
+The cache is enabled by default under `Tmp/script-bytecode`, separately from
+durable `Tmp/scripts` state. It stores compiled classes, never runtime bindings,
+script instances, handlers or configuration/registration results. Source identity/content,
+Java/Groovy versions, Groovy compiler system properties and runtime code hashes
+form the cache key. Library hashing uses actual bytes rather than modification
+times, including URL-classloader entries and development class directories.
+Jar entries carry bytecode checksums and publication uses an atomic replacement.
+Missing, damaged or unwritable caches fall back to compilation; source and
+registration errors still fail startup. Old content-addressed entries are retained;
+with the node stopped, only `Tmp/script-bytecode` can be removed to reset this cache.
+Never remove `Tmp/scripts` as cache maintenance.
+
+Only source reading and compilation/loading run in parallel. Every script body
+and `register(api)` run on the startup thread in configuration order; unload runs
+in reverse order. Each script has its own classloader and fresh instance, including
+on a cache hit. All preparation finishes before any script registers, and worker
+threads are joined on success/failure. Scripts must be independently compilable;
+registration order and first-consumer mail handler behavior remain deterministic.
+
+`auto` uses the minimum of script count, four workers, available processors minus
+one (at least one), and a conservative heap allowance: `(maxHeapMiB - 256) / 128`,
+at least one worker. This is a starting heuristic, not a measured memory guarantee
+for arbitrary operator scripts. An explicit `1..32` setting overrides the CPU/heap
+heuristic, but never creates more workers than scripts. For four stock scripts,
+requesting five or ten workers therefore still uses four. Use the logged effective
+worker count and benchmark the actual deployment before increasing it.
+
+Run reproducible isolated probes after loading the development environment:
+
+```powershell
+.\gradlew.bat :jftn-bundle:benchmarkScriptStartup -PscriptCache=false -PscriptThreads=1
+.\gradlew.bat :jftn-bundle:benchmarkScriptStartup -PscriptCache=true -PscriptThreads=auto
+.\gradlew.bat :jftn-bundle:benchmarkScriptStartupMatrix
+```
+
+Each probe is a fresh JVM with a 512 MiB heap and isolated temporary/script state
+under `jftn-bundle/build`. Matrix logs are retained under `build/reports/script-startup`
+in that module. SQL is an in-memory fixture opened before timing, with no network
+listeners, mail processing or active directory feeds. It measures all four stock
+scripts; it does not time a full production node or its directory/mail scans.
+The heap figure sums memory-pool peaks and is only a rough upper-bound indicator.
+
+On Windows x64 / Temurin 17, eight available processors, 2026-10-21, three fresh
+JVM trials per row gave these median script-startup times:
+
+| Mode | Effective workers | Median |
+| --- | ---: | ---: |
+| Original JSR-223 loader, no persistent cache | 1 | 3.166 s |
+| New compiler, cache disabled | 1 | 2.861 s |
+| New compiler, cache disabled | 2 | 2.505 s |
+| New compiler, cache disabled | 4 | 2.584 s |
+| Persistent cache hit | 1 | 0.768 s |
+| Persistent cache hit | 2 | 0.725 s |
+| Persistent cache hit | 4 | 0.652 s |
+| Persistent cache hit, auto | 2 | 0.693 s |
+
+The original instrumented baseline is reproducible at commit `5b2432d3`.
+The first cache-populating run took 3.734 s (one trial), including 1.017 s for
+first-use runtime fingerprinting. Subsequent fingerprinting took roughly 0.4–0.6 s;
+cached class preparation usually took 20–35 ms and evaluation/registration about
+0.2–0.3 s. A first cache hit also showed 391 ms of class preparation, so these are
+ranges, not latency guarantees. Requested five/ten-worker trials were effectively
+four-worker trials and varied within the same broad range. There is no evidence
+here that five or ten actual workers would help. The strongest gain is persistent
+bytecode reuse: auto's median was about 4.6 times faster than the original loader.
+Runtime fingerprinting is now the largest measured warm-start stage; further
+optimization should preserve content-based invalidation rather than trust timestamps.
+After the final invalidation/diagnostic changes, another fill took 3.261 s and
+three fresh-JVM confirmations took 1.095, 0.977 and 0.728 s, each with four verified
+cache hits. This separate confirmation has a 0.977 s median and illustrates the
+run-to-run variation; the matrix median is not a full-node startup guarantee.
+
 Authorization can use `RobotAccessSource=database` (default) or `files`, regardless
 of whether UI/RPC is enabled. See [access sources and offline administration](robot-access.md).
 Scripts use `api.robotAccess` for credential checks; inactive file rules are not

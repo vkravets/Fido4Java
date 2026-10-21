@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 /** Fresh-JVM startup probe; all mutable state is below the explicitly supplied scratch path. */
 public final class ScriptStartupProbe {
@@ -59,7 +60,8 @@ public final class ScriptStartupProbe {
                                          .filter(pool -> pool.getType() == MemoryType.HEAP)
                                          .mapToLong(pool -> pool.getPeakUsage().getUsed())
                                          .sum();
-            System.out.printf("STARTUP elapsedMs=%.3f peakHeapMiB=%.1f processors=%d maxHeapMiB=%d%n",
+            System.out.printf(Locale.ROOT,
+                              "STARTUP elapsedMs=%.3f peakHeapMiB=%.1f processors=%d maxHeapMiB=%d%n",
                               elapsed / 1_000_000.0,
                               heap / 1048576.0,
                               Runtime.getRuntime().availableProcessors(),

@@ -24,6 +24,16 @@ tasks.register('benchmarkScriptStartup', JavaExec) {
             providers.gradleProperty('scriptThreads').orElse('1').get()
 }
 
+tasks.register('benchmarkScriptStartupMatrix', JavaExec) {
+    group = 'verification'
+    description = 'Compares independent JVM script startup with 1/2/4/5/10 workers and a persistent cache.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.fidonet.jftn.ScriptStartupMatrix'
+    maxHeapSize = '128m'
+    args layout.buildDirectory.dir('reports/script-startup').get().asFile.absolutePath
+}
+
 tasks.register('importJamArchive', JavaExec) {
     group = 'application'
     description = 'Imports a historical JAM area into SQL without scheduling delivery.'

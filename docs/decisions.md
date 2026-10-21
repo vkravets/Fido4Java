@@ -215,6 +215,14 @@ Classpath loading remains useful for isolated tests and explicit compatibility.
 Existing operator scripts/configurations are preserved during startup; upgrading
 JARs alone does not overwrite an old customized external script.
 
+Mail automation compiles independent scripts with bounded workers and a persistent
+content-addressed bytecode cache under `Tmp/script-bytecode`. Compilation/cache loading
+is separate from script body evaluation and registration, which remain serial in
+configuration order. Every startup gets fresh instances; no handlers or API objects
+are cached. Source/runtime code and compiler environment changes invalidate bytecode;
+unusable caches fall back to compilation. Durable `Tmp/scripts` is never cache state.
+Startup stage logs and fresh-JVM benchmark tasks are described in [mail scripts](mail-scripts.md).
+
 ## 9. One directory owner with explicit delivery adapters
 
 `DirectoryService` owns the catalog and every `DirectorySource` definition.

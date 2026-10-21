@@ -14,6 +14,9 @@ import org.fidonet.jftn.tosser.RobotDelivery;
 import org.fidonet.jftn.tosser.Tosser;
 import org.fidonet.types.FTNAddr;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,6 +28,7 @@ public final class MailAutomationRuntime extends ScriptApi
         implements
             MailProcessingExtension,
             SettingsExtensionProvider {
+    private static final Logger log = LoggerFactory.getLogger(MailAutomationRuntime.class);
     @FunctionalInterface
     public interface FileEchoHandler {
         void accept(FileEchoEvent event) throws IOException;
@@ -106,6 +110,7 @@ public final class MailAutomationRuntime extends ScriptApi
                                  DirectoryImportService directoryImports)
             throws IOException {
         super(null, new ScriptHookRegistry(), new CommandRegistry(new CommandCollection()));
+        long started = System.nanoTime();
         this.directoryImports = directoryImports;
         this.tosser = tosser;
         this.storage = storage;
@@ -114,15 +119,23 @@ public final class MailAutomationRuntime extends ScriptApi
         state = new ScriptState(Path.of(config.getTmpDir(), "scripts"));
         this.scripts = new ExternalMailScripts();
         List<String> scripts = config.getValuesAsList("MailScript");
+        long initialized = System.nanoTime();
         try {
             for (MailScriptExtension extension : extensions) {
+                long extensionStarted = System.nanoTime();
                 extension.register(this);
+                log.info("Mail automation extension: name={}, registerMs={}",
+                         extension.getClass().getName(),
+                         (System.nanoTime() - extensionStarted) / 1_000_000);
             }
-            if (scripts != null) {
-                for (String script : scripts) {
-                    this.scripts.load(script, this);
-                }
-            }
+            long extended = System.nanoTime();
+            this.scripts.loadAll(scripts, config, this);
+            long completed = System.nanoTime();
+            log.info("Mail automation startup: initializeMs={}, extensionsMs={}, scriptsMs={}, totalMs={}",
+                     (initialized - started) / 1_000_000,
+                     (extended - initialized) / 1_000_000,
+                     (completed - extended) / 1_000_000,
+                     (completed - started) / 1_000_000);
         } catch (Exception failure) {
             try {
                 close();
