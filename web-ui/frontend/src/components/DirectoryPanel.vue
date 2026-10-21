@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
+import SettingsSectionHeader from './SettingsSectionHeader.vue';
+import AppIcon from './AppIcon.vue';
 import type { DirectoryNode } from '@rpc/bindings.mjs';
 defineProps<{ items: DirectoryNode[]; busy: boolean; hasMore: boolean; offset: number }>();
 const query = defineModel<string>({ default: '' });
@@ -10,7 +12,10 @@ defineEmits<{ search: []; next: []; previous: [] }>();
         class="card directory-panel"
         :aria-busy="busy"
     >
-        <h2>{{ t('Node and point directory') }}</h2>
+        <SettingsSectionHeader
+            :title="t('Node and point directory')"
+            page
+        />
         <p>
             {{
                 t(
@@ -31,10 +36,12 @@ defineEmits<{ search: []; next: []; previous: [] }>();
                     :placeholder="t('AKA, sysop, station, location or IP / hostname')"
             /></label>
             <button
-                class="secondary"
+                class="secondary settings-icon-action"
+                :title="t('Search')"
+                :aria-label="t('Search')"
                 :disabled="busy"
             >
-                {{ t('Search') }}
+                <AppIcon name="search" />
             </button>
         </form>
         <p

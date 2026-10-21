@@ -4,6 +4,10 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'polling-page', story: 'connections-connections--queue' },
+    { name: 'polling-page-empty', story: 'connections-connections--empty' },
+    { name: 'directory-page', story: 'directory-nodedirectory--results' },
+    { name: 'directory-page-empty', story: 'directory-nodedirectory--empty' },
     { name: 'routing-rules-adding', story: 'routing-netmailroutespanel--adding' },
     { name: 'personal-profile', story: 'settings-accountsettings--profile' },
     { name: 'personal-addresses', story: 'settings-accountsettings--addresses' },

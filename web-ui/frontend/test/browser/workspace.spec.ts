@@ -2,6 +2,43 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('polling and directory use the compact full-width page with icon refresh', async ({
+    page
+}) => {
+    for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const story of [
+            'connections-connections--queue',
+            'directory-nodedirectory--results'
+        ]) {
+            await openStory(page, story);
+            const header = page.locator('.settings-page-header');
+            await expect(header.locator('h1')).toHaveCount(1);
+            await expect(page.locator('.settings-page .eyebrow')).toHaveCount(0);
+            await expect(page.locator('.settings-navigation')).toHaveCount(0);
+            const refresh = header.getByRole('button', { name: 'Refresh', exact: true });
+            await expect(refresh).toBeEnabled();
+            expect(await refresh.innerText()).toBe('');
+            await refresh.click();
+            if (story.startsWith('directory-')) {
+                await page.getByRole('searchbox').fill('First Point');
+                await expect(page.locator('.directory-table tbody tr')).toHaveCount(1);
+                const input = await page.getByRole('searchbox').boundingBox();
+                const search = await page
+                    .getByRole('button', { name: 'Search', exact: true })
+                    .boundingBox();
+                expect(Math.abs(input!.y - search!.y)).toBeLessThanOrEqual(3);
+                await refresh.click();
+                await expect(page.getByRole('searchbox')).toHaveValue('First Point');
+                await expect(page.locator('.directory-table tbody tr')).toHaveCount(1);
+            }
+            expect(
+                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
+            ).toBe(true);
+        }
+    }
+});
+
 test('settings use one compact heading and keep only active page actions in its toolbar', async ({
     page
 }) => {

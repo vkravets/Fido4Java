@@ -1,8 +1,9 @@
 import { locale, t } from './i18n.ts';
 import { ref } from 'vue';
 import type { LinkInfo, PollInfo, QueueItem, UiServiceClient } from '@rpc/bindings.mjs';
+import type { InjectionKey } from 'vue';
 
-type PollClient = Pick<
+export type PollClient = Pick<
     UiServiceClient,
     | 'poll'
     | 'cancelPoll'
@@ -13,6 +14,7 @@ type PollClient = Pick<
     | 'links'
     | 'outbound'
 >;
+export const pollClientKey: InjectionKey<PollClient> = Symbol('poll-client');
 
 export function activePoll(state: string): boolean {
     return ['QUEUED', 'CONNECTING', 'AUTHENTICATING', 'TRANSFERRING'].includes(state);

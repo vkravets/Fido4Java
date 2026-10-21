@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, provide, ref, watch } from 'vue';
 import { settingsWorkspaceKey } from '../settings-workspace.ts';
 import SettingsPageHeader from './SettingsPageHeader.vue';
-const props = defineProps<{ context: string; title: string }>();
+const props = defineProps<{ context?: string; title: string }>();
 const actions = ref<HTMLElement | null>(null);
 const navigation = ref<HTMLElement | null>(null);
 provide(settingsWorkspaceKey, { title: computed(() => props.title), actions });
@@ -24,7 +24,10 @@ watch(
 );
 </script>
 <template>
-    <div class="settings-page">
+    <div
+        class="settings-page"
+        :class="{ 'settings-page-single': !$slots.navigation }"
+    >
         <SettingsPageHeader
             :context="context"
             :title="title"
@@ -37,6 +40,7 @@ watch(
             </div>
         </SettingsPageHeader>
         <aside
+            v-if="$slots.navigation"
             ref="navigation"
             class="settings-navigation"
         >

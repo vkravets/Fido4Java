@@ -16,6 +16,11 @@ eyebrows. Groups use smaller headings, compact cards and consistent form spacing
 On narrow screens, the section menu becomes a horizontally scrollable tab strip
 that reveals the selected section when opened or changed.
 
+Polling and the node directory use the same compact heading, cards and controls
+in a single-column workspace, without a second section menu. Their refresh icon
+is at the upper right. Polling retains its outgoing-attempt and binkp-log tabs;
+directory search retains filtering and pagination, with an accessible search icon.
+
 The station heading stays below the application header while scrolling.
 **Reload configuration files** is an icon button at the upper right. It rereads
 configuration through the existing authorized RPC operation; it does not restart

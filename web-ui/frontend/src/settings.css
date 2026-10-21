@@ -27,6 +27,13 @@
     top: 0;
     z-index: 12;
 }
+.settings-page.settings-page-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+.settings-page-single > .settings-page-header,
+.settings-page-single > .settings-body {
+    grid-column: 1;
+}
 .settings-breadcrumb {
     display: flex;
     flex-wrap: wrap;
@@ -252,6 +259,16 @@
 }
 .settings-page .refresh {
     margin-bottom: 12px;
+}
+.settings-page .directory-panel .directory-search {
+    flex-wrap: nowrap;
+}
+.settings-page .directory-panel .directory-search label {
+    min-width: 0;
+    margin-bottom: 0;
+}
+.settings-page .directory-panel .directory-search button {
+    flex-shrink: 0;
 }
 .workspace .settings-page > .settings-page-header,
 .workspace .settings-navigation .tabs {
