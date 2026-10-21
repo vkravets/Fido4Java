@@ -14,7 +14,10 @@ import java.util.Set;
 
 /** Account-owned, bounded JSON data. Documents cannot modify node configuration or identities. */
 final class H2UiDocuments {
-    private static final Set<String> KEYS = Set.of("workspace", "mail-themes", "mail-templates");
+    private static final Set<String> KEYS = Set.of("workspace",
+                                                   "mail-themes",
+                                                   "mail-templates",
+                                                   "keyboard");
     private static final JsonFactory JSON = JsonFactory.builder()
                                                        .streamReadConstraints(StreamReadConstraints.builder()
                                                                                                    .maxNestingDepth(16)

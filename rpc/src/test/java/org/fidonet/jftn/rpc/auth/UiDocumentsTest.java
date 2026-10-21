@@ -83,6 +83,10 @@ class UiDocumentsTest {
                                    "workspace",
                                    "{\"version\":1,\"netmail\":{\"preview\":\"below\"}}");
             assertEquals("{}", handler.uiDocument(second, "workspace"));
+            handler.saveUiDocument(first, "keyboard", "{\"profile\":\"golded\"}");
+            assertEquals("{}", handler.uiDocument(second, "keyboard"));
+            assertEquals("{\"profile\":\"golded\"}", handler.uiDocument(first, "keyboard"));
+            assertThrows(UiError.class, () -> handler.saveUiDocument("invalid", "keyboard", "{}"));
             assertThrows(UiError.class, () -> handler.uiDocument("invalid", "workspace"));
             assertThrows(UiError.class, () -> handler.saveUiDocument(first, "station", "{}"));
             for (String invalid : List.of("[]",
@@ -97,6 +101,8 @@ class UiDocumentsTest {
         try (RpcAccounts accounts = new RpcAccounts(path)) {
             assertEquals("{\"version\":1,\"netmail\":{\"preview\":\"below\"}}",
                          new UiDocuments(accounts).read("first", "workspace"));
+            assertEquals("{\"profile\":\"golded\"}",
+                         new UiDocuments(accounts).read("first", "keyboard"));
         }
     }
 }
