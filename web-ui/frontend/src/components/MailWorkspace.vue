@@ -8,7 +8,12 @@ import SplitPane from './SplitPane.vue';
 import MailListTools from './MailListTools.vue';
 import AppIcon from './AppIcon.vue';
 import NotificationBanner from './NotificationBanner.vue';
-const props = defineProps<{ kind: MailKind; opened: boolean; busy?: boolean }>();
+const props = defineProps<{
+    kind: MailKind;
+    opened: boolean;
+    busy?: boolean;
+    selected?: string;
+}>();
 defineEmits<{ back: [] }>();
 const workspace = useWorkspace();
 const query = ref('');
@@ -19,6 +24,24 @@ const error = ref('');
 const layoutRoot = ref<HTMLElement>();
 let listTop = 0;
 let windowTop = 0;
+watch(
+    () => props.selected,
+    () => {
+        const list = layoutRoot.value?.querySelector<HTMLElement>('.split-list');
+        const row = list?.querySelector<HTMLElement>('[data-shortcut-selected]');
+        if (!list || !row || !list.getClientRects().length || !list.clientHeight) return;
+
+        // Scroll only the list. scrollIntoView would also move the page and reader.
+        const bounds = list.getBoundingClientRect();
+        const tools = list.querySelector<HTMLElement>('.mail-list-tools');
+        const top = Math.max(bounds.top, tools?.getBoundingClientRect().bottom || bounds.top);
+        const bottom = bounds.top + list.clientTop + list.clientHeight;
+        const selected = row.getBoundingClientRect();
+        if (selected.top < top) list.scrollTop -= top - selected.top;
+        else if (selected.bottom > bottom) list.scrollTop += selected.bottom - bottom;
+    },
+    { flush: 'post' }
+);
 watch(
     () => props.opened,
     (opened, previous) => {

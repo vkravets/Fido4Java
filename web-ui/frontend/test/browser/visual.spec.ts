@@ -5,6 +5,22 @@ import { openStory } from './story.ts';
 
 const screens = [
     {
+        name: 'netmail-scrolled-selection',
+        story: 'mail-netmailview--long-reading',
+        scrollSelection: 20
+    },
+    {
+        name: 'netmail-scrolled-selection-below',
+        story: 'mail-netmailview--long-reading-below',
+        scrollSelection: 20
+    },
+    {
+        name: 'echo-scrolled-selection',
+        story: 'mail-echomailview--long-tree-reading',
+        scrollSelection: 12,
+        short: true
+    },
+    {
         name: 'echo-tree-navigation',
         story: 'mail-echomailview--tree-root-reading',
         treeNavigation: true
@@ -264,6 +280,19 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.scrollSelection) {
+                    for (let index = 1; index <= screen.scrollSelection; index++) {
+                        await expect(page.locator('[data-shortcut="mail.next"]')).toBeEnabled();
+                        await page.keyboard.press('ArrowRight');
+                        await expect(
+                            page.locator('[data-shortcut-row]').nth(index)
+                        ).toHaveAttribute('data-shortcut-selected', '');
+                        await expect(page.locator('.mail-message')).not.toHaveAttribute(
+                            'aria-busy',
+                            'true'
+                        );
+                    }
+                }
                 if (screen.treeNavigation) {
                     await expect(page.locator('[data-shortcut="mail.next"]')).toBeEnabled();
                     await page.keyboard.press('j');

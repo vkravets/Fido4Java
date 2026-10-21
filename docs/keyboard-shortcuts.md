@@ -46,7 +46,10 @@ button uses the assigned reader navigation keys, just like the preview itself.
 Physical letter positions make bindings independent of the keyboard layout.
 Authorized reader commands in the More menu also work while that menu is closed.
 Message navigation shortcuts focus the persistent preview without scrolling;
-the list keeps its single selected-message highlight. During a pending read,
+the list keeps its single selected-message highlight. In a visible split preview,
+the list scrolls just enough to reveal the selected row below its pinned toolbar;
+the page and reader retain their scroll positions. Hidden mobile/separate lists
+retain their previous position for Back navigation. During a pending read,
 reader actions remain visually stable but unavailable to mouse and shortcuts.
 At navigation boundaries or during a pending request, assigned arrow shortcuts
 are consumed rather than falling through to list activation or browser scrolling.

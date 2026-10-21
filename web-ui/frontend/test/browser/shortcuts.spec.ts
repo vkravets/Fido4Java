@@ -1,6 +1,60 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+for (const story of [
+    'mail-netmailview--long-reading',
+    'mail-netmailview--long-reading-below',
+    'mail-echomailview--focused-desktop'
+]) {
+    test(`keyboard selection stays visible without scrolling the reader: ${story}`, async ({
+        page
+    }) => {
+        await page.setViewportSize({
+            width: 1280,
+            height: story.includes('echomail') ? 540 : 700
+        });
+        await openStory(page, story);
+        const rows = page.locator('[data-shortcut-row]');
+        await rows.first().click();
+        const reader = page.locator('.mail-message');
+        await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+        const list = page.locator('.split-list');
+        const detail = page.locator('.split-detail');
+        await detail.evaluate((element) => (element.scrollTop = 20));
+        const detailTop = await detail.evaluate((element) => element.scrollTop);
+        const pageTop = await page.evaluate(() => window.scrollY);
+        const count = Math.min(await rows.count(), 22);
+        const selectionVisible = () =>
+            list.evaluate((element) => {
+                const row = element
+                    .querySelector('[data-shortcut-selected]')!
+                    .getBoundingClientRect();
+                const bounds = element.getBoundingClientRect();
+                const tools = element.querySelector('.mail-list-tools')!.getBoundingClientRect();
+                return (
+                    row.top >= Math.max(bounds.top, tools.bottom) - 1 &&
+                    row.bottom <= bounds.top + element.clientTop + element.clientHeight + 1
+                );
+            });
+        for (const [key, indices] of [
+            ['ArrowRight', Array.from({ length: count - 1 }, (_, i) => i + 1)],
+            ['ArrowLeft', Array.from({ length: count - 1 }, (_, i) => count - i - 2)]
+        ] as const) {
+            for (const index of indices) {
+                await page.keyboard.press(key);
+                await expect(rows.nth(index)).toHaveAttribute('data-shortcut-selected', '');
+                await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+                await expect.poll(selectionVisible).toBe(true);
+                await expect(reader).toBeFocused();
+                expect(await detail.evaluate((element) => element.scrollTop)).toBe(detailTop);
+                expect(await page.evaluate(() => window.scrollY)).toBe(pageTop);
+            }
+            if (key === 'ArrowRight')
+                expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+        }
+    });
+}
+
 test('keyboard message changes keep the list enabled and previous preview mounted during a slow read', async ({
     page
 }) => {

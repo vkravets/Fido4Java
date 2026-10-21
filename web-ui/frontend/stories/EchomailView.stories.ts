@@ -116,3 +116,8 @@ export const FocusedDesktop: Story = {
     ...ApplicationWorkspace,
     parameters: { echo: { dense: true } }
 };
+
+export const LongTreeReading: Story = {
+    args: { initialMessage: '9007199254741009', initialMode: 'tree' },
+    parameters: { echo: { dense: true } }
+};

@@ -113,6 +113,11 @@ export const Separate: Story = {
 };
 
 export const LongList: Story = { parameters: { rows: 100 } };
+export const LongReading: Story = { ...Reading, parameters: { rows: 100 } };
+export const LongReadingBelow: Story = {
+    ...LongReading,
+    parameters: { rows: 100, workspace: { netmail: { preview: 'below' } } }
+};
 
 export const ApplicationWorkspace: Story = {
     args: { initialMessage: String(netmailMessage.id) },
