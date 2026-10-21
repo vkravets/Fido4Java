@@ -254,6 +254,7 @@ const nextUnread = computed(() =>
                 >
                     {{ t('In reply to') }}: {{ reader.context.value.parent.fromName }} —
                     {{ reader.context.value.parent.subject }}
+                    <time class="conversation-date">{{ reader.context.value.parent.date }}</time>
                 </button>
                 <p
                     v-else-if="reader.context.value.missingParent"
@@ -286,6 +287,7 @@ const nextUnread = computed(() =>
                         >
                             {{ reply.fromName }} — {{ reply.subject }}
                         </button>
+                        <time class="conversation-date">{{ reply.date }}</time>
                     </li>
                 </ul>
                 <button
@@ -306,3 +308,15 @@ const nextUnread = computed(() =>
         </section>
     </MailWorkspace>
 </template>
+<style scoped>
+.echo-conversation li {
+    padding-block: 4px;
+}
+.conversation-date {
+    display: inline-block;
+    margin-inline-start: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: normal;
+}
+</style>

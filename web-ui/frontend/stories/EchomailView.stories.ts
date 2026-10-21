@@ -46,6 +46,10 @@ type Story = StoryObj<typeof meta>;
 export const Tree: Story = {};
 export const Flat: Story = { args: { initialMode: 'flat' } };
 export const Reading: Story = { args: { initialMessage: '9007199254740994' } };
+export const Conversation: Story = {
+    ...Reading,
+    parameters: { workspace: { echo: { preview: 'separate' } } }
+};
 export const MissingParent: Story = { args: { initialMessage: '9007199254740996' } };
 export const Compose: Story = { args: { initialDraft: echoDraft } };
 export const Reply: Story = {

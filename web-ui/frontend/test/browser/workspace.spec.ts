@@ -315,6 +315,18 @@ test('mobile mail uses separate list and detail screens and protects a modified 
     await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unsaved changes');
 });
 
+test('conversation shows original dates for the parent and replies and opens a reply', async ({
+    page
+}) => {
+    await openStory(page, 'mail-echomailview--conversation');
+    const conversation = page.locator('.echo-conversation');
+    await conversation.locator('summary').click();
+    await expect(conversation.locator('button time')).toHaveText('20 Oct 26  10:00:00');
+    await expect(conversation.locator('li time')).toHaveText('20 Oct 26  12:00:00');
+    await conversation.getByRole('button', { name: /Carol Example/ }).click();
+    await expect(page.locator('.mail-envelope')).toContainText('Carol Example');
+});
+
 test('split panes resize by keyboard, clamp boundaries and expose orientation', async ({
     page
 }) => {

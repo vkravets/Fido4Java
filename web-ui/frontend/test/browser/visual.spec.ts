@@ -74,6 +74,7 @@ const screens = [
     { name: 'echo-tree', story: 'mail-echomailview--tree' },
     { name: 'echo-flat', story: 'mail-echomailview--flat' },
     { name: 'echo-reading', story: 'mail-echomailview--reading' },
+    { name: 'echo-conversation', story: 'mail-echomailview--conversation', conversation: true },
     { name: 'echo-missing-parent', story: 'mail-echomailview--missing-parent' },
     { name: 'echo-compose', story: 'mail-echomailview--compose' },
     { name: 'echo-reply', story: 'mail-echomailview--reply' },
@@ -221,6 +222,10 @@ for (const theme of ['light', 'dark']) {
                     await expect(page.locator(screen.disclosure)).toBeVisible();
                 if (screen.suggestions)
                     await expect(page.getByRole('option').first()).toBeVisible();
+                if (screen.conversation) {
+                    await page.locator('.echo-conversation > summary').click();
+                    await expect(page.locator('.echo-conversation li time')).toBeVisible();
+                }
                 if (screen.unavailable)
                     await expect(page.locator('.address-options [role=status]')).toBeVisible();
                 if (screen.notification) {
