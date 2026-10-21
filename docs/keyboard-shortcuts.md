@@ -43,6 +43,11 @@ IME composition, AltGr and appearance previews do not receive commands.
 Existing arrow navigation in trees, tabs and splitters takes precedence.
 Physical letter positions make bindings independent of the keyboard layout.
 Authorized reader commands in the More menu also work while that menu is closed.
+Message navigation shortcuts focus the persistent preview without scrolling;
+the list keeps its single selected-message highlight. During a pending read,
+reader actions remain visually stable but unavailable to mouse and shortcuts.
+At navigation boundaries or during a pending request, assigned arrow shortcuts
+are consumed rather than falling through to list activation or browser scrolling.
 
 Browsers and operating systems do not deliver every shortcut to a web page.
 Reserved combinations such as Ctrl+L, Ctrl+R, Ctrl+W, Alt+F4, F5 and F12 cannot

@@ -58,6 +58,10 @@ export const SwitchingMessage: Story = {
     ...Reading,
     parameters: { pauseNavigation: true }
 };
+export const SwitchingFlatMessage: Story = {
+    ...SwitchingMessage,
+    args: { ...Reading.args, initialMode: 'flat' }
+};
 export const Conversation: Story = {
     ...Reading,
     parameters: { workspace: { echo: { preview: 'separate' } } }

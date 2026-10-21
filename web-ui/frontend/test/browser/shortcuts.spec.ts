@@ -4,10 +4,11 @@ import { openStory } from './story.ts';
 test('keyboard message changes keep the list enabled and previous preview mounted during a slow read', async ({
     page
 }) => {
-    for (const story of [
-        'mail-netmailview--switching-message',
-        'mail-echomailview--switching-message'
-    ]) {
+    for (const [story, key] of [
+        ['mail-netmailview--switching-message', 'ArrowRight'],
+        ['mail-echomailview--switching-message', 'j'],
+        ['mail-echomailview--switching-flat-message', 'ArrowRight']
+    ] as const) {
         await openStory(page, story);
         const next = page.locator('[data-shortcut="mail.next"]');
         await expect(next).toBeEnabled();
@@ -15,17 +16,78 @@ test('keyboard message changes keep the list enabled and previous preview mounte
         const original = await body.textContent();
         const list = page.locator('.split-list');
         const listNode = (await list.elementHandle())!;
-        await page.keyboard.press('j');
+        const reader = page.locator('.mail-message');
+        const controls = reader.locator('button');
+        const appearance = () =>
+            controls.evaluateAll((buttons) =>
+                buttons.map((button) => {
+                    const style = getComputedStyle(button);
+                    return {
+                        opacity: style.opacity,
+                        color: style.color,
+                        background: style.backgroundColor,
+                        disabled: (button as HTMLButtonElement).disabled
+                    };
+                })
+            );
+        const originalAppearance = await appearance();
+        await list.locator('[data-shortcut-selected]').focus();
+        await page.keyboard.press(key);
         await expect(next).toBeDisabled();
+        await expect(reader).toBeFocused();
+        await expect(reader).toHaveAttribute('aria-busy', 'true');
+        await expect(list.locator(':focus-visible')).toHaveCount(0);
+        const consumed = await reader.evaluate((element) =>
+            [
+                { key: 'ArrowRight', code: 'ArrowRight', repeat: true },
+                { key: 'u', code: 'KeyU', repeat: false }
+            ].map((keys) => {
+                const event = new KeyboardEvent('keydown', {
+                    ...keys,
+                    bubbles: true,
+                    cancelable: true
+                });
+                element.dispatchEvent(event);
+                return event.defaultPrevented;
+            })
+        );
+        expect(consumed).toEqual([true, true]);
+        expect(await appearance()).toEqual(originalAppearance);
         await expect(list.locator('button:disabled')).toHaveCount(0);
         await expect(body).toHaveText(original!);
         expect(await listNode.evaluate((element) => element.isConnected)).toBe(true);
+        await page.keyboard.press('r');
+        await expect(page.locator('.mail-composer')).toHaveCount(0);
+        await reader
+            .locator('[data-shortcut="mail.reply"]')
+            .first()
+            .evaluate((button) => (button as HTMLButtonElement).click());
+        await expect(page.locator('.mail-composer')).toHaveCount(0);
         await page.keyboard.press('c');
         await expect(page.locator('.mail-composer')).toBeVisible();
         await expect(
             page.getByRole('textbox', { name: 'Message text', exact: true })
         ).toHaveAttribute('aria-readonly', 'false');
     }
+});
+
+test('reader focus follows consecutive message changes without leaving a second list highlight', async ({
+    page
+}) => {
+    await openStory(page, 'mail-echomailview--reading');
+    const selected = page.locator('[data-shortcut-selected]');
+    const original = await selected.textContent();
+    await selected.focus();
+    await page.keyboard.press('j');
+    await expect(selected).not.toHaveText(original!);
+    const reader = page.locator('.mail-message');
+    await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    await expect(reader).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(selected).toHaveText(original!);
+    await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    await expect(reader).toBeFocused();
+    await expect(page.locator('.split-list :focus-visible')).toHaveCount(0);
 });
 
 test('deleting from a shortcut keeps the existing confirmation guard', async ({ page }) => {

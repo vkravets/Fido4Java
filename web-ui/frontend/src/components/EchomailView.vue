@@ -230,7 +230,8 @@ const nextUnread = computed(() =>
         >
             <NetmailMessage
                 :message="reader.selected.value"
-                :busy="state.busy.value || opening"
+                :busy="state.busy.value"
+                :pending="opening"
                 :reply="!!reader.authors.value.length"
                 :removable="false"
                 :forwardable="!!state.profile.value?.allowedAkas.length"
@@ -259,8 +260,9 @@ const nextUnread = computed(() =>
                 <button
                     v-if="reader.context.value.parent"
                     class="secondary"
-                    :disabled="state.busy.value || opening"
-                    @click="openMessage(reader.context.value!.parent!)"
+                    :disabled="state.busy.value"
+                    :aria-disabled="opening || undefined"
+                    @click="!opening && openMessage(reader.context.value!.parent!)"
                 >
                     {{ t('In reply to') }}: {{ reader.context.value.parent.fromName }} —
                     {{ reader.context.value.parent.subject }}
@@ -292,8 +294,9 @@ const nextUnread = computed(() =>
                     >
                         <button
                             class="text-button"
-                            :disabled="state.busy.value || opening"
-                            @click="openMessage(reply)"
+                            :disabled="state.busy.value"
+                            :aria-disabled="opening || undefined"
+                            @click="!opening && openMessage(reply)"
                         >
                             {{ reply.fromName }} — {{ reply.subject }}
                         </button>
@@ -304,7 +307,8 @@ const nextUnread = computed(() =>
                     v-if="reader.context.value.replies.hasMore"
                     class="secondary"
                     :disabled="state.busy.value"
-                    @click="read(reader.moreReplies)"
+                    :aria-disabled="opening || undefined"
+                    @click="!opening && read(reader.moreReplies)"
                 >
                     {{ t('More replies') }}
                 </button>

@@ -163,7 +163,8 @@ const index = computed(() =>
         <NetmailMessage
             v-else-if="reader.selected.value"
             :message="reader.selected.value"
-            :busy="state.busy.value || opening"
+            :busy="state.busy.value"
+            :pending="opening"
             :reply="reader.folder.value === 'inbox'"
             :forwardable="!!state.profile.value?.allowedAkas.length"
             @forward="reader.edit(forwardDraft(reader.selected.value!, state.profile.value!))"

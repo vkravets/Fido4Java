@@ -5,6 +5,11 @@ import { openStory } from './story.ts';
 
 const screens = [
     {
+        name: 'echo-switching-flat-message',
+        story: 'mail-echomailview--switching-flat-message',
+        switching: true
+    },
+    {
         name: 'netmail-switching-message',
         story: 'mail-netmailview--switching-message',
         switching: true
@@ -257,8 +262,11 @@ for (const theme of ['light', 'dark']) {
                 if (screen.switching) {
                     const next = page.locator('[data-shortcut="mail.next"]');
                     await expect(next).toBeEnabled();
-                    await next.click();
+                    if (info.project.name === 'desktop')
+                        await page.locator('[data-shortcut-selected]').focus();
+                    await page.keyboard.press('j');
                     await expect(next).toBeDisabled();
+                    await expect(page.locator('.mail-message')).toBeFocused();
                 }
                 if (screen.disclosure && info.project.name === 'desktop')
                     await expect(page.locator(screen.disclosure)).toBeVisible();

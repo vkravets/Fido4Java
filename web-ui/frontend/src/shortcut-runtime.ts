@@ -10,7 +10,7 @@ function available(element: HTMLElement): boolean {
     if (
         !element.isConnected ||
         element.matches(':disabled, [aria-disabled="true"]') ||
-        element.closest('[inert], [data-shortcuts-disabled]')
+        element.closest('[inert], [data-shortcuts-disabled], [aria-disabled="true"]')
     )
         return false;
     for (let current: HTMLElement | null = element; current; current = current.parentElement) {
@@ -77,7 +77,6 @@ export function installShortcuts(app: App, model: Shortcuts) {
         if (
             !preferences.enabled ||
             event.defaultPrevented ||
-            event.repeat ||
             event.isComposing ||
             event.getModifierState('AltGraph')
         )
@@ -110,6 +109,20 @@ export function installShortcuts(app: App, model: Shortcuts) {
             available
         );
         const editor = focused?.closest('.fido-editor');
+        const navigation = ['mail.previous', 'mail.next', 'mail.unread'].some((id) =>
+            bindingsFor(preferences, id as ShortcutAction).includes(key)
+        );
+        const reader =
+            navigation && !composer && !editable
+                ? [...document.querySelectorAll<HTMLElement>('.mail-message')].find(available)
+                : undefined;
+        if (event.repeat) {
+            if (reader) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return;
+        }
         for (const [element, id] of targets) {
             if (!bindingsFor(preferences, id).includes(key)) continue;
             const action = shortcutActions.find((action) => action.id === id)!;
@@ -133,7 +146,12 @@ export function installShortcuts(app: App, model: Shortcuts) {
             if (element instanceof HTMLInputElement) {
                 element.focus();
                 element.select();
-            } else element.click();
+            } else {
+                if (['mail.previous', 'mail.next', 'mail.unread'].includes(id)) {
+                    element.closest<HTMLElement>('.mail-message')?.focus({ preventScroll: true });
+                }
+                element.click();
+            }
             return;
         }
         if (composer || editable) return;
@@ -142,6 +160,14 @@ export function installShortcuts(app: App, model: Shortcuts) {
             : bindingsFor(preferences, 'mail.previous').includes(key)
               ? -1
               : 0;
+        // A mounted reader owns navigation even while its actions are pending or at a boundary.
+        // Do not fall back to list rows or allow native arrow scrolling in that case.
+        if (reader) {
+            reader.focus({ preventScroll: true });
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
         if (!direction) return;
         const rows = [...document.querySelectorAll<HTMLElement>('[data-shortcut-row]')].filter(
             available

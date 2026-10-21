@@ -66,6 +66,10 @@ reader controls. It must not toggle the application's progress indicator or
 disable/dim the list, navigation or header. Keep the previous reader mounted until
 the new message is ready; folder/area changes, closing and composing invalidate
 pending opens. Late failures from an old session cannot clear a newer login.
+Pending reads expose busy/unavailable semantics without toggling native disabled
+styles on the reader actions. Guard both mouse and keyboard activation. Message
+navigation shortcuts focus the persistent reader without scrolling, so an old
+list row cannot retain a second focus highlight beside the selected message.
 
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement

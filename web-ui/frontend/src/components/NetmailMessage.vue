@@ -7,6 +7,7 @@ withDefaults(
     defineProps<{
         message: MailItem;
         busy: boolean;
+        pending?: boolean;
         reply?: boolean;
         removable?: boolean;
         forwardable?: boolean;
@@ -32,7 +33,12 @@ function closeMenu(event: Event) {
 }
 </script>
 <template>
-    <article class="card mail-message">
+    <article
+        class="card mail-message"
+        tabindex="-1"
+        :aria-label="message.subject"
+        :aria-busy="pending || undefined"
+    >
         <header class="reader-heading">
             <h2>{{ message.subject }}</h2>
             <div class="reader-meta-actions">
@@ -48,6 +54,7 @@ function closeMenu(event: Event) {
                     class="actions reader-actions"
                     role="toolbar"
                     :aria-label="t('Message actions')"
+                    :aria-disabled="pending || undefined"
                 >
                     <button
                         v-if="reply"
@@ -56,7 +63,7 @@ function closeMenu(event: Event) {
                         :aria-label="t('Reply')"
                         :title="t('Reply')"
                         v-shortcut="'mail.reply'"
-                        @click="$emit('reply', 'quoted')"
+                        @click="!pending && $emit('reply', 'quoted')"
                     >
                         <AppIcon name="reply" />
                     </button>
@@ -67,7 +74,7 @@ function closeMenu(event: Event) {
                         :title="t('Previous message')"
                         :disabled="busy || previousDisabled"
                         v-shortcut="'mail.previous'"
-                        @click="$emit('previous')"
+                        @click="!pending && $emit('previous')"
                     >
                         <AppIcon name="left" />
                     </button>
@@ -78,7 +85,7 @@ function closeMenu(event: Event) {
                         :title="t('Next message')"
                         :disabled="busy || nextDisabled"
                         v-shortcut="'mail.next'"
-                        @click="$emit('next')"
+                        @click="!pending && $emit('next')"
                     >
                         <AppIcon name="right" />
                     </button>
@@ -90,7 +97,7 @@ function closeMenu(event: Event) {
                             :aria-label="t('Forward')"
                             :title="t('Forward')"
                             v-shortcut="'mail.forward'"
-                            @click="$emit('forward')"
+                            @click="!pending && $emit('forward')"
                         >
                             <AppIcon name="forward" />
                         </button>
@@ -101,7 +108,7 @@ function closeMenu(event: Event) {
                             :aria-label="t('Delete message')"
                             :title="t('Delete message')"
                             v-shortcut="'mail.delete'"
-                            @click="$emit('remove')"
+                            @click="!pending && $emit('remove')"
                         >
                             <AppIcon name="trash" />
                         </button>
@@ -116,6 +123,7 @@ function closeMenu(event: Event) {
                             role="button"
                             :aria-label="t('More')"
                             :title="t('More')"
+                            @click="pending && $event.preventDefault()"
                         >
                             <AppIcon name="more" />
                         </summary>
@@ -127,7 +135,7 @@ function closeMenu(event: Event) {
                                 v-if="reply"
                                 :disabled="busy"
                                 v-shortcut="'mail.reply'"
-                                @click="$emit('reply', 'quoted')"
+                                @click="!pending && $emit('reply', 'quoted')"
                             >
                                 <AppIcon name="file" />{{ t('Quoted reply') }}
                             </button>
@@ -135,7 +143,7 @@ function closeMenu(event: Event) {
                                 v-if="reply"
                                 :disabled="busy"
                                 v-shortcut="'mail.shortReply'"
-                                @click="$emit('reply', 'reply')"
+                                @click="!pending && $emit('reply', 'reply')"
                             >
                                 <AppIcon name="file" />{{ t('Short reply') }}
                             </button>
@@ -143,7 +151,7 @@ function closeMenu(event: Event) {
                                 v-if="reply"
                                 :disabled="busy"
                                 v-shortcut="'mail.new'"
-                                @click="$emit('compose')"
+                                @click="!pending && $emit('compose')"
                             >
                                 <AppIcon name="edit" />{{ t('New message') }}
                             </button>
@@ -151,7 +159,7 @@ function closeMenu(event: Event) {
                                 v-if="forwardable"
                                 :disabled="busy"
                                 v-shortcut="'mail.forward'"
-                                @click="$emit('forward')"
+                                @click="!pending && $emit('forward')"
                             >
                                 <AppIcon name="forward" />{{ t('Forward') }}
                             </button>
@@ -160,7 +168,7 @@ function closeMenu(event: Event) {
                                 class="danger"
                                 :disabled="busy"
                                 v-shortcut="'mail.delete'"
-                                @click="$emit('remove')"
+                                @click="!pending && $emit('remove')"
                             >
                                 <AppIcon name="trash" />{{ t('Delete message') }}
                             </button>
@@ -173,14 +181,17 @@ function closeMenu(event: Event) {
             {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
         <FidoText :text="message.body || ''" />
-        <footer class="reader-footer">
+        <footer
+            class="reader-footer"
+            :aria-disabled="pending || undefined"
+        >
             <button
                 v-if="reply"
                 class="primary"
                 :aria-label="t('Reply to message')"
                 :disabled="busy"
                 v-shortcut="'mail.reply'"
-                @click="$emit('reply', 'quoted')"
+                @click="!pending && $emit('reply', 'quoted')"
             >
                 <AppIcon name="reply" />{{ t('Reply') }}
             </button>
@@ -189,7 +200,7 @@ function closeMenu(event: Event) {
                 class="text-button next-unread"
                 :disabled="busy || unreadDisabled"
                 v-shortcut="'mail.unread'"
-                @click="$emit('unread')"
+                @click="!pending && $emit('unread')"
             >
                 {{ t('Next unread') }}<AppIcon name="right" />
             </button>
@@ -197,6 +208,9 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
+.mail-message:focus {
+    outline: none;
+}
 .reader-actions > button,
 .reader-direct-actions > button,
 .reader-more > summary {
