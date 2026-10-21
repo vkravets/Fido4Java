@@ -54,6 +54,9 @@ type Story = StoryObj<typeof meta>;
 export const Tree: Story = {};
 export const Flat: Story = { args: { initialMode: 'flat' } };
 export const Reading: Story = { args: { initialMessage: '9007199254740994' } };
+export const TreeRootReading: Story = {
+    args: { initialMessage: '9007199254740993', initialMode: 'tree' }
+};
 export const SwitchingMessage: Story = {
     ...Reading,
     parameters: { pauseNavigation: true }

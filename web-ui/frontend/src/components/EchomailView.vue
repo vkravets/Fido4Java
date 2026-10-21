@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
@@ -8,7 +8,7 @@ import { api, bindings } from '../api.ts';
 import { createEchomail, echoClientKey } from '../echomail.ts';
 import { mailId } from '../netmail.ts';
 import type { AppState } from '../state.ts';
-import type { MailDraft } from '@rpc/bindings.mjs';
+import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import EchoMessageList from './EchoMessageList.vue';
 import NetmailMessage from './NetmailMessage.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
@@ -28,6 +28,7 @@ const reader = createEchomail(
     inject(echoClientKey, api.ui),
     (value) => new bindings.MailDraft(value)
 );
+const navigationItems = shallowRef<MailItem[]>([]);
 const search = ref('');
 const visibleAreas = computed(() =>
     reader.areas.value.filter((area) =>
@@ -35,7 +36,7 @@ const visibleAreas = computed(() =>
     )
 );
 const index = computed(() =>
-    reader.items.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
+    navigationItems.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
 );
 defineExpose({ canLeave: reader.discard });
 const {
@@ -78,7 +79,7 @@ function reply(kind: 'quoted' | 'reply' = 'quoted') {
     if (reader.draft.value) reader.draft.value.composeKind = kind;
 }
 const nextUnread = computed(() =>
-    reader.items.value.find(
+    navigationItems.value.find(
         (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
     )
 );
@@ -196,6 +197,7 @@ const nextUnread = computed(() =>
                 :busy="state.busy.value"
                 :has-more="reader.hasMore.value"
                 :initial-mode="initialMode"
+                @navigation="navigationItems = $event"
                 @open="openMessage"
                 @more="state.run(() => reader.load(true))"
             />
@@ -242,10 +244,10 @@ const nextUnread = computed(() =>
                 @compose="reader.edit()"
                 :navigation="true"
                 :previous-disabled="index <= 0"
-                :next-disabled="index < 0 || index >= reader.items.value.length - 1"
+                :next-disabled="index < 0 || index >= navigationItems.length - 1"
                 :unread-disabled="!nextUnread"
-                @previous="openMessage(reader.items.value[index - 1]!)"
-                @next="openMessage(reader.items.value[index + 1]!)"
+                @previous="openMessage(navigationItems[index - 1]!)"
+                @next="openMessage(navigationItems[index + 1]!)"
                 @unread="nextUnread && openMessage(nextUnread)"
             />
             <details

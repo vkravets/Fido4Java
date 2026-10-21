@@ -41,6 +41,8 @@ have separate contexts; browser defaults are prevented only when an available
 action handles the combination. Hidden pages, disabled controls, modal dialogs,
 IME composition, AltGr and appearance previews do not receive commands.
 Existing arrow navigation in trees, tabs and splitters takes precedence.
+Tree-item focus keeps native expand/collapse navigation; a focused message-open
+button uses the assigned reader navigation keys, just like the preview itself.
 Physical letter positions make bindings independent of the keyboard layout.
 Authorized reader commands in the More menu also work while that menu is closed.
 Message navigation shortcuts focus the persistent preview without scrolling;
@@ -48,6 +50,12 @@ the list keeps its single selected-message highlight. During a pending read,
 reader actions remain visually stable but unavailable to mouse and shortcuts.
 At navigation boundaries or during a pending request, assigned arrow shortcuts
 are consumed rather than falling through to list activation or browser scrolling.
+Echomail reader buttons and shortcuts use the same visible order as the list:
+depth-first tree order in Threads, server/list order in Flat, with collapsed
+branches and local search excluded. The list publishes this order to the reader,
+including when the list is hidden by a mobile/separate preview. A message hidden
+by collapse or filtering stays open; adjacent navigation is unavailable until
+that message is visible again or another visible message is selected.
 
 Browsers and operating systems do not deliver every shortcut to a web page.
 Reserved combinations such as Ctrl+L, Ctrl+R, Ctrl+W, Alt+F4, F5 and F12 cannot

@@ -6,7 +6,7 @@ test('keyboard message changes keep the list enabled and previous preview mounte
 }) => {
     for (const [story, key] of [
         ['mail-netmailview--switching-message', 'ArrowRight'],
-        ['mail-echomailview--switching-message', 'j'],
+        ['mail-echomailview--switching-message', 'ArrowRight'],
         ['mail-echomailview--switching-flat-message', 'ArrowRight']
     ] as const) {
         await openStory(page, story);
@@ -78,7 +78,7 @@ test('reader focus follows consecutive message changes without leaving a second 
     const selected = page.locator('[data-shortcut-selected]');
     const original = await selected.textContent();
     await selected.focus();
-    await page.keyboard.press('j');
+    await page.keyboard.press('ArrowRight');
     await expect(selected).not.toHaveText(original!);
     const reader = page.locator('.mail-message');
     await expect(reader).not.toHaveAttribute('aria-busy', 'true');
@@ -88,6 +88,77 @@ test('reader focus follows consecutive message changes without leaving a second 
     await expect(reader).not.toHaveAttribute('aria-busy', 'true');
     await expect(reader).toBeFocused();
     await expect(page.locator('.split-list :focus-visible')).toHaveCount(0);
+});
+
+test('echo reader buttons and shortcuts traverse the visible tree in both directions', async ({
+    page
+}) => {
+    await openStory(page, 'mail-echomailview--tree');
+    const rows = page.locator('[data-mail-row]');
+    const order = await rows.evaluateAll((elements) =>
+        elements.map((row) => row.getAttribute('data-mail-row'))
+    );
+    expect(order).toEqual([
+        '9007199254740996',
+        '9007199254740993',
+        '9007199254740994',
+        '9007199254740995'
+    ]);
+    await rows.first().locator('[data-shortcut-row]').click();
+    const selected = page.locator('[data-mail-row].selected');
+    const reader = page.locator('.mail-message');
+    const next = reader.locator('[data-shortcut="mail.next"]');
+    const previous = reader.locator('[data-shortcut="mail.previous"]');
+    for (let index = 0; index < order.length; index++) {
+        await expect(selected).toHaveAttribute('data-mail-row', order[index]!);
+        await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+        if (index === order.length - 1) break;
+        if (index % 2) await next.click();
+        else await page.keyboard.press('ArrowRight');
+    }
+    await expect(next).toBeDisabled();
+    for (let index = order.length - 2; index >= 0; index--) {
+        if (index % 2) await previous.click();
+        else await page.keyboard.press('ArrowLeft');
+        await expect(selected).toHaveAttribute('data-mail-row', order[index]!);
+        await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    }
+    await expect(previous).toBeDisabled();
+});
+
+test('echo reader navigation follows collapsed branches, list mode and search results', async ({
+    page
+}) => {
+    await openStory(page, 'mail-echomailview--tree');
+    await page.getByRole('button', { name: 'Collapse conversation' }).first().click();
+    await page.locator('[data-shortcut-row]').first().click();
+    const reader = page.locator('.mail-message');
+    const selected = page.locator('[data-mail-row].selected');
+    const next = reader.locator('[data-shortcut="mail.next"]');
+    await page.keyboard.press('j');
+    await expect(selected).toHaveAttribute('data-mail-row', '9007199254740993');
+    await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    await expect(next).toBeDisabled();
+    await page.getByRole('button', { name: 'Flat list', exact: true }).click();
+    await expect(page.getByRole('treeitem')).toHaveCount(0);
+    await expect(next).toBeDisabled();
+    await page.keyboard.press('ArrowLeft');
+    await expect(selected).toHaveAttribute('data-mail-row', '9007199254740994');
+    await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    await page.getByRole('button', { name: 'Conversation tree', exact: true }).click();
+    await expect(page.getByRole('treeitem')).toHaveCount(2);
+    await expect(next).toBeDisabled();
+    await expect(reader.locator('[data-shortcut="mail.previous"]')).toBeDisabled();
+    await page.getByRole('button', { name: 'Expand conversation' }).click();
+    await expect(next).toBeEnabled();
+    await page.getByRole('searchbox', { name: 'Search loaded messages' }).fill('Welcome');
+    await expect(page.locator('[data-mail-row]')).toHaveCount(3);
+    await next.click();
+    await expect(selected).toHaveAttribute('data-mail-row', '9007199254740995');
+    await expect(reader).not.toHaveAttribute('aria-busy', 'true');
+    await expect(next).toBeDisabled();
+    await page.keyboard.press('ArrowLeft');
+    await expect(selected).toHaveAttribute('data-mail-row', '9007199254740994');
 });
 
 test('deleting from a shortcut keeps the existing confirmation guard', async ({ page }) => {

@@ -97,7 +97,8 @@ export function installShortcuts(app: App, model: Shortcuts) {
             return;
         if (
             /^(?:Arrow|Home|End|Enter|Space|Tab)/.test(event.code) &&
-            focused?.closest('[role="tree"], [role="tablist"], [role="separator"]')
+            ((focused?.closest('[role="tree"]') && !focused.matches('[data-shortcut-row]')) ||
+                focused?.closest('[role="tablist"], [role="separator"]'))
         )
             return;
         const key = eventBinding(event);

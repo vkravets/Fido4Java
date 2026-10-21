@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppIcon from './AppIcon.vue';
 import { shortMailDate } from '../mail-date.ts';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { t } from '../i18n.ts';
 import NotificationBanner from './NotificationBanner.vue';
 import { useWorkspace } from '../workspace.ts';
@@ -18,7 +18,11 @@ const props = defineProps<{
     hasMore: boolean;
     initialMode?: 'flat' | 'tree';
 }>();
-const emit = defineEmits<{ open: [item: MailItem]; more: [] }>();
+const emit = defineEmits<{
+    open: [item: MailItem];
+    more: [];
+    navigation: [items: MailItem[]];
+}>();
 const workspace = useWorkspace();
 const selectedMode = ref<'flat' | 'tree'>();
 const savingMode = ref(false);
@@ -49,6 +53,15 @@ const rows = computed<EchoThreadRow[]>(() =>
     mode.value === 'tree'
         ? echoThreads(visibleItems.value, collapsed.value)
         : visibleItems.value.map((item) => ({ item, depth: 0, children: false, parent: '' }))
+);
+watch(
+    rows,
+    (value) =>
+        emit(
+            'navigation',
+            value.map((row) => row.item)
+        ),
+    { immediate: true }
 );
 function toggle(id: string) {
     const value = new Set(collapsed.value);
