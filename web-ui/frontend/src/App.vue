@@ -52,7 +52,10 @@ watch([state.session, () => state.profile.value?.login], async ([token, owner]) 
         if (token === state.session.value)
             state.error.value = t('Could not load mail preferences.');
     } finally {
-        if (token === state.session.value) preferencesReady.value = true;
+        if (token === state.session.value) {
+            page.value = workspace.value.value.startupPage;
+            preferencesReady.value = true;
+        }
     }
 });
 const mobileNavigation = ref(false);

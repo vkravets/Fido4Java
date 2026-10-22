@@ -7,9 +7,11 @@ For current unfinished work, read [TODO](../TODO) and inspect the current Git st
 
 ## Product and module boundaries
 
-The browser opens the Netmail inbox after authentication, including a restored
-session on page reload and a new login after sign-out or session expiry. Account
-settings remain an explicit navigation destination.
+The browser defaults to the Netmail inbox after authentication. Personal settings
+under Appearance can select Netmail, Echomail, Drafts, Node directory or Profile
+as the startup page. This is stored in the account-owned `workspace` UI document
+as `startupPage` and applies after session restoration, reload or a new login.
+Changing it does not navigate away from settings; absent/invalid values use Netmail.
 
 The node/point directory browser is shared by ADMIN and POINT users. Its local
 catalog search API is deliberately public, also serving pre-login registration

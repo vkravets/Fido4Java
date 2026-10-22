@@ -13,6 +13,9 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(parseWorkspace('broken').collapsed, true);
     assert.equal(parseWorkspace('{}').collapsed, true);
     assert.equal(parseWorkspace('{"collapsed":false}').collapsed, false);
+    assert.equal(parseWorkspace('{}').startupPage, 'netmail');
+    assert.equal(parseWorkspace('{"startupPage":"node"}').startupPage, 'netmail');
+    assert.equal(parseWorkspace('{"startupPage":"echo"}').startupPage, 'echo');
 });
 test('late loads cannot replace another account and failed saves retain previous settings', async () => {
     let finish!: (value: string) => void;
@@ -50,9 +53,10 @@ test('concurrent field saves are serialized and preserve independent layout edit
     await Promise.all([
         workspace.updateLayout('echo', { density: 'compact' }),
         workspace.updateLayout('echo', { mode: 'flat' }),
-        workspace.update({ collapsed: true })
+        workspace.update({ collapsed: true, startupPage: 'directory' })
     ]);
     assert.equal(workspace.value.value.echo.mode, 'flat');
     assert.equal(workspace.value.value.echo.density, 'compact');
     assert.equal(JSON.parse(snapshots.at(-1)!).collapsed, true);
+    assert.equal(JSON.parse(snapshots.at(-1)!).startupPage, 'directory');
 });

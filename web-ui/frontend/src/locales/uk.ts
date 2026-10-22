@@ -548,6 +548,9 @@ export const ukrainian = {
     'My AKAs': 'Мої AKA',
     Security: 'Безпека',
     Appearance: 'Вигляд',
+    'Page after sign-in': 'Сторінка після входу',
+    'Also used when reloading the page. Saved automatically.':
+        'Також відкривається після перезавантаження сторінки. Зберігається автоматично.',
     Username: 'Ім’я користувача',
     Access: 'Доступ',
     Point: 'Поінт',

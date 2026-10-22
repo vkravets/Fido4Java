@@ -10,6 +10,14 @@ export const composerListKey: InjectionKey<ComposerListControl> = Symbol('compos
 
 export type PreviewPosition = 'right' | 'below' | 'separate';
 export type MailKind = 'netmail' | 'echo';
+export const startupPages = [
+    { id: 'netmail', label: 'Netmail' },
+    { id: 'echo', label: 'Echomail' },
+    { id: 'drafts', label: 'Drafts' },
+    { id: 'directory', label: 'Node directory' },
+    { id: 'settings', label: 'Profile' }
+] as const;
+export type StartupPage = (typeof startupPages)[number]['id'];
 export interface MailLayout {
     preview: PreviewPosition;
     ratio: number;
@@ -19,6 +27,7 @@ export interface MailLayout {
 export interface WorkspacePreferences {
     version: 1;
     collapsed: boolean;
+    startupPage: StartupPage;
     netmail: MailLayout;
     echo: MailLayout;
 }
@@ -39,6 +48,9 @@ export function workspacePreferences(value: unknown): WorkspacePreferences {
     return {
         version: 1,
         collapsed: row.collapsed !== false,
+        startupPage: startupPages.some((page) => page.id === row.startupPage)
+            ? row.startupPage!
+            : 'netmail',
         netmail: layout(row.netmail),
         echo: layout(row.echo)
     };

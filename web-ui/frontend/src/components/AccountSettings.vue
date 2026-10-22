@@ -13,6 +13,8 @@ import MailAppearanceSettings from './MailAppearanceSettings.vue';
 import MailTemplateSettings from './MailTemplateSettings.vue';
 import type { AppState } from '../state.ts';
 import type { Theme } from '../state.ts';
+import { startupPages, useWorkspace } from '../workspace.ts';
+import type { StartupPage } from '../workspace.ts';
 const tabs = [
     { id: 'profile', label: 'Profile' },
     { id: 'aka', label: 'My AKAs' },
@@ -24,6 +26,19 @@ const tabs = [
 ] as const;
 type PersonalTab = (typeof tabs)[number]['id'];
 const props = defineProps<{ state: AppState; initialTab?: PersonalTab }>();
+const workspace = useWorkspace();
+function saveStartupPage(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const startupPage = select.value as StartupPage;
+    props.state.run(async () => {
+        try {
+            await workspace.update({ startupPage });
+            props.state.notice.value = t('Settings saved.');
+        } finally {
+            select.value = workspace.value.value.startupPage;
+        }
+    });
+}
 const tab = ref<PersonalTab>(props.initialTab || 'profile');
 const narrow = useMedia('(max-width: 700px)');
 const title = computed(() => t(tabs.find((item) => item.id === tab.value)!.label));
@@ -208,6 +223,25 @@ function claimLabel(state: string): string {
                     class="card"
                 >
                     <SettingsSectionHeader :title="t('Appearance')" />
+                    <label class="startup-page">
+                        {{ t('Page after sign-in') }}
+                        <select
+                            :value="workspace.value.value.startupPage"
+                            :disabled="state.busy.value"
+                            @change="saveStartupPage"
+                        >
+                            <option
+                                v-for="item in startupPages"
+                                :key="item.id"
+                                :value="item.id"
+                            >
+                                {{ t(item.label) }}
+                            </option>
+                        </select>
+                        <small>{{
+                            t('Also used when reloading the page. Saved automatically.')
+                        }}</small>
+                    </label>
                     <p>{{ t('Your selected theme is saved in your profile.') }}</p>
                     <div class="theme-options">
                         <button
@@ -241,3 +275,12 @@ function claimLabel(state: string): string {
         </SettingsWorkspace>
     </template>
 </template>
+
+<style scoped>
+.startup-page {
+    display: grid;
+    gap: 0.5rem;
+    max-width: 26rem;
+    margin-bottom: 1.25rem;
+}
+</style>

@@ -90,6 +90,37 @@ test('page reload restores the validated session while stale tokens return to si
     expect(await page.evaluate(() => sessionStorage.getItem('jftn-session') === null)).toBe(true);
 });
 
+test('personal startup page survives reload and sign-in without navigating on save', async ({
+    page
+}) => {
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    const settings = page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true });
+    await settings.click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    const startup = page.getByRole('combobox', { name: 'Page after sign-in' });
+    await expect(startup).toHaveValue('netmail');
+    await startup.selectOption('echo');
+    await expect(notification(page)).toContainText('Settings saved.');
+    await expect(startup).toHaveValue('echo');
+    await page.reload();
+    await expectSignedIn(page, 'Echomail');
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await signIn(page, 'admin', 'preview-admin-password', 'Echomail');
+    await settings.click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    await expect(startup).toHaveValue('echo');
+    await startup.selectOption('settings');
+    await expect(notification(page)).toContainText('Settings saved.');
+    await page.reload();
+    await expectSignedIn(page, 'Profile');
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    await startup.selectOption('netmail');
+    await expect(notification(page)).toContainText('Settings saved.');
+});
+
 test('personal keyboard assignments survive a new login and invoke the echomail reply action', async ({
     page
 }) => {
@@ -144,15 +175,15 @@ function notification(page: Page) {
     return page.getByRole('region', { name: 'Notifications' }).getByRole('status');
 }
 
-async function signIn(page: Page, username: string, password: string) {
+async function signIn(page: Page, username: string, password: string, landing = 'Netmail') {
     await page.getByRole('textbox', { name: 'Username', exact: true }).fill(username);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expectSignedIn(page);
+    await expectSignedIn(page, landing);
 }
 
-async function expectSignedIn(page: Page) {
-    await expect(page.getByRole('heading', { name: 'Netmail', exact: true })).toBeVisible();
+async function expectSignedIn(page: Page, landing = 'Netmail') {
+    await expect(page.getByRole('heading', { name: landing, exact: true })).toBeVisible();
 }
 
 async function stationSection(page: Page, name: string) {
