@@ -28,13 +28,18 @@ const mailAppearance = createMailAppearance(api.profile);
 provide(mailAppearanceKey, mailAppearance);
 onMounted(() => mailAppearance.files().catch(() => {}));
 const queue = createMailQueue(state, api.ui);
-const page = ref('settings');
+const page = ref('netmail');
+const echoDraft = ref<MailDraft>();
+const netmailDraft = ref<MailDraft>();
 const settingsView = ref<InstanceType<typeof AccountSettings> | null>(null);
 const templates = createMailTemplates(api.profile);
 provide(mailTemplatesKey, templates);
 const preferencesReady = ref(false);
 watch([state.session, () => state.profile.value?.login], async ([token, owner]) => {
     if (token && !owner) return;
+    page.value = 'netmail';
+    echoDraft.value = undefined;
+    netmailDraft.value = undefined;
     preferencesReady.value = false;
     try {
         await Promise.all([
@@ -54,8 +59,6 @@ const mobileNavigation = ref(false);
 
 const netmail = ref<InstanceType<typeof NetmailView> | null>(null);
 const echomail = ref<InstanceType<typeof EchomailView> | null>(null);
-const echoDraft = ref<MailDraft>();
-const netmailDraft = ref<MailDraft>();
 function canLeave() {
     return (
         (!netmail.value || netmail.value.canLeave()) &&
@@ -91,7 +94,7 @@ onBeforeUnmount(() => window.removeEventListener('focus', refreshQueue));
 onMounted(state.start);
 function logout() {
     if (!canLeave()) return;
-    page.value = 'settings';
+    page.value = 'netmail';
     state.run(state.logout);
 }
 function openEchoDraft(draft: MailDraft) {

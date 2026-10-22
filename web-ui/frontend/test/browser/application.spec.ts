@@ -42,7 +42,7 @@ test('keyboard reading updates the preview without dimming the list or starting 
         });
         Object.assign(window, { navigationCheck: { report, observer } });
     });
-    await page.keyboard.press('k');
+    await page.keyboard.press('j');
     await expect(page.locator('.reader-heading h2')).not.toHaveText(title!);
     await expect(page.locator('[data-shortcut="mail.reply"]').first()).toBeEnabled();
     const report = await page.evaluate(() => {
@@ -71,6 +71,10 @@ test('page reload restores the validated session while stale tokens return to si
     await signIn(page, 'admin', 'preview-admin-password');
     const original = await page.evaluate(() => sessionStorage.getItem('jftn-session'));
     expect(!!original).toBe(true);
+    await page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true })
+        .click();
     await page.reload();
     await expectSignedIn(page);
     expect(
@@ -92,6 +96,10 @@ test('personal keyboard assignments survive a new login and invoke the echomail 
     page.on('dialog', (dialog) => dialog.accept());
     await page.goto('/');
     await signIn(page, 'admin', 'preview-admin-password');
+    await page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true })
+        .click();
     await page.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
     const field = page.getByRole('textbox', { name: 'Quoted reply', exact: true });
     await field.click();
@@ -102,6 +110,10 @@ test('personal keyboard assignments survive a new login and invoke the echomail 
     ).toBeDisabled();
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
     await signIn(page, 'admin', 'preview-admin-password');
+    await page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true })
+        .click();
     await page.getByRole('tab', { name: 'Keyboard shortcuts', exact: true }).click();
     await expect(field).toHaveValue('Alt+Shift+Q');
     await page.locator('.sidebar').getByRole('button', { name: 'Echomail', exact: true }).click();
@@ -140,9 +152,7 @@ async function signIn(page: Page, username: string, password: string) {
 }
 
 async function expectSignedIn(page: Page) {
-    await expect(
-        page.locator('.settings-page-header').getByRole('heading', { name: 'Profile', exact: true })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Netmail', exact: true })).toBeVisible();
 }
 
 async function stationSection(page: Page, name: string) {
@@ -466,6 +476,10 @@ test('real HTTP RPC supports language, theme, registration, approval and point a
     await expect(page.getByRole('heading', { name: 'Вхід до JFtn' })).toBeVisible();
     await page.getByRole('combobox', { name: 'Мова' }).selectOption('en');
     await signIn(page, 'admin', 'preview-admin-password');
+    await page
+        .locator('.sidebar')
+        .getByRole('button', { name: 'My settings', exact: true })
+        .click();
     await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
     await page.getByRole('button', { name: 'Dark · Night shift' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

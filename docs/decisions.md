@@ -7,6 +7,10 @@ For current unfinished work, read [TODO](../TODO) and inspect the current Git st
 
 ## Product and module boundaries
 
+The browser opens the Netmail inbox after authentication, including a restored
+session on page reload and a new login after sign-out or session expiry. Account
+settings remain an explicit navigation destination.
+
 The node/point directory browser is shared by ADMIN and POINT users. Its local
 catalog search API is deliberately public, also serving pre-login registration
 suggestions. Only imported directory metadata is exposed: no import/download,

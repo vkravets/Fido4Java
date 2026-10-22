@@ -58,6 +58,8 @@ final class BrowserEchoMailbox {
                                                             .setWriteAddresses(sessions.mailAddresses(owner,
                                                                                                       List.of("1:500/100.0"))));
             case "messages" :
+                if (args[1] == Mailbox.INBOX || args[1] == Mailbox.OUTBOX)
+                    return page(owner, List.of(), (Integer) args[4]);
                 requireArea((Mailbox) args[1], (String) args[2]);
                 return page(owner,
                             messages.stream()
