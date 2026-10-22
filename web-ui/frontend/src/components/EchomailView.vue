@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import AppIcon from './AppIcon.vue';
+import MailSearchStatus from './MailSearchStatus.vue';
+import { createArchiveSearch } from '../archive-search.ts';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
 import { useMailReading } from '../mail-reading.ts';
@@ -23,11 +25,30 @@ const props = defineProps<{
     initialMode?: 'flat' | 'tree';
 }>();
 const emit = defineEmits<{ forward: [draft: MailDraft] }>();
-const reader = createEchomail(
-    props.state,
-    inject(echoClientKey, api.ui),
-    (value) => new bindings.MailDraft(value)
+const client = inject(echoClientKey, api.ui);
+const reader = createEchomail(props.state, client, (value) => new bindings.MailDraft(value));
+const query = ref('');
+const mailSearch = createArchiveSearch(
+    props.state.session,
+    computed(() =>
+        reader.currentArea.value?.readable ? { mailbox: 1 as const, area: reader.area.value } : null
+    ),
+    query,
+    reader.items,
+    client,
+    (failure) => {
+        void props.state.run(
+            async () => {
+                throw failure;
+            },
+            { background: true }
+        );
+    }
 );
+async function loadMore() {
+    if (mailSearch.remote.value) await mailSearch.loadMore();
+    else await props.state.run(() => reader.load(true));
+}
 const navigationItems = shallowRef<MailItem[]>([]);
 const search = ref('');
 const visibleAreas = computed(() =>
@@ -73,6 +94,7 @@ async function refresh() {
     if (!reader.discard()) return;
     await reader.refreshAreas();
     await reader.selectArea(reader.area.value);
+    if (mailSearch.active.value) await mailSearch.refresh();
 }
 function reply(kind: 'quoted' | 'reply' = 'quoted') {
     reader.edit(undefined, reader.selected.value!);
@@ -86,6 +108,7 @@ const nextUnread = computed(() =>
 </script>
 <template>
     <MailWorkspace
+        v-model:query="query"
         kind="echo"
         :selected="reader.selected.value ? mailId(reader.selected.value.id) : undefined"
         :opened="!!reader.selected.value || !!reader.draft.value || reader.showDrafts.value"
@@ -93,6 +116,15 @@ const nextUnread = computed(() =>
         :busy="state.busy.value"
         @back="back"
     >
+        <template #search-status>
+            <MailSearchStatus
+                :active="mailSearch.active.value"
+                :remote="mailSearch.remote.value"
+                :pending="mailSearch.pending.value"
+                :failure="mailSearch.failure.value"
+                :has-more="mailSearch.hasMore.value"
+            />
+        </template>
         <template #toolbar>
             <header class="page-heading">
                 <div>
@@ -194,14 +226,19 @@ const nextUnread = computed(() =>
             <EchoMessageList
                 v-if="reader.currentArea.value?.readable"
                 :key="reader.area.value"
-                :items="reader.items.value"
+                :items="mailSearch.items.value"
+                :search-results="mailSearch.remote.value"
+                :searching="mailSearch.pending.value"
+                :search-failed="mailSearch.failure.value"
                 :selected="reader.selected.value ? mailId(reader.selected.value.id) : ''"
                 :busy="state.busy.value"
-                :has-more="reader.hasMore.value"
+                :has-more="
+                    mailSearch.remote.value ? mailSearch.hasMore.value : reader.hasMore.value
+                "
                 :initial-mode="initialMode"
                 @navigation="navigationItems = $event"
                 @open="openMessage"
-                @more="state.run(() => reader.load(true))"
+                @more="loadMore"
             />
         </template>
         <MailComposer

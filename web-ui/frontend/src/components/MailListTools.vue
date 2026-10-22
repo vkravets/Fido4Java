@@ -25,13 +25,13 @@ const positions = [
         <div class="mail-filter-row">
             <slot name="filters" />
             <label class="mail-query">
-                <span class="control-label">{{ t('Search loaded messages') }}</span>
+                <span class="control-label">{{ t('Search messages') }}</span>
                 <AppIcon name="search" />
                 <input
                     v-shortcut="'mail.search'"
                     v-model="query"
                     type="search"
-                    maxlength="120"
+                    maxlength="160"
                     :placeholder="t('Search messages')"
                 />
             </label>
@@ -89,5 +89,6 @@ const positions = [
                 </div>
             </details>
         </div>
+        <slot name="search-status" />
     </div>
 </template>

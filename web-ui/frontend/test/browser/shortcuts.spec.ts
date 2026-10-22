@@ -284,7 +284,7 @@ test('echo reader navigation follows collapsed branches, list mode and search re
     await expect(reader.locator('[data-shortcut="mail.previous"]')).toBeDisabled();
     await page.getByRole('button', { name: 'Expand conversation' }).click();
     await expect(next).toBeEnabled();
-    await page.getByRole('searchbox', { name: 'Search loaded messages' }).fill('Welcome');
+    await page.getByRole('searchbox', { name: 'Search messages' }).fill('Welcome');
     await expect(page.locator('[data-mail-row]')).toHaveCount(3);
     await next.click();
     await expect(selected).toHaveAttribute('data-mail-row', '9007199254740995');
@@ -331,7 +331,7 @@ test('reader shortcuts reuse reply and cancel actions without firing while typin
     page
 }) => {
     await openStory(page, 'mail-netmailview--reading');
-    const search = page.getByRole('searchbox', { name: 'Search loaded messages', exact: true });
+    const search = page.getByRole('searchbox', { name: 'Search messages', exact: true });
     await search.fill('');
     await search.press('r');
     await expect(page.locator('.mail-composer')).toHaveCount(0);

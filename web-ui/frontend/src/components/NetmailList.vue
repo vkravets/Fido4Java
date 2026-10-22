@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shortMailDate } from '../mail-date.ts';
 import { t } from '../i18n.ts';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { matchesMail, useMailSearch } from '../mail-search.ts';
 import { mailId } from '../netmail.ts';
 import type { MailItem } from '@rpc/bindings.mjs';
@@ -10,20 +10,36 @@ const props = defineProps<{
     selected: string;
     busy: boolean;
     hasMore: boolean;
+    searchResults?: boolean;
+    searching?: boolean;
+    searchFailed?: boolean;
     outgoing?: boolean;
 }>();
 const query = useMailSearch();
-const visibleItems = computed(() => props.items.filter((item) => matchesMail(item, query.value)));
-defineEmits<{ open: [item: MailItem]; more: [] }>();
+const visibleItems = computed(() =>
+    props.searchResults ? props.items : props.items.filter((item) => matchesMail(item, query.value))
+);
+const emit = defineEmits<{ open: [item: MailItem]; more: []; navigation: [items: MailItem[]] }>();
+watch(visibleItems, (items) => emit('navigation', items), { immediate: true });
 </script>
 <template>
     <section
         class="card mail-list"
         :aria-label="t('Messages')"
-        :aria-busy="busy"
+        :aria-busy="busy || searching"
     >
-        <p v-if="!visibleItems.length">
-            {{ busy ? t('Loading messages…') : t('No messages in this folder.') }}
+        <p
+            v-if="
+                !visibleItems.length && !searching && !searchFailed && !(searchResults && hasMore)
+            "
+        >
+            {{
+                busy
+                    ? t('Loading messages…')
+                    : query
+                      ? t('No matching messages.')
+                      : t('No messages in this folder.')
+            }}
         </p>
         <div
             class="mail-table-head"
@@ -78,7 +94,7 @@ defineEmits<{ open: [item: MailItem]; more: [] }>();
         <button
             v-if="hasMore"
             class="secondary"
-            :disabled="busy"
+            :disabled="busy || searching"
             @click="$emit('more')"
         >
             {{ t('Load more') }}

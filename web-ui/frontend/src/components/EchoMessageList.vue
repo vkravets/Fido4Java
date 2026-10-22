@@ -16,6 +16,9 @@ const props = defineProps<{
     selected: string;
     busy: boolean;
     hasMore: boolean;
+    searchResults?: boolean;
+    searching?: boolean;
+    searchFailed?: boolean;
     initialMode?: 'flat' | 'tree';
 }>();
 const emit = defineEmits<{
@@ -47,7 +50,9 @@ const mode = computed({
     }
 });
 const query = useMailSearch();
-const visibleItems = computed(() => props.items.filter((item) => matchesMail(item, query.value)));
+const visibleItems = computed(() =>
+    props.searchResults ? props.items : props.items.filter((item) => matchesMail(item, query.value))
+);
 const collapsed = ref(new Set<string>());
 const rows = computed<EchoThreadRow[]>(() =>
     mode.value === 'tree'
@@ -98,6 +103,7 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
     <section
         class="card echo-message-list"
         :aria-label="t('Conference messages')"
+        :aria-busy="busy || searching"
     >
         <div class="actions echo-list-controls">
             <label class="list-mode-select"
@@ -135,13 +141,15 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
             <span class="muted">{{ t('Loaded messages: {count}', { count: items.length }) }}</span>
         </div>
         <p
-            v-if="!visibleItems.length"
+            v-if="
+                !visibleItems.length && !searching && !searchFailed && !(searchResults && hasMore)
+            "
             class="muted"
         >
-            {{ query ? t('No matching loaded messages.') : t('No messages in this conference.') }}
+            {{ query ? t('No matching messages.') : t('No messages in this conference.') }}
         </p>
         <p
-            v-if="mode === 'tree' && hasMore"
+            v-if="mode === 'tree' && hasMore && visibleItems.length"
             class="message warning echo-tree-warning"
             role="status"
         >
@@ -226,10 +234,10 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         <button
             v-if="hasMore"
             class="secondary"
-            :disabled="busy"
+            :disabled="busy || searching"
             @click="emit('more')"
         >
-            {{ t('Load older messages') }}
+            {{ t('Load more') }}
         </button>
     </section>
 </template>

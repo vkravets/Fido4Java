@@ -4,6 +4,16 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'mail-archive-search', story: 'mail-netmailview--archive-search', mailSearch: true },
+    { name: 'mail-local-search', story: 'mail-netmailview--local-search', mailSearch: true },
+    { name: 'mail-search-pending', story: 'mail-netmailview--search-pending', mailSearch: true },
+    { name: 'mail-search-failure', story: 'mail-netmailview--search-failure', mailSearch: true },
+    { name: 'echo-archive-search', story: 'mail-echomailview--archive-search', mailSearch: true },
+    {
+        name: 'echo-search-continuation',
+        story: 'mail-echomailview--search-continuation',
+        mailSearch: true
+    },
     { name: 'shortcut-help', story: 'navigation-shortcuthelp--default', modal: true },
     { name: 'shortcut-help-golded', story: 'navigation-shortcuthelp--golded', modal: true },
     {
@@ -333,6 +343,15 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.mailSearch) {
+                    await page.locator('.mail-query input').fill('Welcome');
+                    await expect(page.locator('.mail-search-status')).toBeVisible();
+                    if (screen.name !== 'mail-search-pending') {
+                        await expect(page.locator('.mail-search-status')).not.toContainText(
+                            /Searching messages|Пошук листів/
+                        );
+                    }
+                }
                 if (screen.hideComposerList && info.project.name === 'desktop') {
                     await expect(page.locator('.split-list')).toBeHidden();
                     await expect(page.locator('.split-handle')).toBeHidden();

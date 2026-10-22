@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { InjectionKey } from 'vue';
 import { t } from './i18n.ts';
+import type { SearchClient } from './archive-search.ts';
 import type { AppState } from './state.ts';
 import type { MailDraft, MailItem, Mailbox } from '@rpc/bindings.mjs';
 type NetmailClient = Pick<
@@ -13,7 +14,8 @@ type NetmailClient = Pick<
     | 'send'
     | 'deleteDraft'
     | 'deleteMessage'
->;
+> &
+    SearchClient;
 export const netmailClientKey: InjectionKey<NetmailClient> = Symbol('netmail-client');
 
 export type MailFolder = 'inbox' | 'outbox' | 'drafts';
@@ -114,6 +116,8 @@ export function createNetmail(
         if (ticket !== opening || token !== state.session.value) return;
         message.read = true;
         item.read = true;
+        const listed = items.value.find((value) => mailId(value.id) === mailId(item.id));
+        if (listed) listed.read = true;
         selected.value = message;
         draft.value = null;
     }

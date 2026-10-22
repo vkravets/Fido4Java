@@ -1,4 +1,5 @@
 import MailApplicationFrame from './MailApplicationFrame.vue';
+import { archiveSearchFixture } from './archive-search-fixture.ts';
 import { nextTick, provide, ref } from 'vue';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
@@ -45,7 +46,11 @@ const meta = {
                     }
                 }
             } as AppState;
+            const searchFixture = context.parameters.archiveSearch
+                ? archiveSearchFixture(context.parameters.archiveSearch, netmailMessage)
+                : null;
             provide(netmailClientKey, {
+                ...(searchFixture ? { searchMessages: searchFixture.searchMessages } : {}),
                 messages: async () => ({
                     items: deleted ? [] : messages,
                     nextId: netmailMessage.id,
@@ -54,6 +59,8 @@ const meta = {
                 message: async (_token, _box, _area, id) => {
                     if (context.parameters.pauseNavigation && messageRequests++ > 0)
                         await new Promise(() => {});
+                    if (searchFixture && mailId(id) === searchFixture.archive.id)
+                        return { ...searchFixture.archive };
                     return { ...messages.find((item) => mailId(item.id) === mailId(id))! };
                 },
                 markRead: async () => {},
@@ -140,3 +147,9 @@ export const EditorSeparate: Story = {
     ...Editor,
     parameters: { workspace: { netmail: { preview: 'separate' } } }
 };
+
+export const ArchiveSearch: Story = { parameters: { archiveSearch: 'enabled', rows: 3 } };
+export const LocalSearch: Story = { parameters: { archiveSearch: 'disabled', rows: 3 } };
+export const SearchPending: Story = { parameters: { archiveSearch: 'pending' } };
+export const SearchFailure: Story = { parameters: { archiveSearch: 'error' } };
+export const SearchContinuation: Story = { parameters: { archiveSearch: 'continuation' } };

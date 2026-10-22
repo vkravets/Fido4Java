@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import type { InjectionKey } from 'vue';
 import { t } from './i18n.ts';
+import type { SearchClient } from './archive-search.ts';
 import { mailId, quotedReply } from './netmail.ts';
 import type { AppState } from './state.ts';
 import type { AreaInfo, EchoContext, MailDraft, MailItem } from '@rpc/bindings.mjs';
@@ -16,7 +17,8 @@ export type EchoClient = Pick<
     | 'saveDraft'
     | 'deleteDraft'
     | 'send'
->;
+> &
+    SearchClient;
 export const echoClientKey: InjectionKey<EchoClient> = Symbol('echo-client');
 
 export function createEchomail(
@@ -98,6 +100,7 @@ export function createEchomail(
         await client.markRead(token, 1, name, item.id, true);
         if (ticket !== opening || token !== state.session.value || name !== area.value) return;
         message.read = true;
+        item.read = true;
         const listed = items.value.find((value) => mailId(value.id) === mailId(item.id));
         if (listed) listed.read = true;
         selected.value = message;

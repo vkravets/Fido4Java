@@ -74,6 +74,14 @@ export const ukrainian = {
     'Invalid mail theme color': 'Некоректний колір теми листів',
     'Invalid mail template': 'Некоректний шаблон листа',
     'Search loaded messages': 'Шукати серед завантажених листів',
+    'Searching messages…': 'Пошук листів…',
+    'Searching loaded messages only.': 'Пошук лише серед завантажених листів.',
+    'Searching the archive. Load more to continue.':
+        'Пошук в архіві. Завантажте більше, щоб продовжити.',
+    'Archive search complete.': 'Пошук в архіві завершено.',
+    'Search failed. Use Load more to retry.':
+        'Не вдалося виконати пошук. Натисніть «Завантажити більше», щоб повторити.',
+    'No matching messages.': 'Листів зі збігами немає.',
     'No matching loaded messages.': 'Серед завантажених листів збігів немає.',
     'Search matches': 'Збіги пошуку',
     All: 'Усі',

@@ -60,7 +60,7 @@ export const shortcutActions = [
     },
     {
         id: 'mail.search',
-        label: 'Search loaded messages',
+        label: 'Search messages',
         scope: 'mail',
         keys: ['/'],
         golded: ['F', 'Alt+F']

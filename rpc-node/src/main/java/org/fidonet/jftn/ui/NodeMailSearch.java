@@ -56,7 +56,7 @@ final class NodeMailSearch {
         while (matches.size() < limit && scanned < SCAN_LIMIT && more) {
             int count = Math.min(BATCH_SIZE, SCAN_LIMIT - scanned);
             List<StoredMail> rows = box == Mailbox.ECHO
-                    ? base.readEchoPage(area, cursor, count + 1)
+                    ? base.readEchoRecent(area, cursor, count + 1)
                     : base.readNetmailPage(addresses, box == Mailbox.OUTBOX, cursor, count + 1);
             Set<Long> deleted = box == Mailbox.ECHO
                     ? Set.of()

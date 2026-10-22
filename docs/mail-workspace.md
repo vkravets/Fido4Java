@@ -52,11 +52,15 @@ unsaved draft asks for confirmation. The mobile header opens the application
 menu; node administration remains available only to administrators.
 This compact-layout pass targets desktop; a broader mobile redesign is deferred.
 
-**Search loaded messages** filters the currently loaded headers and bounded text
+**Search messages** normally filters the currently loaded headers and bounded text
 excerpts. It is not a full archive or full body search. Load more messages to
 extend this local scope. Matching literal text is highlighted in the open reader.
-Experimental archive/body search now exists through RPC behind the text-only
-`RpcExperimentalMailSearch` flag, but is not connected to this browser control.
+With the experimental text-only `RpcExperimentalMailSearch` flag enabled, this
+same control searches the selected archive through RPC for queries of two or
+more characters. Its status identifies the scope; Load more continues scanning,
+including after an empty results page. Clearing restores the loaded list.
+Navigation, list/tree modes and highlighting use the displayed results in both
+modes. The disabled flag retains local filtering.
 See [server search setup and limits](rpc-ui.md#experimental-server-side-mail-search).
 Echo threading uses exact MSGID/REPLY, including explicit missing-parent states;
 subjects do not define conversations.

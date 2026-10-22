@@ -18,7 +18,7 @@ const props = defineProps<{
 }>();
 defineEmits<{ back: [] }>();
 const workspace = useWorkspace();
-const query = ref('');
+const query = defineModel<string>('query', { default: '' });
 provide(mailSearchKey, query);
 const preferences = computed(() => workspace.value.value[props.kind]);
 const desktop = useMedia('(min-width: 701px)');
@@ -130,7 +130,10 @@ async function update(patch: Partial<MailLayout>) {
                 >
                     <template #toolbar><slot name="toolbar" /></template>
                     <template #filters><slot name="filters" /></template>
-                    <template #options><slot name="options" /></template> </MailListTools
+                    <template #options><slot name="options" /></template>
+                    <template #search-status
+                        ><slot name="search-status"
+                    /></template> </MailListTools
                 ><slot name="list"
             /></template>
             <button
@@ -159,6 +162,7 @@ async function update(patch: Partial<MailLayout>) {
                     <template #toolbar><slot name="toolbar" /></template>
                     <template #filters><slot name="filters" /></template>
                     <template #options><slot name="options" /></template>
+                    <template #search-status><slot name="search-status" /></template>
                 </MailListTools>
                 <slot name="list" />
             </section>

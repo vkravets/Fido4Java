@@ -244,11 +244,11 @@ class EchoReaderRpcTest {
     void searchPagesRespectScanBudgetAndContinueAfterEmptyPagesWithoutSkippingMatches()
             throws Exception {
         restartSearch("true");
+        storeSearchText("test", "first-1", "Needle one", "Archive");
+        storeSearchText("test", "first-2", "Needle two", "Archive");
         for (int index = 0; index < 1000; index++) {
             storeSearchText("test", "old-" + index, "Unrelated body", "Archive");
         }
-        storeSearchText("test", "last-1", "Needle one", "Archive");
-        storeSearchText("test", "last-2", "Needle two", "Archive");
         var empty = ui.searchMessages(admin, Mailbox.ECHO, "test", "needle", 0, 1);
         assertEquals(1000, empty.getScanned());
         assertEquals(0, empty.getItemsSize());
@@ -261,7 +261,7 @@ class EchoReaderRpcTest {
         var last = ui.searchMessages(admin, Mailbox.ECHO, "test", "needle", first.getNextId(), 1);
         assertEquals(1, last.getItemsSize());
         assertFalse(last.isHasMore());
-        assertTrue(last.getItems().get(0).getId() > first.getItems().get(0).getId());
+        assertTrue(last.getItems().get(0).getId() < first.getItems().get(0).getId());
     }
 
     @Test

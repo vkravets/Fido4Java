@@ -328,7 +328,7 @@ export; call processMail to request an immediate processing pass.
 ## Experimental server-side mail search
 
 Archive search is experimental and disabled by default. It is available through
-RPC only; the browser's existing search still filters loaded messages. Enable it
+RPC and the browser's existing search field. Enable it
 by editing `conf.d/90-rpc.conf` (or another ordered text fragment):
 
 ```ini
@@ -343,7 +343,7 @@ create an index or grant any permissions. An authenticated call while disabled
 returns `UiError` with code `FEATURE_DISABLED` on both TCP and HTTP.
 
 ```text
-UiService.searchMessages(session, mailbox, area, query, afterId, limit)
+UiService.searchMessages(session, mailbox, area, query, cursorId, limit)
     -> MailSearchPage { items, nextId, hasMore, scanned }
 ```
 
@@ -364,9 +364,11 @@ search never marks messages read. Items are summaries without full bodies; their
 excerpt contains up to 240 UTF-16 code units of context around the first body
 match (plus optional ellipses). Use `message` for the complete text.
 
-Start at `afterId=0`, use `limit=1..100`, and pass the returned `nextId` unchanged
-on subsequent requests with the same mailbox, area and query. Ordering is ascending
-SQL row ID, not message date or relevance. IDs retain their normal Thrift i64
+Start at `cursorId=0`, use `limit=1..100`, and pass the returned `nextId` unchanged
+on subsequent requests with the same mailbox, area and query. Echo ordering follows
+the normal reader: decreasing SQL row ID, newest received first. Netmail follows
+its normal increasing row-ID order. The cursor is exclusive in that direction;
+ordering is not message date or relevance. IDs retain their normal Thrift i64
 semantics. Changing the search scope/query starts a new scan at zero.
 
 Each call examines at most 1000 scoped rows in batches of at most 100 plus one
@@ -383,8 +385,22 @@ messages on the server; it is not an indexed full-text engine. A sparse query
 over a large archive requires multiple calls. There is no snapshot/search session
 or exact hit count: mailbox changes and new messages can affect later pages,
 and reaching the end does not subscribe to future mail. The row budget does not
-guarantee a fixed wall-clock latency. Indexing and browser integration remain
+guarantee a fixed wall-clock latency. Indexing and large-archive performance remain
 tracked in [TODO](../TODO).
+
+The browser uses the same search field, clearing, list/tree modes and navigation
+with either flag value. With the flag off, `FEATURE_DISABLED` switches that view
+to filtering loaded messages and is remembered for its current session. Other
+errors remain visible with a retry action; they do not silently narrow scope.
+With the flag on, queries of at least two characters use a debounced RPC scan.
+One-character queries remain local. A scope/status line identifies local versus
+archive search and pending, complete or failed work. The existing Load more
+button continues the archive cursor, including after an empty page; completion
+means no more rows, not a known total. Clearing restores the ordinary loaded
+mailbox without losing its pagination. Changing query, folder, conference or
+account discards late search replies. Searching does not disable reader actions
+or mark messages read. Search summaries are not re-filtered against their short
+excerpts, because a match can occur further into the body.
 
 ## Node operations
 

@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './test/browser',
     testMatch: [
+        'archive-search.spec.ts',
         'components.spec.ts',
         'workspace.spec.ts',
         'shortcuts.spec.ts',

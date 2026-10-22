@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onBeforeUnmount } from 'vue';
+import { computed, inject, onMounted, onBeforeUnmount, ref, shallowRef } from 'vue';
 import AppIcon from './AppIcon.vue';
+import MailSearchStatus from './MailSearchStatus.vue';
+import { createArchiveSearch } from '../archive-search.ts';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
 import { useMailReading } from '../mail-reading.ts';
@@ -8,7 +10,7 @@ import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
 import { api, bindings } from '../api.ts';
 import type { AppState } from '../state.ts';
 import type { MailFolder } from '../netmail.ts';
-import type { MailDraft } from '@rpc/bindings.mjs';
+import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import NetmailList from './NetmailList.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
 import NetmailMessage from './NetmailMessage.vue';
@@ -21,13 +23,39 @@ const props = defineProps<{
     initialDraft?: MailDraft;
 }>();
 const emit = defineEmits<{ queueChanged: []; openEchoDraft: [draft: MailDraft] }>();
+const client = inject(netmailClientKey, api.ui);
 const reader = createNetmail(
     props.state,
-    inject(netmailClientKey, api.ui),
+    client,
     (value) => new bindings.MailDraft(value),
     () => emit('queueChanged')
 );
-defineExpose({ canLeave: reader.discard, refresh: reader.load });
+const navigationItems = shallowRef<MailItem[]>([]);
+const query = ref('');
+const mailSearch = createArchiveSearch(
+    props.state.session,
+    computed(() =>
+        reader.folder.value === 'drafts'
+            ? null
+            : { mailbox: reader.folder.value === 'outbox' ? (3 as const) : (2 as const), area: '' }
+    ),
+    query,
+    reader.items,
+    client,
+    (failure) => {
+        void props.state.run(
+            async () => {
+                throw failure;
+            },
+            { background: true }
+        );
+    }
+);
+async function loadMore() {
+    if (mailSearch.remote.value) await mailSearch.loadMore();
+    else await props.state.run(() => reader.load(true));
+}
+defineExpose({ canLeave: reader.discard, refresh });
 const {
     pending: opening,
     open: openMessage,
@@ -64,21 +92,30 @@ function editDraft(value: MailDraft) {
     if (value.mailbox === 1) emit('openEchoDraft', value);
     else reader.edit(value);
 }
+async function refresh() {
+    await reader.load();
+    if (mailSearch.active.value) await mailSearch.refresh();
+}
+async function removeMessage() {
+    await reader.removeMessage();
+    if (mailSearch.remote.value) await mailSearch.refresh();
+}
 function reply(kind: 'quoted' | 'reply' = 'quoted') {
     reader.edit(undefined, reader.selected.value!);
     if (reader.draft.value) reader.draft.value.composeKind = kind;
 }
 const nextUnread = computed(() =>
-    reader.items.value.find(
+    navigationItems.value.find(
         (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
     )
 );
 const index = computed(() =>
-    reader.items.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
+    navigationItems.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
 );
 </script>
 <template>
     <MailWorkspace
+        v-model:query="query"
         kind="netmail"
         :selected="reader.selected.value ? mailId(reader.selected.value.id) : undefined"
         :opened="!!reader.selected.value || !!reader.draft.value"
@@ -86,6 +123,15 @@ const index = computed(() =>
         :busy="state.busy.value"
         @back="back"
     >
+        <template #search-status>
+            <MailSearchStatus
+                :active="mailSearch.active.value"
+                :remote="mailSearch.remote.value"
+                :pending="mailSearch.pending.value"
+                :failure="mailSearch.failure.value"
+                :has-more="mailSearch.hasMore.value"
+            />
+        </template>
         <template #toolbar>
             <header class="page-heading">
                 <div>
@@ -107,7 +153,7 @@ const index = computed(() =>
                         :title="t('Refresh')"
                         :disabled="state.busy.value"
                         v-shortcut="'page.refresh'"
-                        @click="state.run(() => reader.load())"
+                        @click="state.run(refresh)"
                     >
                         <AppIcon name="refresh" /><span class="desktop-hidden">{{
                             t('Refresh')
@@ -142,13 +188,19 @@ const index = computed(() =>
 
             <NetmailList
                 v-else
-                :items="reader.items.value"
+                :items="mailSearch.items.value"
+                :search-results="mailSearch.remote.value"
+                :searching="mailSearch.pending.value"
+                :search-failed="mailSearch.failure.value"
                 :selected="reader.selected.value ? mailId(reader.selected.value.id) : ''"
                 :busy="state.busy.value"
-                :has-more="reader.hasMore.value"
+                :has-more="
+                    mailSearch.remote.value ? mailSearch.hasMore.value : reader.hasMore.value
+                "
                 :outgoing="reader.folder.value === 'outbox'"
+                @navigation="navigationItems = $event"
                 @open="openMessage"
-                @more="state.run(() => reader.load(true))"
+                @more="loadMore"
             />
         </template>
         <MailComposer
@@ -174,12 +226,12 @@ const index = computed(() =>
             @compose="reader.edit()"
             :navigation="true"
             :previous-disabled="index <= 0"
-            :next-disabled="index < 0 || index >= reader.items.value.length - 1"
+            :next-disabled="index < 0 || index >= navigationItems.length - 1"
             :unread-disabled="!nextUnread"
-            @previous="openMessage(reader.items.value[index - 1]!)"
-            @next="openMessage(reader.items.value[index + 1]!)"
+            @previous="openMessage(navigationItems[index - 1]!)"
+            @next="openMessage(navigationItems[index + 1]!)"
             @unread="nextUnread && openMessage(nextUnread)"
-            @remove="state.run(reader.removeMessage)"
+            @remove="state.run(removeMessage)"
         />
         <section
             v-else

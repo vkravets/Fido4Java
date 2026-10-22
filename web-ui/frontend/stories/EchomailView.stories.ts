@@ -1,4 +1,6 @@
 import MailApplicationFrame from './MailApplicationFrame.vue';
+import { archiveSearchFixture } from './archive-search-fixture.ts';
+import { mailId } from '../src/netmail.ts';
 import { provide, ref } from 'vue';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 import { createWorkspace, workspaceKey, workspacePreferences } from '../src/workspace.ts';
@@ -36,11 +38,27 @@ const meta = {
                 }
             } as AppState;
             const client = echoClient(context.parameters.echo || {});
+            const searchFixture = context.parameters.archiveSearch
+                ? archiveSearchFixture(context.parameters.archiveSearch)
+                : null;
+            if (searchFixture) client.searchMessages = searchFixture.searchMessages;
+            const contextForMessage = client.echoContext;
+            client.echoContext = async (token, area, id, after, limit) => {
+                if (searchFixture && mailId(id) === searchFixture.archive.id) {
+                    return {
+                        missingParent: false,
+                        replies: { items: [], nextId: 0, hasMore: false }
+                    };
+                }
+                return contextForMessage(token, area, id, after, limit);
+            };
             const message = client.message;
             let messageRequests = 0;
             client.message = async (token, mailbox, area, id) => {
                 if (context.parameters.pauseNavigation && messageRequests++ > 0)
                     await new Promise(() => {});
+                if (searchFixture && mailId(id) === searchFixture.archive.id)
+                    return { ...searchFixture.archive };
                 return message(token, mailbox, area, id);
             };
             provide(echoClientKey, client);
@@ -125,3 +143,13 @@ export const LongTreeReading: Story = {
     args: { initialMessage: '9007199254741009', initialMode: 'tree' },
     parameters: { echo: { dense: true } }
 };
+
+export const ArchiveSearch: Story = {
+    parameters: { archiveSearch: 'enabled' },
+    args: { initialMode: 'flat' }
+};
+export const LocalSearch: Story = {
+    parameters: { archiveSearch: 'disabled' },
+    args: { initialMode: 'flat' }
+};
+export const SearchContinuation: Story = { parameters: { archiveSearch: 'continuation' } };

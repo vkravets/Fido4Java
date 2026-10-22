@@ -33,7 +33,7 @@ personal themes and templates.
 Echomail crossposting to multiple conferences is not implemented; the UI/RPC
 currently publish to one area per submission. See the
 [crossposting analysis and proposed implementation](docs/crossposting-plan.md).
-Experimental server-side archive/body search is available through RPC, disabled
+Experimental server-side archive/body search is available through RPC and the UI, disabled
 by default and enabled only in text configuration; see
 [configuration and search limits](docs/rpc-ui.md#experimental-server-side-mail-search).
 See [remaining work](TODO) and the limitations in each service guide.
