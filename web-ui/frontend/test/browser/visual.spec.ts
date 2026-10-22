@@ -4,6 +4,22 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'netmail-editor-list-toggle', story: 'mail-netmailview--editor' },
+    {
+        name: 'netmail-editor-list-hidden',
+        story: 'mail-netmailview--editor',
+        hideComposerList: true
+    },
+    {
+        name: 'echo-editor-list-hidden',
+        story: 'mail-echomailview--compose',
+        hideComposerList: true
+    },
+    {
+        name: 'netmail-editor-below-list-hidden',
+        story: 'mail-netmailview--editor-below',
+        hideComposerList: true
+    },
     { name: 'composer-sender-details', story: 'mail-mailcomposer--sender-details' },
     { name: 'composer-echo-compact', story: 'mail-mailcomposer--echo-compact' },
     {
@@ -311,6 +327,11 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.hideComposerList && info.project.name === 'desktop') {
+                    await page.locator('.composer-list-toggle').click();
+                    await expect(page.locator('.split-list')).toBeHidden();
+                    await expect(page.locator('.split-handle')).toBeHidden();
+                }
                 if (screen.profileDirectory) {
                     await page.locator('.profile-name-search').click();
                     await expect(page.locator('.profile-name-matches button')).toHaveCount(2);

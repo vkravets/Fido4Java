@@ -2,7 +2,8 @@
 import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { templateLabel, templateError } from '../mail-template-labels.ts';
-import { computed, nextTick, onMounted, ref, useId, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, ref, useId, watch } from 'vue';
+import { composerListKey } from '../workspace.ts';
 import FidoEditor from './FidoEditor.vue';
 import NotificationBanner from './NotificationBanner.vue';
 import { expandTemplate, useMailTemplates } from '../mail-templates.ts';
@@ -17,6 +18,10 @@ const editor = ref<InstanceType<typeof FidoEditor>>();
 const templates = useMailTemplates();
 const appearance = useMailAppearance();
 const error = ref('');
+const listControl = inject(composerListKey, undefined);
+const listToggleLabel = computed(() =>
+    listControl?.hidden.value ? t('Show message list') : t('Hide message list')
+);
 const selectedTemplate = ref('');
 const senderId = useId();
 const senderOpen = ref(!draft.value.fromName || !props.addresses.includes(draft.value.fromAddress));
@@ -138,21 +143,35 @@ function chooseTemplate() {
                     >{{ draft.area }}</span
                 >
             </div>
-            <button
-                type="button"
-                class="secondary composer-sender-toggle"
-                :disabled="busy"
-                :aria-label="t('Edit sender')"
-                :title="t('Edit sender')"
-                :aria-expanded="senderOpen"
-                :aria-controls="senderId"
-                @click="senderOpen = !senderOpen"
-            >
-                <span
-                    >{{ draft.fromName }} <span class="muted">· {{ draft.fromAddress }}</span></span
+            <div class="composer-heading-actions">
+                <button
+                    type="button"
+                    class="secondary composer-sender-toggle"
+                    :disabled="busy"
+                    :aria-label="t('Edit sender')"
+                    :title="t('Edit sender')"
+                    :aria-expanded="senderOpen"
+                    :aria-controls="senderId"
+                    @click="senderOpen = !senderOpen"
                 >
-                <AppIcon name="edit" />
-            </button>
+                    <span
+                        >{{ draft.fromName }}
+                        <span class="muted">· {{ draft.fromAddress }}</span></span
+                    >
+                    <AppIcon name="edit" />
+                </button>
+                <button
+                    v-if="listControl?.available.value"
+                    type="button"
+                    class="secondary composer-list-toggle"
+                    :aria-label="listToggleLabel"
+                    :title="listToggleLabel"
+                    :aria-pressed="listControl.hidden.value"
+                    @click="listControl.toggle"
+                >
+                    <AppIcon :name="listControl.hidden.value ? 'listShow' : 'listHide'" />
+                </button>
+            </div>
         </div>
         <fieldset
             :disabled="busy"
@@ -315,6 +334,20 @@ function chooseTemplate() {
     flex-wrap: wrap;
     gap: 6px 10px;
     min-width: 0;
+}
+.composer-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+}
+.mail-composer .composer-list-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    flex-shrink: 0;
 }
 .mail-composer .composer-title h2 {
     margin: 0;

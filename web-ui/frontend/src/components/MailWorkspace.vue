@@ -2,7 +2,8 @@
 import { computed, ref, provide, watch, nextTick } from 'vue';
 import { mailSearchKey } from '../mail-search.ts';
 import { t } from '../i18n.ts';
-import { useWorkspace } from '../workspace.ts';
+import { composerListKey, useWorkspace } from '../workspace.ts';
+import { useMedia } from '../media.ts';
 import type { MailKind, MailLayout } from '../workspace.ts';
 import SplitPane from './SplitPane.vue';
 import MailListTools from './MailListTools.vue';
@@ -11,6 +12,7 @@ import NotificationBanner from './NotificationBanner.vue';
 const props = defineProps<{
     kind: MailKind;
     opened: boolean;
+    composing?: boolean;
     busy?: boolean;
     selected?: string;
 }>();
@@ -19,6 +21,24 @@ const workspace = useWorkspace();
 const query = ref('');
 provide(mailSearchKey, query);
 const preferences = computed(() => workspace.value.value[props.kind]);
+const desktop = useMedia('(min-width: 701px)');
+const listHidden = ref(false);
+const canToggleList = computed(
+    () => !!props.composing && desktop.value && preferences.value.preview !== 'separate'
+);
+provide(composerListKey, {
+    available: canToggleList,
+    hidden: listHidden,
+    toggle() {
+        if (canToggleList.value) listHidden.value = !listHidden.value;
+    }
+});
+watch(
+    () => props.composing,
+    (composing) => {
+        if (!composing) listHidden.value = false;
+    }
+);
 const saving = ref(false);
 const error = ref('');
 const layoutRoot = ref<HTMLElement>();
@@ -88,7 +108,11 @@ async function update(patch: Partial<MailLayout>) {
         class="mail-layout"
         :class="[
             preferences.density,
-            { 'detail-open': opened, separate: preferences.preview === 'separate' }
+            {
+                'detail-open': opened,
+                separate: preferences.preview === 'separate',
+                'composer-list-hidden': canToggleList && listHidden
+            }
         ]"
     >
         <SplitPane
@@ -161,6 +185,15 @@ async function update(patch: Partial<MailLayout>) {
 }
 .mail-layout {
     min-width: 0;
+}
+.mail-layout.composer-list-hidden :deep(.split-pane.right),
+.mail-layout.composer-list-hidden :deep(.split-pane.below) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+}
+.mail-layout.composer-list-hidden :deep(.split-list),
+.mail-layout.composer-list-hidden :deep(.split-handle) {
+    display: none;
 }
 .mail-layout :deep(.split-list:has(> .mail-list-empty)) {
     display: flex;

@@ -130,3 +130,13 @@ export const ApplicationWorkspace: Story = {
         })
     ]
 };
+
+export const Editor: Story = { args: { initialDraft: netmailDraft } };
+export const EditorBelow: Story = {
+    ...Editor,
+    parameters: { workspace: { netmail: { preview: 'below' } } }
+};
+export const EditorSeparate: Story = {
+    ...Editor,
+    parameters: { workspace: { netmail: { preview: 'separate' } } }
+};

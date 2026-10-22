@@ -1,5 +1,12 @@
 import { inject, ref } from 'vue';
-import type { InjectionKey } from 'vue';
+import type { ComputedRef, InjectionKey, Ref } from 'vue';
+
+export interface ComposerListControl {
+    available: ComputedRef<boolean>;
+    hidden: Ref<boolean>;
+    toggle(): void;
+}
+export const composerListKey: InjectionKey<ComposerListControl> = Symbol('composer-list');
 
 export type PreviewPosition = 'right' | 'below' | 'separate';
 export type MailKind = 'netmail' | 'echo';

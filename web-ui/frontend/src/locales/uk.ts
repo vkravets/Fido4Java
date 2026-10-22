@@ -1,4 +1,6 @@
 export const ukrainian = {
+    'Hide message list': 'Приховати список листів',
+    'Show message list': 'Показати список листів',
     'Edit sender': 'Змінити відправника',
     'Display name': 'Видиме ім’я',
     'Name from lists': 'Ім’я зі списків',

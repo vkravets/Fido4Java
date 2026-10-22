@@ -774,3 +774,77 @@ test('GoldED quoted replies start typing above the quote and retain manually edi
     await page.getByLabel('Recipient name', { exact: true }).fill('Other Recipient');
     await expect.poll(() => editor.innerText()).toBe(text);
 });
+
+for (const kind of ['netmail', 'echomail']) {
+    test(`${kind} list toggle belongs only to the editor and preserves draft history and list position`, async ({
+        page
+    }) => {
+        await page.setViewportSize({ width: 1280, height: 540 });
+        await openStory(
+            page,
+            `mail-${kind}view--${kind === 'netmail' ? 'long-reading' : 'long-tree-reading'}`
+        );
+        await expect(page.locator('.composer-list-toggle')).toHaveCount(0);
+        await page.getByRole('button', { name: 'Reply', exact: true }).click();
+        const list = page.locator('.split-list');
+        const editor = page.locator('.cm-content');
+        const original = await editor.elementHandle();
+        const ratio = await page.getByRole('separator').getAttribute('aria-valuenow');
+        const top = await list.evaluate((el) => {
+            el.scrollTop = 50;
+            return el.scrollTop;
+        });
+        expect(top).toBeGreaterThan(0);
+        await editor.fill('Draft before hiding');
+        await editor.press('Control+End');
+        await page.keyboard.type(' MORE');
+        const before = (await page.locator('.mail-composer').boundingBox())!;
+        await page.getByRole('button', { name: 'Hide message list', exact: true }).click();
+        await expect(list).toBeHidden();
+        await expect(page.getByRole('separator')).toHaveCount(0);
+        await expect(
+            page.getByRole('button', { name: 'Show message list', exact: true })
+        ).toHaveAttribute('aria-pressed', 'true');
+        const expanded = (await page.locator('.mail-composer').boundingBox())!;
+        expect(expanded.width).toBeGreaterThan(before.width + 200);
+        expect(await editor.evaluate((el, previous) => el === previous, original)).toBe(true);
+        await expect(editor).toContainText('Draft before hiding MORE');
+        await page.getByRole('button', { name: 'Show message list', exact: true }).click();
+        await expect(list).toBeVisible();
+        await expect(page.getByRole('separator')).toHaveAttribute('aria-valuenow', ratio!);
+        expect(await list.evaluate((el) => el.scrollTop)).toBe(top);
+        await editor.focus();
+        await editor.press('Control+z');
+        await expect(editor).not.toContainText('MORE');
+        await page.getByRole('button', { name: 'Hide message list', exact: true }).click();
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await expect(list).toBeVisible();
+        await expect(page.locator('.composer-list-toggle')).toHaveCount(0);
+        await page.getByRole('button', { name: 'Reply', exact: true }).click();
+        await expect(
+            page.getByRole('button', { name: 'Hide message list', exact: true })
+        ).toBeVisible();
+        await expect(list).toBeVisible();
+    });
+}
+
+test('editor list toggle supports below layout and is absent in mobile and separate screens', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await openStory(page, 'mail-netmailview--editor-below');
+    const before = (await page.locator('.split-detail').boundingBox())!;
+    await page.getByRole('button', { name: 'Hide message list', exact: true }).click();
+    await expect(page.locator('.split-list')).toBeHidden();
+    const after = (await page.locator('.split-detail').boundingBox())!;
+    expect(after.height).toBeGreaterThan(before.height + 100);
+    await page.getByRole('button', { name: 'Show message list', exact: true }).click();
+    await expect(page.locator('.split-list')).toBeVisible();
+    await openStory(page, 'mail-netmailview--editor-separate');
+    await expect(page.locator('.composer-list-toggle')).toHaveCount(0);
+    await page.setViewportSize({ width: 375, height: 900 });
+    await openStory(page, 'mail-netmailview--editor');
+    await expect(page.locator('.composer-list-toggle')).toHaveCount(0);
+    await expect(page.locator('.split-list')).toBeHidden();
+});

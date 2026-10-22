@@ -41,7 +41,7 @@ export const WorkspaceReply: Story = {
             return { args, draft: ref({ ...args.modelValue }) };
         },
         template:
-            '<MailWorkspace kind="netmail" :opened="true"><MailComposer v-bind="args" v-model="draft" /></MailWorkspace>'
+            '<MailWorkspace kind="netmail" :opened="true" :composing="true"><MailComposer v-bind="args" v-model="draft" /></MailWorkspace>'
     })
 };
 export const NewMessage: Story = {

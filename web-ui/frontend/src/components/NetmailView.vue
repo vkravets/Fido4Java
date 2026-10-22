@@ -82,6 +82,7 @@ const index = computed(() =>
         kind="netmail"
         :selected="reader.selected.value ? mailId(reader.selected.value.id) : undefined"
         :opened="!!reader.selected.value || !!reader.draft.value"
+        :composing="!!reader.draft.value"
         :busy="state.busy.value"
         @back="back"
     >
