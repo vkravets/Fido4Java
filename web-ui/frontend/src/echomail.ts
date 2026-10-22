@@ -149,7 +149,7 @@ export function createEchomail(
                           : {}),
                       mailbox: 1,
                       area: area.value,
-                      fromName: profile.login,
+                      fromName: profile.displayName || profile.login,
                       fromAddress: author,
                       toName: reply?.fromName || 'All',
                       toAddress: reply?.fromAddress || author,

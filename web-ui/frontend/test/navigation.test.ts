@@ -45,6 +45,7 @@ after(async () => {
 function profile(role: string): UserProfile {
     return {
         login: role.toLowerCase(),
+        displayName: role.toLowerCase(),
         role,
         enabled: true,
         theme: 'light',

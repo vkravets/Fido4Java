@@ -4,6 +4,7 @@ export function profile(role: 'ADMIN' | 'POINT'): UserProfile {
     const address = role === 'ADMIN' ? '1:500/100' : '1:500/100.1';
     return {
         login: role === 'ADMIN' ? 'sysop' : 'point',
+        displayName: role === 'ADMIN' ? 'sysop' : 'point',
         role,
         enabled: true,
         theme: 'light',

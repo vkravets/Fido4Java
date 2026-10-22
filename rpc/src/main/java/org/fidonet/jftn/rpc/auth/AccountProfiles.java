@@ -8,6 +8,8 @@ public interface AccountProfiles {
 
     List<AccountRecord> users() throws Exception;
 
+    void displayName(String owner, String displayName) throws Exception;
+
     void register(String login, String password, String requestedAka) throws Exception;
 
     List<AddressClaim> claims(String owner) throws Exception;

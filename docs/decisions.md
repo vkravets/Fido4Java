@@ -93,6 +93,13 @@ is not part of the current scope. External editors apply the documented template
 rules themselves. This decision does not move submission validation, permissions
 or packet encoding out of the backend.
 
+An account-owned display name is separate from its immutable login identity.
+Profile RPC persists it in the account store; an empty value falls back to login.
+UI labels and new draft sender names use it, including template `@cname`.
+Local directory names are explicit editable suggestions for approved AKAs rather
+than automatic identity synchronization. Existing drafts and authentication,
+ownership and posting authorization remain unchanged.
+
 Supported UI configuration changes are applied live after validation/staging.
 An explicit administrator RPC/UI reload rereads main-file and fragment edits;
 there is no file watcher. The coordinator serializes with mail processing,

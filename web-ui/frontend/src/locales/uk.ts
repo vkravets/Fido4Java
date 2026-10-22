@@ -1,4 +1,14 @@
 export const ukrainian = {
+    'Display name': 'Видиме ім’я',
+    'Display name must contain at most 80 printable characters':
+        'Видиме ім’я має містити щонайбільше 80 друкованих символів',
+    'AKA for name lookup': 'AKA для пошуку імені',
+    'Find name in nodelist / pointlist': 'Знайти ім’я в нодлисті / поінтлисті',
+    'No name found for this AKA. Enter a display name manually.':
+        'Ім’я для цієї AKA не знайдено. Введіть видиме ім’я вручну.',
+    'Shown throughout the interface and used as the sender name and @cname in new messages.':
+        'Відображається в інтерфейсі та використовується як ім’я відправника і @cname у нових листах.',
+    'Unsaved profile changes. Discard changes?': 'Є незбережені зміни профілю. Відкинути їх?',
     'Keyboard shortcuts': 'Гарячі клавіші',
     'Enable keyboard shortcuts': 'Увімкнути гарячі клавіші',
     'Shortcut preset': 'Набір клавіш',

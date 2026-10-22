@@ -5,7 +5,7 @@ export function forwardDraft(item: MailItem, profile: UserProfile): MailDraft {
         id: crypto.randomUUID(),
         mailbox: 3,
         area: '',
-        fromName: profile.login,
+        fromName: profile.displayName || profile.login,
         fromAddress: profile.allowedAkas.includes(profile.defaultAka)
             ? profile.defaultAka
             : profile.allowedAkas[0] || '',

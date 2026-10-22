@@ -56,6 +56,13 @@ const screens = [
     { name: 'directory-page-empty', story: 'directory-nodedirectory--empty' },
     { name: 'routing-rules-adding', story: 'routing-netmailroutespanel--adding' },
     { name: 'personal-profile', story: 'settings-accountsettings--profile' },
+    {
+        name: 'profile-directory-names',
+        story: 'settings-accountsettings--profile-directory',
+        profileDirectory: true
+    },
+    { name: 'header-display-name', story: 'navigation-applicationheader--display-name' },
+    { name: 'sidebar-display-name', story: 'navigation-sidebar--display-name' },
     { name: 'personal-addresses', story: 'settings-accountsettings--addresses' },
     { name: 'personal-security', story: 'settings-accountsettings--security' },
     { name: 'personal-appearance', story: 'settings-accountsettings--appearance' },
@@ -280,6 +287,10 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.profileDirectory) {
+                    await page.locator('.profile-directory button').click();
+                    await expect(page.locator('.profile-name-matches button')).toHaveCount(2);
+                }
                 if (screen.scrollSelection) {
                     for (let index = 1; index <= screen.scrollSelection; index++) {
                         await expect(page.locator('[data-shortcut="mail.next"]')).toBeEnabled();

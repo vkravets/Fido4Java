@@ -27,7 +27,7 @@ final class H2AccountProfiles implements AccountProfiles {
 
     public AccountRecord profile(String login) throws SQLException {
         try (Connection connection = accounts.open();
-                PreparedStatement sql = connection.prepareStatement("SELECT login,role,enabled,theme,default_aka FROM rpc_users WHERE login=?")) {
+                PreparedStatement sql = connection.prepareStatement("SELECT login,role,enabled,theme,default_aka,display_name FROM rpc_users WHERE login=?")) {
             sql.setString(1, login);
             try (ResultSet rows = sql.executeQuery()) {
                 if (!rows.next()) {
@@ -40,7 +40,7 @@ final class H2AccountProfiles implements AccountProfiles {
 
     public List<AccountRecord> users() throws SQLException {
         try (Connection connection = accounts.open();
-                PreparedStatement sql = connection.prepareStatement("SELECT login,role,enabled,theme,default_aka FROM rpc_users ORDER BY enabled,login LIMIT 1024");
+                PreparedStatement sql = connection.prepareStatement("SELECT login,role,enabled,theme,default_aka,display_name FROM rpc_users ORDER BY enabled,login LIMIT 1024");
                 ResultSet rows = sql.executeQuery()) {
             List<AccountRecord> result = new ArrayList<>();
             while (rows.next()) {
@@ -55,7 +55,19 @@ final class H2AccountProfiles implements AccountProfiles {
                                  rows.getString(2),
                                  rows.getBoolean(3),
                                  rows.getString(4),
-                                 rows.getString(5));
+                                 rows.getString(5),
+                                 rows.getString(6));
+    }
+
+    public void displayName(String owner, String displayName) throws SQLException {
+        try (Connection connection = accounts.open();
+                PreparedStatement sql = connection.prepareStatement("UPDATE rpc_users SET display_name=? WHERE login=?")) {
+            sql.setString(1, displayName);
+            sql.setString(2, owner);
+            if (sql.executeUpdate() != 1) {
+                throw new IllegalArgumentException("Unknown account");
+            }
+        }
     }
 
     public synchronized void register(String login, String password, String requestedAka)

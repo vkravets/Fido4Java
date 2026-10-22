@@ -143,7 +143,7 @@ export function createNetmail(
                       : {}),
                   mailbox: 3,
                   area: '',
-                  fromName: profile.login,
+                  fromName: profile.displayName || profile.login,
                   fromAddress: from,
                   toName: reply?.fromName || '',
                   toAddress: reply?.fromAddress || '',

@@ -14,7 +14,8 @@ struct UserProfile {
     4: required string theme,
     5: required string defaultAka,
     6: required list<string> allowedAkas,
-    7: required list<AkaClaim> claims
+    7: required list<AkaClaim> claims,
+    8: required string displayName
 }
 
 service ProfileService {
@@ -23,6 +24,7 @@ service ProfileService {
     bool registrationEnabled(),
     void register(1:string login, 2:string password, 3:string requestedAka) throws (1:ui.UiError error),
     UserProfile me(1:string session) throws (1:ui.UiError error),
+    void saveDisplayName(1:string session, 2:string displayName) throws (1:ui.UiError error),
     void savePreferences(1:string session, 2:string theme, 3:string defaultAka) throws (1:ui.UiError error),
     void requestAka(1:string session, 2:string address) throws (1:ui.UiError error),
     list<UserProfile> accounts(1:string session) throws (1:ui.UiError error),

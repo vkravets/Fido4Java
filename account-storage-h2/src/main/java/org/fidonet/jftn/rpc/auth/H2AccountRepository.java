@@ -41,6 +41,7 @@ public final class H2AccountRepository implements AccountRepository {
                 sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'ADMIN'");
                 sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS theme VARCHAR(8) NOT NULL DEFAULT 'light'");
                 sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS default_aka VARCHAR(40) NOT NULL DEFAULT ''");
+                sql.execute("ALTER TABLE rpc_users ADD COLUMN IF NOT EXISTS display_name VARCHAR(80) NOT NULL DEFAULT ''");
                 sql.execute("CREATE TABLE IF NOT EXISTS rpc_akas (owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login), address VARCHAR(40) NOT NULL, state VARCHAR(16) NOT NULL, PRIMARY KEY(owner,address))");
                 sql.execute("CREATE TABLE IF NOT EXISTS rpc_point_addresses (address VARCHAR(40) PRIMARY KEY, owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login))");
                 sql.execute("CREATE TABLE IF NOT EXISTS rpc_ui_documents (owner VARCHAR(100) NOT NULL REFERENCES rpc_users(login), document_key VARCHAR(32) NOT NULL, document CLOB NOT NULL, PRIMARY KEY(owner, document_key))");

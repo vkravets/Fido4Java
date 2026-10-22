@@ -15,10 +15,12 @@ test('forwarding creates new netmail from a permitted identity and leaves the or
     } as MailItem;
     const draft = forwardDraft(item, {
         login: 'Point',
+        displayName: 'Alex Example',
         defaultAka: '1:500/999',
         allowedAkas: ['1:500/100.1']
     } as UserProfile);
     assert.equal(draft.fromAddress, '1:500/100.1');
+    assert.equal(draft.fromName, 'Alex Example');
     assert.equal(draft.mailbox, 3);
     assert.equal(draft.replyTo, undefined);
     assert.equal(draft.originalName, 'Bob');

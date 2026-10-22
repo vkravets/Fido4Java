@@ -47,6 +47,7 @@ function fixture() {
         notice: ref(''),
         profile: ref({
             login: 'Point',
+            displayName: 'Alex Example',
             allowedAkas: ['1:500/100.1', '1:500/100.2'],
             defaultAka: '1:500/100.2'
         } as UserProfile)
@@ -90,6 +91,7 @@ test('reply stays in its echo and preserves REPLY, quoting, permitted AKA and re
     assert.equal(reader.draft.value!.mailbox, 1);
     assert.equal(reader.draft.value!.area, 'test');
     assert.equal(reader.draft.value!.fromAddress, '1:500/100.1');
+    assert.equal(reader.draft.value!.fromName, 'Alex Example');
     assert.equal(reader.draft.value!.replyTo, 'root');
     assert.equal(reader.draft.value!.toName, 'Alice');
     assert.equal(reader.draft.value!.body, '> First\n> Second');

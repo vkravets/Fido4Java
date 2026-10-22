@@ -130,8 +130,9 @@ const emit = defineEmits<{
             </template>
         </nav>
         <div class="sidebar-footer">
-            <AppIcon name="user" /><span
-                >{{ profile.login }}<small>{{ profile.defaultAka }}</small></span
+            <AppIcon name="user" /><span :title="profile.displayName || profile.login"
+                >{{ profile.displayName || profile.login
+                }}<small>{{ profile.defaultAka }}</small></span
             >
         </div>
         <button
@@ -148,3 +149,8 @@ const emit = defineEmits<{
         </button>
     </aside>
 </template>
+<style scoped>
+.sidebar-footer > span {
+    overflow-wrap: anywhere;
+}
+</style>

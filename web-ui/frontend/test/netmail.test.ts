@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ref } from 'vue';
 import { createNetmail, createMailQueue, mailId, quotedReply } from '../src/netmail.ts';
+import { builtInTemplates, expandTemplate } from '../src/mail-templates.ts';
 import type {
     MailDraft,
     MailItem,
@@ -29,6 +30,7 @@ function fixture() {
         notice: ref(''),
         profile: ref({
             login: 'point',
+            displayName: 'Alex Example',
             defaultAka: '1:500/100.1',
             allowedAkas: ['1:500/100.1']
         } as UserProfile)
@@ -73,6 +75,14 @@ test('opens the full message, marks it read and replies from the addressed appro
     assert.equal(reader.selected.value?.read, true);
     reader.edit(undefined, reader.selected.value!);
     assert.equal(reader.draft.value?.fromAddress, '1:500/100.1');
+    assert.equal(reader.draft.value?.fromName, 'Alex Example');
+    assert.ok(
+        expandTemplate(builtInTemplates[0]!, {
+            ...reader.draft.value!,
+            kind: 'new',
+            echo: false
+        }).body.endsWith('Alex Example')
+    );
     assert.equal(reader.draft.value?.toAddress, '1:500/101');
     assert.equal(reader.draft.value?.replyTo, '1:500/101 abc');
     assert.equal(reader.draft.value?.subject, 'Re: Hello');

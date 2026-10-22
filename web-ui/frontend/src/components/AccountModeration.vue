@@ -44,7 +44,7 @@ function decide(owner: string, address: string, approve: boolean) {
         class="card account-row"
     >
         <div class="section-title">
-            <h2>{{ account.login }}</h2>
+            <h2>{{ account.displayName || account.login }}</h2>
             <span class="badge">{{
                 account.role === 'ADMIN'
                     ? t('Administrator')

@@ -66,7 +66,8 @@ defineEmits<{ menu: []; theme: []; logout: [] }>();
             <span
                 v-if="profile"
                 class="user-name"
-                >{{ profile.login }}</span
+                :title="profile.displayName || profile.login"
+                >{{ profile.displayName || profile.login }}</span
             ><button
                 class="icon-button"
                 :aria-label="theme === 'dark' ? t('Light theme') : t('Dark theme')"
@@ -86,3 +87,11 @@ defineEmits<{ menu: []; theme: []; logout: [] }>();
         </div>
     </header>
 </template>
+<style scoped>
+.user-name {
+    max-width: min(30vw, 260px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>

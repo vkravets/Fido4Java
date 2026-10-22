@@ -20,3 +20,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const SignedIn: Story = {};
+export const DisplayName: Story = {
+    args: { profile: { ...profile('POINT'), displayName: 'Alex Example' } }
+};

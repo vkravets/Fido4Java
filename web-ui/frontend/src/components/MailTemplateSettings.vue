@@ -98,7 +98,10 @@ const preview = computed(() => {
             body: expandTemplate(draft.value, {
                 kind: draft.value.kind,
                 echo: true,
-                fromName: props.state.profile.value?.login || 'Alex',
+                fromName:
+                    props.state.profile.value?.displayName ||
+                    props.state.profile.value?.login ||
+                    'Alex',
                 fromAddress: props.state.profile.value?.defaultAka || '1:500/100.1',
                 toName: 'Bob',
                 toAddress: '1:500/101',

@@ -157,6 +157,49 @@ test('settings use one compact heading and keep only active page actions in its 
     }
 });
 
+test('profile names can be chosen from exact directory matches, edited and saved with a dirty guard', async ({
+    page
+}) => {
+    await openStory(page, 'settings-accountsettings--profile-directory');
+    const name = page.getByRole('textbox', { name: 'Display name', exact: true });
+    await expect(name).toHaveValue('Alex Example');
+    await page
+        .getByRole('button', { name: 'Find name in nodelist / pointlist', exact: true })
+        .click();
+    await expect(page.locator('.profile-name-matches button')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: /Another Point/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Oleksii Example — points-r46', exact: true }).click();
+    await expect(name).toHaveValue('Oleksii Example');
+    page.once('dialog', (dialog) => dialog.dismiss());
+    await page.getByRole('tab', { name: 'My AKAs', exact: true }).click();
+    await expect(name).toBeVisible();
+    await name.fill('Manual Name');
+    await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Save preferences', exact: true })
+    ).toBeDisabled();
+    await page.getByRole('tab', { name: 'My AKAs', exact: true }).click();
+    await page.getByRole('tab', { name: 'Profile', exact: true }).click();
+    await expect(name).toHaveValue('Manual Name');
+    await name.fill('');
+    await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+    await expect(name).toHaveValue('point');
+    await openStory(page, 'settings-accountsettings--profile');
+    await page
+        .getByRole('button', { name: 'Find name in nodelist / pointlist', exact: true })
+        .click();
+    await expect(
+        page.getByText('No name found for this AKA. Enter a display name manually.')
+    ).toBeVisible();
+});
+
+test('account labels show display names in the header and sidebar', async ({ page }) => {
+    await openStory(page, 'navigation-applicationheader--display-name');
+    await expect(page.locator('.topbar')).toContainText('Alex Example');
+    await openStory(page, 'navigation-sidebar--display-name');
+    await expect(page.locator('.sidebar')).toContainText('Alex Example');
+});
+
 test('personal settings share the compact workspace and support keyboard navigation', async ({
     page
 }) => {

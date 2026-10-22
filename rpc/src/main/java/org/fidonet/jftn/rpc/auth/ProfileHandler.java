@@ -78,7 +78,17 @@ public final class ProfileHandler implements ProfileService.Iface {
                                account.theme,
                                account.defaultAka,
                                directory.allowed(account.login, stationAddresses),
-                               claims);
+                               claims,
+                               account.displayName);
+    }
+
+    @Override
+    public void saveDisplayName(String session, String displayName) throws UiError {
+        String owner = sessions.require(session);
+        call(() -> {
+            directory.displayName(owner, displayName);
+            return null;
+        });
     }
 
     @Override

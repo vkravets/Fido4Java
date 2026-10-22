@@ -7,16 +7,19 @@ public final class AccountRecord {
     public final boolean enabled;
     public final String theme;
     public final String defaultAka;
+    public final String displayName;
 
     public AccountRecord(String login,
                          String role,
                          boolean enabled,
                          String theme,
-                         String defaultAka) {
+                         String defaultAka,
+                         String displayName) {
         this.login = login;
         this.role = role;
         this.enabled = enabled;
         this.theme = theme;
         this.defaultAka = defaultAka;
+        this.displayName = displayName.isEmpty() ? login : displayName;
     }
 }

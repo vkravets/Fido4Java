@@ -8,6 +8,20 @@ subscription and AKA restrictions; layout preferences never grant access.
 
 ## Layout and navigation
 
+Personal settings → Profile stores an account display name (up to 80 printable
+characters). Enter it manually or search the local nodelist/pointlist catalog
+using an approved AKA. Results must match that exact address; records from
+different sources remain separate choices. Selecting a result fills the editable
+field, and Save publishes it. Clearing the name restores the login fallback.
+Directory refreshes do not overwrite a saved name or grant address ownership.
+
+The header, sidebar and account labels show this name. New netmail, echomail,
+replies and forwards use it as the sender name, which also supplies `@cname` to
+templates. Existing drafts retain their sender name and text. Normal outgoing
+mail encoding and header-size validation still apply. The login remains the
+authentication/storage identity and is shown explicitly in Profile.
+
+
 On desktop, the three panes meet without card gutters. A 44px application header,
 216px menu (56px collapsed), outline icons and compact controls leave more space
 for mail. Message rows align sender, subject and date; the full date remains in

@@ -23,6 +23,9 @@ export const SwitchingPages: Story = {
     })
 };
 export const Point: Story = { args: { profile: profile('POINT') } };
+export const DisplayName: Story = {
+    args: { profile: { ...profile('POINT'), displayName: 'Alex Example' } }
+};
 export const AwaitingSend: Story = { args: { pendingCount: 12, page: 'netmail' } };
 export const PreparingMail: Story = { args: { pendingCount: 12, busy: true, page: 'netmail' } };
 

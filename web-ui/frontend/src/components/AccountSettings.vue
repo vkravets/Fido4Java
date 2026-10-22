@@ -2,6 +2,7 @@
 import SettingsWorkspace from './SettingsWorkspace.vue';
 import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import KeyboardSettings from './KeyboardSettings.vue';
+import ProfileSettings from './ProfileSettings.vue';
 import { useMedia } from '../media.ts';
 import AddressInput from './AddressInput.vue';
 import { t } from '../i18n.ts';
@@ -49,8 +50,10 @@ function navigate(event: KeyboardEvent) {
 }
 const templateSettings = ref<InstanceType<typeof MailTemplateSettings> | null>(null);
 const keyboardSettings = ref<InstanceType<typeof KeyboardSettings> | null>(null);
+const profileSettings = ref<InstanceType<typeof ProfileSettings> | null>(null);
 function canLeave() {
     return (
+        (!profileSettings.value || profileSettings.value.canLeave()) &&
         (!templateSettings.value || templateSettings.value.canLeave()) &&
         (!keyboardSettings.value || keyboardSettings.value.canLeave())
     );
@@ -136,29 +139,11 @@ function claimLabel(state: string): string {
                     v-if="tab === 'mail-appearance'"
                     :state="state"
                 />
-                <section
+                <ProfileSettings
                     v-if="tab === 'profile'"
-                    class="card"
-                >
-                    <SettingsSectionHeader :title="t('Profile')" />
-                    <dl>
-                        <dt>{{ t('Username') }}</dt>
-                        <dd>{{ state.profile.value.login }}</dd>
-                        <dt>{{ t('Access') }}</dt>
-                        <dd>
-                            {{
-                                state.profile.value.role === 'ADMIN'
-                                    ? t('Administrator')
-                                    : t('Point')
-                            }}
-                        </dd>
-                        <dt>{{ t('Default AKA') }}</dt>
-                        <dd>{{ state.profile.value.defaultAka || t('Not selected') }}</dd>
-                    </dl>
-                    <p class="hint">
-                        {{ t('Each point address requires administrator approval.') }}
-                    </p>
-                </section>
+                    ref="profileSettings"
+                    :state="state"
+                />
                 <section
                     v-if="tab === 'aka'"
                     class="card"

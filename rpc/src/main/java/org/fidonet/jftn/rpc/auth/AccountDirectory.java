@@ -36,6 +36,14 @@ public final class AccountDirectory {
         return read(() -> accounts.repository().profiles().users());
     }
 
+    public void displayName(String owner, String value) throws Exception {
+        if (value == null || value.length() > 80
+                || value.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Display name must contain at most 80 printable characters");
+        }
+        accounts.repository().profiles().displayName(owner, value.strip());
+    }
+
     public List<AddressClaim> claims(String owner) throws IOException {
         return read(() -> accounts.repository().profiles().claims(owner));
     }
