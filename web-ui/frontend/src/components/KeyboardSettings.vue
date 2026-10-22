@@ -95,21 +95,18 @@ async function save() {
         </SettingsSectionHeader>
         <form @submit.prevent="save">
             <fieldset :disabled="state.busy.value">
-                <div class="form-grid">
-                    <label
-                        >{{ t('Shortcut preset')
-                        }}<select
-                            :value="draft.profile"
-                            @change="
-                                preset(
-                                    ($event.target as HTMLSelectElement).value as ShortcutProfile
-                                )
-                            "
-                        >
-                            <option value="jftn">{{ t('JFtn default') }}</option>
-                            <option value="golded">{{ t('GoldED+ (web)') }}</option>
-                        </select></label
+                <div class="keyboard-presets">
+                    <label for="shortcut-preset">{{ t('Shortcut preset') }}</label>
+                    <select
+                        id="shortcut-preset"
+                        :value="draft.profile"
+                        @change="
+                            preset(($event.target as HTMLSelectElement).value as ShortcutProfile)
+                        "
                     >
+                        <option value="jftn">{{ t('JFtn default') }}</option>
+                        <option value="golded">{{ t('GoldED+ (web)') }}</option>
+                    </select>
                     <label class="keyboard-enabled"
                         ><input
                             v-model="draft.enabled"
@@ -224,6 +221,27 @@ async function save() {
     </section>
 </template>
 <style scoped>
+.keyboard-settings {
+    --keyboard-columns: minmax(140px, 1fr) minmax(240px, 1.5fr);
+}
+.keyboard-presets {
+    display: grid;
+    grid-template-columns: var(--keyboard-columns);
+    gap: 6px 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.keyboard-presets > label {
+    margin: 0;
+}
+.keyboard-presets select {
+    grid-column: 1;
+    grid-row: 2;
+}
+.keyboard-presets .keyboard-enabled {
+    grid-column: 2;
+    grid-row: 2;
+}
 .keyboard-settings fieldset {
     border: 0;
     padding: 0;
@@ -239,7 +257,7 @@ async function save() {
 }
 .keyboard-row {
     display: grid;
-    grid-template-columns: minmax(140px, 1fr) minmax(240px, 1.5fr);
+    grid-template-columns: var(--keyboard-columns);
     align-items: center;
     gap: 12px;
     padding: 7px 0;
@@ -261,6 +279,13 @@ async function save() {
     margin-bottom: 20px;
 }
 @media (max-width: 640px) {
+    .keyboard-settings {
+        --keyboard-columns: minmax(0, 1fr);
+    }
+    .keyboard-presets .keyboard-enabled {
+        grid-column: 1;
+        grid-row: 3;
+    }
     .keyboard-row {
         grid-template-columns: minmax(0, 1fr);
         gap: 4px;
