@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from './AppIcon.vue';
+import MailLoadMore from './MailLoadMore.vue';
 import { shortMailDate } from '../mail-date.ts';
 import { computed, ref, watch } from 'vue';
 import { t } from '../i18n.ts';
@@ -231,14 +232,11 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
                 </button>
             </li>
         </ul>
-        <button
+        <MailLoadMore
             v-if="hasMore"
-            class="secondary"
             :disabled="busy || searching"
-            @click="emit('more')"
-        >
-            {{ t('Load more') }}
-        </button>
+            @more="emit('more')"
+        />
     </section>
 </template>
 <style scoped>

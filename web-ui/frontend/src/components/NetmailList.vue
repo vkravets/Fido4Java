@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { shortMailDate } from '../mail-date.ts';
+import MailLoadMore from './MailLoadMore.vue';
 import { t } from '../i18n.ts';
 import { computed, watch } from 'vue';
 import { matchesMail, useMailSearch } from '../mail-search.ts';
@@ -91,13 +92,10 @@ watch(visibleItems, (items) => emit('navigation', items), { immediate: true });
                 >{{ t('Unread') }}</small
             >
         </button>
-        <button
+        <MailLoadMore
             v-if="hasMore"
-            class="secondary"
             :disabled="busy || searching"
-            @click="$emit('more')"
-        >
-            {{ t('Load more') }}
-        </button>
+            @more="$emit('more')"
+        />
     </section>
 </template>

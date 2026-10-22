@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'mail-load-more', story: 'mail-mailloadmore--ready' },
+    { name: 'mail-load-more-disabled', story: 'mail-mailloadmore--disabled' },
     { name: 'mail-archive-search', story: 'mail-netmailview--archive-search', mailSearch: true },
     { name: 'mail-local-search', story: 'mail-netmailview--local-search', mailSearch: true },
     { name: 'mail-search-pending', story: 'mail-netmailview--search-pending', mailSearch: true },
