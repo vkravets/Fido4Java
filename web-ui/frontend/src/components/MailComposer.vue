@@ -144,8 +144,15 @@ function chooseTemplate() {
                 >
                 <label
                     >{{ t('Recipient name')
-                    }}<input
+                    }}<AddressInput
                         v-model="draft.toName"
+                        :aria-label="t('Recipient name')"
+                        value-kind="name"
+                        @select="
+                            (node) => {
+                                if (draft.mailbox !== 1) draft.toAddress = node.address;
+                            }
+                        "
                         required
                         maxlength="35"
                 /></label>
@@ -153,6 +160,7 @@ function chooseTemplate() {
                     >{{ t('Recipient address')
                     }}<AddressInput
                         v-model="draft.toAddress"
+                        :aria-label="t('Recipient address')"
                         required
                         :include-points="true"
                 /></label>

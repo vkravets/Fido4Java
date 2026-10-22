@@ -307,6 +307,8 @@ export const ukrainian = {
     'Search the directory': 'Пошук у каталозі',
     'AKA, sysop, station, location or IP / hostname': 'AKA, сисоп, станція, місце або IP / хост',
     'Searching directory…': 'Пошук у каталозі…',
+    'Directory search is unavailable. You can enter a name manually.':
+        'Пошук у каталозі недоступний. Ім’я можна ввести вручну.',
     'Directory search is unavailable. You can enter an address manually.':
         'Пошук у каталозі недоступний. Адресу можна ввести вручну.',
     'Directory search is unavailable. Please try again.':

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import MailComposer from '../src/components/MailComposer.vue';
 import MailWorkspace from '../src/components/MailWorkspace.vue';
 import { createWorkspace, workspaceKey } from '../src/workspace.ts';
+import { directorySearchKey } from '../src/directory.ts';
+import { searchDirectory } from './directory-fixture.ts';
 import { netmailDraft } from './netmail-fixture.ts';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 const meta = {
@@ -16,6 +18,7 @@ const meta = {
     render: (args, context) => ({
         components: { MailComposer },
         setup() {
+            provide(directorySearchKey, searchDirectory);
             mailWorkspaceFixture(context.globals.theme === 'dark');
             return { args, draft: ref({ ...args.modelValue }) };
         },
@@ -32,6 +35,7 @@ export const WorkspaceReply: Story = {
     render: (args, context) => ({
         components: { MailComposer, MailWorkspace },
         setup() {
+            provide(directorySearchKey, searchDirectory);
             mailWorkspaceFixture(context.globals.theme === 'dark');
             provide(workspaceKey, createWorkspace());
             return { args, draft: ref({ ...args.modelValue }) };
@@ -53,3 +57,15 @@ export const NewMessage: Story = {
     }
 };
 export const Sending: Story = { args: { busy: true } };
+
+export const RecipientSearch: Story = {
+    args: { modelValue: { ...netmailDraft, toName: 'Point Owner', toAddress: '' } },
+    play: async ({ canvasElement }) => {
+        const input = canvasElement.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+        input.focus();
+    }
+};
+export const EchoRecipientSearch: Story = {
+    ...RecipientSearch,
+    args: { modelValue: { ...netmailDraft, mailbox: 1, area: 'TEST', toName: 'Point Owner' } }
+};

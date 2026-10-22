@@ -771,3 +771,30 @@ test('plugin settings edit permissions and preserve empty password edits', async
     await story(page, 'plugins-pluginsettingspanel--empty');
     await expect(page.getByText('No active settings extensions.')).toBeVisible();
 });
+
+test('recipient lookup fills point names and netmail addresses while keeping echo routing unchanged', async ({
+    page
+}) => {
+    await story(page, 'mail-mailcomposer--recipient-search');
+    const name = page.getByRole('combobox', { name: 'Recipient name', exact: true });
+    const address = page.getByRole('combobox', { name: 'Recipient address', exact: true });
+    await expect(page.getByRole('option').filter({ hasText: 'Point Owner' })).toBeVisible();
+    await name.press('ArrowDown');
+    await name.press('Enter');
+    await expect(name).toHaveValue('Point Owner');
+    await expect(address).toHaveValue('1:500/101.1');
+    await name.fill('Jane');
+    await page.getByRole('option').filter({ hasText: 'Jane Doe' }).click();
+    await expect(name).toHaveValue('Jane Doe');
+    await expect(address).toHaveValue('1:500/101.0');
+    await name.fill('Manual Recipient');
+    await name.press('Escape');
+    await expect(name).toHaveValue('Manual Recipient');
+    await expect(address).toHaveValue('1:500/101.0');
+    await story(page, 'mail-mailcomposer--echo-recipient-search');
+    await page.getByRole('option').filter({ hasText: 'Point Owner' }).click();
+    await expect(name).toHaveValue('Point Owner');
+    await expect(
+        page.getByRole('combobox', { name: 'Recipient address', exact: true })
+    ).toHaveCount(0);
+});

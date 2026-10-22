@@ -6,10 +6,11 @@ import { t } from '../i18n.ts';
 import type { DirectoryNode } from '@rpc/bindings.mjs';
 defineOptions({ inheritAttrs: false });
 const model = defineModel<string>({ required: true });
-const props = withDefaults(defineProps<{ multiple?: boolean; includePoints?: boolean }>(), {
-    multiple: false,
-    includePoints: true
-});
+const props = withDefaults(
+    defineProps<{ multiple?: boolean; includePoints?: boolean; valueKind?: 'address' | 'name' }>(),
+    { multiple: false, includePoints: true, valueKind: 'address' }
+);
+const emit = defineEmits<{ select: [node: DirectoryNode] }>();
 const attrs = useAttrs();
 const search = inject(directorySearchKey, (query, offset, limit, includePoints) =>
     api.settings.searchDirectory(query, offset, limit, includePoints)
@@ -57,9 +58,12 @@ function changed(event: Event) {
 async function choose(node: DirectoryNode) {
     const token = addressToken(model.value, caret, props.multiple);
     const suffix = model.value.slice(token.end);
-    const selected = node.address + (props.multiple && !suffix ? ' ' : '');
+    const selected =
+        (props.valueKind === 'name' ? node.sysop : node.address) +
+        (props.multiple && !suffix ? ' ' : '');
     model.value = model.value.slice(0, token.start) + selected + suffix;
     close();
+    emit('select', node);
     await nextTick();
     input.value?.focus();
     input.value?.setSelectionRange(token.start + selected.length, token.start + selected.length);
@@ -129,7 +133,9 @@ watch(
                 v-if="failed"
                 role="status"
                 >{{
-                    t('Directory search is unavailable. You can enter an address manually.')
+                    props.valueKind === 'name'
+                        ? t('Directory search is unavailable. You can enter a name manually.')
+                        : t('Directory search is unavailable. You can enter an address manually.')
                 }}</span
             >
             <span

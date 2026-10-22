@@ -4,6 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    {
+        name: 'composer-recipient-search',
+        story: 'mail-mailcomposer--recipient-search',
+        suggestions: true
+    },
     { name: 'echo-partial-tree-warning', story: 'mail-echomailview--partial-tree' },
     {
         name: 'netmail-scrolled-selection',
@@ -333,7 +338,9 @@ for (const theme of ['light', 'dark']) {
                 if (screen.disclosure && info.project.name === 'desktop')
                     await expect(page.locator(screen.disclosure)).toBeVisible();
                 if (screen.suggestions)
-                    await expect(page.getByRole('option').first()).toBeVisible();
+                    await expect(
+                        page.locator('.address-options').getByRole('option').first()
+                    ).toBeVisible();
                 if (screen.conversation) {
                     await page.locator('.echo-conversation > summary').click();
                     await expect(page.locator('.echo-conversation li time')).toBeVisible();
