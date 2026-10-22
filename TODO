@@ -19,8 +19,12 @@ Remaining implementation
   to external RPC editors. The current implementation has a fixed five-encoding
   list and a personal default; the editable list is requested but not implemented.
 
-- Add full archive/body search and optional trash for browser mail readers.
-  Local filtering of loaded message headers/excerpts is already available.
+- Integrate experimental server-side archive/body search into browser mail readers
+  and evaluate indexing/performance on large archives. RPC search now exists,
+  disabled by default behind text-only RpcExperimentalMailSearch; it scans bounded
+  pages in one area/mailbox, with continuation even for empty result pages.
+  Local browser filtering of loaded headers/excerpts remains unchanged.
+  Add optional trash separately. Usage and limits: docs/rpc-ui.md.
 - Refine the mobile mail layout after desktop review; retain separate list,
   reader and composer screens, readable controls and dirty-draft protection.
 - Add safe link removal/renaming, accounting for routes, subscriptions and queues.

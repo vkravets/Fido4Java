@@ -7,6 +7,15 @@ For current unfinished work, read [TODO](../TODO) and inspect the current Git st
 
 ## Product and module boundaries
 
+Server-side archive/body search is an experimental RPC-only capability, disabled
+unless `RpcExperimentalMailSearch=true` is explicitly set in text configuration.
+Changing the flag requires restart, not a UI setter or live reload. Search uses
+existing SQL mailbox scopes and current account/area rights, excludes netmail
+tombstones and scans at most 1000 rows per call. Its cursor is the last scanned
+row; empty matches with `hasMore=true` require continuation. No full-text index,
+cross-area search or browser integration is implied. See
+[RPC search](rpc-ui.md#experimental-server-side-mail-search).
+
 Echomail crossposting is not implemented. The retained
 [crossposting analysis and proposal](crossposting-plan.md) describes possible
 UI/RPC, publication and recovery changes, not an accepted implementation record.

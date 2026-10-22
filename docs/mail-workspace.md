@@ -55,6 +55,9 @@ This compact-layout pass targets desktop; a broader mobile redesign is deferred.
 **Search loaded messages** filters the currently loaded headers and bounded text
 excerpts. It is not a full archive or full body search. Load more messages to
 extend this local scope. Matching literal text is highlighted in the open reader.
+Experimental archive/body search now exists through RPC behind the text-only
+`RpcExperimentalMailSearch` flag, but is not connected to this browser control.
+See [server search setup and limits](rpc-ui.md#experimental-server-side-mail-search).
 Echo threading uses exact MSGID/REPLY, including explicit missing-parent states;
 subjects do not define conversations.
 

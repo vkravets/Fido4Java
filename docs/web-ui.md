@@ -145,6 +145,11 @@ eight batches; focused runs do not narrow the CI test matrix.
 
 ## Echomail reader
 
+The browser search remains local to loaded messages. Experimental server-side
+archive/body search is currently RPC-only and disabled by default; enable it in
+text configuration as described in [RPC search](rpc-ui.md#experimental-server-side-mail-search).
+There is no experimental-feature toggle or archive-search control in the UI yet.
+
 **Echomail** provides a searchable conference list, a message list and a reading
 pane. Switch between **Threads** and **Flat** on desktop; the mobile selector
 offers **Conversation tree** and **Flat list**. Unread messages are highlighted;

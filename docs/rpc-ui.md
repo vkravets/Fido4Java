@@ -325,6 +325,67 @@ the mail store's identity receipts prevent duplicates after interruption.
 A successful submission deletes its draft. Send stores mail for normal periodic
 export; call processMail to request an immediate processing pass.
 
+## Experimental server-side mail search
+
+Archive search is experimental and disabled by default. It is available through
+RPC only; the browser's existing search still filters loaded messages. Enable it
+by editing `conf.d/90-rpc.conf` (or another ordered text fragment):
+
+```ini
+RpcExperimentalMailSearch=true
+```
+
+Restart the node after changing the flag. It has no UI/settings setter and is not
+live-reloadable; `SettingsService.reload` rejects a changed value as requiring a
+controlled restart. Removing it or setting it to `false` disables search at the
+next start. Only `true`/`false` values are accepted. The flag does not change mail,
+create an index or grant any permissions. An authenticated call while disabled
+returns `UiError` with code `FEATURE_DISABLED` on both TCP and HTTP.
+
+```text
+UiService.searchMessages(session, mailbox, area, query, afterId, limit)
+    -> MailSearchPage { items, nextId, hasMore, scanned }
+```
+
+Select one ECHO area, or INBOX/OUTBOX with an empty area. Search covers the archive
+in that scope, including messages that have not been loaded by a client. It is a
+literal Unicode case-insensitive substring search across sender/recipient names
+and addresses, subject and decoded plain body. `%`, `_`, quotes and regex syntax
+are ordinary characters, not operators. Queries must contain 2..160 characters
+without controls; surrounding whitespace is trimmed. There is no stemming,
+ranking, date filter, draft search or combined search across areas/mailboxes.
+Transport kludges are not searched as body text.
+
+The server checks current echo READ/BOTH access and uses the account's approved
+AKAs to scope netmail in SQL before scanning. Write-only echoes cannot be searched.
+Transit mail, unreleased incoming copies and account-deleted netmail remain hidden,
+as in normal mailbox reads. Results include current per-account read state, but
+search never marks messages read. Items are summaries without full bodies; their
+excerpt contains up to 240 UTF-16 code units of context around the first body
+match (plus optional ellipses). Use `message` for the complete text.
+
+Start at `afterId=0`, use `limit=1..100`, and pass the returned `nextId` unchanged
+on subsequent requests with the same mailbox, area and query. Ordering is ascending
+SQL row ID, not message date or relevance. IDs retain their normal Thrift i64
+semantics. Changing the search scope/query starts a new scan at zero.
+
+Each call examines at most 1000 scoped rows in batches of at most 100 plus one
+lookahead row. It stops when the result limit, scan budget or end is reached.
+`scanned` counts examined rows, including account-deleted netmail, not total hits.
+`nextId` is the last examined row, which need not be a matching message.
+`hasMore` means unexamined rows remain, not that another match is known to exist.
+**Empty `items` with `hasMore=true` is a valid continuation page**; keep requesting
+with `nextId` until enough matches are found, the user cancels, or `hasMore=false`.
+Clients should issue these requests asynchronously rather than block their UI.
+
+This implementation uses existing scoped SQL reader pages and scans decoded
+messages on the server; it is not an indexed full-text engine. A sparse query
+over a large archive requires multiple calls. There is no snapshot/search session
+or exact hit count: mailbox changes and new messages can affect later pages,
+and reaching the end does not subscribe to future mail. The row budget does not
+guarantee a fixed wall-clock latency. Indexing and browser integration remain
+tracked in [TODO](../TODO).
+
 ## Node operations
 
 | Methods | Behavior |
@@ -421,7 +482,8 @@ policy with the existing atomic validation and hot-reload machinery. Configured
 next hops are validated; source changes do not migrate rules or rewrite queues.
 
 Remaining API/UI work includes tracking or terminating incoming sessions,
-full-text mail search, trash, message editing and safe link removal/renaming,
+browser integration and indexing for experimental archive search, trash,
+message editing and safe link removal/renaming,
 file subscription administration and durable automatic poll
 retry scheduling. Station settings support adding and editing all configured links,
 including separate PKT passwords. AreaFix/FileFix can be addressed through ordinary netmail sends;

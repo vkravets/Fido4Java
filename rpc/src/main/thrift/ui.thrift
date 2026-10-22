@@ -52,6 +52,14 @@ struct MailPage {
     3: required bool hasMore
 }
 
+// Experimental bounded archive scan. Empty items with hasMore=true require continuation.
+struct MailSearchPage {
+    1: required list<MailItem> items,
+    2: required i64 nextId,
+    3: required bool hasMore,
+    4: required i32 scanned
+}
+
 struct AreaInfo {
     1: required string name,
     2: required i64 messages,
@@ -241,6 +249,7 @@ service UiService {
     MailPage echoMessages(1:string session, 2:string area, 3:i64 beforeId, 4:i32 limit) throws (1:UiError error),
     EchoContext echoContext(1:string session, 2:string area, 3:i64 id, 4:i64 afterId, 5:i32 limit) throws (1:UiError error),
     MailPage messages(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 afterId, 5:i32 limit) throws (1:UiError error),
+    MailSearchPage searchMessages(1:string session, 2:Mailbox mailbox, 3:string area, 4:string query, 5:i64 afterId, 6:i32 limit) throws (1:UiError error),
     MailItem message(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 id) throws (1:UiError error),
     void markRead(1:string session, 2:Mailbox mailbox, 3:string area, 4:i64 id, 5:bool read) throws (1:UiError error),
     void deleteMessage(1:string session, 2:Mailbox mailbox, 3:i64 id) throws (1:UiError error),

@@ -14,14 +14,19 @@ import org.fidonet.jftn.rpc.LoginService;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.ProfileService;
+import org.fidonet.jftn.rpc.SettingsService;
 import org.fidonet.jftn.rpc.UiError;
 import org.fidonet.jftn.rpc.UiService;
 import org.fidonet.jftn.ui.NodeRpc;
 import org.fidonet.types.FTNAddr;
 import org.fidonet.types.Message;
 
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TJSONProtocol;
+import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.transport.THttpClient;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.layered.TFramedTransport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,6 +107,261 @@ class EchoReaderRpcTest {
                              "1:500/100",
                              "Discussion",
                              "Hello from an approved point");
+    }
+
+    private void restartSearch(String value) throws Exception {
+        connection.close();
+        rpc.close();
+        Path fragments = root.resolve("conf.d");
+        Files.createDirectories(fragments);
+        Files.writeString(fragments.resolve("90-rpc.conf"),
+                          "RpcExperimentalMailSearch=" + value + "\n");
+        JFtnConfig config = new JFtnConfig();
+        config.load(root.resolve("jftn.conf").toString());
+        rpc = NodeRpc.open(config, base, mail, NodeSessions.create(config));
+        connection = endpoint("ui");
+        ui = new UiService.Client(new TJSONProtocol(connection));
+        admin = login("sysop", "ui-secret");
+    }
+
+    @Test
+    void searchIsDisabledByDefaultAndItsFileOnlySwitchRequiresRestart() throws Exception {
+        assertEquals("FEATURE_DISABLED",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(admin,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "body",
+                                                          0,
+                                                          10)).getCode());
+        assertEquals("UNAUTHORIZED",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages("invalid",
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "body",
+                                                          0,
+                                                          10)).getCode());
+        restartSearch("true");
+        assertFalse(ui.searchMessages(admin, Mailbox.ECHO, "test", "body", 0, 10).isHasMore());
+        Files.writeString(root.resolve("conf.d/90-rpc.conf"), "RpcExperimentalMailSearch=false\n");
+        try (THttpClient client = endpoint("settings")) {
+            SettingsService.Client settings = new SettingsService.Client(new TJSONProtocol(client));
+            UiError failure = assertThrows(UiError.class, () -> settings.reload(admin));
+            assertEquals("INVALID_ARGUMENT", failure.getCode());
+            assertTrue(failure.getMessage().toLowerCase().contains("rpcexperimentalmailsearch"));
+        }
+        assertTrue(ui.searchMessages(admin, Mailbox.ECHO, "test", "body", 0, 10)
+                     .getItems()
+                     .isEmpty());
+        restartSearch("false");
+        assertEquals("FEATURE_DISABLED",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(admin,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "body",
+                                                          0,
+                                                          10)).getCode());
+        assertThrows(IllegalArgumentException.class, () -> restartSearch("maybe"));
+    }
+
+    @Test
+    void searchMatchesUnicodeBodyBeyondExcerptsAndTreatsQueryAsLiteralText() throws Exception {
+        restartSearch("true");
+        storeSearchText("test",
+                        "unicode",
+                        "context ".repeat(70)
+                        + "\u041f\u0420\u0418\u0412\u0406\u0422 \u0421\u0412\u0406\u0422\u0415",
+                        "Topic");
+        storeSearchText("test", "literal", "Literal [.*]%_ text", "Other");
+        storeSearchText("test", "hidden", "\1SEARCH: hidden-token\rVisible text", "Other");
+        var page = ui.searchMessages(admin,
+                                     Mailbox.ECHO,
+                                     "TEST",
+                                     "\u043f\u0440\u0438\u0432\u0456\u0442",
+                                     0,
+                                     10);
+        assertEquals(1, page.getItemsSize());
+        var found = page.getItems().get(0);
+        assertTrue(found.getExcerpt().contains("\u041f\u0420\u0418\u0412\u0406\u0422"));
+        assertFalse(found.isSetBody());
+        assertFalse(found.isRead());
+        assertFalse(ui.message(admin, Mailbox.ECHO, "test", found.getId()).isRead());
+        assertEquals(1,
+                     ui.searchMessages(admin, Mailbox.ECHO, "test", "[.*]%_", 0, 10)
+                       .getItemsSize());
+        assertTrue(ui.searchMessages(admin, Mailbox.ECHO, "test", "hidden-token", 0, 10)
+                     .getItems()
+                     .isEmpty());
+        assertEquals(3,
+                     ui.searchMessages(admin, Mailbox.ECHO, "test", "AUTHOR", 0, 10)
+                       .getItemsSize());
+        assertEquals(3,
+                     ui.searchMessages(admin, Mailbox.ECHO, "test", "1:500/101", 0, 10)
+                       .getItemsSize());
+        assertEquals(1,
+                     ui.searchMessages(admin, Mailbox.ECHO, "test", "topic", 0, 10).getItemsSize());
+        ui.markRead(admin, Mailbox.ECHO, "test", found.getId(), true);
+        assertTrue(ui.searchMessages(admin,
+                                     Mailbox.ECHO,
+                                     "test",
+                                     "\u043f\u0440\u0438\u0432\u0456\u0442",
+                                     0,
+                                     10)
+                     .getItems()
+                     .get(0)
+                     .isRead());
+        for (String query : List.of("", " ", "x", "x".repeat(161), "bad\nquery", "bad\0query")) {
+            assertEquals("INVALID_ARGUMENT",
+                         assertThrows(UiError.class,
+                                      () -> ui.searchMessages(admin,
+                                                              Mailbox.ECHO,
+                                                              "test",
+                                                              query,
+                                                              0,
+                                                              10)).getCode());
+        }
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(admin,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "body",
+                                                          -1,
+                                                          10)).getCode());
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(admin,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "body",
+                                                          0,
+                                                          101)).getCode());
+    }
+
+    @Test
+    void searchPagesRespectScanBudgetAndContinueAfterEmptyPagesWithoutSkippingMatches()
+            throws Exception {
+        restartSearch("true");
+        for (int index = 0; index < 1000; index++) {
+            storeSearchText("test", "old-" + index, "Unrelated body", "Archive");
+        }
+        storeSearchText("test", "last-1", "Needle one", "Archive");
+        storeSearchText("test", "last-2", "Needle two", "Archive");
+        var empty = ui.searchMessages(admin, Mailbox.ECHO, "test", "needle", 0, 1);
+        assertEquals(1000, empty.getScanned());
+        assertEquals(0, empty.getItemsSize());
+        assertTrue(empty.isHasMore());
+        assertTrue(empty.getNextId() > 0);
+        var first = ui.searchMessages(admin, Mailbox.ECHO, "test", "needle", empty.getNextId(), 1);
+        assertEquals(1, first.getItemsSize());
+        assertEquals(1, first.getScanned());
+        assertTrue(first.isHasMore());
+        var last = ui.searchMessages(admin, Mailbox.ECHO, "test", "needle", first.getNextId(), 1);
+        assertEquals(1, last.getItemsSize());
+        assertFalse(last.isHasMore());
+        assertTrue(last.getItems().get(0).getId() > first.getItems().get(0).getId());
+    }
+
+    @Test
+    void searchEnforcesLiveAreaReadRightsOnHttpAndTcp() throws Exception {
+        restartSearch("true");
+        String point = point();
+        storeSearchText("test", "public", "Needle public", "Topic");
+        storeSearchText("private", "private", "Needle private", "Topic");
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(point,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "needle",
+                                                          0,
+                                                          10)).getCode());
+        ui.subscribe(admin, "1:500/100.1", "test", "WRITE");
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.searchMessages(point,
+                                                          Mailbox.ECHO,
+                                                          "test",
+                                                          "needle",
+                                                          0,
+                                                          10)).getCode());
+        ui.subscribe(admin, "1:500/100.1", "test", "READ");
+        try (TFramedTransport transport = new TFramedTransport(new TSocket("127.0.0.1",
+                                                                           rpc.getPort(),
+                                                                           5000))) {
+            transport.open();
+            UiService.Client tcp = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                 "ui"));
+            assertEquals(1,
+                         tcp.searchMessages(point, Mailbox.ECHO, "test", "needle", 0, 10)
+                            .getItemsSize());
+            assertEquals("FORBIDDEN",
+                         assertThrows(UiError.class,
+                                      () -> tcp.searchMessages(point,
+                                                               Mailbox.ECHO,
+                                                               "private",
+                                                               "needle",
+                                                               0,
+                                                               10)).getCode());
+            ui.unsubscribe(admin, "1:500/100.1", "test");
+            assertEquals("FORBIDDEN",
+                         assertThrows(UiError.class,
+                                      () -> tcp.searchMessages(point,
+                                                               Mailbox.ECHO,
+                                                               "test",
+                                                               "needle",
+                                                               0,
+                                                               10)).getCode());
+        }
+    }
+
+    @Test
+    void searchScopesNetmailToOwnedAkasAndHonorsWaitingAndDeletedState() throws Exception {
+        restartSearch("true");
+        String point = point();
+        MailDraft direct = draft().setMailbox(Mailbox.OUTBOX)
+                                  .setArea("")
+                                  .setFromAddress("1:500/100")
+                                  .setToAddress("1:500/100.1")
+                                  .setBody("Needle private netmail");
+        ui.send(admin, direct, "search-point");
+        ui.send(admin,
+                direct.deepCopy().setId("sysop-mail").setToAddress("1:500/100"),
+                "search-sysop");
+        assertEquals(2,
+                     ui.searchMessages(admin, Mailbox.OUTBOX, "", "needle", 0, 10).getItemsSize());
+        assertTrue(ui.searchMessages(point, Mailbox.OUTBOX, "", "needle", 0, 10)
+                     .getItems()
+                     .isEmpty());
+        assertTrue(ui.searchMessages(point, Mailbox.INBOX, "", "needle", 0, 10)
+                     .getItems()
+                     .isEmpty());
+        ui.sendPendingNetmail(admin);
+        var incoming = ui.searchMessages(point, Mailbox.INBOX, "", "needle", 0, 10);
+        assertEquals(1, incoming.getItemsSize());
+        assertEquals(1,
+                     ui.searchMessages(admin, Mailbox.INBOX, "", "needle", 0, 10).getItemsSize());
+        ui.deleteMessage(point, Mailbox.INBOX, incoming.getItems().get(0).getId());
+        var deleted = ui.searchMessages(point, Mailbox.INBOX, "", "needle", 0, 10);
+        assertTrue(deleted.getItems().isEmpty());
+        assertEquals(1, deleted.getScanned());
+        assertFalse(deleted.isHasMore());
+        assertEquals(2,
+                     ui.searchMessages(admin, Mailbox.OUTBOX, "", "needle", 0, 10).getItemsSize());
+    }
+
+    private void storeSearchText(String area, String id, String text, String subject)
+            throws Exception {
+        Message message = new Message("Author",
+                                      "All",
+                                      new FTNAddr("1:500/101"),
+                                      null,
+                                      subject,
+                                      "AREA:" + area + "\r\1MSGID: 1:500/101 " + id + "\r" + text,
+                                      new Date());
+        base.addMessage(message, area);
     }
 
     @Test

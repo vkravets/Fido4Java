@@ -56,6 +56,7 @@ public final class AuthenticatedUi {
 
     private static boolean mailOperation(String name) {
         return Set.of("messages",
+                      "searchMessages",
                       "areas",
                       "echoMessages",
                       "echoContext",

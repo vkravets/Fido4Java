@@ -21,6 +21,7 @@ import org.fidonet.jftn.rpc.LogPage;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailItem;
 import org.fidonet.jftn.rpc.MailPage;
+import org.fidonet.jftn.rpc.MailSearchPage;
 import org.fidonet.jftn.rpc.Mailbox;
 import org.fidonet.jftn.rpc.NetmailRouteInfo;
 import org.fidonet.jftn.rpc.NetmailRoutePreview;
@@ -66,6 +67,8 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
     private final MailDraftValidator draftValidator;
     private final MailboxAccess access;
     private final MailSubmissionService submissions;
+    private final boolean mailSearchEnabled;
+    private final NodeMailSearch search;
     private final PollService polls;
     private final NodeRobotRules robotRules;
     private final long started = System.nanoTime();
@@ -77,6 +80,7 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
                                 UiSessions sessions)
             throws Exception {
         this.config = config;
+        mailSearchEnabled = RpcConfiguration.enabled(config, "RpcExperimentalMailSearch");
         draftValidator = new MailDraftValidator(config);
         access = new MailboxAccess(config, sessions, base);
         this.base = base;
@@ -87,6 +91,7 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
                                                                  Path.of(config.getTmpDir(),
                                                                          "ui-state")));
         submissions = new MailSubmissionService(mail, state);
+        search = new NodeMailSearch(base, state, access, (row, read) -> item(row, false, read));
         this.polls = polls;
     }
 
@@ -375,6 +380,21 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
             }
             return item(rows.get(0), true, state.isRead(owner, box.name(), area, id));
         });
+    }
+
+    @Override
+    public MailSearchPage searchMessages(String owner,
+                                         Mailbox box,
+                                         String name,
+                                         String query,
+                                         long after,
+                                         int limit)
+            throws UiError {
+        if (!mailSearchEnabled) {
+            throw new UiError("FEATURE_DISABLED", "Experimental mail search is disabled");
+        }
+        String area = area(box, name);
+        return call(() -> search.search(owner, box, area, query, after, limit));
     }
 
     @Override
