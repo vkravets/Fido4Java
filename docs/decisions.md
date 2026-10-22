@@ -791,6 +791,12 @@ signature, reply attribution, quote insertion point and forward structure,
 adapted to JFtn's retained draft context. Updating built-ins never rewrites
 personal templates, their rules or saved draft bodies.
 
+Composition uses a compact mixed header: sender identity is visible with its
+fields behind Edit sender, recipient and subject remain editable, and templates
+share the editor toolbar. Echo recipients have no address field; either netmail
+directory lookup fills name and address. Automatic template refreshes preserve
+header focus and never replace manually edited bodies.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

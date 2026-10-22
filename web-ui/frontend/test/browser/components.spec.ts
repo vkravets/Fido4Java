@@ -56,7 +56,7 @@ test('compact desktop composer aligns template controls and keeps the editor too
         expect(Math.max(...controls) - Math.min(...controls)).toBeLessThan(1);
         const form = await page.locator('.mail-composer').boundingBox();
         const editor = await page.locator('.editor-toolbar').boundingBox();
-        expect(editor!.y - form!.y).toBeLessThan(300);
+        expect(editor!.y - form!.y).toBeLessThan(180);
         await expect(
             page.getByRole('button', { name: 'Скасувати зміну', exact: true })
         ).toHaveAttribute('title', /Z/);
@@ -194,6 +194,7 @@ test('echo composer posts to its conference and read-only areas cannot create or
     page
 }) => {
     await story(page, 'mail-echomailview--compose');
+    await page.getByRole('button', { name: 'Edit sender', exact: true }).click();
     await expect(page.getByRole('combobox', { name: 'Sender AKA', exact: true })).toHaveValue(
         '1:500/100.1'
     );
@@ -278,6 +279,7 @@ test('point netmail workflow opens a letter, replies, saves a draft and sends', 
     await page.getByRole('button', { name: /Welcome to FidoNet/ }).click();
     await expect(page.locator('.mail-body')).toContainText('Your station is ready');
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit sender', exact: true }).click();
     await expect(page.getByRole('combobox', { name: 'Sender AKA', exact: true })).toHaveValue(
         '1:500/100.1'
     );
@@ -335,6 +337,7 @@ test('netmail composer restricts sender AKA and disables controls during send', 
     page
 }) => {
     await story(page, 'mail-mailcomposer--new-message');
+    await page.getByRole('button', { name: 'Edit sender', exact: true }).click();
     const sender = page.getByRole('combobox', { name: 'Sender AKA', exact: true });
     await expect(sender.locator('option')).toHaveCount(2);
     await sender.selectOption('1:500/100.1');
@@ -830,5 +833,70 @@ test('focused editor draws a themed caret that follows keyboard navigation and t
         await page.getByRole('button', { name: 'Bold', exact: true }).focus();
         await expect(page.locator('.cm-editor')).not.toHaveClass(/cm-focused/);
         await expect(caret).not.toBeVisible();
+    }
+});
+
+test('compact netmail preserves sender edits and searches both recipient fields without stealing focus', async ({
+    page
+}) => {
+    await story(page, 'mail-mailcomposer--golded-new');
+    const senderToggle = page.getByRole('button', { name: 'Edit sender', exact: true });
+    await expect(senderToggle).toHaveAttribute('aria-expanded', 'false');
+    await senderToggle.click();
+    const sender = page.getByLabel('Sender name', { exact: true });
+    await sender.fill('Other Sender');
+    await senderToggle.click();
+    await expect(senderToggle).toContainText('Other Sender');
+    await expect(sender).toBeHidden();
+    const name = page.getByRole('combobox', { name: 'Recipient name', exact: true });
+    const address = page.getByRole('combobox', { name: 'Recipient address', exact: true });
+    await name.fill('Jane');
+    await expect(name).toBeFocused();
+    await page.getByRole('option').filter({ hasText: 'Jane Doe' }).click();
+    await expect(address).toHaveValue('1:500/101.0');
+    await address.fill('1:500/101.1');
+    await expect(address).toBeFocused();
+    await page.getByRole('option').filter({ hasText: 'Point Owner' }).click();
+    await expect(name).toHaveValue('Point Owner');
+    await expect(address).toHaveValue('1:500/101.1');
+    await expect(address).toBeFocused();
+    await expect(page.locator('.cm-content')).toContainText('Hello Point!');
+    await expect(page.locator('.cm-content')).toContainText('Other');
+    await senderToggle.click();
+    await expect(sender).toHaveValue('Other Sender');
+});
+
+test('hidden invalid sender fields expand for native validation', async ({ page }) => {
+    await story(page, 'mail-mailcomposer--golded-new');
+    const toggle = page.getByRole('button', { name: 'Edit sender', exact: true });
+    await toggle.click();
+    await page.getByLabel('Sender name', { exact: true }).fill('');
+    await toggle.click();
+    await page.getByRole('button', { name: 'Add to send queue', exact: true }).click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByLabel('Sender name', { exact: true })).toBeFocused();
+});
+
+test('compact echo and netmail headers fit desktop and mobile panes', async ({ page }) => {
+    for (const width of [1280, 375]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const mode of ['echo-compact', 'new-message']) {
+            await story(page, `mail-mailcomposer--${mode}`, 'dark', 'uk');
+            const form = page.locator('.mail-composer');
+            const name = page.locator('.composer-fields label').nth(0);
+            const other = page.locator('.composer-fields label').nth(1);
+            const first = (await name.boundingBox())!;
+            const second = (await other.boundingBox())!;
+            if (width > 700) expect(Math.abs(first.y - second.y)).toBeLessThan(1);
+            else expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+            const geometry = await form.evaluate((el) => ({
+                width: el.clientWidth,
+                scroll: el.scrollWidth,
+                top: el.getBoundingClientRect().top
+            }));
+            expect(geometry.scroll).toBeLessThanOrEqual(geometry.width);
+            const toolbar = (await page.locator('.editor-toolbar').boundingBox())!;
+            expect(toolbar.y - geometry.top).toBeLessThan(width > 700 ? 180 : 340);
+        }
     }
 });

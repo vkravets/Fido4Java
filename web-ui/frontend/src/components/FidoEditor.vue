@@ -240,9 +240,9 @@ function setSource(value: boolean) {
     preview.value = false;
 }
 defineExpose({
-    focusAt(position: number) {
+    focusAt(position: number, focus = true) {
         editor?.dispatch({ selection: { anchor: Math.min(position, editor.state.doc.length) } });
-        editor?.focus();
+        if (focus) editor?.focus();
     }
 });
 </script>
@@ -359,6 +359,12 @@ defineExpose({
             >
                 <AppIcon name="eye" />
             </button>
+            <div
+                v-if="$slots.toolbar"
+                class="editor-extra"
+            >
+                <slot name="toolbar" />
+            </div>
         </div>
         <div
             v-show="!preview"
@@ -391,6 +397,10 @@ defineExpose({
     padding: 6px;
     border: 1px solid var(--line);
     border-radius: 6px 6px 0 0;
+}
+.editor-extra {
+    margin-inline-start: auto;
+    min-width: 0;
 }
 .editor-toolbar button {
     width: 32px;

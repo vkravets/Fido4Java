@@ -4,6 +4,18 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'composer-sender-details', story: 'mail-mailcomposer--sender-details' },
+    { name: 'composer-echo-compact', story: 'mail-mailcomposer--echo-compact' },
+    {
+        name: 'composer-echo-recipient-search',
+        story: 'mail-mailcomposer--echo-recipient-search',
+        suggestions: true
+    },
+    {
+        name: 'composer-address-search',
+        story: 'mail-mailcomposer--address-search',
+        suggestions: true
+    },
     { name: 'golded-template-new', story: 'mail-mailcomposer--golded-new' },
     { name: 'golded-template-reply', story: 'mail-mailcomposer--golded-reply' },
     { name: 'golded-template-quoted', story: 'mail-mailcomposer--golded-quoted' },

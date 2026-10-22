@@ -60,6 +60,14 @@ subjects do not define conversations.
 
 ## Plain-text visual editor
 
+The composer keeps recipient and subject fields in a compact header. Echomail
+shows only the recipient name; netmail has separate name/address fields on one
+row, stacking in a narrow pane. Both fields search the local nodelist/pointlist;
+choosing a netmail match fills both values, while an echo match changes only the
+name. Manual entry remains available. The sender name and permitted AKA appear
+in the heading; **Edit sender** opens their fields without losing draft edits.
+Hidden invalid sender fields reopen when validation requires attention.
+
 The visual editor and reader share a FIDO text parser. They distinguish quote
 depths, signatures, tearline, Origin, links and FTN addresses. Style codes remain
 plain text: `*bold*`, `/italic/`, `_underline_`, `#reverse#`. Visual mode hides paired
@@ -76,8 +84,8 @@ Quote colors cycle through the three configured levels: 1/4/7 use the first,
 classification; the appearance preview includes levels one through six.
 The formatting/mode toolbar uses icons with translated tooltips and accessible
 labels. Undo (Ctrl/Cmd+Z) reverts the last text edit; Redo
-(Ctrl/Cmd+Shift+Z) restores an undone edit. The template selector and **Apply
-template** button share an aligned row above the toolbar.
+(Ctrl/Cmd+Shift+Z) restores an undone edit. The template selector and icon-only
+**Apply template** button sit at the end of the editor toolbar, wrapping as needed.
 The message reader's header actions also use icons with translated tooltips and
 accessible labels, including the live appearance preview. The More menu retains
 text labels for its choices.
@@ -157,8 +165,9 @@ AKA, then generic. Conference names match case-insensitively.
 The composer applies the chosen default to a fresh draft and offers a manual
 **Template > Apply template** action. Replacing existing text requires confirmation.
 Changing headers updates the automatically generated body only while that body
-is still untouched. Saved drafts retain their text and original reply context;
-opening an existing draft does not reapply a template. Reader original context
+is still untouched, preserving focus in the edited header field. Saved drafts
+retain their text and original reply context; opening an existing draft does not
+reapply a template. Reader original context
 is data, not permission to author mail or inject transport kludges.
 
 The built-in defaults follow GoldED+'s internal template: `Hello <first name>!`

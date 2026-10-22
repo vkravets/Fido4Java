@@ -91,3 +91,20 @@ export const GoldedQuoted: Story = {
 export const GoldedForward: Story = {
     args: { modelValue: { ...goldedDraft, composeKind: 'forward', replyTo: undefined } }
 };
+
+export const SenderDetails: Story = {
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLButtonElement>('.composer-sender-toggle')!.click();
+    }
+};
+export const EchoCompact: Story = {
+    args: { modelValue: { ...netmailDraft, mailbox: 1, area: 'odessa.fileecho' } }
+};
+export const AddressSearch: Story = {
+    args: { modelValue: { ...netmailDraft, toAddress: '1:500/101.1' } },
+    play: async ({ canvasElement }) => {
+        canvasElement
+            .querySelector<HTMLInputElement>('.composer-fields label:nth-child(2) input')!
+            .focus();
+    }
+};

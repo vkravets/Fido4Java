@@ -1,4 +1,5 @@
 export const ukrainian = {
+    'Edit sender': 'Змінити відправника',
     'Display name': 'Видиме ім’я',
     'Name from lists': 'Ім’я зі списків',
     'Close name lookup': 'Закрити пошук імені',
