@@ -67,8 +67,8 @@ choosing a netmail match fills both values, while an echo match changes only the
 name. Manual entry remains available. The sender name and permitted AKA appear
 in the heading; **Edit sender** opens their fields without losing draft edits.
 Hidden invalid sender fields reopen when validation requires attention.
-On desktop, the editor heading's **Hide message list / Show message list** button
-temporarily expands the composer over the list pane (also for a below preview).
+On desktop, the composer opens with the message list hidden (also for a below
+preview). The heading's **Show message list / Hide message list** button toggles it.
 It retains the draft, undo history, list scroll position and split ratio. Closing
 the editor restores the list without changing saved workspace preferences. The
 reader has no such button; mobile and separate-screen layouts already hide the list.

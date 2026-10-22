@@ -796,8 +796,9 @@ fields behind Edit sender, recipient and subject remain editable, and templates
 share the editor toolbar. Echo recipients have no address field; either netmail
 directory lookup fills name and address. Automatic template refreshes preserve
 header focus and never replace manually edited bodies.
-The editor-only list visibility toggle is local to the active composer. It hides
-the existing pane without remounting either pane or changing saved layout rules;
+The editor-only list visibility toggle is local to the active composer. Entering
+composition starts with the list hidden. Visibility changes keep both panes
+mounted and preserve saved layout rules;
 leaving composition restores the list. Mobile and separate previews retain their
 existing list/detail navigation.
 

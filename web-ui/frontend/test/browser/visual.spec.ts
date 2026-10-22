@@ -4,7 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
-    { name: 'netmail-editor-list-toggle', story: 'mail-netmailview--editor' },
+    {
+        name: 'netmail-editor-list-toggle',
+        story: 'mail-netmailview--editor',
+        showComposerList: true
+    },
     {
         name: 'netmail-editor-list-hidden',
         story: 'mail-netmailview--editor',
@@ -328,9 +332,12 @@ for (const theme of ['light', 'dark']) {
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
                 if (screen.hideComposerList && info.project.name === 'desktop') {
-                    await page.locator('.composer-list-toggle').click();
                     await expect(page.locator('.split-list')).toBeHidden();
                     await expect(page.locator('.split-handle')).toBeHidden();
+                }
+                if (screen.showComposerList && info.project.name === 'desktop') {
+                    await page.locator('.composer-list-toggle').click();
+                    await expect(page.locator('.split-list')).toBeVisible();
                 }
                 if (screen.profileDirectory) {
                     await page.locator('.profile-name-search').click();

@@ -22,7 +22,7 @@ const query = ref('');
 provide(mailSearchKey, query);
 const preferences = computed(() => workspace.value.value[props.kind]);
 const desktop = useMedia('(min-width: 701px)');
-const listHidden = ref(false);
+const listHidden = ref(true);
 const canToggleList = computed(
     () => !!props.composing && desktop.value && preferences.value.preview !== 'separate'
 );
@@ -35,8 +35,8 @@ provide(composerListKey, {
 });
 watch(
     () => props.composing,
-    (composing) => {
-        if (!composing) listHidden.value = false;
+    () => {
+        listHidden.value = true;
     }
 );
 const saving = ref(false);
