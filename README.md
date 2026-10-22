@@ -30,6 +30,9 @@ The browser supports netmail and threaded echomail reading, composition, replies
 forwarding and drafts for permitted account AKAs, plus administrator routing controls.
 Its mail workspace includes resizable previews, a plain-text FIDO visual editor,
 personal themes and templates.
+Echomail crossposting to multiple conferences is not implemented; the UI/RPC
+currently publish to one area per submission. See the
+[crossposting analysis and proposed implementation](docs/crossposting-plan.md).
 See [remaining work](TODO) and the limitations in each service guide.
 
 ### INSTALL
@@ -53,6 +56,7 @@ profile example; see [runtime profiles](docs/transit-profiles.md).
 - [Architecture decisions and working agreements](docs/decisions.md)
 - [Browser setup, settings and UI testing](docs/web-ui.md)
 - [Mail layouts, FIDO editor, themes and templates](docs/mail-workspace.md)
+- [Echomail crossposting proposal (not implemented)](docs/crossposting-plan.md)
 - [Mail processing, routing, JAM and HPT interoperability](docs/tosser.md)
 - [External BSO delivery, attachments and file requests](docs/bso.md)
 - [Real BSO/HTick container integration tests](docs/husky-integration.md)

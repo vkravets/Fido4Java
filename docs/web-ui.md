@@ -165,6 +165,11 @@ submits through the tosser's normal echo export; it is separate from netmail's
 explicit **Send queued mail** workflow. A successful post is not transport delivery
 confirmation. Echo deletion is not exposed in this reader.
 
+Crossposting is **not implemented**: each echo draft/submission names one area.
+There is no additional-area selector or XC/XP command processing. See the
+[crossposting analysis and implementation proposal](crossposting-plan.md);
+its batch/retry behavior describes planned work, not current guarantees.
+
 Administrators can read all local conferences and post from station AKAs.
 Approved points can read only areas with READ/BOTH subscriptions for their exact
 approved AKAs; composing requires WRITE/BOTH for the chosen AKA. A write-only grant

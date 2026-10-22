@@ -7,6 +7,12 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Implement author-initiated echomail crossposting to multiple selected areas.
+  UI/RPC currently submit one area only; there is no selector or XC/XP processing.
+  Add structured draft targets, whole-list authorization, durable per-area MSGIDs
+  and retry progress, accurate partial results, and HPT/browser/VRT checks.
+  Analysis and proposed scope (not implemented): docs/crossposting-plan.md.
+
 - Add a personal editable list of outgoing encodings, including adding supported
   encodings by name (for example KOI8-U or CP437), selecting enabled choices and
   a default. Validate additions on the server and expose the same preferences

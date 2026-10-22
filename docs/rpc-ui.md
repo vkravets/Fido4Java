@@ -307,6 +307,11 @@ Clients send plain text; the server adds CHRS, MSGID and optional REPLY. Embedde
 NUL/kludge controls and AREA headers are rejected. Request/draft IDs contain
 1..80 letters, digits, `_` or `-`. Up to 200 drafts can be stored.
 
+Echomail crossposting is **not implemented**. A draft/send names one area and
+returns one MSGID; there is no batch destination/result contract or XC/XP command
+interpretation. The [crossposting proposal](crossposting-plan.md) describes future
+work and must not be treated as the current RPC specification.
+
 `MailDraft.encoding` selects `UTF-8`, `CP866`, `KOI8-R`, `CP1251` or `CP848`;
 omitting it selects UTF-8. It is preserved in drafts and used for both `CHRS` and
 packet encoding. Submission rejects unrepresentable names, subject or body.

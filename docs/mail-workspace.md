@@ -60,6 +60,11 @@ subjects do not define conversations.
 
 ## Plain-text visual editor
 
+Crossposting to multiple echo areas is **not implemented**. The composer and RPC
+submit to one area at a time; XC/XP lines do not trigger additional publications.
+The [crossposting proposal](crossposting-plan.md) records the standards/source
+analysis, selector design and required server-side recovery work.
+
 The composer keeps recipient and subject fields in a compact header. Echomail
 shows only the recipient name; netmail has separate name/address fields on one
 row, stacking in a narrow pane. Both fields search the local nodelist/pointlist;

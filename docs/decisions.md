@@ -7,6 +7,11 @@ For current unfinished work, read [TODO](../TODO) and inspect the current Git st
 
 ## Product and module boundaries
 
+Echomail crossposting is not implemented. The retained
+[crossposting analysis and proposal](crossposting-plan.md) describes possible
+UI/RPC, publication and recovery changes, not an accepted implementation record.
+The current API submits one echo area; implementation is tracked in [TODO](../TODO).
+
 The browser defaults to the Netmail inbox after authentication. Personal settings
 under Appearance can select Netmail, Echomail, Drafts, Node directory or Profile
 as the startup page. This is stored in the account-owned `workspace` UI document
