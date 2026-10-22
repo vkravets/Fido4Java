@@ -168,8 +168,9 @@ test('profile names can be chosen from exact directory matches, edited and saved
         .click();
     await expect(page.locator('.profile-name-matches button')).toHaveCount(2);
     await expect(page.getByRole('button', { name: /Another Point/ })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Oleksii Example — points-r46', exact: true }).click();
+    await page.getByRole('button', { name: /Oleksii Example.*points-r46/ }).click();
     await expect(name).toHaveValue('Oleksii Example');
+    await expect(page.locator('.profile-directory')).toHaveCount(0);
     page.once('dialog', (dialog) => dialog.dismiss());
     await page.getByRole('tab', { name: 'My AKAs', exact: true }).click();
     await expect(name).toBeVisible();
@@ -191,6 +192,45 @@ test('profile names can be chosen from exact directory matches, edited and saved
     await expect(
         page.getByText('No name found for this AKA. Enter a display name manually.')
     ).toBeVisible();
+});
+
+test('profile lookup panel matches the field and icon button width and dismisses without changing the name', async ({
+    page
+}) => {
+    for (const width of [1280, 375]) {
+        await page.setViewportSize({ width, height: 900 });
+        await openStory(page, 'settings-accountsettings--profile-directory');
+        const trigger = page.getByRole('button', {
+            name: 'Find name in nodelist / pointlist',
+            exact: true
+        });
+        const name = page.getByRole('textbox', { name: 'Display name', exact: true });
+        await trigger.click();
+        const panel = page.locator('.profile-directory');
+        await expect(panel.locator('.profile-name-matches button')).toHaveCount(2);
+        const fieldBounds = (await page.locator('.profile-name-row').boundingBox())!;
+        const panelBounds = (await panel.boundingBox())!;
+        expect(Math.abs(panelBounds.x - fieldBounds.x)).toBeLessThanOrEqual(1);
+        expect(Math.abs(panelBounds.width - fieldBounds.width)).toBeLessThanOrEqual(1);
+        expect(panelBounds.x).toBeGreaterThanOrEqual(0);
+        expect(panelBounds.x + panelBounds.width).toBeLessThanOrEqual(width);
+        expect((await name.boundingBox())!.width).toBeLessThan(340);
+        await page
+            .getByRole('combobox', { name: 'AKA for name lookup' })
+            .selectOption('1:500/100.2');
+        await expect(panel.getByRole('status')).toHaveText(
+            'No name found for this AKA. Enter a display name manually.'
+        );
+        await page.keyboard.press('Escape');
+        await expect(panel).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+        await expect(name).toHaveValue('Alex Example');
+        await trigger.click();
+        await expect(panel).toBeVisible();
+        await page.getByText('Default AKA', { exact: true }).click();
+        await expect(panel).toHaveCount(0);
+        await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    }
 });
 
 test('account labels show display names in the header and sidebar', async ({ page }) => {

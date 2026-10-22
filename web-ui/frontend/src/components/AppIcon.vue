@@ -34,6 +34,7 @@ const paths = {
     collapse: 'M14 6l-6 6 6 6 M20 6l-6 6 6 6',
     expand: 'M4 6l6 6-6 6 M10 6l6 6-6 6',
     search: 'M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0 M15 15l6 6',
+    fileSearch: 'M5 3h9l5 5v3 M14 3v5h5 M5 3v18h6 M19 16a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M18 19l4 4',
     refresh: 'M20 7A9 9 0 1 0 21 15 M20 2v6h-6',
     reloadConfig: 'M4 3h10l4 4v4 M14 3v5h4 M4 3v18h6 M21 16a5 5 0 1 0-1 5 M22 12v5h-5',
     add: 'M12 4v16 M4 12h16',

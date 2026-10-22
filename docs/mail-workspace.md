@@ -10,7 +10,10 @@ subscription and AKA restrictions; layout preferences never grant access.
 
 Personal settings → Profile stores an account display name (up to 80 printable
 characters). Enter it manually or search the local nodelist/pointlist catalog
-using an approved AKA. Results must match that exact address; records from
+using an approved AKA. The orange document-search icon beside the compact name
+field opens a panel matching the combined field/button width. Changing its AKA
+refreshes the results; choosing a name closes the panel. Escape or an outside
+click dismisses it without changing the name. Results must match that exact address; records from
 different sources remain separate choices. Selecting a result fills the editable
 field, and Save publishes it. Clearing the name restores the login fallback.
 Directory refreshes do not overwrite a saved name or grant address ownership.

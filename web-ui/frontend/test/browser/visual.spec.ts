@@ -288,7 +288,7 @@ for (const theme of ['light', 'dark']) {
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
                 if (screen.profileDirectory) {
-                    await page.locator('.profile-directory button').click();
+                    await page.locator('.profile-name-search').click();
                     await expect(page.locator('.profile-name-matches button')).toHaveCount(2);
                 }
                 if (screen.scrollSelection) {

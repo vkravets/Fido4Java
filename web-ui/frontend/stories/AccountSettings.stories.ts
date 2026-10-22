@@ -22,6 +22,8 @@ const meta = {
             state.methods = { password: true, passkey: false };
             state.theme = ref(context.globals.theme === 'dark' ? 'dark' : 'light');
             state.profile.value = profile(context.parameters.role === 'ADMIN' ? 'ADMIN' : 'POINT');
+            if (context.parameters.multipleAkas)
+                state.profile.value.allowedAkas.push('1:500/100.2');
             state.profile.value.displayName =
                 context.parameters.displayName || state.profile.value.login;
             let savedName = state.profile.value.displayName;
@@ -85,7 +87,7 @@ export const AdministratorTemplates: Story = { parameters: { role: 'ADMIN' } };
 export const Profile: Story = { args: { initialTab: 'profile' } };
 export const ProfileDirectory: Story = {
     ...Profile,
-    parameters: { directoryNames: true, displayName: 'Alex Example' }
+    parameters: { directoryNames: true, displayName: 'Alex Example', multipleAkas: true }
 };
 export const Addresses: Story = { args: { initialTab: 'aka' } };
 export const Security: Story = { args: { initialTab: 'security' } };

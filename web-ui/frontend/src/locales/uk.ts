@@ -1,5 +1,8 @@
 export const ukrainian = {
     'Display name': 'Видиме ім’я',
+    'Name from lists': 'Ім’я зі списків',
+    'Close name lookup': 'Закрити пошук імені',
+    'Name for the interface and @cname': 'Ім’я для інтерфейсу та @cname',
     'Display name must contain at most 80 printable characters':
         'Видиме ім’я має містити щонайбільше 80 друкованих символів',
     'AKA for name lookup': 'AKA для пошуку імені',
