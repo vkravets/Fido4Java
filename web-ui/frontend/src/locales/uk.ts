@@ -1,4 +1,9 @@
 export const ukrainian = {
+    'Close shortcut help': 'Закрити довідку клавіш',
+    'Keyboard shortcuts are disabled. You can enable them in personal settings.':
+        'Гарячі клавіші вимкнено. Увімкнути їх можна в особистих налаштуваннях.',
+    'Keys depend on the current screen. Change them in My settings → Keyboard shortcuts.':
+        'Дії залежать від поточного екрана. Змінити клавіші: Особисті налаштування → Гарячі клавіші.',
     'Hide message list': 'Приховати список листів',
     'Show message list': 'Показати список листів',
     'Edit sender': 'Змінити відправника',

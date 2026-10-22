@@ -9,8 +9,8 @@ import {
     shortcutPreferences,
     useShortcuts
 } from '../shortcuts.ts';
-import { shortcutActions } from '../shortcut-actions.ts';
-import type { ShortcutAction, ShortcutProfile, ShortcutScope } from '../shortcut-actions.ts';
+import { shortcutActions, shortcutGroups as groups } from '../shortcut-actions.ts';
+import type { ShortcutAction, ShortcutProfile } from '../shortcut-actions.ts';
 import type { AppState } from '../state.ts';
 import SettingsSectionHeader from './SettingsSectionHeader.vue';
 import AppIcon from './AppIcon.vue';
@@ -22,15 +22,6 @@ const recording = ref<ShortcutAction>();
 const error = ref('');
 const dirty = computed(() => JSON.stringify(draft.value) !== JSON.stringify(model.value.value));
 const conflict = computed(() => shortcutConflict(draft.value));
-const groups: {
-    id: ShortcutScope;
-    label: 'Navigation and page' | 'Reading mail' | 'Writing mail' | 'Text editor';
-}[] = [
-    { id: 'global', label: 'Navigation and page' },
-    { id: 'mail', label: 'Reading mail' },
-    { id: 'compose', label: 'Writing mail' },
-    { id: 'editor', label: 'Text editor' }
-];
 watch(model.value, () => {
     draft.value = shortcutPreferences(model.value.value);
 });

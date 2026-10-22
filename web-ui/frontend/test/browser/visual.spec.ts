@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'shortcut-help', story: 'navigation-shortcuthelp--default', modal: true },
+    { name: 'shortcut-help-golded', story: 'navigation-shortcuthelp--golded', modal: true },
     {
         name: 'netmail-editor-list-toggle',
         story: 'mail-netmailview--editor',
@@ -395,6 +397,11 @@ for (const theme of ['light', 'dark']) {
                     await expect(page.locator('.address-options [role=status]')).toBeVisible();
                 if (screen.notification) {
                     await expect(page.locator('.message')).toBeVisible();
+                    await expect(page).toHaveScreenshot(filename);
+                    return;
+                }
+                if (screen.modal) {
+                    await expect(page.getByRole('dialog')).toBeVisible();
                     await expect(page).toHaveScreenshot(filename);
                     return;
                 }

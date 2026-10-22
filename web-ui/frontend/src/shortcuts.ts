@@ -135,9 +135,11 @@ type Client = {
 };
 export function createShortcuts(client?: Client) {
     const value = ref(shortcutPreferences({}));
+    const helpOpen = ref(false);
     let session = '';
     let generation = 0;
     async function load(token: string) {
+        helpOpen.value = false;
         session = token;
         const ticket = ++generation;
         value.value = shortcutPreferences({});
@@ -160,7 +162,7 @@ export function createShortcuts(client?: Client) {
             pending = false;
         }
     }
-    return { value, load, save };
+    return { value, helpOpen, load, save };
 }
 export type Shortcuts = ReturnType<typeof createShortcuts>;
 export const shortcutsKey: InjectionKey<Shortcuts> = Symbol('shortcuts');

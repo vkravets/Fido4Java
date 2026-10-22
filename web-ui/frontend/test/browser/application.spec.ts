@@ -13,6 +13,13 @@ test('keyboard reading updates the preview without dimming the list or starting 
     const title = await page.locator('.reader-heading h2').textContent();
     const list = (await page.locator('.split-list').elementHandle())!;
     const body = (await page.locator('.mail-body').elementHandle())!;
+    await page.keyboard.press('?');
+    await expect(
+        page.getByRole('dialog', { name: 'Keyboard shortcuts', exact: true })
+    ).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page.locator('.reader-heading h2')).toHaveText(title!);
     const requests: string[] = [];
     await page.route('**/rpc/ui', async (route) => {
         const method = (route.request().postDataJSON() as unknown[])[1] as string;

@@ -19,6 +19,7 @@ import NotificationBanner from './components/NotificationBanner.vue';
 import ApplicationHeader from './components/ApplicationHeader.vue';
 import NetmailView from './components/NetmailView.vue';
 import EchomailView from './components/EchomailView.vue';
+import ShortcutHelp from './components/ShortcutHelp.vue';
 import type { MailDraft } from '@rpc/bindings.mjs';
 const state = createState();
 const shortcuts = useShortcuts();
@@ -176,6 +177,7 @@ function openForward(draft: MailDraft) {
             'navigation-open': mobileNavigation
         }"
     >
+        <ShortcutHelp :administrator="state.profile.value.role === 'ADMIN'" />
         <Sidebar
             :profile="state.profile.value"
             :collapsed="workspace.value.value.collapsed"

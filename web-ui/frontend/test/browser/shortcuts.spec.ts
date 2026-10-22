@@ -1,6 +1,85 @@
 import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 
+test('question mark opens modal help, traps focus and preserves typing and underlying actions', async ({
+    page
+}) => {
+    await openStory(page, 'navigation-shortcuthelp--closed');
+    const open = page.getByRole('button', { name: 'Open help', exact: true });
+    await open.focus();
+    await page.keyboard.press('?');
+    const dialog = page.getByRole('dialog', { name: 'Keyboard shortcuts', exact: true });
+    await expect(dialog).toBeVisible();
+    const close = dialog.getByRole('button', { name: 'Close shortcut help' });
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dialog.locator('.help-content')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+    await page.keyboard.press('c');
+    await expect(page.getByText('Actions: 0', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+    await expect(open).toBeFocused();
+    for (const label of ['Message text', 'Rich text']) {
+        const field = page.getByRole('textbox', { name: label, exact: true });
+        await field.fill('');
+        await field.press('?');
+        await expect(dialog).not.toBeVisible();
+        if (label === 'Message text') await expect(field).toHaveValue('?');
+        else await expect(field).toHaveText('?');
+    }
+    await open.focus();
+    await page.keyboard.press('?');
+    await close.click();
+    await expect(dialog).not.toBeVisible();
+    await expect(open).toBeFocused();
+});
+
+test('help shows personal and GoldED bindings, and remains available when shortcuts are disabled', async ({
+    page
+}) => {
+    await openStory(page, 'navigation-shortcuthelp--personal');
+    const dialog = page.getByRole('dialog', { name: 'Keyboard shortcuts', exact: true });
+    await expect(dialog.locator('[data-help-action="mail.reply"]')).toContainText('Alt+Shift+Q');
+    await expect(dialog.locator('[data-help-action="mail.delete"]')).toContainText('Not assigned');
+    await expect(dialog.locator('[data-help-action="nav.station"]')).toHaveCount(0);
+    await openStory(page, 'navigation-shortcuthelp--golded');
+    await expect(dialog.locator('[data-help-action="mail.reply"] kbd')).toHaveText([
+        'Q',
+        'F4',
+        'Alt+Q'
+    ]);
+    await openStory(page, 'navigation-shortcuthelp--disabled');
+    await page.getByRole('button', { name: 'Open help', exact: true }).focus();
+    await page.keyboard.press('?');
+    await expect(dialog).toContainText('Keyboard shortcuts are disabled.');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('c');
+    await expect(page.getByText('Actions: 0', { exact: true })).toBeVisible();
+});
+
+test('help stays centered within a short mobile viewport and scrolls its own content', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 375, height: 540 });
+    await openStory(page, 'navigation-shortcuthelp--default', 'dark', 'uk');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const bounds = await dialog.boundingBox();
+    expect(Math.abs(bounds!.x + bounds!.width / 2 - 375 / 2)).toBeLessThan(2);
+    expect(Math.abs(bounds!.y + bounds!.height / 2 - 540 / 2)).toBeLessThan(2);
+    expect(bounds!.y).toBeGreaterThanOrEqual(15);
+    expect(bounds!.height).toBeLessThanOrEqual(510);
+    const content = dialog.locator('.help-content');
+    await content.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+    });
+    expect(await content.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(dialog.locator('[data-help-action="editor.preview"]')).toBeInViewport();
+    await expect(dialog.getByRole('button')).toBeInViewport();
+});
+
 for (const story of [
     'mail-netmailview--long-reading',
     'mail-netmailview--long-reading-below',

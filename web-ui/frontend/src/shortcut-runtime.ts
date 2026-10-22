@@ -74,12 +74,7 @@ export function installShortcuts(app: App, model: Shortcuts) {
     });
     function keyboard(event: KeyboardEvent) {
         const preferences = model.value.value;
-        if (
-            !preferences.enabled ||
-            event.defaultPrevented ||
-            event.isComposing ||
-            event.getModifierState('AltGraph')
-        )
+        if (event.defaultPrevented || event.isComposing || event.getModifierState('AltGraph'))
             return;
         const focused = event.target instanceof Element ? event.target : null;
         if (focused?.closest('[data-shortcut-recorder], [data-shortcuts-disabled]')) return;
@@ -89,6 +84,16 @@ export function installShortcuts(app: App, model: Shortcuts) {
             )
         )
             return;
+        const editable = !!focused?.closest(
+            'input, textarea, select, [contenteditable="true"], [role="textbox"]'
+        );
+        if (event.key === '?' && !event.ctrlKey && !event.altKey && !event.metaKey && !editable) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!event.repeat) model.helpOpen.value = true;
+            return;
+        }
+        if (!preferences.enabled) return;
         if (event.key === 'Escape' && focused?.closest('details[open]')) return;
         if (
             event.key === 'Escape' &&
@@ -103,9 +108,6 @@ export function installShortcuts(app: App, model: Shortcuts) {
             return;
         const key = eventBinding(event);
         if (!key) return;
-        const editable = !!focused?.closest(
-            'input, textarea, select, [contenteditable="true"], [role="textbox"]'
-        );
         const composer = [...document.querySelectorAll<HTMLElement>('.mail-composer')].find(
             available
         );

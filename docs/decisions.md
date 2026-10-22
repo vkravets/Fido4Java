@@ -13,6 +13,12 @@ as the startup page. This is stored in the account-owned `workspace` UI document
 as `startupPage` and applies after session restoration, reload or a new login.
 Changing it does not navigate away from settings; absent/invalid values use Netmail.
 
+`?` outside editable fields opens a centered, viewport-bounded shortcut reference
+with the active preset and personal bindings. It remains available when shortcuts
+are disabled. The modal blocks underlying actions, scrolls internally, closes with
+Escape or its close button and restores focus. It never consumes typed question
+marks or interrupts another modal or shortcut recording.
+
 The node/point directory browser is shared by ADMIN and POINT users. Its local
 catalog search API is deliberately public, also serving pre-login registration
 suggestions. Only imported directory metadata is exposed: no import/download,

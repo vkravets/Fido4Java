@@ -1,4 +1,10 @@
 export type ShortcutScope = 'global' | 'mail' | 'compose' | 'editor';
+export const shortcutGroups = [
+    { id: 'global', label: 'Navigation and page' },
+    { id: 'mail', label: 'Reading mail' },
+    { id: 'compose', label: 'Writing mail' },
+    { id: 'editor', label: 'Text editor' }
+] as const;
 export const shortcutActions = [
     { id: 'nav.netmail', label: 'Netmail', scope: 'global', keys: ['Alt+1'] },
     { id: 'nav.echo', label: 'Echomail', scope: 'global', keys: ['Alt+2'] },
