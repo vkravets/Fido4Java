@@ -19,6 +19,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Writing: Story = {};
+export const Focused: Story = {
+    args: { modelValue: 'Hello All.\n\n\nVova Kravets' },
+    play: async ({ canvasElement }) => {
+        canvasElement.querySelector<HTMLElement>('.cm-content')!.focus();
+    }
+};
 export const ReadOnly: Story = { args: { disabled: true } };
 
 export const Source: Story = { args: { initialMode: 'source' } };

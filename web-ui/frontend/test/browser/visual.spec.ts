@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'editor-focused-caret', story: 'mail-fidoeditor--focused' },
     {
         name: 'composer-recipient-search',
         story: 'mail-mailcomposer--recipient-search',

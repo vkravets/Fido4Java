@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Compartment, EditorState, StateField } from '@codemirror/state';
 import type { Range } from '@codemirror/state';
-import { Decoration, EditorView, keymap, WidgetType } from '@codemirror/view';
+import { Decoration, drawSelection, EditorView, keymap, WidgetType } from '@codemirror/view';
 import type { DecorationSet } from '@codemirror/view';
 import {
     defaultKeymap,
@@ -129,6 +129,7 @@ onMounted(() => {
                         ?.content || ''
                 ),
                 history(),
+                drawSelection(),
                 keymap.of([...defaultKeymap, ...historyKeymap]),
                 EditorView.lineWrapping,
                 accessibility.of(attributes()),

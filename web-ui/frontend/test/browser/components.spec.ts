@@ -798,3 +798,37 @@ test('recipient lookup fills point names and netmail addresses while keeping ech
         page.getByRole('combobox', { name: 'Recipient address', exact: true })
     ).toHaveCount(0);
 });
+
+test('focused editor draws a themed caret that follows keyboard navigation and typing', async ({
+    page
+}) => {
+    for (const theme of ['light', 'dark']) {
+        await story(page, 'mail-fidoeditor--focused', theme);
+        const content = page.locator('.cm-content');
+        const caret = page.locator('.cm-cursor-primary');
+        await expect(content).toBeFocused();
+        await expect(caret).toBeVisible();
+        await expect(caret).toHaveCSS(
+            'border-left-color',
+            theme === 'dark' ? 'rgb(242, 198, 107)' : 'rgb(36, 36, 36)'
+        );
+        const start = (await caret.boundingBox())!;
+        await content.press('ArrowRight');
+        await expect.poll(async () => (await caret.boundingBox())!.x).toBeGreaterThan(start.x);
+        await content.press('Control+End');
+        await content.press('Enter');
+        await content.press('X');
+        await expect(content.locator('.cm-line').last()).toHaveText('X');
+        await expect.poll(async () => (await caret.boundingBox())!.y).toBeGreaterThan(start.y);
+        await page.getByRole('button', { name: 'Source text', exact: true }).click();
+        await content.focus();
+        await expect(caret).toBeVisible();
+        await expect(caret).toHaveCSS(
+            'border-left-color',
+            theme === 'dark' ? 'rgb(242, 198, 107)' : 'rgb(36, 36, 36)'
+        );
+        await page.getByRole('button', { name: 'Bold', exact: true }).focus();
+        await expect(page.locator('.cm-editor')).not.toHaveClass(/cm-focused/);
+        await expect(caret).not.toBeVisible();
+    }
+});
