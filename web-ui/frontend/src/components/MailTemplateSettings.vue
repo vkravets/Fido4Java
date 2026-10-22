@@ -30,6 +30,8 @@ const tokens = [
     '@cname',
     '@caddr',
     '@tname',
+    '@tpseudo',
+    '@cfname',
     '@taddr',
     '@oname',
     '@oaddr',

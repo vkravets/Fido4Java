@@ -69,3 +69,25 @@ export const EchoRecipientSearch: Story = {
     ...RecipientSearch,
     args: { modelValue: { ...netmailDraft, mailbox: 1, area: 'TEST', toName: 'Point Owner' } }
 };
+
+const goldedDraft = {
+    ...netmailDraft,
+    templateInitialized: false,
+    body: '',
+    originalName: 'Alice Example',
+    originalAddress: '1:500/101.2',
+    originalDate: '18 Oct 26 12:30:00',
+    originalBody: 'Welcome to FidoNet!'
+};
+export const GoldedNew: Story = {
+    args: { modelValue: { ...goldedDraft, composeKind: 'new', replyTo: undefined, toName: 'All' } }
+};
+export const GoldedReply: Story = {
+    args: { modelValue: { ...goldedDraft, composeKind: 'reply' } }
+};
+export const GoldedQuoted: Story = {
+    args: { modelValue: { ...goldedDraft, composeKind: 'quoted' } }
+};
+export const GoldedForward: Story = {
+    args: { modelValue: { ...goldedDraft, composeKind: 'forward', replyTo: undefined } }
+};

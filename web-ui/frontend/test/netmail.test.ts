@@ -81,7 +81,7 @@ test('opens the full message, marks it read and replies from the addressed appro
             ...reader.draft.value!,
             kind: 'new',
             echo: false
-        }).body.endsWith('Alex Example')
+        }).body.endsWith('Alex')
     );
     assert.equal(reader.draft.value?.toAddress, '1:500/101');
     assert.equal(reader.draft.value?.replyTo, '1:500/101 abc');

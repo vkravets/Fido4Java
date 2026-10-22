@@ -161,6 +161,16 @@ is still untouched. Saved drafts retain their text and original reply context;
 opening an existing draft does not reapply a template. Reader original context
 is data, not permission to author mail or inject transport kludges.
 
+The built-in defaults follow GoldED+'s internal template: `Hello <first name>!`
+(or `Hello everybody!` for All or an empty recipient), a first-name signature,
+the original date/author in replies, and the insertion point above quoted text.
+Forwards put the original author/address/date and unchanged message first,
+then the greeting and insertion point. These are adapted to the persisted JFtn
+draft context: the original date already includes time; original recipient and
+source-area headings are omitted because those values are not retained.
+Personal templates, default rules and already saved draft bodies are unchanged.
+Reference: [GoldED+ built-in template](https://github.com/golded-plus/golded-plus/blob/1a251c6375081453a410bb8d647be120b8902de3/golded3/getpls.h).
+
 Supported GoldED+-inspired tokens:
 
 | Token | Value |
@@ -170,6 +180,7 @@ Supported GoldED+-inspired tokens:
 | `@tname`, `@tfname`, `@taddr` | Recipient, first name, address |
 | `@dname`, `@daddr` | Recipient aliases |
 | `@oname`, `@ofname`, `@oaddr`, `@odate` | Original author, first name, address, date |
+| `@tpseudo` | Recipient first name; `everybody` for All or an empty recipient |
 | `@subject`, `@cecho`, `@areaname` | Subject and conference |
 | `@cdate`, `@ctime` | Composition date/time |
 | `@quote`, `@message` | Quoted or unchanged original text |

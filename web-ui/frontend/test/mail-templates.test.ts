@@ -43,7 +43,7 @@ test('templates expand GoldED-style data, conditions and quotes once with a prec
     };
     const result = expandTemplate(builtInTemplates[2]!, context);
     assert.ok(result.body.includes('> @cname\n> Original'));
-    assert.equal(result.body.slice(result.cursor), '\n\nAlex Example');
+    assert.equal(result.body.slice(result.cursor), '\n> @cname\n> Original\n\nAlex');
     const template = {
         ...builtInTemplates[0]!,
         body: '@newNew\n@echoEcho\n@netNet\n@@cname\n@caddr @position!'
@@ -90,4 +90,58 @@ test('escaped cursor tokens remain literal and values never expand recursively',
         () => expandTemplate({ ...builtInTemplates[0]!, body: '@constructor' }, context),
         /Unsupported/
     );
+});
+
+test('GoldED defaults greet by first name, sign with the sender first name and place replies above quotes', () => {
+    const context = {
+        echo: false,
+        fromName: 'Alex Example',
+        fromAddress: '1:500/100.1',
+        toName: 'Bob Example',
+        toAddress: '1:500/101',
+        subject: 'Test',
+        area: '',
+        originalName: 'Bob Example',
+        originalAddress: '1:500/101',
+        originalDate: '20 Oct 26 10:00:00',
+        originalBody: 'Original message'
+    };
+    const expected = [
+        'Hello Bob!\n\n<cursor>\n\nAlex',
+        'Hello Bob!\n\nReplying to a msg dated 20 Oct 26 10:00:00, from Bob Example.\n\n<cursor>\n\nAlex',
+        'Hello Bob!\n\n20 Oct 26 10:00:00, Bob Example wrote:\n\n<cursor>\n> Original message\n\nAlex',
+        '* Forwarded by Alex Example (1:500/100.1).\n* Originally by: Bob Example (1:500/101), 20 Oct 26 10:00:00.\n\nOriginal message\n\nHello Bob!\n\n<cursor>\n\nAlex'
+    ];
+    builtInTemplates.forEach((template, index) => {
+        const { body, cursor } = expandTemplate(template, { ...context, kind: template.kind });
+        assert.equal(body.slice(0, cursor) + '<cursor>' + body.slice(cursor), expected[index]);
+    });
+    for (const toName of ['All', 'ALL', '']) {
+        assert.ok(
+            expandTemplate(builtInTemplates[0]!, {
+                ...context,
+                kind: 'new',
+                toName
+            }).body.startsWith('Hello everybody!')
+        );
+    }
+});
+
+test('updated built-ins preserve saved personal templates and their default rules', async () => {
+    const personal = {
+        id: 'personal',
+        name: 'My greeting',
+        kind: 'new' as const,
+        body: 'Hi @tname.\n@position\n@cname'
+    };
+    const rules = [{ kind: 'new' as const, aka: '', area: '', template: 'personal' }];
+    const store = createMailTemplates({
+        uiDocument: async () => JSON.stringify({ version: 1, custom: [personal], rules }),
+        saveUiDocument: async () => {
+            throw new Error('Loading defaults must not write preferences');
+        }
+    });
+    await store.load('session');
+    assert.deepEqual(store.choose('new', '1:500/100', ''), personal);
+    assert.deepEqual(store.rules.value, rules);
 });

@@ -29,24 +29,29 @@ export interface TemplateContext {
     date?: Date;
 }
 export const builtInTemplates: MailTemplate[] = [
-    { id: 'new', name: 'New message', kind: 'new', body: 'Hello @tname.\n\n@position\n\n@cname' },
+    {
+        id: 'new',
+        name: 'New message',
+        kind: 'new',
+        body: 'Hello @tpseudo!\n\n@position\n\n@cfname'
+    },
     {
         id: 'reply',
         name: 'Short reply',
         kind: 'reply',
-        body: 'Hello @oname.\n\n@position\n\n@cname'
+        body: 'Hello @tpseudo!\n\nReplying to a msg dated @odate, from @oname.\n\n@position\n\n@cfname'
     },
     {
         id: 'quoted',
         name: 'Quoted reply',
         kind: 'quoted',
-        body: 'Hello @oname.\n\n@quote\n\n@position\n\n@cname'
+        body: 'Hello @tpseudo!\n\n@odate, @oname wrote:\n\n@position\n@quote\n\n@cfname'
     },
     {
         id: 'forward',
         name: 'Forward',
         kind: 'forward',
-        body: 'Forwarded from @oname (@oaddr), @odate:\n\n@message\n\n@position\n\n@cname'
+        body: '* Forwarded by @cname (@caddr).\n* Originally by: @oname (@oaddr), @odate.\n\n@message\n\nHello @tpseudo!\n\n@position\n\n@cfname'
     }
 ];
 export function mailTemplate(value: unknown): MailTemplate {
@@ -82,6 +87,10 @@ export function expandTemplate(template: MailTemplate, context: TemplateContext)
         faddr: context.fromAddress,
         tname: context.toName,
         tfname: context.toName.split(' ')[0]!,
+        tpseudo:
+            /^all$/i.test(context.toName.trim()) || !context.toName.trim()
+                ? 'everybody'
+                : context.toName.trim().split(/[ @.]/)[0]!,
         taddr: context.toAddress,
         dname: context.toName,
         daddr: context.toAddress,

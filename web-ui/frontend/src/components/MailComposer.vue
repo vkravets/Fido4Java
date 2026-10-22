@@ -38,7 +38,7 @@ function context() {
         echo: draft.value.mailbox === 1,
         fromName: draft.value.fromName,
         fromAddress: draft.value.fromAddress,
-        toName: draft.value.toName || 'there',
+        toName: draft.value.toName,
         toAddress: draft.value.toAddress,
         subject: draft.value.subject,
         area: draft.value.area,

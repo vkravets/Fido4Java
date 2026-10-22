@@ -652,7 +652,7 @@ test('forwarding copies original text into a new draft without reusing reply ide
     await page.getByRole('button', { name: 'Forward', exact: true }).click();
     await expect(page.getByLabel('Subject', { exact: true })).toHaveValue(/^Fwd:/);
     await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(
-        'Forwarded from'
+        'Forwarded by'
     );
     await expect(page.locator('.mail-composer')).not.toContainText('Reply to message:');
     await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('');
@@ -679,7 +679,7 @@ test('starting another draft reinitializes its template without retaining previo
     await editor.fill('Changed reply');
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'New netmail', exact: true }).click();
-    await expect(editor).toContainText('Hello there.');
+    await expect(editor).toContainText('Hello everybody!');
     await expect(editor).not.toContainText('Changed reply');
     await expect(page.locator('.mail-composer')).not.toContainText('Reply to message:');
 });
@@ -736,7 +736,7 @@ test('desktop More menu supports short replies and dismisses with Escape', async
     await menu.locator('summary').click();
     await page.getByRole('button', { name: 'Short reply', exact: true }).click();
     const text = page.getByRole('textbox', { name: 'Message text', exact: true });
-    await expect(text).toContainText('Hello Alice Example.');
+    await expect(text).toContainText('Hello Alice!');
     await expect(text).not.toContainText('Your station is ready');
     await expect(page.locator('.mail-composer')).toContainText('Reply to message');
 });
@@ -759,3 +759,18 @@ for (const width of [1280, 390]) {
         await expect(page.locator('.split-pane')).toHaveClass(/below/);
     });
 }
+
+test('GoldED quoted replies start typing above the quote and retain manually edited text', async ({
+    page
+}) => {
+    await openStory(page, 'mail-mailcomposer--golded-quoted');
+    const editor = page.getByRole('textbox', { name: 'Message text', exact: true });
+    await expect(editor).toBeFocused();
+    await page.keyboard.type('My answer');
+    const text = await editor.innerText();
+    expect(text.indexOf('My answer')).toBeLessThan(text.indexOf('> Welcome to FidoNet!'));
+    expect(text).toContain('18 Oct 26 12:30:00, Alice Example wrote:');
+    expect(text.trimEnd()).toMatch(/Test$/);
+    await page.getByLabel('Recipient name', { exact: true }).fill('Other Recipient');
+    await expect.poll(() => editor.innerText()).toBe(text);
+});

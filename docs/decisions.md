@@ -786,6 +786,11 @@ RPC account database rather than installation configuration. Operator JSON files
 are public presentation data and may contain no secrets. Details and limits:
 [Mail workspace](mail-workspace.md).
 
+The four built-in mail templates follow GoldED+'s default greeting, first-name
+signature, reply attribution, quote insertion point and forward structure,
+adapted to JFtn's retained draft context. Updating built-ins never rewrites
+personal templates, their rules or saved draft bodies.
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the

@@ -4,6 +4,11 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'golded-template-new', story: 'mail-mailcomposer--golded-new' },
+    { name: 'golded-template-reply', story: 'mail-mailcomposer--golded-reply' },
+    { name: 'golded-template-quoted', story: 'mail-mailcomposer--golded-quoted' },
+    { name: 'golded-template-forward', story: 'mail-mailcomposer--golded-forward' },
+
     { name: 'editor-focused-caret', story: 'mail-fidoeditor--focused' },
     {
         name: 'composer-recipient-search',
