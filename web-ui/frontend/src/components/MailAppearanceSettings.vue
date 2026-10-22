@@ -220,7 +220,7 @@ const labels = {
                         {{ t('Delete theme') }}
                     </button>
                 </div>
-                <label
+                <label class="theme-import"
                     >{{ t('Import theme')
                     }}<input
                         type="file"
@@ -270,6 +270,12 @@ const labels = {
 .theme-color-grid input {
     height: 40px;
     padding: 4px;
+}
+.appearance-layout .theme-import {
+    margin-top: 16px;
+}
+.theme-import input::file-selector-button {
+    margin-inline-end: 12px;
 }
 hr {
     border: 0;
