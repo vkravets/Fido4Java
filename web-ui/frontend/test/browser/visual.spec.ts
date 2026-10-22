@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'echo-partial-tree-warning', story: 'mail-echomailview--partial-tree' },
     {
         name: 'netmail-scrolled-selection',
         story: 'mail-netmailview--long-reading',

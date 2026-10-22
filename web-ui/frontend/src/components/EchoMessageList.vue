@@ -142,7 +142,8 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         </p>
         <p
             v-if="mode === 'tree' && hasMore"
-            class="muted"
+            class="message warning echo-tree-warning"
+            role="status"
         >
             {{ t('The tree includes loaded messages. Load more to see earlier or later replies.') }}
         </p>
@@ -232,3 +233,14 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         </button>
     </section>
 </template>
+<style scoped>
+.echo-tree-warning {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+}
+@media (min-width: 701px) {
+    .echo-tree-warning {
+        margin-inline: 12px;
+    }
+}
+</style>

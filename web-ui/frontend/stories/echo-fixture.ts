@@ -68,7 +68,13 @@ export const echoDraft: MailDraft = {
 };
 
 export function echoClient(
-    options: { empty?: boolean; readOnly?: boolean; noAreas?: boolean; dense?: boolean } = {}
+    options: {
+        empty?: boolean;
+        readOnly?: boolean;
+        noAreas?: boolean;
+        dense?: boolean;
+        hasMore?: boolean;
+    } = {}
 ): EchoClient {
     const messages = options.empty ? [] : echoMessages.map((item) => ({ ...item }));
     if (options.dense) {
@@ -119,7 +125,7 @@ export function echoClient(
                           .map((item) => ({ ...item }))
                     : [],
             nextId: messages[0]?.id || 0,
-            hasMore: false
+            hasMore: options.hasMore || false
         }),
         message: async (_token, _box, _area, id) => ({
             ...messages.find((item) => mailId(item.id) === mailId(id))!

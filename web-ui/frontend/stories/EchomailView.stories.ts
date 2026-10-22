@@ -52,6 +52,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Tree: Story = {};
+export const PartialTree: Story = {
+    args: { initialMode: 'tree' },
+    parameters: { echo: { hasMore: true } }
+};
 export const Flat: Story = { args: { initialMode: 'flat' } };
 export const Reading: Story = { args: { initialMessage: '9007199254740994' } };
 export const TreeRootReading: Story = {
