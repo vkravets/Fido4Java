@@ -2,6 +2,41 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('mobile netmail and echo toolbar buttons stay icon-only in one row on narrow screens', async ({
+    page
+}) => {
+    for (const width of [320, 375]) {
+        await page.setViewportSize({ width, height: 812 });
+        for (const locale of ['en', 'uk']) {
+            for (const [story, count] of [
+                ['mail-netmailview--inbox', 2],
+                ['mail-echomailview--flat', 3]
+            ] as const) {
+                await openStory(page, story, 'dark', locale);
+                const buttons = page.locator('.mail-header-actions button');
+                await expect(buttons).toHaveCount(count);
+                const boxes = [];
+                for (const button of await buttons.all()) {
+                    await expect(button).toBeVisible();
+                    await expect(button).toHaveAttribute('aria-label', /.+/);
+                    expect(await button.innerText()).toBe('');
+                    const box = (await button.boundingBox())!;
+                    expect(box.width).toBe(44);
+                    expect(box.height).toBe(44);
+                    expect(box.x).toBeGreaterThanOrEqual(0);
+                    expect(box.x + box.width).toBeLessThanOrEqual(width);
+                    boxes.push(box);
+                }
+                expect(
+                    Math.max(...boxes.map((box) => box.y)) - Math.min(...boxes.map((box) => box.y))
+                ).toBeLessThan(1);
+                await buttons.first().click();
+                await expect(page.locator('.mail-composer')).toBeVisible();
+            }
+        }
+    }
+});
+
 test('send queue icon has the same box and centering in both desktop menu states', async ({
     page
 }) => {

@@ -138,14 +138,18 @@ const index = computed(() =>
                     <p class="eyebrow">{{ t('MAIL') }}</p>
                     <h1>{{ reader.folder.value === 'drafts' ? t('Drafts') : t('Netmail') }}</h1>
                 </div>
-                <div class="actions">
+                <div class="actions mail-header-actions">
                     <button
                         class="primary"
+                        :aria-label="t('New netmail')"
+                        :title="t('New netmail')"
                         :disabled="state.busy.value || !state.profile.value?.allowedAkas.length"
                         v-shortcut="'mail.new'"
                         @click="reader.edit()"
                     >
-                        <AppIcon name="edit" />{{ t('New netmail') }}
+                        <AppIcon name="edit" /><span class="mail-action-label">{{
+                            t('New netmail')
+                        }}</span>
                     </button>
                     <button
                         class="secondary"
@@ -155,9 +159,7 @@ const index = computed(() =>
                         v-shortcut="'page.refresh'"
                         @click="state.run(refresh)"
                     >
-                        <AppIcon name="refresh" /><span class="desktop-hidden">{{
-                            t('Refresh')
-                        }}</span>
+                        <AppIcon name="refresh" />
                     </button>
                 </div>
             </header>

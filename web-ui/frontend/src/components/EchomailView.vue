@@ -132,14 +132,18 @@ const nextUnread = computed(() =>
                     <h1>{{ t('Echomail') }}</h1>
                     <p class="muted">{{ t('Read and discuss in your subscribed conferences.') }}</p>
                 </div>
-                <div class="actions">
+                <div class="actions mail-header-actions">
                     <button
                         class="primary"
+                        :aria-label="t('New echomail')"
+                        :title="t('New echomail')"
                         :disabled="state.busy.value || !reader.authors.value.length"
                         v-shortcut="'mail.new'"
                         @click="reader.edit()"
                     >
-                        <AppIcon name="edit" />{{ t('New echomail') }}
+                        <AppIcon name="edit" /><span class="mail-action-label">{{
+                            t('New echomail')
+                        }}</span>
                     </button>
                     <button
                         class="secondary"
@@ -148,9 +152,7 @@ const nextUnread = computed(() =>
                         :title="t('Echo drafts')"
                         @click="state.run(reader.loadDrafts)"
                     >
-                        <AppIcon name="file" /><span class="desktop-hidden">{{
-                            t('Echo drafts')
-                        }}</span>
+                        <AppIcon name="file" />
                     </button>
                     <button
                         class="secondary"
@@ -160,9 +162,7 @@ const nextUnread = computed(() =>
                         v-shortcut="'page.refresh'"
                         @click="state.run(refresh)"
                     >
-                        <AppIcon name="refresh" /><span class="desktop-hidden">{{
-                            t('Refresh')
-                        }}</span>
+                        <AppIcon name="refresh" />
                     </button>
                 </div>
             </header>

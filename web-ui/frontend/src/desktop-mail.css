@@ -51,6 +51,21 @@ summary:has(> .app-icon) {
     padding: 8px 0;
 }
 @media (max-width: 700px) {
+    .mail-header-actions {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+    .mail-header-actions .mail-action-label {
+        display: none;
+    }
+    .mail-header-actions button {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+    }
     .topbar .text-button::before {
         display: none;
     }

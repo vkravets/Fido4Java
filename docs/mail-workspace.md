@@ -51,6 +51,8 @@ to messages** returns to the retained list and scroll position. Leaving a change
 unsaved draft asks for confirmation. The mobile header opens the application
 menu; node administration remains available only to administrators.
 This compact-layout pass targets desktop; a broader mobile redesign is deferred.
+Mobile Netmail and Echomail toolbars use a single row of icon-only New, Refresh
+and (for echoes) Drafts buttons, retaining accessible names and 44-pixel targets.
 
 **Search messages** normally filters the currently loaded headers and bounded text
 excerpts. It is not a full archive or full body search. Load more messages to
