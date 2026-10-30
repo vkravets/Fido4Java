@@ -7,6 +7,11 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Add an expandable read-only technical details block to the netmail and echomail
+  reader for kludges (for example MSGID, REPLY and CHRS). Expose the required
+  metadata through RPC; keep it separate from the editable body and quoted text.
+  The UI currently has no kludge viewer.
+
 - Implement author-initiated echomail crossposting to multiple selected areas.
   UI/RPC currently submit one area only; there is no selector or XC/XP processing.
   Add structured draft targets, whole-list authorization, durable per-area MSGIDs
