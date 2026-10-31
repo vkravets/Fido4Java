@@ -145,22 +145,40 @@ the profile (this can require administrative package installation). CI uses
 
 ## macOS: prerequisites and bootstrap
 
-Install Git/Xcode Command Line Tools, Python 3.12+ and the native Thrift build
-dependencies. If using Homebrew, the expected packages are Python, Boost, bison,
-flex, libtool and pkg-config; Homebrew's bison/flex may need their `bin` paths
-explicitly added ahead of Apple's older system tools. For example, with Homebrew
-already installed and initialized:
+Install Xcode Command Line Tools (`xcode-select --install`, then finish the
+installation) and Homebrew from https://brew.sh. Clone the repository, including
+the latest commits. On a new Intel or Apple Silicon Mac, the macOS entry point
+installs missing Homebrew prerequisites when explicitly requested, puts Homebrew's
+bison/flex ahead of Apple's tools, and delegates pinned JDK/Node/Thrift preparation
+to the shared bootstrap. It does not install Homebrew itself or change shell profiles.
 
 ```bash
-brew install python@3.13 boost bison flex libtool pkg-config
-export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
-export CPPFLAGS="-I$(brew --prefix boost)/include ${CPPFLAGS:-}"
-export LDFLAGS="-L$(brew --prefix boost)/lib ${LDFLAGS:-}"
-export JFTN_BOOTSTRAP_PYTHON="$(brew --prefix python@3.13)/bin/python3.13"
-bash tools/bootstrap.sh --frontend
+git clone https://github.com/vkravets/Fido4Java.git jftn
+cd jftn
+# Use Bash for the generated environment profile; macOS Terminal defaults to zsh.
+bash
+bash tools/bootstrap-macos.sh --install-prerequisites --frontend --browsers
 source .dev-tools/dev-env.sh
+bash tools/bootstrap-macos.sh --check
 ./gradlew --version
+./gradlew build --no-daemon --console=plain
 ```
+
+In later terminals, enter Bash and source `.dev-tools/dev-env.sh` again. The wrapper
+also accepts shared bootstrap options such as `--offline` and `--system-java`.
+Without `--install-prerequisites`, missing Homebrew dependencies produce an error
+instead of installing packages. Homebrew prerequisites are host dependencies,
+not pinned tool downloads. Do not copy Windows `.dev-tools`, `node_modules`, build
+outputs or generated environment profiles to the Mac; recreate them for its native
+architecture. SSH/GitHub authentication and editor setup remain separate.
+
+Install a working Linux Docker/Podman engine separately for interoperability and
+visual tests. VRT uses Linux/amd64 even on Apple Silicon and needs working emulation.
+For a copied test station, stop the old node first, preserve all operational state,
+use the portable no-JRE distribution with a native local JDK and its `jftn.sh`
+launcher, and review configured Windows paths before starting it. Packaged JREs
+currently cover Windows/Linux x64, not macOS. Do not use a copied Windows JRE on
+the Mac. Never run both copies of the same station simultaneously.
 
 The JDK's macOS `Contents/Home` layout is handled by the manifest. This checkout's
 bootstrap logic and archive safeguards have unit tests, but a successful native
