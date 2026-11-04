@@ -69,6 +69,7 @@ class UserMailStateStoreTest {
     void originalReplyContextSurvivesReopenAndRemainsOwnerScoped() throws Exception {
         Path path = root.resolve("context");
         MailDraft draft = draft("reply").setOriginalBody("Original *plain text*")
+                                        .setOriginalKludgesTruncated(true)
                                         .setOriginalKludges(List.of("\1MSGID: 1:500/101 1234abcd",
                                                                     "\1X-UNKNOWN: first",
                                                                     "\1X-UNKNOWN: second"))

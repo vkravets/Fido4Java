@@ -806,8 +806,8 @@ class UiRpcIntegrationTest {
 
     @Test
     void sendsNetmailIdempotentlyPersistsDraftsAndDoesNotExposePasswords() throws Exception {
-        MailDraft draft = draft(Mailbox.OUTBOX).setOriginalKludges(List.of("\1MSGID: forged-id",
-                                                                           "\1CHRS: forged-encoding"));
+        MailDraft draft = draft(Mailbox.OUTBOX).setOriginalKludges(List.of("\1X: "
+                + "x".repeat(59996))).setOriginalKludgesTruncated(true);
         ui.saveDraft(token, draft);
         assertEquals(1, ui.drafts(token).size());
         transport.close();
@@ -824,6 +824,7 @@ class UiRpcIntegrationTest {
                      ui.send(token, draft.deepCopy().setOriginalKludges(List.of()), "request-1"));
         MailDraft withoutSnapshot = draft.deepCopy();
         withoutSnapshot.unsetOriginalKludges();
+        withoutSnapshot.unsetOriginalKludgesTruncated();
         assertEquals(id, ui.send(token, withoutSnapshot, "request-1"));
         assertEquals(1, ui.pendingNetmail(token));
         ui.processMail(token);

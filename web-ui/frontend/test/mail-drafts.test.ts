@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { forwardDraft } from '../src/mail-drafts.ts';
+import { forwardDraft, originalKludgeSnapshot } from '../src/mail-drafts.ts';
 import type { MailItem, UserProfile } from '../../build/frontend-generated/bindings.mjs';
 test('forwarding creates new netmail from a permitted identity and leaves the original unchanged', () => {
     const item = {
@@ -29,4 +29,26 @@ test('forwarding creates new netmail from a permitted identity and leaves the or
     assert.notEqual(draft.originalKludges, item.kludges);
     assert.equal(item.messageId, 'original');
     assert.equal(item.body, 'Original');
+});
+
+test('reference snapshots keep whole ordered lines within the UTF-8 limit without changing the source', () => {
+    const lines = ['\u0001X: ' + 'Ж'.repeat(14998), '\u0001Y: ' + 'Ж'.repeat(14998)];
+    const source = { kludges: lines } as MailItem;
+    const exact = originalKludgeSnapshot(source);
+    assert.deepEqual(exact.originalKludges, lines);
+    assert.equal(exact.originalKludgesTruncated, undefined);
+    assert.equal(new TextEncoder().encode(lines.join('')).length, 60000);
+    const overflowing = { kludges: [...lines, '\u0001Z: next'] } as MailItem;
+    assert.deepEqual(originalKludgeSnapshot(overflowing), {
+        originalKludges: lines,
+        originalKludgesTruncated: true
+    });
+    assert.equal(overflowing.kludges!.length, 3);
+    assert.deepEqual(
+        originalKludgeSnapshot({ kludges: ['\u0001X: ' + 'Ж'.repeat(30000)] } as MailItem),
+        {
+            originalKludges: [],
+            originalKludgesTruncated: true
+        }
+    );
 });

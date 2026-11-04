@@ -3,6 +3,27 @@ import { ukrainian } from '../../src/locales/uk.ts';
 import { openStory } from './story.ts';
 import type { MailDraft } from '../../../build/frontend-generated/bindings.mjs';
 
+for (const state of ['truncated', 'omitted']) {
+    test(`oversized ${state} kludge references allow saving and sending`, async ({ page }) => {
+        await openStory(page, `mail-mailcomposer--${state}-reference`);
+        await expect(page.locator('.composer-kludge-notice')).toBeVisible();
+        await expect(page.locator('.mail-kludge-list')).toHaveCount(state === 'truncated' ? 1 : 0);
+        for (const action of ['save', 'send']) {
+            await page.locator(`[data-shortcut="compose.${action}"]`).click();
+            const capture = page.getByTestId(action === 'save' ? 'saved-draft' : 'submitted-draft');
+            await expect(capture).not.toHaveValue('');
+            const draft = JSON.parse(await capture.inputValue()) as MailDraft;
+            expect(draft.originalKludgesTruncated).toBe(true);
+            const bytes = draft.originalKludges!.reduce(
+                (sum, line) => sum + new TextEncoder().encode(line).length,
+                0
+            );
+            expect(bytes).toBeLessThanOrEqual(60000);
+            expect(draft.body).not.toContain('\u0001');
+        }
+    });
+}
+
 for (const kind of ['reply', 'quoted', 'forward', 'echo']) {
     for (const width of [1280, 390]) {
         test(`reference kludges stay outside ${kind} composition at ${width}px`, async ({

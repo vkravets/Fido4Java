@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'composer-truncated-kludges', story: 'mail-mailcomposer--truncated-reference' },
+    { name: 'composer-omitted-kludges', story: 'mail-mailcomposer--omitted-reference' },
     { name: 'mail-load-more', story: 'mail-mailloadmore--ready' },
     { name: 'mail-load-more-disabled', story: 'mail-mailloadmore--disabled' },
     { name: 'mail-archive-search', story: 'mail-netmailview--archive-search', mailSearch: true },

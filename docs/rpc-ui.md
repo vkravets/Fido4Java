@@ -695,10 +695,15 @@ for the supported template tokens and preference limits.
 `originalKludges` is a reference snapshot persisted in the existing draft payload,
 retaining line order and repetitions across save/reopen. The sum of the UTF-8
 byte lengths of its strings must not exceed 60,000; Ctrl+A prefixes count toward
-that limit. Absent and empty snapshots are allowed. Oversized updates return
-`INVALID_ARGUMENT` before writing and leave the previously saved draft intact.
-Submission validates this snapshot's size, then discards it from the submission
-copy before computing the idempotency fingerprint or creating the message.
+that limit. The web UI copies a prefix of whole lines within this limit and sets
+`originalKludgesTruncated` when remaining lines cannot fit. This optional flag
+persists with the draft, including when no complete line fits; the original
+reader still has the complete metadata. Absent and empty snapshots are allowed.
+Oversized updates return `INVALID_ARGUMENT` before writing and leave the
+previously saved draft intact.
+Submission validates this snapshot's size, then discards it and the truncation
+flag from the submission copy before computing the idempotency fingerprint or
+creating the message.
 Changing or omitting reference kludges alone does not change the request's
 identity; changes to editable message data still conflict with a reused request
 ID. MSGID, encoding and transport controls come from the normal server pipeline;

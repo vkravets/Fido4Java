@@ -7,6 +7,8 @@ import { directorySearchKey } from '../src/directory.ts';
 import { searchDirectory } from './directory-fixture.ts';
 import { netmailDraft } from './netmail-fixture.ts';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
+import { originalKludgeSnapshot } from '../src/mail-drafts.ts';
+import type { MailItem } from '@rpc/bindings.mjs';
 const meta = {
     title: 'Mail/MailComposer',
     component: MailComposer,
@@ -146,6 +148,28 @@ export const ReferenceForward: Story = {
 export const ReferenceEcho: Story = {
     args: {
         modelValue: { ...referenceDraft, mailbox: 1, area: 'TEST.ECHO', composeKind: 'quoted' }
+    },
+    render: referenceRender
+};
+export const TruncatedReference: Story = {
+    args: {
+        modelValue: {
+            ...goldedReplyDraft,
+            ...originalKludgeSnapshot({
+                kludges: ['\u0001MSGID: 1:500/101.2 12345', '\u0001X: ' + 'Ж'.repeat(30000)]
+            } as MailItem),
+            composeKind: 'quoted'
+        }
+    },
+    render: referenceRender
+};
+export const OmittedReference: Story = {
+    args: {
+        modelValue: {
+            ...goldedReplyDraft,
+            ...originalKludgeSnapshot({ kludges: ['\u0001X: ' + 'Ж'.repeat(30000)] } as MailItem),
+            composeKind: 'quoted'
+        }
     },
     render: referenceRender
 };

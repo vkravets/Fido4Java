@@ -250,3 +250,17 @@ item is committed separately under the execution agreement above.
   typechecks, changed-file formatting and Storybook build. Generated/reviewed
   16 new pinned Linux baselines for expanded netmail/echomail references, then
   passed all 16 comparisons without updates across themes/languages and sizes.
+
+### Review follow-up — oversized source snapshots
+
+- Fixed replies/forwards becoming unsavable or unsendable when the original
+  control lines exceeded the draft's 60000-byte limit. Snapshot creation now
+  copies a prefix of complete lines by UTF-8 byte size; the source is unchanged.
+- Added optional Thrift field 19 `originalKludgesTruncated`. It persists a visible
+  English/Ukrainian notice after reopening, including when no whole line fits.
+  Submission clears both reference fields before fingerprinting/message creation.
+- Verification passed: exact-limit and multibyte frontend cases (102 unit tests),
+  six focused Java cases including a 60000-byte snapshot saved/sent across
+  restart and persisted truncation state, 10 browser cases, both typechecks,
+  Storybook build and Java/frontend formatting. Reviewed 16 new Linux baselines;
+  24 comparisons passed without updates, including ordinary new-message states.

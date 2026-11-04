@@ -252,6 +252,17 @@ function chooseTemplate() {
                 :kludges="draft.originalKludges || []"
                 :label="t('Original message kludges')"
             />
+            <p
+                v-if="draft.originalKludgesTruncated"
+                class="muted composer-kludge-notice"
+                role="status"
+            >
+                {{
+                    t(
+                        'Some original kludge lines were omitted from this draft to fit the size limit. Open the original message to see all lines.'
+                    )
+                }}
+            </p>
             <FidoEditor
                 :key="draft.id"
                 ref="editor"

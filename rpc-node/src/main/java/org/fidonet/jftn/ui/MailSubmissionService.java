@@ -26,6 +26,7 @@ final class MailSubmissionService {
     String sendValidated(String owner, MailDraft draft, String requestId) throws Exception {
         MailDraft submission = draft.deepCopy();
         submission.unsetOriginalKludges();
+        submission.unsetOriginalKludgesTruncated();
         return mail.operate(tosser -> {
             String key = ScriptState.digest(owner + ":" + requestId);
             String hash = ScriptState.digest(Base64.getEncoder()

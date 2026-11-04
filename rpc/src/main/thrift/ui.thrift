@@ -92,7 +92,8 @@ struct MailDraft {
     15: optional string originalName,
     16: optional string originalAddress,
     17: optional string encoding,
-    18: optional list<string> originalKludges
+    18: optional list<string> originalKludges,
+    19: optional bool originalKludgesTruncated
 }
 
 struct LinkInfo {

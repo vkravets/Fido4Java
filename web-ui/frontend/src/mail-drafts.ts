@@ -1,6 +1,18 @@
 import type { MailDraft, MailItem, UserProfile } from '@rpc/bindings.mjs';
-export function originalKludgeSnapshot(item: MailItem): Pick<MailDraft, 'originalKludges'> {
-    return item.kludges?.length ? { originalKludges: [...item.kludges] } : {};
+export function originalKludgeSnapshot(
+    item: MailItem
+): Pick<MailDraft, 'originalKludges' | 'originalKludgesTruncated'> {
+    if (!item.kludges?.length) return {};
+    const encoder = new TextEncoder();
+    const lines: string[] = [];
+    let bytes = 0;
+    for (const line of item.kludges) {
+        const size = encoder.encode(line).length;
+        if (bytes + size > 60000) return { originalKludges: lines, originalKludgesTruncated: true };
+        lines.push(line);
+        bytes += size;
+    }
+    return { originalKludges: lines };
 }
 
 /** Forwarding copies readable text into new netmail; it never reuses MSGID/REPLY. */
