@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 and U1–U4 are implemented; U5–U6 and
+Status: implementation in progress. S1–S5 and U1–U5 are implemented; U6 and
 T1–T5 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -232,3 +232,21 @@ item is committed separately under the execution agreement above.
   files, all 101 frontend unit tests and Storybook build. Reviewed the affected
   Linux baselines and passed 32 VRT comparisons without snapshot updates,
   including unchanged new-message states in both themes/languages and sizes.
+
+### U5 — editor, template and submitted-body isolation
+
+- Confirmed the existing composer keeps the reference disclosure outside the
+  editable document and supplies an explicit plain-text context to templates.
+  Existing English/Ukrainian labels and theme styles cover both screen sizes.
+- Added dedicated Storybook states and browser checks for plain/quoted replies,
+  forwards and echomail. They verify keyboard disclosure, literal control/HTML
+  text, wrapping, no editable reference controls, source/visual/preview modes,
+  quotation actions and template replacement. Captured composer save/send events
+  preserve the reference metadata while keeping it out of the editable body.
+  Server submission isolation remains covered by S5.
+- Updated the UI guide and replaced the stale TODO claim that no viewer exists.
+  Remaining inline-view and final audit work stays recorded in this plan.
+- Verification passed: eight focused Playwright cases, application/Storybook
+  typechecks, changed-file formatting and Storybook build. Generated/reviewed
+  16 new pinned Linux baselines for expanded netmail/echomail references, then
+  passed all 16 comparisons without updates across themes/languages and sizes.

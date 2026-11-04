@@ -54,6 +54,16 @@ const screens = [
     { name: 'golded-template-reply', story: 'mail-mailcomposer--golded-reply' },
     { name: 'golded-template-quoted', story: 'mail-mailcomposer--golded-quoted' },
     { name: 'golded-template-forward', story: 'mail-mailcomposer--golded-forward' },
+    {
+        name: 'composer-kludge-reference',
+        story: 'mail-mailcomposer--reference-quoted',
+        referenceKludges: true
+    },
+    {
+        name: 'composer-echo-kludge-reference',
+        story: 'mail-mailcomposer--reference-echo',
+        referenceKludges: true
+    },
 
     { name: 'editor-focused-caret', story: 'mail-fidoeditor--focused' },
     {
@@ -439,6 +449,13 @@ for (const theme of ['light', 'dark']) {
                         return selected;
                     });
                     expect(selectable).toBe('^ANOTE: <img src=x onerror=alert(1)>');
+                }
+                if (screen.referenceKludges) {
+                    await page.locator('.mail-kludge-list > summary').click();
+                    await expect(page.locator('.mail-kludge-list code').last()).toContainText(
+                        'REFERENCE_ONLY'
+                    );
+                    await expect(page.locator('.cm-content')).not.toContainText('REFERENCE_ONLY');
                 }
                 if (screen.unavailable)
                     await expect(page.locator('.address-options [role=status]')).toBeVisible();

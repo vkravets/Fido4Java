@@ -96,6 +96,60 @@ export const GoldedForward: Story = {
     args: { modelValue: { ...goldedReplyDraft, composeKind: 'forward', replyTo: undefined } }
 };
 
+const referenceDraft = {
+    ...goldedReplyDraft,
+    originalKludges: [
+        '\u0001MSGID: 1:500/101.2 12345',
+        '\u0001CHRS: UTF-8 4',
+        '\u0001CHRS: CP866 2',
+        `\u0001UNKNOWN: REFERENCE_ONLY @quote <b>literal text</b> ${'long-value-'.repeat(20)}`
+    ]
+};
+const referenceRender: NonNullable<Story['render']> = (args, context) => ({
+    components: { MailComposer },
+    setup() {
+        provide(directorySearchKey, searchDirectory);
+        mailWorkspaceFixture(context.globals.theme === 'dark');
+        const draft = ref({ ...args.modelValue });
+        return {
+            args,
+            draft,
+            saved: ref(''),
+            submitted: ref(''),
+            snapshot: () => JSON.stringify(draft.value)
+        };
+    },
+    template: `
+        <MailComposer
+            v-bind="args"
+            v-model="draft"
+            @save="saved = snapshot()"
+            @send="submitted = snapshot()"
+        />
+        <textarea hidden data-testid="draft-state" :value="snapshot()" />
+        <textarea hidden data-testid="saved-draft" :value="saved" />
+        <textarea hidden data-testid="submitted-draft" :value="submitted" />
+    `
+});
+export const ReferenceReply: Story = {
+    args: { modelValue: { ...referenceDraft, composeKind: 'reply' } },
+    render: referenceRender
+};
+export const ReferenceQuoted: Story = {
+    args: { modelValue: { ...referenceDraft, composeKind: 'quoted' } },
+    render: referenceRender
+};
+export const ReferenceForward: Story = {
+    args: { modelValue: { ...referenceDraft, composeKind: 'forward', replyTo: undefined } },
+    render: referenceRender
+};
+export const ReferenceEcho: Story = {
+    args: {
+        modelValue: { ...referenceDraft, mailbox: 1, area: 'TEST.ECHO', composeKind: 'quoted' }
+    },
+    render: referenceRender
+};
+
 export const SenderDetails: Story = {
     play: async ({ canvasElement }) => {
         canvasElement.querySelector<HTMLButtonElement>('.composer-sender-toggle')!.click();

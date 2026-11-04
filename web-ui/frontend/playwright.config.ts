@@ -5,6 +5,7 @@ export default defineConfig({
     testMatch: [
         'archive-search.spec.ts',
         'components.spec.ts',
+        'kludges.spec.ts',
         'workspace.spec.ts',
         'shortcuts.spec.ts',
         'dos-graphics.spec.ts',
