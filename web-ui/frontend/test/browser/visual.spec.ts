@@ -8,9 +8,20 @@ const screens = [
     { name: 'reader-unknown-only', story: 'mail-netmailmessage--unknown-kludges-only' },
     { name: 'reader-kludges-hidden', story: 'mail-netmailmessage--kludge-reading' },
     {
+        name: 'reader-kludges-expanded',
+        story: 'mail-netmailmessage--kludge-reading',
+        expandReaderKludges: true
+    },
+    {
         name: 'reader-kludges-inline',
         story: 'mail-netmailmessage--inline-kludges',
         inlineReader: true
+    },
+    {
+        name: 'reader-kludges-inline-expanded',
+        story: 'mail-netmailmessage--inline-kludges',
+        inlineReader: true,
+        expandReaderKludges: true
     },
     { name: 'composer-truncated-kludges', story: 'mail-mailcomposer--truncated-reference' },
     { name: 'composer-omitted-kludges', story: 'mail-mailcomposer--omitted-reference' },
@@ -373,6 +384,14 @@ for (const theme of ['light', 'dark']) {
                 if (screen.inlineReader) {
                     await expect(page.locator('.reader-kludge-toggle input')).toBeChecked();
                     await expect(page.locator('.mail-body .kludge')).toHaveCount(5);
+                }
+                if (screen.expandReaderKludges) {
+                    await page.locator('.mail-kludge-list > summary').click();
+                    await expect(page.locator('.mail-kludge-list')).toHaveAttribute('open', '');
+                    await expect(page.locator('.mail-kludge-list code')).toHaveCount(5);
+                    await expect(page.locator('.mail-kludge-list code').last()).toContainText(
+                        '<b>*literal*</b> @quote long-value-'
+                    );
                 }
                 if (screen.mailSearch) {
                     await page.locator('.mail-query input').fill('Welcome');

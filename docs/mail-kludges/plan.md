@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5, U1–U6 and T1–T3 are complete;
-T4–T5 remain pending for the final feature audit.
+Status: implementation in progress. S1–S5, U1–U6 and T1–T4 are complete;
+T5 remains pending for the final feature audit.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -89,7 +89,7 @@ text or controls are duplicated within the reading pane itself.
 | T1 | Completed: server tests cover known/unknown/repeated controls, order, unchanged body, access control and draft round trips. No installed-state inspection was needed for this test-only change. | High / Sol Medium | Use representative stored/serialized fixtures; map-only tests would miss duplicate loss and representation differences. |
 | T2 | Completed: decoded actual outbound packets after RPC submission with malicious reference metadata; verified rejection of editable-body control injection without publication or request-ID consumption. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
 | T3 | Completed: browser scenarios cover expansion, read-only presentation, actual reply/forward entry points, saved-draft reopening and absence of controls from quoted/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
-| T4 | Add Storybook and pinned Linux VRT cases for expanded/collapsed blocks, long lines, both themes/languages and desktop/mobile. Review affected baselines, then compare without updates. | Medium / Sol Low | Existing scenarios reduce coding work, but visual review and Linux execution remain required. Report blocked verification explicitly. |
+| T4 | Completed: pinned Linux VRT covers expanded/collapsed reader blocks, inline controls, long lines, editor references and warnings across both themes/languages and desktop/mobile. Reviewed new baselines, then compared without updates. | Medium / Sol Low | Existing scenarios reduced coding work; reviewed Linux screenshots and ran the final comparison. |
 | T5 | Run formatting checks, focused Java/browser tests and frontend/Storybook typechecks. Update behavior docs and the relevant `TODO` entry after implementation. | Low / Luna Medium | Established commands and documentation are mechanical; diagnose failures at the complexity of their cause. |
 
 Suggested dependency order: S1, then S3/S2/S4/S5, then U1–U6, with relevant tests
@@ -416,3 +416,20 @@ At T1 completion, T2–T5 remained pending, including the separate outgoing-pack
   and `git diff --check`. Test corrections use the existing mobile direct buttons
   and Thrift's null representation of absent fields. No production UI or server
   behavior changed; VRT baseline review remains the separate T4 audit.
+
+### T4 — visual audit completed
+
+- Added two reader VRT states using the existing Storybook kludge story: the full
+  reference block expanded with inline viewing off and with inline viewing on.
+  The fixture includes repeated CHRS records, an unknown control, literal markup
+  and a long control line. Existing states cover the collapsed reader, unknown
+  visibility setting, read-only composer references and truncation/omission notices.
+- Generated 16 new baselines in the pinned Linux/amd64 Playwright 1.64.1 container,
+  covering desktop/mobile, light/dark and English/Ukrainian. Reviewed representative
+  screenshots for all combinations of viewport, theme, language and inline state,
+  plus existing mobile long-line and composer-reference baselines. Long lines wrap
+  without clipping or horizontal overflow; control text remains literal.
+- The final comparison ran without snapshot updates: all 104 feature-relevant
+  visual cases passed, including the 16 new cases. Storybook build, Storybook
+  typecheck and changed-file Prettier check passed. No production behavior or
+  unrelated baseline changed. T5 remains pending.
