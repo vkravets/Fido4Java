@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import type { InjectionKey } from 'vue';
 import { t } from './i18n.ts';
+import { originalKludgeSnapshot } from './mail-drafts.ts';
 import type { SearchClient } from './archive-search.ts';
 import { mailId, quotedReply } from './netmail.ts';
 import type { AppState } from './state.ts';
@@ -147,7 +148,8 @@ export function createEchomail(
                                 originalBody: reply.body || '',
                                 originalDate: reply.date,
                                 originalName: reply.fromName,
-                                originalAddress: reply.fromAddress
+                                originalAddress: reply.fromAddress,
+                                ...originalKludgeSnapshot(reply)
                             }
                           : {}),
                       mailbox: 1,

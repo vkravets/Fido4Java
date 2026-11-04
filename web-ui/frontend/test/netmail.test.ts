@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import { ref } from 'vue';
 import { createNetmail, createMailQueue, mailId, quotedReply } from '../src/netmail.ts';
 import { builtInTemplates, expandTemplate } from '../src/mail-templates.ts';
+import { createBindings } from '../../build/frontend-generated/bindings.mjs';
+import { Thrift, Int64 } from '../../build/frontend-generated/runtime.mjs';
 import type {
     MailDraft,
     MailItem,
@@ -10,6 +12,13 @@ import type {
     UserProfile
 } from '../../build/frontend-generated/bindings.mjs';
 
+const bindings = createBindings(Thrift, Int64);
+const kludges = [
+    '\u0001MSGID: 1:500/101 abc',
+    '\u0001CHRS: UTF-8 4',
+    '\u0001CHRS: CP866 2',
+    '\u0001UNKNOWN: value'
+];
 const message = (): MailItem => ({
     id: '9007199254740993',
     fromName: 'Alice',
@@ -25,6 +34,7 @@ const message = (): MailItem => ({
 
 function fixture() {
     const calls: { id: unknown; request?: string }[] = [];
+    const savedDrafts: MailDraft[] = [];
     const state = {
         session: ref('session'),
         notice: ref(''),
@@ -45,10 +55,12 @@ function fixture() {
             calls.push({ id });
             return { items: [message()], nextId: message().id, hasMore: false };
         },
-        message: async () => message(),
+        message: async (): Promise<MailItem> => ({ ...message(), kludges: [...kludges] }),
         markRead: async () => {},
-        drafts: async () => [],
-        saveDraft: async () => {},
+        drafts: async (_token: string): Promise<MailDraft[]> => [],
+        saveDraft: async (_token: string, draft: MailDraft) => {
+            savedDrafts.push(new bindings.MailDraft(draft));
+        },
         deleteDraft: async () => {},
         deleteMessage: async () => {},
         send: async (_token: string, value: MailDraft, request: string) => {
@@ -59,9 +71,9 @@ function fixture() {
     const reader = createNetmail(
         state,
         client as Parameters<typeof createNetmail>[1],
-        (value) => value
+        (value) => new bindings.MailDraft(value)
     );
-    return { state, client, reader, calls };
+    return { state, client, reader, calls, savedDrafts };
 }
 
 test('preserves i64 identifiers and quotes reply text without HTML interpretation', () => {
@@ -86,11 +98,35 @@ test('opens the full message, marks it read and replies from the addressed appro
     assert.equal(reader.draft.value?.toAddress, '1:500/101');
     assert.equal(reader.draft.value?.replyTo, '1:500/101 abc');
     assert.equal(reader.draft.value?.subject, 'Re: Hello');
+    assert.deepEqual(reader.draft.value?.originalKludges, kludges);
+    reader.selected.value!.kludges!.push('\u0001LATER: source changed');
+    assert.deepEqual(reader.draft.value?.originalKludges, kludges);
+});
+
+test('reply kludge snapshots stay read-only draft metadata through save and reopen', async () => {
+    const { reader, client, savedDrafts } = fixture();
+    await reader.open(message());
+    reader.edit(undefined, reader.selected.value!);
+    reader.draft.value!.composeKind = 'reply';
+    reader.draft.value!.body = 'Plain response';
+    client.drafts = async () => savedDrafts;
+
+    await reader.save();
+    assert.equal(savedDrafts[0]!.body, 'Plain response');
+    assert.deepEqual(savedDrafts[0]!.originalKludges, kludges);
+
+    await reader.navigate('drafts');
+    reader.edit(savedDrafts[0]!);
+    assert.deepEqual(reader.draft.value!.originalKludges, kludges);
+    assert.equal(reader.draft.value!.body, 'Plain response');
+    reader.draft.value!.originalKludges!.push('\u0001LATER: draft changed');
+    assert.deepEqual(savedDrafts[0]!.originalKludges, kludges);
 });
 
 test('keeps the request identity after a lost send response so retry cannot duplicate mail', async () => {
     const { reader, calls } = fixture();
     reader.edit();
+    assert.ok(!reader.draft.value?.originalKludges?.length);
     await assert.rejects(reader.send, /response lost/);
     await assert.rejects(reader.send, /response lost/);
     assert.equal(calls[0]?.request, calls[1]?.request);

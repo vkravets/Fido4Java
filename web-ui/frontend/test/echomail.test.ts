@@ -4,9 +4,13 @@ import { ref } from 'vue';
 import { createEchomail } from '../src/echomail.ts';
 import { echoThreads } from '../src/echo-threads.ts';
 import { mailId } from '../src/netmail.ts';
+import { createBindings } from '../../build/frontend-generated/bindings.mjs';
+import { Thrift, Int64 } from '../../build/frontend-generated/runtime.mjs';
 import type { EchoClient } from '../src/echomail.ts';
 import type { MailDraft, MailItem, UserProfile } from '../../build/frontend-generated/bindings.mjs';
 
+const bindings = createBindings(Thrift, Int64);
+const kludges = ['\u0001MSGID: 1:500/101 root', '\u0001CHRS: UTF-8 4'];
 function message(id: string, messageId: string, replyTo?: string): MailItem {
     return {
         id,
@@ -61,7 +65,7 @@ function fixture() {
             { name: 'read.only', messages: 0, readable: true, writeAddresses: [] }
         ],
         echoMessages: async () => ({ items: [first], nextId: first.id, hasMore: false }),
-        message: async () => ({ ...first }),
+        message: async () => ({ ...first, kludges: [...kludges] }),
         markRead: async (_token, _box, _area, id) => {
             read.push(mailId(id));
         },
@@ -77,7 +81,7 @@ function fixture() {
             return 'sent';
         }
     };
-    const reader = createEchomail(state, client, (value) => value);
+    const reader = createEchomail(state, client, (value) => new bindings.MailDraft(value));
     return { state, client, reader, first, sent, read };
 }
 
@@ -95,6 +99,9 @@ test('reply stays in its echo and preserves REPLY, quoting, permitted AKA and re
     assert.equal(reader.draft.value!.replyTo, 'root');
     assert.equal(reader.draft.value!.toName, 'Alice');
     assert.equal(reader.draft.value!.body, '> First\n> Second');
+    assert.deepEqual(reader.draft.value!.originalKludges, kludges);
+    reader.selected.value!.kludges!.push('\u0001LATER: source changed');
+    assert.deepEqual(reader.draft.value!.originalKludges, kludges);
     const send = client.send;
     let failed = true;
     client.send = async (token: string, draft: MailDraft, request: string) => {
@@ -167,14 +174,23 @@ test('saved echo drafts keep their conference and recipients and are separate fr
         toName: 'All',
         toAddress: '1:500/100',
         subject: 'Saved',
-        body: 'Text'
+        body: 'Text',
+        originalKludges: ['\u0001MSGID: 1:500/101 original', '\u0001CHRS: UTF-8 4']
     };
-    client.drafts = async () => [draft, { ...draft, id: 'netmail', mailbox: 3, area: '' }];
+    const saved: MailDraft[] = [];
+    client.saveDraft = async (_token, value) => {
+        saved.push(new bindings.MailDraft(value));
+    };
+    client.drafts = async () => [saved[0]!, { ...draft, id: 'netmail', mailbox: 3, area: '' }];
     await reader.start(draft);
     assert.equal(reader.draft.value!.subject, 'Saved');
+    await reader.save();
     await reader.loadDrafts();
     assert.equal(reader.drafts.value.length, 1);
     await reader.editDraft(reader.drafts.value[0]!);
     assert.equal(reader.area.value, 'test');
     assert.equal(reader.draft.value!.toName, 'All');
+    assert.deepEqual(reader.draft.value!.originalKludges, draft.originalKludges);
+    reader.draft.value!.originalKludges!.push('\u0001LATER: draft changed');
+    assert.deepEqual(saved[0]!.originalKludges, draft.originalKludges);
 });

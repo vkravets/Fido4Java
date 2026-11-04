@@ -79,17 +79,21 @@ const goldedDraft = {
     originalDate: '18 Oct 26 12:30:00',
     originalBody: 'Welcome to FidoNet!'
 };
+const goldedReplyDraft = {
+    ...goldedDraft,
+    originalKludges: ['\u0001MSGID: 1:500/101.2 12345', '\u0001CHRS: UTF-8 4']
+};
 export const GoldedNew: Story = {
     args: { modelValue: { ...goldedDraft, composeKind: 'new', replyTo: undefined, toName: 'All' } }
 };
 export const GoldedReply: Story = {
-    args: { modelValue: { ...goldedDraft, composeKind: 'reply' } }
+    args: { modelValue: { ...goldedReplyDraft, composeKind: 'reply' } }
 };
 export const GoldedQuoted: Story = {
-    args: { modelValue: { ...goldedDraft, composeKind: 'quoted' } }
+    args: { modelValue: { ...goldedReplyDraft, composeKind: 'quoted' } }
 };
 export const GoldedForward: Story = {
-    args: { modelValue: { ...goldedDraft, composeKind: 'forward', replyTo: undefined } }
+    args: { modelValue: { ...goldedReplyDraft, composeKind: 'forward', replyTo: undefined } }
 };
 
 export const SenderDetails: Story = {

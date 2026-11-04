@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 and U1–U3 are implemented; U4–U6 and
+Status: implementation in progress. S1–S5 and U1–U4 are implemented; U5–U6 and
 T1–T5 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -216,3 +216,19 @@ item is committed separately under the execution agreement above.
 - Added a Storybook/VRT state covering HTML-like input, control characters and
   long unbroken lines. The eight pinned Linux VRT combinations passed after
   baseline review (desktop/mobile, light/dark, English/Ukrainian).
+
+### U4 — original snapshots in reply and forward drafts
+
+- Shared snapshot copying now populates `originalKludges` for netmail and
+  echomail replies, including plain and quoted reply actions, and forwards.
+  Missing or empty source metadata leaves the reference block hidden.
+- Frontend tests use the generated Thrift draft constructor and verify ordered
+  repeated/unknown controls, independent copies, save/reopen behavior and
+  preservation of editable body text. Server persistence remains covered by S4.
+- Review corrected a Storybook fixture that would have added reference kludges
+  to a new message, and removed the test mock's assumption that every draft has
+  reference metadata. List fixtures continue to omit full-message kludges.
+- Verification passed: application/Storybook typechecks, formatting of changed
+  files, all 101 frontend unit tests and Storybook build. Reviewed the affected
+  Linux baselines and passed 32 VRT comparisons without snapshot updates,
+  including unchanged new-message states in both themes/languages and sizes.

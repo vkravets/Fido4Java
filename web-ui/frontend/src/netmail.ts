@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { InjectionKey } from 'vue';
 import { t } from './i18n.ts';
+import { originalKludgeSnapshot } from './mail-drafts.ts';
 import type { SearchClient } from './archive-search.ts';
 import type { AppState } from './state.ts';
 import type { MailDraft, MailItem, Mailbox } from '@rpc/bindings.mjs';
@@ -142,7 +143,8 @@ export function createNetmail(
                             originalBody: reply.body || '',
                             originalDate: reply.date,
                             originalName: reply.fromName,
-                            originalAddress: reply.fromAddress
+                            originalAddress: reply.fromAddress,
+                            ...originalKludgeSnapshot(reply)
                         }
                       : {}),
                   mailbox: 3,

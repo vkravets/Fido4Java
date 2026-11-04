@@ -9,6 +9,7 @@ test('forwarding creates new netmail from a permitted identity and leaves the or
         fromAddress: '1:500/101',
         subject: 'Hello',
         body: 'Original',
+        kludges: ['\u0001MSGID: 1:500/101 original'],
         date: '20 Oct 26',
         messageId: 'original',
         replyTo: 'parent'
@@ -24,6 +25,8 @@ test('forwarding creates new netmail from a permitted identity and leaves the or
     assert.equal(draft.mailbox, 3);
     assert.equal(draft.replyTo, undefined);
     assert.equal(draft.originalName, 'Bob');
+    assert.deepEqual(draft.originalKludges, ['\u0001MSGID: 1:500/101 original']);
+    assert.notEqual(draft.originalKludges, item.kludges);
     assert.equal(item.messageId, 'original');
     assert.equal(item.body, 'Original');
 });
