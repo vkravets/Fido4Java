@@ -94,10 +94,14 @@ item is committed separately under the execution agreement above.
 - Regenerated Java and browser bindings using the repository Gradle tasks.
   Generated files remain build outputs and are not committed.
 - Added focused Thrift binary round-trip coverage for ordered repeated control
-  lines and draft payloads without the new optional field. Server population,
+  lines and new drafts without source metadata. Server population,
   persistence validation and UI rendering remain subsequent plan items.
 - Verification passed on Windows with the pinned development profile: both
   `MailKludgeContractTest` cases, `spotlessCheck`, `verifyJavaFormatting`,
   `:rpc-node:compileJava`, `:web-ui:typecheckFrontend` and
   `:web-ui:typecheckStorybook`. Java/browser contract generation also passed.
   Browser functional tests and VRT were not run because S1 changes no UI behavior.
+- Reviewed S1 under the development RPC policy: retained optional fields for
+  legitimately absent metadata, removed assertions fixing wire field IDs, and
+  described the absent-source draft test by current behavior rather than legacy
+  compatibility. No legacy adapters or fallback paths were introduced.

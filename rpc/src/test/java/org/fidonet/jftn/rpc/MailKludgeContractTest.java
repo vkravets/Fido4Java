@@ -40,15 +40,12 @@ class MailKludgeContractTest {
     }
 
     @Test
-    void loadedDraftPayloadWithoutOriginalKludges() throws Exception {
-        // An unset optional field is omitted, matching the pre-kludge draft wire format.
+    void preservedDraftWithoutSourceMetadata() throws Exception {
         MailDraft original = draft();
         MailDraft restored = new MailDraft();
         new TDeserializer().deserialize(restored, new TSerializer().serialize(original));
         assertEquals(original, restored);
         assertFalse(restored.isSetOriginalKludges());
-        assertEquals(14, MailItem._Fields.KLUDGES.getThriftFieldId());
-        assertEquals(18, MailDraft._Fields.ORIGINAL_KLUDGES.getThriftFieldId());
     }
 
     private static MailDraft draft() {
