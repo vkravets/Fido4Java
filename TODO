@@ -7,8 +7,8 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
-- Complete T2–T5 of the final kludge feature verification/documentation audit in
-  docs/mail-kludges/plan.md; T1 server coverage is complete.
+- Complete T3–T5 of the final kludge feature verification/documentation audit in
+  docs/mail-kludges/plan.md; T1 server coverage and T2 outgoing-packet checks are complete.
   Collapsible details, GoldED/FTSC-based classification,
   inline unknown controls by default with an account visibility setting,
   optional inline viewing of known controls, persisted reply/forward references

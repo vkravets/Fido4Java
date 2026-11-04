@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5, U1–U6 and T1 are complete;
-T2–T5 remain pending for the final feature audit.
+Status: implementation in progress. S1–S5, U1–U6 and T1–T2 are complete;
+T3–T5 remain pending for the final feature audit.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -87,7 +87,7 @@ text or controls are duplicated within the reading pane itself.
 | ID | Planned verification or documentation | Level / model | Why |
 | --- | --- | --- | --- |
 | T1 | Completed: server tests cover known/unknown/repeated controls, order, unchanged body, access control and draft round trips. No installed-state inspection was needed for this test-only change. | High / Sol Medium | Use representative stored/serialized fixtures; map-only tests would miss duplicate loss and representation differences. |
-| T2 | Check actual outgoing packet behavior with malicious reference metadata; verify body control injection is still rejected. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
+| T2 | Completed: decoded actual outbound packets after RPC submission with malicious reference metadata; verified rejection of editable-body control injection without publication or request-ID consumption. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
 | T3 | Add browser tests for expansion, read-only presentation, reply/forward, draft reopening and absence of controls from quotes/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
 | T4 | Add Storybook and pinned Linux VRT cases for expanded/collapsed blocks, long lines, both themes/languages and desktop/mobile. Review affected baselines, then compare without updates. | Medium / Sol Low | Existing scenarios reduce coding work, but visual review and Linux execution remain required. Report blocked verification explicitly. |
 | T5 | Run formatting checks, focused Java/browser tests and frontend/Storybook typechecks. Update behavior docs and the relevant `TODO` entry after implementation. | Low / Luna Medium | Established commands and documentation are mechanical; diagnose failures at the complexity of their cause. |
@@ -357,4 +357,30 @@ Final verification succeeded: 51 fido-tools tests, three RPC contract tests and
 results in the final matrix; the affected RPC integration suites passed together
 after correcting the new fixture's configured point link and valid PKT password.
 No browser or container checks were needed for this server-test-only item.
-T2–T5 remain pending, including the separate outgoing-packet audit.
+At T1 completion, T2–T5 remained pending, including the separate outgoing-packet audit.
+
+### T2 — actual outgoing-packet audit completed
+
+- Retained the existing `MailEncodingTest` direct PacketWriter tests and added
+  eight end-to-end cases to `UiRpcIntegrationTest`: netmail/echomail through each
+  of TCP and HTTP, for both reference isolation and editable-body rejection.
+- Reference-isolation cases save/reopen the draft, submit it through RPC, run
+  the real mail runtime/tosser and decode the generated outbound spool PKT.
+  Forged MSGID/REPLY/CHRS, INTL/FMPT/TOPT, FLAGS/PID, PATH/Via, repeated unknown
+  controls, AREA/SEEN-BY/Origin text and embedded CR/LF/NUL in reference strings
+  do not reach the wire. The real MSGID, REPLY, UTF-8 declaration, message text,
+  envelope addresses and server-generated Origin/PATH or INTL/Via remain intact.
+- Retrying with both reference fields unset returns the same MSGID, preserves
+  exactly one packet and leaves its bytes unchanged. The input draft is unchanged
+  and the saved draft is removed only after successful submission.
+- Rejection cases attempt ten editable-body variants per mailbox/transport:
+  SOH at the start, inside text or after CR/LF/CRLF; AREA at the start or after
+  those line boundaries; and NUL. Every send returns INVALID_ARGUMENT while
+  retaining the saved draft. Processing/releasing mail afterwards produces no
+  packet or stored outgoing message. A corrected body succeeds with the same
+  request ID, proving rejection did not reserve an incompatible fingerprint.
+- Verification passed: 33 UI RPC cases (including the eight new cases), eight
+  encoding/packet cases and three PacketWriter cases, plus root `spotlessCheck`
+  and `verifyJavaFormatting`. All 44 cases passed in one final invocation.
+  No production code, contracts, installed node state or UI/VRT baselines changed.
+  T3–T5 remain pending.

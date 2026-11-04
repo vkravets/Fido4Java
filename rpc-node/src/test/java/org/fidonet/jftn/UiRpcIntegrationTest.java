@@ -13,6 +13,7 @@ import org.fidonet.config.JFtnConfig;
 import org.fidonet.db.MailDatabaseFacade;
 import org.fidonet.db.OrmManager;
 import org.fidonet.db.robots.RobotService;
+import org.fidonet.fts.FtsPkt;
 import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
@@ -47,6 +48,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
@@ -1007,6 +1010,175 @@ class UiRpcIntegrationTest {
         assertTrue(ui.drafts(first).isEmpty());
         ui.subscribe(token, "1:500/100.1", "test", "BOTH");
         assertEquals(List.of(echo), ui.drafts(first));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"OUTBOX,false", "OUTBOX,true", "ECHO,false", "ECHO,true"})
+    void keptReferenceKludgesOutOfActualOutboundPackets(Mailbox mailbox, boolean http)
+            throws Exception {
+        preparePacketRecipient(mailbox);
+        MailDraft original = draft(mailbox).setEncoding("UTF-8")
+                                           .setBody("Authoritative body\nSecond line\n")
+                                           .setReplyTo("1:500/101 true-parent")
+                                           .setOriginalKludges(maliciousReferenceKludges())
+                                           .setOriginalKludgesTruncated(true);
+        MailDraft unchanged = original.deepCopy();
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client client = http
+                    ? new UiService.Client(new TJSONProtocol(connection))
+                    : ui;
+            client.saveDraft(token, original);
+            MailDraft reopened = client.drafts(token).get(0);
+            assertEquals(original, reopened);
+            String msgid = client.send(token, reopened, "reference-packet");
+            Path packet = prepareOutboundPacket(client, mailbox);
+            byte[] bytes = Files.readAllBytes(packet);
+            assertPacketControls(bytes, mailbox, msgid);
+            MailDraft retry = reopened.deepCopy();
+            retry.unsetOriginalKludges();
+            retry.unsetOriginalKludgesTruncated();
+            assertEquals(msgid, client.send(token, retry, "reference-packet"));
+            client.processMail(token);
+            assertEquals(List.of(packet), outboundPackets());
+            assertArrayEquals(bytes, Files.readAllBytes(packet));
+            assertTrue(client.drafts(token).isEmpty());
+        }
+        assertEquals(unchanged, original);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"OUTBOX,false", "OUTBOX,true", "ECHO,false", "ECHO,true"})
+    void rejectedEditableControlInjectionWithoutPublishingOrConsumingRequest(Mailbox mailbox,
+                                                                             boolean http)
+            throws Exception {
+        preparePacketRecipient(mailbox);
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client client = http
+                    ? new UiService.Client(new TJSONProtocol(connection))
+                    : ui;
+            for (String body : List.of("\1MSGID: forged\rBody",
+                                       "Body\n\1CHRS: forged\n",
+                                       "Body\r\1INTL forged\r",
+                                       "Body\r\n\1PATH: forged\r\n",
+                                       "Body\1CUSTOM: forged",
+                                       "AREA:forged\rBody",
+                                       "Body\rAREA:forged\r",
+                                       "Body\nAREA:forged\n",
+                                       "Body\r\nAREA:forged\r\n",
+                                       "Body\0trailing")) {
+                MailDraft injected = draft(mailbox).setBody(body)
+                                                   .setOriginalKludges(maliciousReferenceKludges());
+                client.saveDraft(token, injected);
+                assertEquals("INVALID_ARGUMENT",
+                             assertThrows(UiError.class,
+                                          () -> client.send(token, injected, "rejected-packet"))
+                                                                                                .getCode());
+                assertEquals(List.of(injected), client.drafts(token));
+            }
+            client.processMail(token);
+            assertEquals(0, client.pendingNetmail(token));
+            assertEquals(0, client.sendPendingNetmail(token));
+            assertTrue(client.messages(token, Mailbox.OUTBOX, "", 0, 10).getItems().isEmpty());
+            assertEquals(0, base.getMessageSize("test"));
+            assertTrue(outboundPackets().isEmpty());
+            MailDraft corrected = draft(mailbox).setBody("Authoritative body\nSecond line\n")
+                                                .setEncoding("UTF-8")
+                                                .setReplyTo("1:500/101 true-parent")
+                                                .setOriginalKludges(maliciousReferenceKludges());
+            String msgid = client.send(token, corrected, "rejected-packet");
+            Path packet = prepareOutboundPacket(client, mailbox);
+            assertPacketControls(Files.readAllBytes(packet), mailbox, msgid);
+        }
+    }
+
+    private void preparePacketRecipient(Mailbox mailbox) throws Exception {
+        if (mailbox == Mailbox.ECHO) {
+            ui.subscribe(token, "1:500/101", "test", "BOTH");
+        }
+    }
+
+    private List<Path> outboundPackets() throws Exception {
+        return new OutboundSpool(config).pending(config.getLink(new FTNAddr("1:500/101")), true);
+    }
+
+    private Path prepareOutboundPacket(UiService.Client client, Mailbox mailbox) throws Exception {
+        if (mailbox == Mailbox.OUTBOX) {
+            assertEquals(1, client.sendPendingNetmail(token));
+        }
+        client.processMail(token);
+        List<Path> packets = outboundPackets();
+        assertEquals(1, packets.size());
+        return packets.get(0);
+    }
+
+    private static List<String> maliciousReferenceKludges() {
+        return List.of("\1MSGID: T2_REFERENCE_ONLY",
+                       "\1REPLY: T2_REFERENCE_ONLY",
+                       "\1CHRS: T2_REFERENCE_ONLY",
+                       "\1INTL T2_REFERENCE_ONLY",
+                       "\1FMPT 999",
+                       "\1TOPT 999",
+                       "\1FLAGS T2_REFERENCE_ONLY",
+                       "\1PID: T2_REFERENCE_ONLY",
+                       "\1PATH: T2_REFERENCE_ONLY",
+                       "\1Via T2_REFERENCE_ONLY",
+                       "\1CUSTOM: T2_REFERENCE_ONLY",
+                       "\1CUSTOM: T2_REFERENCE_ONLY",
+                       "AREA:T2_REFERENCE_ONLY",
+                       "SEEN-BY: T2_REFERENCE_ONLY",
+                       " * Origin: T2_REFERENCE_ONLY",
+                       "Reference\r\n\1CUSTOM: T2_REFERENCE_ONLY\0");
+    }
+
+    private static void assertPacketControls(byte[] bytes, Mailbox mailbox, String msgid)
+            throws Exception {
+        String wire = new String(bytes, StandardCharsets.UTF_8);
+        assertFalse(wire.contains("T2_REFERENCE_ONLY"));
+        assertFalse(wire.contains("\1FMPT 999"));
+        assertFalse(wire.contains("\1TOPT 999"));
+        FtsPkt packet = new FtsPkt(ByteBuffer.wrap(bytes));
+        assertEquals(1, packet.getOrigZone());
+        assertEquals(500, packet.getOrigNet());
+        assertEquals(100, packet.getOrigNode());
+        assertEquals(1, packet.getDestZone());
+        assertEquals(500, packet.getDestNet());
+        assertEquals(101, packet.getDestNode());
+        assertEquals(1, packet.getMsgs().length);
+        Message restored = new Message(packet.getMsgs()[0],
+                                       packet.getOrigZone(),
+                                       packet.getDestZone());
+        assertEquals(msgid, restored.getMsgId());
+        assertEquals(new FTNAddr("1:500/100"), restored.getFAddr());
+        assertEquals("1:500/101 true-parent", restored.getBody().getKludges().get("REPLY").trim());
+        assertEquals("UTF-8 4", restored.getBody().getKludges().get("CHRS").trim());
+        assertEquals("Authoritative body\rSecond line\r", restored.getBody().getBody());
+        assertEquals(1,
+                     restored.getBody()
+                             .getKludgeLines()
+                             .stream()
+                             .filter(line -> line.startsWith("\1MSGID:"))
+                             .count());
+        assertEquals(1,
+                     restored.getBody()
+                             .getKludgeLines()
+                             .stream()
+                             .filter(line -> line.startsWith("\1CHRS:"))
+                             .count());
+        if (mailbox == Mailbox.ECHO) {
+            assertEquals("test", restored.getArea());
+            assertFalse(restored.getBody().getKludges().containsKey("INTL"));
+            assertTrue(wire.contains("\1PATH: 500/100"));
+            assertTrue(wire.contains(" * Origin: JFtn (1:500/100"));
+        } else {
+            assertEquals(new FTNAddr("1:500/101"), restored.getTAddr());
+            assertEquals("1:500/101 1:500/100", restored.getBody().getKludges().get("INTL").trim());
+            assertTrue(restored.getBody()
+                               .getViaLines()
+                               .stream()
+                               .anyMatch(line -> line.startsWith("\1Via 1:500/100")));
+        }
     }
 
     @Test
