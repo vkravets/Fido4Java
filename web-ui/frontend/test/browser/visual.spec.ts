@@ -225,6 +225,11 @@ const screens = [
     { name: 'mail-empty', story: 'mail-netmaillist--empty' },
     { name: 'mail-loading', story: 'mail-netmaillist--loading' },
     { name: 'mail-reading', story: 'mail-netmailmessage--reading' },
+    {
+        name: 'mail-kludge-lines',
+        story: 'mail-mailkludgelist--readable-lines',
+        expandKludges: true
+    },
     { name: 'mail-delete-busy', story: 'mail-netmailmessage--deleting' },
     { name: 'mail-long-text', story: 'mail-netmailmessage--long-text' },
     { name: 'mail-reply', story: 'mail-mailcomposer--reply' },
@@ -413,6 +418,27 @@ for (const theme of ['light', 'dark']) {
                 if (screen.conversation) {
                     await page.locator('.echo-conversation > summary').click();
                     await expect(page.locator('.echo-conversation li time')).toBeVisible();
+                }
+                if (screen.expandKludges) {
+                    await page.locator('.mail-kludge-list > summary').click();
+                    await expect(page.locator('.mail-kludge-list')).toHaveAttribute('open', '');
+                    const firstKludge = page.locator('.mail-kludge-list code').nth(1);
+                    await expect(firstKludge).toHaveText('^ANOTE: <img src=x onerror=alert(1)>');
+                    await expect(page.locator('.mail-kludge-list img')).toHaveCount(0);
+                    await expect(page.locator('.mail-kludge-list code').nth(2)).toHaveText(
+                        '^ACTRL: NUL=^@ BEL=^G ESC=^[ DEL=^? C1=\\x85'
+                    );
+                    const selectable = await firstKludge.evaluate((element) => {
+                        const range = document.createRange();
+                        range.selectNodeContents(element);
+                        const selection = window.getSelection();
+                        selection?.removeAllRanges();
+                        selection?.addRange(range);
+                        const selected = selection?.toString();
+                        selection?.removeAllRanges();
+                        return selected;
+                    });
+                    expect(selectable).toBe('^ANOTE: <img src=x onerror=alert(1)>');
                 }
                 if (screen.unavailable)
                     await expect(page.locator('.address-options [role=status]')).toBeVisible();

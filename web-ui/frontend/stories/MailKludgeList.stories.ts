@@ -14,6 +14,16 @@ type Story = StoryObj<typeof meta>;
 
 export const WithLines: Story = {};
 export const Empty: Story = { args: { kludges: [] } };
+export const ReadableLines: Story = {
+    args: {
+        kludges: [
+            '\u0001MSGID: 1:500/100 abc',
+            '\u0001NOTE: <img src=x onerror=alert(1)>',
+            '\u0001CTRL: NUL=\u0000 BEL=\u0007 ESC=\u001b DEL=\u007f C1=\u0085',
+            `\u0001LONG: ${'unbroken-kludge-value-'.repeat(12)}`
+        ]
+    }
+};
 
 export const ReaderAndComposerPlacement: Story = {
     render: () => ({

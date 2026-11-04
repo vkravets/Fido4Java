@@ -179,3 +179,12 @@ item is committed separately under the execution agreement above.
   editor; it remains outside the editable text field.
 - Added English and Ukrainian labels and a Storybook example showing both
   placements. Reply and forward drafts receive their snapshots in U4.
+
+### U3 — readable, selectable kludge lines
+
+- Render kludges as escaped text in monospace, converting C0/DEL controls to
+  caret notation and C1 controls to visible `\xNN` notation. Long lines wrap
+  within the available width; text remains selectable for native copying.
+- Added a Storybook/VRT state covering HTML-like input, control characters and
+  long unbroken lines. The eight pinned Linux VRT combinations passed after
+  baseline review (desktop/mobile, light/dark, English/Ukrainian).
