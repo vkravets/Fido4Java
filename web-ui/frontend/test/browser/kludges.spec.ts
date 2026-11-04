@@ -16,14 +16,11 @@ for (const width of [1280, 390]) {
             locale
         );
         const toggle = page.getByRole('checkbox', {
-            name:
-                locale === 'uk'
-                    ? ukrainian['Show known kludges inline']
-                    : 'Show known kludges inline'
+            name: locale === 'uk' ? ukrainian['Show kludges inline'] : 'Show kludges inline'
         });
         const body = page.locator('.mail-body');
         await expect(toggle).not.toBeChecked();
-        await expect(body.locator('.kludge')).toHaveCount(0);
+        await expect(body.locator('.kludge')).toHaveText('^ACUSTOM: visible by default');
         const plain = await body.innerText();
         await toggle.focus();
         await page.keyboard.press('Space');
@@ -31,6 +28,7 @@ for (const width of [1280, 390]) {
         await expect(body.locator('.fido-line')).toHaveText([
             '^AMSGID: 1:500/101.2 first',
             'First paragraph',
+            '^ACUSTOM: visible by default',
             '^ACHRS: UTF-8 4',
             'AE> Quoted text',
             '^ACHRS: CP866 2',
@@ -39,9 +37,9 @@ for (const width of [1280, 390]) {
             'Signature'
         ]);
         await expect(body.locator('.kludge a, .kludge b, .kludge .bold')).toHaveCount(0);
-        await expect(body).not.toContainText('X-UNKNOWN');
+        await expect(body).toContainText('CUSTOM');
         await page.locator('.mail-kludge-list > summary').click();
-        await expect(page.locator('.mail-kludge-list')).toContainText('X-UNKNOWN');
+        await expect(page.locator('.mail-kludge-list')).toContainText('CUSTOM');
         await expect(body.locator('.fido-line:not(.kludge)')).toHaveCount(4);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
             width
@@ -57,6 +55,38 @@ for (const width of [1280, 390]) {
         await expect(body).not.toContainText('MSGID');
     });
 }
+
+test('unknown controls follow the personal toggle policy and remain accessible in the full list', async ({
+    page
+}) => {
+    await openStory(page, 'mail-netmailmessage--unknown-kludges-on-toggle');
+    const body = page.locator('.mail-body');
+    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
+    await expect(body.locator('.kludge')).toHaveCount(0);
+    await page.locator('.mail-kludge-list > summary').click();
+    await expect(page.locator('.mail-kludge-list')).toContainText('CUSTOM');
+    await toggle.check();
+    await expect(body.locator('.kludge')).toHaveCount(5);
+    await expect(body).toContainText('CUSTOM');
+    await toggle.uncheck();
+    await expect(body.locator('.kludge')).toHaveCount(0);
+    await openStory(page, 'mail-netmailmessage--unknown-kludges-only');
+    await expect(body.locator('.kludge')).toHaveText('^ACUSTOM: visible by default');
+    await expect(toggle).toHaveCount(0);
+});
+
+test('unknown control visibility is saved in personal appearance settings', async ({ page }) => {
+    await openStory(page, 'settings-accountsettings--appearance');
+    const select = page.getByRole('combobox', { name: 'Unknown kludges in messages' });
+    await expect(select).toHaveValue('always');
+    await select.selectOption('toggle');
+    await expect(select).toHaveValue('toggle');
+    await page.getByRole('tab', { name: 'Profile', exact: true }).click();
+    await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    await expect(select).toHaveValue('toggle');
+    await select.selectOption('always');
+    await expect(select).toHaveValue('always');
+});
 
 for (const state of ['truncated', 'omitted']) {
     test(`oversized ${state} kludge references allow saving and sending`, async ({ page }) => {

@@ -4,12 +4,12 @@ import { readerTextLines } from '../src/mail-kludges.ts';
 
 test('inline controls stay literal and ordered while ordinary text keeps its quote and signature styles', () => {
     const lines = readerTextLines('Unchanged plain body', [
-        { text: '\u0001MSGID: <b>*literal*</b>', kludge: true },
-        { text: '> *quoted*', kludge: false },
-        { text: '\u0001CHRS: UTF-8 4', kludge: true },
-        { text: '-- ', kludge: false },
-        { text: '\u0001CHRS: CP866 2', kludge: true },
-        { text: 'Signature', kludge: false }
+        { text: '\u0001MSGID: <b>*literal*</b>', kludge: true, known: true },
+        { text: '> *quoted*', kludge: false, known: false },
+        { text: '\u0001CHRS: UTF-8 4', kludge: true, known: true },
+        { text: '-- ', kludge: false, known: false },
+        { text: '\u0001CHRS: CP866 2', kludge: true, known: true },
+        { text: 'Signature', kludge: false, known: false }
     ]);
     assert.deepEqual(
         lines.map((line) => line.kind),

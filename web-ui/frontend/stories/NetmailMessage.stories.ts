@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { nextTick, ref } from 'vue';
+import { nextTick, ref, provide } from 'vue';
+import { createWorkspace, workspaceKey } from '../src/workspace.ts';
 import NetmailMessage from '../src/components/NetmailMessage.vue';
 import { netmailMessage } from './netmail-fixture.ts';
 const meta = {
@@ -15,27 +16,36 @@ const inlineMessage = {
     body: 'First paragraph\nAE> Quoted text\n-- \nSignature',
     kludges: [
         '\u0001MSGID: 1:500/101.2 first',
-        '\u0001X-UNKNOWN: hidden only in the full list',
+        '\u0001CUSTOM: visible by default',
         '\u0001CHRS: UTF-8 4',
         '\u0001CHRS: CP866 2',
         '\u0001PID: <b>*literal*</b> @quote ' + 'long-value-'.repeat(16)
     ],
     bodyLines: [
-        { text: '\u0001MSGID: 1:500/101.2 first', kludge: true },
-        { text: 'First paragraph', kludge: false },
-        { text: '\u0001CHRS: UTF-8 4', kludge: true },
-        { text: 'AE> Quoted text', kludge: false },
-        { text: '\u0001CHRS: CP866 2', kludge: true },
-        { text: '\u0001PID: <b>*literal*</b> @quote ' + 'long-value-'.repeat(16), kludge: true },
-        { text: '-- ', kludge: false },
-        { text: 'Signature', kludge: false }
+        { text: '\u0001MSGID: 1:500/101.2 first', kludge: true, known: true },
+        { text: 'First paragraph', kludge: false, known: false },
+        { text: '\u0001CUSTOM: visible by default', kludge: true, known: false },
+        { text: '\u0001CHRS: UTF-8 4', kludge: true, known: true },
+        { text: 'AE> Quoted text', kludge: false, known: false },
+        { text: '\u0001CHRS: CP866 2', kludge: true, known: true },
+        {
+            text: '\u0001PID: <b>*literal*</b> @quote ' + 'long-value-'.repeat(16),
+            kludge: true,
+            known: true
+        },
+        { text: '-- ', kludge: false, known: false },
+        { text: 'Signature', kludge: false, known: false }
     ]
 };
 export const KludgeReading: Story = {
     args: { message: inlineMessage, navigation: true },
-    render: (args) => ({
+    render: (args, context) => ({
         components: { NetmailMessage },
         setup() {
+            const workspace = createWorkspace();
+            if (context.parameters.unknownKludges === 'toggle')
+                workspace.value.value.unknownKludges = 'toggle';
+            provide(workspaceKey, workspace);
             const message = ref(args.message);
             const next = () => {
                 message.value = {
@@ -44,8 +54,8 @@ export const KludgeReading: Story = {
                     body: 'Second body',
                     kludges: ['\u0001CHRS: CP866 2'],
                     bodyLines: [
-                        { text: '\u0001CHRS: CP866 2', kludge: true },
-                        { text: 'Second body', kludge: false }
+                        { text: '\u0001CHRS: CP866 2', kludge: true, known: true },
+                        { text: 'Second body', kludge: false, known: false }
                     ]
                 };
             };
@@ -85,5 +95,19 @@ export const MoreActions: Story = {
     play: async ({ canvasElement }) => {
         await nextTick();
         canvasElement.querySelector<HTMLDetailsElement>('.reader-more')!.open = true;
+    }
+};
+
+export const UnknownKludgesOnToggle: Story = {
+    ...KludgeReading,
+    parameters: { unknownKludges: 'toggle' }
+};
+export const UnknownKludgesOnly: Story = {
+    ...KludgeReading,
+    args: {
+        message: {
+            ...inlineMessage,
+            bodyLines: inlineMessage.bodyLines.filter((line) => !line.known)
+        }
     }
 };

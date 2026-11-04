@@ -50,11 +50,12 @@ final review of serialization and submission boundaries.
 | U3 | Show monospace lines with a visible `^A` prefix, escaped text, selection and copying. Handle long lines and control characters. | Medium / Sol Low | Untrusted message text must render as text, without HTML or mail markup interpretation. |
 | U4 | Copy the source snapshot into plain replies, quoted replies and forwards; retain it after saving and reopening drafts. | High / Sol Medium | Separate entry points, absent source metadata and persistence must agree; new messages can legitimately have no snapshot. |
 | U5 | Keep kludges outside the editable document, quotations, template expansion and submitted body. Add English/Ukrainian labels, both themes and mobile layout. | High / Sol Medium | Isolation must hold across composition paths and editor modes. Labels and styling alone are Low after data flow is settled. |
-| U6 | Add an optional GoldED-like reader mode: show recognized kludges inline in original body order with distinct styling, controlled by a reader toggle. Keep the complete kludge disclosure for unknown controls and the default collapsed view. | High / Sol Medium | The current `kludges` list does not encode positions relative to body text. Define an ordered display-segment contract from the authoritative `Body` representation and a reliable known-control classification before changing the viewer. |
+| U6 | Add an optional GoldED-like reader mode: show recognized kludges inline in original body order with distinct styling, controlled by a reader toggle. Show unknown controls inline by default, with an account setting to reveal them only through the reader toggle; keep the complete collapsed disclosure. | High / Sol Medium | The current `kludges` list does not encode positions relative to body text. Define an ordered display-segment contract from the authoritative `Body` representation and a reliable known-control classification before changing the viewer. |
 
 ## GoldED+ comparison and U6 approach
 
-GoldED+ hides kludges by default and offers reader keys to show kludges alone
+GoldED+ hides recognized kludges by default (other hidden lines have a separate
+visibility flag) and offers reader keys to show kludges alone
 (`K` / `Alt-K`) or together with hidden lines (`V` / `Alt-V`). Its `VIEWKLUDGE`
 setting covers recognized kludges, including configured entries; the manual
 describes them as color-distinguished lines. See the [reader key help](https://github.com/golded-plus/golded-plus/blob/master/cfgs/config/goldhelp.cfg)
@@ -64,11 +65,12 @@ U6 adapts that interaction to the web reader without replacing U1–U3's
 separate disclosure:
 
 1. Inspect the message body's authoritative representation and define ordered
-   display segments for ordinary text and recognized controls. Preserve repeated
+   display segments for ordinary text and all controls, with server-owned classification. Preserve repeated
    controls and their positions; do not infer positions from the extracted list.
 2. Reuse an existing protocol-level control classifier where available. Document
-   its recognized set and keep unknown controls in the complete disclosure rather
-   than silently dropping them.
+   its recognized set and provenance in [classification.md](classification.md).
+   Always transmit unknown controls and display them by default; support an
+   account preference to reveal them only through the reader toggle.
 3. Add an accessible reader toggle, off by default. When enabled, render recognized
    controls inline at their original positions with distinct theme-aware styling;
    leave the full disclosure available for all controls.
@@ -286,3 +288,29 @@ item is committed separately under the execution agreement above.
   checks, literal markup, full-list access and navigation reset. Reviewed 16 new
   pinned Linux baselines; 32 comparisons passed without updates, including prior
   ordinary-reader and disclosure states across both themes/languages and sizes.
+
+### U6 follow-up — sourced classification and unknown-control policy
+
+- Replaced the initial short name allowlist with a reusable server classifier
+  derived from GoldED's FTS/FSC/XXX/RFC tables, including historical aliases,
+  case rules and gateway headers. [Classification sources](classification.md)
+  distinguish recognized extensions from adopted standards and record exact
+  GoldED and FTSC snapshot revisions. The official FTSC site was unavailable;
+  cited document revisions were verified through the documented 2021 mirror.
+- `MailBodyLine` now includes required `known` classification. Full messages
+  retain all unknown/repeated control display records in stored order. These
+  response-only fields do not change persisted draft or installed mail formats.
+- Unknown controls appear inline by default. Personal Appearance settings persist
+  `workspace.unknownKludges` as `always` or `toggle`. The message checkbox reveals
+  all controls, resets on navigation and never changes editor/template data.
+- Verification passed: 51 fido-tools tests, two RPC contract tests, 31 RPC
+  integration cases (with the eight echo cases rerun after adding explicit
+  known/unknown assertions), 103 frontend unit tests, both TypeScript checks,
+  Storybook build, 14 browser cases, root Java formatting and changed frontend
+  formatting. The whole frontend Prettier check reports an existing violation in
+  unchanged `stories/protocol-fixture.ts`; that file was not reformatted.
+- Generated affected Linux baselines only: 24 updated and 16 new screenshots.
+  Reviewed default unknown visibility, toggle-only and unknown-only readers,
+  inline controls and personal settings. Final comparison passed 56/56 without
+  updates across both themes/languages and desktop/mobile, including unchanged
+  ordinary reader and full-disclosure baselines.

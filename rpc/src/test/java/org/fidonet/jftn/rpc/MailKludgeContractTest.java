@@ -26,8 +26,8 @@ class MailKludgeContractTest {
                                         false);
         message.setBody("Message body");
         message.setKludges(kludges);
-        message.setBodyLines(List.of(new MailBodyLine(kludges.get(0), true),
-                                     new MailBodyLine("Message body", false)));
+        message.setBodyLines(List.of(new MailBodyLine(kludges.get(0), true, true),
+                                     new MailBodyLine("Message body", false, false)));
         MailItem restoredMessage = new MailItem();
         new TDeserializer().deserialize(restoredMessage, new TSerializer().serialize(message));
         assertEquals(kludges, restoredMessage.getKludges());

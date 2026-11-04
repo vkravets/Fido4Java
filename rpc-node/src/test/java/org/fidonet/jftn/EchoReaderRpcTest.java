@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class EchoReaderRpcTest {
     @TempDir
@@ -427,7 +428,7 @@ class EchoReaderRpcTest {
                                       + id
                                       + "\r"
                                       + (reply == null ? "" : "\1REPLY: " + reply + "\r")
-                                      + "Plain body\r",
+                                      + "Plain body\r\1CUSTOM: first\r\1CUSTOM: second\r",
                                       new Date());
         base.addMessage(message, area);
     }
@@ -475,8 +476,18 @@ class EchoReaderRpcTest {
         assertTrue(full.getKludges().contains("\1REPLY: " + rootId));
         assertTrue(full.getBodyLines()
                        .stream()
-                       .anyMatch(line -> line.isKludge()
+                       .anyMatch(line -> line.isKludge() && line.isKnown()
                                && line.getText().equals("\1REPLY: " + rootId)));
+        assertEquals(List.of("\1CUSTOM: first", "\1CUSTOM: second"),
+                     full.getBodyLines()
+                         .stream()
+                         .filter(line -> line.isKludge() && !line.isKnown())
+                         .map(line -> line.getText())
+                         .collect(Collectors.toList()));
+        assertTrue(full.getBodyLines()
+                       .stream()
+                       .filter(line -> !line.isKludge())
+                       .noneMatch(line -> line.isKnown()));
         String body = full.getBody();
         assertTrue(body.contains("Plain body"));
         assertFalse(body.contains("\1"));

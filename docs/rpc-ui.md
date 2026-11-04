@@ -283,15 +283,17 @@ body and metadata. Summaries from `messages`, `echoMessages`, `echoContext` and
 archive search omit this field. Clients must keep these reference lines separate
 from editable text and quotations.
 Full responses additionally provide `MailItem.bodyLines`, an ordered list of
-`MailBodyLine { text, kludge }` records for optional inline viewing. Ordinary
-lines and recognized controls come from the same reconciled `Body` content
-serialization, followed by parsed PATH/Via trailers. Parsed Origin/SEEN-BY trailers and AREA are
-excluded, matching the plain-body boundary. Unknown controls remain in the full
-`kludges` list; they are omitted from `bodyLines`. The reader recognizes these
-case-sensitive names: MSGID, REPLY, CHRS, CHARSET, CODEPAGE, INTL, FMPT, TOPT,
-FLAGS, PID, TID, TZUTC, PATH and Via. Classification concerns the name only;
-values remain untrusted literal text. Repeated lines retain their positions in
-the stored representation, which is not a guarantee of original PKT byte order.
+`MailBodyLine { text, kludge, known }` records for inline viewing. All ordinary
+lines and controls (including unknown controls) come from the same reconciled
+`Body` content serialization, followed by parsed PATH/Via trailers. Parsed
+Origin/SEEN-BY trailers and AREA are excluded, matching the plain-body boundary.
+`known` is server-owned display classification from the GoldED-derived registry;
+see [classification and FTSC sources](mail-kludges/classification.md). It is false
+for ordinary lines. It does not validate the control value or confer trust.
+Repeated lines retain their positions in the stored representation, which is not
+a guarantee of original PKT byte order. Unknown controls must not be discarded:
+the browser displays them inline by default, with an account preference to show
+them only with the reader toggle. The full `kludges` list remains independent.
 Summaries/search/context omit `bodyLines` as well as `kludges`. These display
 records must never replace `body` when creating drafts or outgoing messages.
 No subject-based heuristic merges discussions. The parent lookup uses the existing

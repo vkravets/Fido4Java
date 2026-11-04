@@ -1,5 +1,6 @@
 package org.fidonet.jftn.ui;
 
+import org.fidonet.ReaderKludges;
 import org.fidonet.binkp.common.SessionContext;
 import org.fidonet.config.JFtnConfig;
 import org.fidonet.config.StorageConfiguration;
@@ -344,7 +345,9 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
             result.setBodyLines(message.getBody()
                                        .getReaderLines()
                                        .stream()
-                                       .map(line -> new MailBodyLine(line, line.startsWith("\1")))
+                                       .map(line -> new MailBodyLine(line,
+                                                                     line.startsWith("\1"),
+                                                                     ReaderKludges.isKnown(line)))
                                        .collect(Collectors.toList()));
         }
         return result;

@@ -33,7 +33,8 @@ struct ExtensionSettings {
 // Display-only lines in stored Body order. Kludge lines are literal controls, not editable text.
 struct MailBodyLine {
     1: required string text,
-    2: required bool kludge
+    2: required bool kludge,
+    3: required bool known
 }
 
 struct MailItem {

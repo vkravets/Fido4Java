@@ -798,7 +798,12 @@ export const ukrainian = {
     'For continuous box drawing, use a monospace font and line height 1.0. Fonts must be installed on your device.':
         'Для суцільних рамок виберіть моноширинний шрифт і висоту рядка 1,0. Шрифт має бути встановлений на вашому пристрої.',
     Kludges: 'Клуджі',
-    'Show known kludges inline': 'Показувати відомі клуджі в тексті',
+    'Show kludges inline': 'Показувати клуджі в тексті',
+    'Unknown kludges in messages': 'Невідомі клуджі в листах',
+    'Always show': 'Показувати завжди',
+    'Show with the kludge toggle': 'Показувати перемикачем клуджів',
+    'Saved automatically. Applies to netmail and echomail.':
+        'Зберігається автоматично. Діє для нетмейлу та ехопошти.',
     'Original message kludges': 'Клуджі вихідного повідомлення',
     'Some original kludge lines were omitted from this draft to fit the size limit. Open the original message to see all lines.':
         'Деякі рядки клуджів оригінального повідомлення не включено до чернетки через обмеження розміру. Відкрийте оригінальне повідомлення, щоб переглянути всі рядки.'

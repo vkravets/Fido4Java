@@ -39,6 +39,18 @@ function saveStartupPage(event: Event) {
         }
     });
 }
+function saveUnknownKludges(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const unknownKludges = select.value === 'toggle' ? 'toggle' : 'always';
+    props.state.run(async () => {
+        try {
+            await workspace.update({ unknownKludges });
+            props.state.notice.value = t('Settings saved.');
+        } finally {
+            select.value = workspace.value.value.unknownKludges;
+        }
+    });
+}
 const tab = ref<PersonalTab>(props.initialTab || 'profile');
 const narrow = useMedia('(max-width: 700px)');
 const title = computed(() => t(tabs.find((item) => item.id === tab.value)!.label));
@@ -240,6 +252,20 @@ function claimLabel(state: string): string {
                         </select>
                         <small>{{
                             t('Also used when reloading the page. Saved automatically.')
+                        }}</small>
+                    </label>
+                    <label class="startup-page">
+                        {{ t('Unknown kludges in messages') }}
+                        <select
+                            :value="workspace.value.value.unknownKludges"
+                            :disabled="state.busy.value"
+                            @change="saveUnknownKludges"
+                        >
+                            <option value="always">{{ t('Always show') }}</option>
+                            <option value="toggle">{{ t('Show with the kludge toggle') }}</option>
+                        </select>
+                        <small>{{
+                            t('Saved automatically. Applies to netmail and echomail.')
                         }}</small>
                     </label>
                     <p>{{ t('Your selected theme is saved in your profile.') }}</p>

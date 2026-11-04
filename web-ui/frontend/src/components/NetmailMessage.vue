@@ -5,6 +5,7 @@ import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
 import MailKludgeList from './MailKludgeList.vue';
 import type { MailItem } from '@rpc/bindings.mjs';
+import { useWorkspace } from '../workspace.ts';
 const props = withDefaults(
     defineProps<{
         message: MailItem;
@@ -21,7 +22,20 @@ const props = withDefaults(
     { removable: true }
 );
 const inlineKludges = ref(false);
-const hasInlineKludges = computed(() => props.message.bodyLines?.some((line) => line.kludge));
+const workspace = useWorkspace();
+const hasInlineKludges = computed(() =>
+    props.message.bodyLines?.some(
+        (line) => line.kludge && (line.known || workspace.value.value.unknownKludges === 'toggle')
+    )
+);
+const readerLines = computed(() =>
+    props.message.bodyLines?.filter(
+        (line) =>
+            !line.kludge ||
+            inlineKludges.value ||
+            (!line.known && workspace.value.value.unknownKludges === 'always')
+    )
+);
 watch(
     () => props.message,
     () => {
@@ -203,11 +217,11 @@ function closeMenu(event: Event) {
                 v-model="inlineKludges"
                 :disabled="pending"
             />
-            {{ t('Show known kludges inline') }}
+            {{ t('Show kludges inline') }}
         </label>
         <FidoText
             :text="message.body || ''"
-            :body-lines="inlineKludges ? message.bodyLines : undefined"
+            :body-lines="readerLines"
         />
         <footer
             class="reader-footer"

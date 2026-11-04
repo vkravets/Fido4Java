@@ -150,13 +150,17 @@ are available. It starts closed; use its summary or the keyboard to expand it.
 Lines remain selectable plain text, with a visible `^A` prefix and printable
 representations of other control characters. Long lines wrap within the pane.
 
-**Show known kludges inline** inserts recognized controls into the reading pane
-in stored message order, preserving repeated lines. The switch starts off and
-resets when another message opens. Inline controls have distinct text styling
-and a left border; their values are literal text, without link or mail-markup
-interpretation. Unknown controls remain accessible in the complete **Kludges**
-disclosure, which is independent of the switch. The mode affects only reading;
-reply text, templates and outgoing messages still use the plain body.
+**Show kludges inline** reveals controls in the reading pane in stored message
+order, preserving repeated lines. The switch starts off and resets when another
+message opens. Unknown controls are shown even with the switch off by default.
+Personal **Appearance** settings offer **Unknown kludges in messages** with
+**Always show** (default) or **Show with the kludge toggle**. This account-owned
+`workspace.unknownKludges` preference applies to both netmail and echomail.
+Inline controls have distinct text styling and a left border; their values are
+literal text without link or mail-markup interpretation. The complete **Kludges**
+disclosure remains independent. See the [classification sources and rules](mail-kludges/classification.md).
+The mode affects only reading; reply text, templates and outgoing messages still
+use the plain body.
 
 Replies and forwards show **Original message kludges** before the editor as a
 read-only reference. Saved drafts retain this snapshot. If the reference exceeds

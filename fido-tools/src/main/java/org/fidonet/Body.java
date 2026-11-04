@@ -53,20 +53,6 @@ import java.util.stream.Collectors;
 public class Body {
 
     private static final Pattern CONTROL_LINE = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$");
-    private static final Set<String> READER_KLUDGES = Set.of("MSGID",
-                                                             "REPLY",
-                                                             "CHRS",
-                                                             "CHARSET",
-                                                             "CODEPAGE",
-                                                             "INTL",
-                                                             "FMPT",
-                                                             "TOPT",
-                                                             "FLAGS",
-                                                             "PID",
-                                                             "TID",
-                                                             "TZUTC",
-                                                             "PATH",
-                                                             "Via");
 
     private Map<String, String> kludges;
     private String origin;
@@ -120,23 +106,14 @@ public class Body {
                          .collect(Collectors.toList());
     }
 
-    /** Reader content without AREA, unknown controls or parsed Origin/SEEN-BY trailers. */
+    /** Reader content without AREA or parsed Origin/SEEN-BY trailers. */
     public List<String> getReaderLines() {
         StringBuilder content = new StringBuilder();
         appendContent(content);
-        List<String> lines = content.toString()
-                                    .lines()
-                                    .filter(line -> !line.startsWith("\1")
-                                            || knownReaderKludge(line))
-                                    .collect(Collectors.toList());
+        List<String> lines = content.toString().lines().collect(Collectors.toList());
         Collections.addAll(lines, path.toPathStrings());
-        viaLines.stream().filter(Body::knownReaderKludge).forEach(lines::add);
+        lines.addAll(viaLines);
         return lines;
-    }
-
-    private static boolean knownReaderKludge(String line) {
-        Matcher match = CONTROL_LINE.matcher(line);
-        return match.matches() && READER_KLUDGES.contains(match.group(1));
     }
 
     public String getOrigin() {

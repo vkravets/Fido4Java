@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class BodySerializationTest {
     @Test
-    public void readerLinesPreservedInterleavedKnownControlsWithoutUnknownsOrEchoTrailers() {
+    public void readerLinesPreservedInterleavedControlsWithoutEchoTrailers() {
         Message message = new Message("Author",
                                       "All",
                                       new FTNAddr("1:500/101"),
@@ -35,6 +35,7 @@ public class BodySerializationTest {
         String original = body.toString();
         assertEquals(List.of("\1MSGID: 1:500/101 abc",
                              "First",
+                             "\1X-UNKNOWN: literal",
                              "\1CHRS: UTF-8 4",
                              "Second",
                              "\1CHRS: CP866 2",

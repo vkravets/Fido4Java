@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'reader-unknown-toggle', story: 'mail-netmailmessage--unknown-kludges-on-toggle' },
+    { name: 'reader-unknown-only', story: 'mail-netmailmessage--unknown-kludges-only' },
     { name: 'reader-kludges-hidden', story: 'mail-netmailmessage--kludge-reading' },
     {
         name: 'reader-kludges-inline',
@@ -370,7 +372,7 @@ for (const theme of ['light', 'dark']) {
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
                 if (screen.inlineReader) {
                     await expect(page.locator('.reader-kludge-toggle input')).toBeChecked();
-                    await expect(page.locator('.mail-body .kludge')).toHaveCount(4);
+                    await expect(page.locator('.mail-body .kludge')).toHaveCount(5);
                 }
                 if (screen.mailSearch) {
                     await page.locator('.mail-query input').fill('Welcome');

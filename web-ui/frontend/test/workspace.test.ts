@@ -16,6 +16,9 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(parseWorkspace('{}').startupPage, 'netmail');
     assert.equal(parseWorkspace('{"startupPage":"node"}').startupPage, 'netmail');
     assert.equal(parseWorkspace('{"startupPage":"echo"}').startupPage, 'echo');
+    assert.equal(parseWorkspace('{}').unknownKludges, 'always');
+    assert.equal(parseWorkspace('{"unknownKludges":"bad"}').unknownKludges, 'always');
+    assert.equal(parseWorkspace('{"unknownKludges":"toggle"}').unknownKludges, 'toggle');
 });
 test('late loads cannot replace another account and failed saves retain previous settings', async () => {
     let finish!: (value: string) => void;
@@ -53,10 +56,17 @@ test('concurrent field saves are serialized and preserve independent layout edit
     await Promise.all([
         workspace.updateLayout('echo', { density: 'compact' }),
         workspace.updateLayout('echo', { mode: 'flat' }),
-        workspace.update({ collapsed: true, startupPage: 'directory' })
+        workspace.update({ collapsed: true, startupPage: 'directory', unknownKludges: 'toggle' })
     ]);
     assert.equal(workspace.value.value.echo.mode, 'flat');
     assert.equal(workspace.value.value.echo.density, 'compact');
     assert.equal(JSON.parse(snapshots.at(-1)!).collapsed, true);
     assert.equal(JSON.parse(snapshots.at(-1)!).startupPage, 'directory');
+    assert.equal(JSON.parse(snapshots.at(-1)!).unknownKludges, 'toggle');
+    const reloaded = createWorkspace({
+        uiDocument: async () => snapshots.at(-1)!,
+        saveUiDocument: async () => {}
+    });
+    await reloaded.load('account');
+    assert.equal(reloaded.value.value.unknownKludges, 'toggle');
 });
