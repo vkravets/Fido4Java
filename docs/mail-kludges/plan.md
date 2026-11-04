@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1 is implemented; S2–S5, U1–U5 and T1–T5
+Status: implementation in progress. S1 and S3 are implemented; S2, S4–S5, U1–U5 and T1–T5
 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -105,3 +105,13 @@ item is committed separately under the execution agreement above.
   legitimately absent metadata, removed assertions fixing wire field IDs, and
   described the absent-source draft test by current behavior rather than legacy
   compatibility. No legacy adapters or fallback paths were introduced.
+
+### S3 — control-line extraction prerequisite for S2
+
+- Added `Body.getKludgeLines()`, selecting Ctrl+A-prefixed lines from existing
+  serialization without changing the body, layout or transport serialization.
+- Verified parsed duplicates, unknown controls, PATH/Via, exclusion of AREA,
+  SEEN-BY and ordinary text, empty controls and edits to constructed messages.
+- All five `BodySerializationTest` cases passed on the pinned Windows profile;
+  applied the repository formatter to the two affected Java files.
+- Completed before S2 so RPC can use the correct shared extraction immediately.

@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by IntelliJ IDEA.
@@ -95,6 +96,12 @@ public class Body {
 
     public Map<String, String> getKludges() {
         return kludges;
+    }
+
+    public List<String> getKludgeLines() {
+        return toString().lines()
+                         .filter(line -> line.startsWith("\u0001"))
+                         .collect(Collectors.toList());
     }
 
     public String getOrigin() {

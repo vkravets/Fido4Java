@@ -4,15 +4,55 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
+import org.fidonet.types.FTNAddr;
+import org.fidonet.types.Message;
 
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BodySerializationTest {
+    @Test
+    public void extractedParsedKludgesWithDuplicatesAndRoutingWithoutChangingText() {
+        Message message = new Message("Author",
+                                      "All",
+                                      new FTNAddr("1:500/101"),
+                                      null,
+                                      "Subject",
+                                      "AREA:TEST\r\1MSGID: 1:500/101 abc\r"
+                                      + "\1X-UNKNOWN: first\r\1X-UNKNOWN: second\r"
+                                      + "Plain body\rSEEN-BY: 500/101\r"
+                                      + "\1PATH: 500/101\r\1Via 1:500/102\r",
+                                      new Date());
+        Body body = message.getBody();
+        String serialized = body.toString();
+        String plain = body.getBody();
+        assertEquals(List.of("\1MSGID: 1:500/101 abc",
+                             "\1X-UNKNOWN: first",
+                             "\1X-UNKNOWN: second",
+                             "\1PATH: 500/101",
+                             "\1Via 1:500/102"),
+                     body.getKludgeLines());
+        assertEquals(serialized, body.toString());
+        assertEquals(plain, body.getBody());
+    }
+
+    @Test
+    public void extractedConstructedKludgesReflectCurrentValues() {
+        Body body = body("Plain body\n", new LinkedHashMap<>(), null);
+        assertEquals(List.of(), body.getKludgeLines());
+        body.getKludges().put("CHRS", "UTF-8 4");
+        body.addVia("\1Via 1:500/102");
+        assertEquals(List.of("\1CHRS: UTF-8 4", "\1Via 1:500/102"), body.getKludgeLines());
+        body.getKludges().put("CHRS", "CP866 2");
+        assertEquals(List.of("\1CHRS: CP866 2", "\1Via 1:500/102"), body.getKludgeLines());
+    }
+
     @Test
     public void newAddressControlLinesUseSpaceSyntaxWithoutColons() {
         Map<String, String> values = new LinkedHashMap<>();
