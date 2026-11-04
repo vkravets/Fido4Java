@@ -1,7 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5, U1–U6 and T1–T4 are complete;
-T5 remains pending for the final feature audit.
+Status: S1–S5, U1–U6 and T1–T5 are complete.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -90,7 +89,7 @@ text or controls are duplicated within the reading pane itself.
 | T2 | Completed: decoded actual outbound packets after RPC submission with malicious reference metadata; verified rejection of editable-body control injection without publication or request-ID consumption. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
 | T3 | Completed: browser scenarios cover expansion, read-only presentation, actual reply/forward entry points, saved-draft reopening and absence of controls from quoted/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
 | T4 | Completed: pinned Linux VRT covers expanded/collapsed reader blocks, inline controls, long lines, editor references and warnings across both themes/languages and desktop/mobile. Reviewed new baselines, then compared without updates. | Medium / Sol Low | Existing scenarios reduced coding work; reviewed Linux screenshots and ran the final comparison. |
-| T5 | Run formatting checks, focused Java/browser tests and frontend/Storybook typechecks. Update behavior docs and the relevant `TODO` entry after implementation. | Low / Luna Medium | Established commands and documentation are mechanical; diagnose failures at the complexity of their cause. |
+| T5 | Completed: focused Java, RPC, frontend and browser checks passed; formatting and both frontend/Storybook typechecks passed. Behavior documentation is current and the completed work was removed from `TODO`. | Low / Luna Medium | Established commands and documentation were mechanical; Gradle used valid up-to-date results for the unchanged RPC contract test. |
 
 Suggested dependency order: S1, then S3/S2/S4/S5, then U1–U6, with relevant tests
 alongside each change and T5 last. Review the complete feature with Sol Medium,
@@ -432,4 +431,22 @@ At T1 completion, T2–T5 remained pending, including the separate outgoing-pack
 - The final comparison ran without snapshot updates: all 104 feature-relevant
   visual cases passed, including the 16 new cases. Storybook build, Storybook
   typecheck and changed-file Prettier check passed. No production behavior or
-  unrelated baseline changed. T5 remains pending.
+  unrelated baseline changed.
+
+### T5 — final feature audit completed
+
+- Ran 22 focused fido-tools tests covering body serialization, message tails,
+  FTS compatibility and reader-control classification. The three RPC contract
+  cases were confirmed up to date by Gradle; their successful run is recorded
+  under T1.
+- Ran `UiRpcIntegrationTest` and `EchoReaderRpcTest`; all selected integration
+  cases passed, including stored ordering, authorization, draft ownership and
+  restart, outbound packet isolation, and editable-control rejection.
+- Ran all 104 frontend unit tests and all 29 kludge browser workflows. Frontend
+  and Storybook typechecks, Storybook build, root `spotlessCheck`, and
+  `verifyJavaFormatting` passed. T4 records the 104-case pinned Linux visual
+  comparison without snapshot updates.
+- Confirmed [web UI behavior documentation](../web-ui.md) and the RPC guide
+  describe the current reader, settings, session storage, draft and submission
+  behavior. Removed this completed feature from the root `TODO` list.
+- No implementation files changed in T5. All planned kludge work is complete.
