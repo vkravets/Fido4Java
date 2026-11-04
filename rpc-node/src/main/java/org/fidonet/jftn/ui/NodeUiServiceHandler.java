@@ -18,6 +18,7 @@ import org.fidonet.jftn.rpc.EchoContext;
 import org.fidonet.jftn.rpc.ExtensionSettings;
 import org.fidonet.jftn.rpc.LinkInfo;
 import org.fidonet.jftn.rpc.LogPage;
+import org.fidonet.jftn.rpc.MailBodyLine;
 import org.fidonet.jftn.rpc.MailDraft;
 import org.fidonet.jftn.rpc.MailItem;
 import org.fidonet.jftn.rpc.MailPage;
@@ -340,6 +341,11 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
         if (body) {
             result.setBody(message.getBody().getBody());
             result.setKludges(message.getBody().getKludgeLines());
+            result.setBodyLines(message.getBody()
+                                       .getReaderLines()
+                                       .stream()
+                                       .map(line -> new MailBodyLine(line, line.startsWith("\1")))
+                                       .collect(Collectors.toList()));
         }
         return result;
     }

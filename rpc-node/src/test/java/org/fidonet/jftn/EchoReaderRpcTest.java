@@ -187,6 +187,7 @@ class EchoReaderRpcTest {
         assertFalse(found.isSetKludges());
         assertTrue(found.getExcerpt().contains("\u041f\u0420\u0418\u0412\u0406\u0422"));
         assertFalse(found.isSetBody());
+        assertFalse(found.isSetBodyLines());
         assertFalse(found.isRead());
         assertFalse(ui.message(admin, Mailbox.ECHO, "test", found.getId()).isRead());
         assertEquals(1,
@@ -467,10 +468,15 @@ class EchoReaderRpcTest {
         var child = ui.echoContext(admin, "test", rows.get(1).getId(), 0, 10);
         assertEquals(rows.get(0).getId(), child.getParent().getId());
         assertFalse(child.getParent().isSetKludges());
+        assertFalse(child.getParent().isSetBodyLines());
         assertEquals(rootId, rows.get(1).getReplyTo());
         var full = ui.message(admin, Mailbox.ECHO, "test", rows.get(1).getId());
         assertTrue(full.getKludges().contains("\1MSGID: 1:500/101 child-one"));
         assertTrue(full.getKludges().contains("\1REPLY: " + rootId));
+        assertTrue(full.getBodyLines()
+                       .stream()
+                       .anyMatch(line -> line.isKludge()
+                               && line.getText().equals("\1REPLY: " + rootId)));
         String body = full.getBody();
         assertTrue(body.contains("Plain body"));
         assertFalse(body.contains("\1"));

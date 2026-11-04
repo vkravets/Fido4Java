@@ -4,6 +4,12 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
+    { name: 'reader-kludges-hidden', story: 'mail-netmailmessage--kludge-reading' },
+    {
+        name: 'reader-kludges-inline',
+        story: 'mail-netmailmessage--inline-kludges',
+        inlineReader: true
+    },
     { name: 'composer-truncated-kludges', story: 'mail-mailcomposer--truncated-reference' },
     { name: 'composer-omitted-kludges', story: 'mail-mailcomposer--omitted-reference' },
     { name: 'mail-load-more', story: 'mail-mailloadmore--ready' },
@@ -362,6 +368,10 @@ for (const theme of ['light', 'dark']) {
                 await openStory(page, screen.story, theme, locale);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
+                if (screen.inlineReader) {
+                    await expect(page.locator('.reader-kludge-toggle input')).toBeChecked();
+                    await expect(page.locator('.mail-body .kludge')).toHaveCount(4);
+                }
                 if (screen.mailSearch) {
                     await page.locator('.mail-query input').fill('Welcome');
                     await expect(page.locator('.mail-search-status')).toBeVisible();

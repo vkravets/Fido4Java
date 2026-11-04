@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { typographyStyle } from '../mail-typography.ts';
 import type { MailTypography } from '../mail-typography.ts';
-import { fidoText } from '../fido-text.ts';
+import { readerTextLines } from '../mail-kludges.ts';
+import type { MailBodyLine } from '@rpc/bindings.mjs';
 import { useMailSearch } from '../mail-search.ts';
 import FidoRun from './FidoRun.vue';
 import { themeStyle, useMailAppearance } from '../mail-themes.ts';
@@ -13,13 +14,14 @@ const props = defineProps<{
     themeId?: string;
     theme?: MailTheme;
     typography?: MailTypography;
+    bodyLines?: MailBodyLine[];
 }>();
 const appearance = useMailAppearance();
 const colors = computed(() =>
     themeStyle(props.theme || appearance.find(props.themeId || appearance.reader.value))
 );
 const query = useMailSearch();
-const lines = computed(() => fidoText(props.text, !props.source));
+const lines = computed(() => readerTextLines(props.text, props.bodyLines, !props.source));
 </script>
 <template>
     <div
@@ -56,6 +58,12 @@ const lines = computed(() => fidoText(props.text, !props.source));
 }
 .fido-text .quote1 {
     color: var(--mail-quote1, #298d9b);
+}
+.fido-text .kludge {
+    color: var(--mail-ending, var(--muted));
+    border-inline-start: 2px solid var(--mail-quote3, var(--accent));
+    padding-inline-start: 8px;
+    overflow-wrap: anywhere;
 }
 .fido-text .quote2 {
     color: var(--mail-quote2, #9d72c6);

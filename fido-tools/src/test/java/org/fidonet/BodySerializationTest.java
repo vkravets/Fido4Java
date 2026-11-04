@@ -1,6 +1,7 @@
 package org.fidonet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.fidonet.fts.FidoPath;
 import org.fidonet.fts.SeenBy;
@@ -17,6 +18,52 @@ import java.util.List;
 import java.util.Map;
 
 public class BodySerializationTest {
+    @Test
+    public void readerLinesPreservedInterleavedKnownControlsWithoutUnknownsOrEchoTrailers() {
+        Message message = new Message("Author",
+                                      "All",
+                                      new FTNAddr("1:500/101"),
+                                      null,
+                                      "Subject",
+                                      "AREA:TEST\r\1MSGID: 1:500/101 abc\r"
+                                      + "First\r\1X-UNKNOWN: literal\r\1CHRS: UTF-8 4\r"
+                                      + "Second\r\1CHRS: CP866 2\r> Quote\r"
+                                      + " * Origin: source (1:500/101)\rSEEN-BY: 500/101\r"
+                                      + "\1PATH: 500/101\r",
+                                      new Date());
+        Body body = message.getBody();
+        String original = body.toString();
+        assertEquals(List.of("\1MSGID: 1:500/101 abc",
+                             "First",
+                             "\1CHRS: UTF-8 4",
+                             "Second",
+                             "\1CHRS: CP866 2",
+                             "> Quote",
+                             "\1PATH: 500/101"),
+                     body.getReaderLines());
+        assertEquals(original, body.toString());
+        assertEquals("First\rSecond\r> Quote\r", body.getBody());
+        assertTrue(body.getKludgeLines().contains("\1X-UNKNOWN: literal"));
+    }
+
+    @Test
+    public void readerLinesPreservedNetmailViaAndLiteralBodyLines() {
+        Message message = new Message("Author",
+                                      "Reader",
+                                      new FTNAddr("1:500/101"),
+                                      new FTNAddr("1:500/100"),
+                                      "Subject",
+                                      "\1INTL 1:500/100 1:500/101\rFirst\r\r"
+                                      + "SEEN-BY: literal text\r\1Via 1:500/102\r",
+                                      new Date());
+        assertEquals(List.of("\1INTL 1:500/100 1:500/101",
+                             "First",
+                             "",
+                             "SEEN-BY: literal text",
+                             "\1Via 1:500/102"),
+                     message.getBody().getReaderLines());
+    }
+
     @Test
     public void extractedParsedKludgesWithDuplicatesAndRoutingWithoutChangingText() {
         Message message = new Message("Author",
@@ -51,6 +98,8 @@ public class BodySerializationTest {
         assertEquals(List.of("\1CHRS: UTF-8 4", "\1Via 1:500/102"), body.getKludgeLines());
         body.getKludges().put("CHRS", "CP866 2");
         assertEquals(List.of("\1CHRS: CP866 2", "\1Via 1:500/102"), body.getKludgeLines());
+        assertEquals(List.of("\1CHRS: CP866 2", "Plain body", "\1Via 1:500/102"),
+                     body.getReaderLines());
     }
 
     @Test

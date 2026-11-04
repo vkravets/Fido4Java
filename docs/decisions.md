@@ -21,6 +21,13 @@ authorize modifying the test installation as a side effect of development checks
 
 ## Product and module boundaries
 
+The optional inline kludge reader uses ordered full-message RPC display records
+from `Body` serialization. The ordinary `MailItem.body` remains the source for
+editing, quoting and templates. Known-control classification is server-owned;
+unknown controls remain available through the full reference disclosure. The
+reader mode starts off and resets per message. No display records are persisted
+as editable draft content or used to generate outgoing controls.
+
 Server-side archive/body search is an experimental capability, disabled
 unless `RpcExperimentalMailSearch=true` is explicitly set in text configuration.
 Changing the flag requires restart, not a UI setter or live reload. Search uses

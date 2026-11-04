@@ -1,14 +1,6 @@
 <script setup lang="ts">
+import { visibleKludge } from '../mail-kludges.ts';
 defineProps<{ kludges: string[]; label: string }>();
-
-function visibleKludge(kludge: string) {
-    return kludge.replace(/[\u0000-\u001f\u007f-\u009f]/g, (character) => {
-        const code = character.charCodeAt(0);
-        if (code <= 0x1f) return `^${String.fromCharCode(code + 64)}`;
-        if (code === 0x7f) return '^?';
-        return `\\x${code.toString(16).toUpperCase().padStart(2, '0')}`;
-    });
-}
 </script>
 
 <template>

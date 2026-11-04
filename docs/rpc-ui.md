@@ -282,6 +282,18 @@ list means no control lines. The same mailbox/area authorization protects both
 body and metadata. Summaries from `messages`, `echoMessages`, `echoContext` and
 archive search omit this field. Clients must keep these reference lines separate
 from editable text and quotations.
+Full responses additionally provide `MailItem.bodyLines`, an ordered list of
+`MailBodyLine { text, kludge }` records for optional inline viewing. Ordinary
+lines and recognized controls come from the same reconciled `Body` content
+serialization, followed by parsed PATH/Via trailers. Parsed Origin/SEEN-BY trailers and AREA are
+excluded, matching the plain-body boundary. Unknown controls remain in the full
+`kludges` list; they are omitted from `bodyLines`. The reader recognizes these
+case-sensitive names: MSGID, REPLY, CHRS, CHARSET, CODEPAGE, INTL, FMPT, TOPT,
+FLAGS, PID, TID, TZUTC, PATH and Via. Classification concerns the name only;
+values remain untrusted literal text. Repeated lines retain their positions in
+the stored representation, which is not a guarantee of original PKT byte order.
+Summaries/search/context omit `bodyLines` as well as `kludges`. These display
+records must never replace `body` when creating drafts or outgoing messages.
 No subject-based heuristic merges discussions. The parent lookup uses the existing
 MSGID index; reply pages query serialized REPLY lines in the selected area without
 materializing the entire archive. Very large areas can still require a text scan

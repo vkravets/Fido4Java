@@ -30,6 +30,12 @@ struct ExtensionSettings {
     4: required list<ExtensionSection> sections
 }
 
+// Display-only lines in stored Body order. Kludge lines are literal controls, not editable text.
+struct MailBodyLine {
+    1: required string text,
+    2: required bool kludge
+}
+
 struct MailItem {
     1: required i64 id,
     2: required string fromName,
@@ -44,7 +50,8 @@ struct MailItem {
     11: optional i32 attributes,
     12: optional string replyTo,
     13: optional string excerpt,
-    14: optional list<string> kludges
+    14: optional list<string> kludges,
+    15: optional list<MailBodyLine> bodyLines
 }
 
 struct MailPage {

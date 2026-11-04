@@ -7,10 +7,10 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
-- Finish the optional GoldED-like inline kludge reader mode and the final feature
-  verification/documentation pass in docs/mail-kludges/plan.md. Collapsible
-  netmail/echomail kludge details, persisted reply/forward references and isolation
-  from editable/quoted/submitted text are implemented.
+- Complete the final kludge feature verification/documentation audit in
+  docs/mail-kludges/plan.md. Collapsible details, optional inline viewing of known
+  controls, persisted reply/forward references and isolation from editable/quoted/
+  submitted text are implemented for netmail and echomail.
 
 - Implement author-initiated echomail crossposting to multiple selected areas.
   UI/RPC currently submit one area only; there is no selector or XC/XP processing.

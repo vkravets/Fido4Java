@@ -52,6 +52,22 @@ import java.util.stream.Collectors;
  */
 public class Body {
 
+    private static final Pattern CONTROL_LINE = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$");
+    private static final Set<String> READER_KLUDGES = Set.of("MSGID",
+                                                             "REPLY",
+                                                             "CHRS",
+                                                             "CHARSET",
+                                                             "CODEPAGE",
+                                                             "INTL",
+                                                             "FMPT",
+                                                             "TOPT",
+                                                             "FLAGS",
+                                                             "PID",
+                                                             "TID",
+                                                             "TZUTC",
+                                                             "PATH",
+                                                             "Via");
+
     private Map<String, String> kludges;
     private String origin;
     private SeenBy seenBy;
@@ -104,6 +120,25 @@ public class Body {
                          .collect(Collectors.toList());
     }
 
+    /** Reader content without AREA, unknown controls or parsed Origin/SEEN-BY trailers. */
+    public List<String> getReaderLines() {
+        StringBuilder content = new StringBuilder();
+        appendContent(content);
+        List<String> lines = content.toString()
+                                    .lines()
+                                    .filter(line -> !line.startsWith("\1")
+                                            || knownReaderKludge(line))
+                                    .collect(Collectors.toList());
+        Collections.addAll(lines, path.toPathStrings());
+        viaLines.stream().filter(Body::knownReaderKludge).forEach(lines::add);
+        return lines;
+    }
+
+    private static boolean knownReaderKludge(String line) {
+        Matcher match = CONTROL_LINE.matcher(line);
+        return match.matches() && READER_KLUDGES.contains(match.group(1));
+    }
+
     public String getOrigin() {
         return origin;
     }
@@ -142,16 +177,21 @@ public class Body {
         if (area != null && !area.isEmpty()) {
             sb.append("AREA:").append(area).append("\r");
         }
+        appendContent(sb);
+        appendTail(sb);
+        return sb.toString();
+    }
+
+    private void appendContent(StringBuilder sb) {
         if (layout != null) {
             appendLayout(sb);
-            appendTail(sb);
-            return sb.toString();
+            return;
         }
         // insert kludges
         Map<String, String> originalValues = new LinkedHashMap<>();
         Set<String> emitted = new HashSet<>();
         for (String line : controlLines) {
-            Matcher match = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$").matcher(line);
+            Matcher match = CONTROL_LINE.matcher(line);
             if (!match.matches()) {
                 continue;
             }
@@ -174,15 +214,12 @@ public class Body {
         }
         // insert text
         sb.append(body);
-        appendTail(sb);
-        return sb.toString();
     }
 
     private void appendLayout(StringBuilder sb) {
-        Pattern pattern = Pattern.compile("^\\u0001([^ :]+)(?::|(?= ))(.*)$");
         Map<String, String> originals = new LinkedHashMap<>();
         for (String line : controlLines) {
-            Matcher match = pattern.matcher(line);
+            Matcher match = CONTROL_LINE.matcher(line);
             if (match.matches()) {
                 originals.putIfAbsent(match.group(1), match.group(2));
             }
@@ -195,7 +232,7 @@ public class Body {
             }
         }
         for (String line : layout) {
-            Matcher match = pattern.matcher(line);
+            Matcher match = CONTROL_LINE.matcher(line);
             if (!match.matches() || !originals.containsKey(match.group(1))) {
                 sb.append(line).append('\r');
                 continue;

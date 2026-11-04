@@ -150,6 +150,14 @@ are available. It starts closed; use its summary or the keyboard to expand it.
 Lines remain selectable plain text, with a visible `^A` prefix and printable
 representations of other control characters. Long lines wrap within the pane.
 
+**Show known kludges inline** inserts recognized controls into the reading pane
+in stored message order, preserving repeated lines. The switch starts off and
+resets when another message opens. Inline controls have distinct text styling
+and a left border; their values are literal text, without link or mail-markup
+interpretation. Unknown controls remain accessible in the complete **Kludges**
+disclosure, which is independent of the switch. The mode affects only reading;
+reply text, templates and outgoing messages still use the plain body.
+
 Replies and forwards show **Original message kludges** before the editor as a
 read-only reference. Saved drafts retain this snapshot. If the reference exceeds
 the draft size limit, the snapshot contains only the initial complete lines that

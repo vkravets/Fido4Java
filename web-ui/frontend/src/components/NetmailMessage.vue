@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
+import { computed, ref, watch } from 'vue';
 import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
 import MailKludgeList from './MailKludgeList.vue';
 import type { MailItem } from '@rpc/bindings.mjs';
-withDefaults(
+const props = withDefaults(
     defineProps<{
         message: MailItem;
         busy: boolean;
@@ -18,6 +19,14 @@ withDefaults(
         unreadDisabled?: boolean;
     }>(),
     { removable: true }
+);
+const inlineKludges = ref(false);
+const hasInlineKludges = computed(() => props.message.bodyLines?.some((line) => line.kludge));
+watch(
+    () => props.message,
+    () => {
+        inlineKludges.value = false;
+    }
 );
 defineEmits<{
     reply: [kind?: 'quoted' | 'reply'];
@@ -185,7 +194,21 @@ function closeMenu(event: Event) {
             :kludges="message.kludges || []"
             :label="t('Kludges')"
         />
-        <FidoText :text="message.body || ''" />
+        <label
+            v-if="hasInlineKludges"
+            class="reader-kludge-toggle"
+        >
+            <input
+                type="checkbox"
+                v-model="inlineKludges"
+                :disabled="pending"
+            />
+            {{ t('Show known kludges inline') }}
+        </label>
+        <FidoText
+            :text="message.body || ''"
+            :body-lines="inlineKludges ? message.bodyLines : undefined"
+        />
         <footer
             class="reader-footer"
             :aria-disabled="pending || undefined"
@@ -213,6 +236,20 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
+.reader-kludge-toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 400;
+}
+.reader-kludge-toggle input {
+    width: auto;
+    flex-shrink: 0;
+}
 .mail-message:focus {
     outline: none;
 }

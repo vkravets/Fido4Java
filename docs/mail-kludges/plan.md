@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 and U1–U5 are implemented; U6 and
-T1–T5 remain pending.
+Status: implementation in progress. S1–S5 and U1–U6 are implemented;
+T1–T5 remain pending for the final feature audit.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -60,7 +60,7 @@ setting covers recognized kludges, including configured entries; the manual
 describes them as color-distinguished lines. See the [reader key help](https://github.com/golded-plus/golded-plus/blob/master/cfgs/config/goldhelp.cfg)
 and [VIEWKLUDGE behavior](https://koapp.narod.ru/tehlit/instruction/golded.htm).
 
-U6 will adapt that interaction to the web reader without replacing U1–U3's
+U6 adapts that interaction to the web reader without replacing U1–U3's
 separate disclosure:
 
 1. Inspect the message body's authoritative representation and define ordered
@@ -75,9 +75,10 @@ separate disclosure:
 4. Verify ordering, repeats, unknown-control visibility, escaped text, no duplicate
    presentation, and behavior in both themes/languages on desktop and mobile.
 
-If the current `Body` abstraction cannot provide ordered segments without lossy
-re-parsing, U6 must first extend the server/RPC contract; keep the existing
-disclosure usable until that contract is established.
+Implemented through `MailItem.bodyLines`, derived from the same reconciled
+`Body` content serialization. The full disclosure remains independently
+available, including recognized lines also visible in inline mode; no ordinary
+text or controls are duplicated within the reading pane itself.
 
 ## Tests and documentation
 
@@ -264,3 +265,24 @@ item is committed separately under the execution agreement above.
   restart and persisted truncation state, 10 browser cases, both typechecks,
   Storybook build and Java/frontend formatting. Reviewed 16 new Linux baselines;
   24 comparisons passed without updates, including ordinary new-message states.
+
+### U6 — optional inline reader
+
+- Added ordered `MailBodyLine` records to full-message RPC responses only. Shared
+  `Body` content serialization preserves text/control positions and repetitions;
+  existing message/packet serialization tests remain unchanged and pass.
+  Summaries, search and reply context omit the new display field.
+- The server classifies a documented set of control names for inline display.
+  Unknown controls remain in the complete disclosure. Parsed AREA and Origin/
+  SEEN-BY trailers stay outside the plain reader content; parsed PATH/Via trailers
+  follow it.
+- Added an English/Ukrainian reader checkbox, off by default and reset on message
+  changes. Known controls remain literal, with visible control notation and a
+  theme-aware border/color. Ordinary quote/signature formatting is preserved.
+  Editable drafts, templates and submission continue to use plain `body`.
+- Verification passed: 49 fido-tools tests, two RPC contract tests, 31 RPC
+  integration cases, the frontend unit suite, both typechecks and formatting.
+  All 12 focused browser cases passed, including keyboard toggle, duplicate/order
+  checks, literal markup, full-list access and navigation reset. Reviewed 16 new
+  pinned Linux baselines; 32 comparisons passed without updates, including prior
+  ordinary-reader and disclosure states across both themes/languages and sizes.

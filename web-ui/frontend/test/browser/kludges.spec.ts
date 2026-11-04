@@ -3,6 +3,61 @@ import { ukrainian } from '../../src/locales/uk.ts';
 import { openStory } from './story.ts';
 import type { MailDraft } from '../../../build/frontend-generated/bindings.mjs';
 
+for (const width of [1280, 390]) {
+    test(`reader toggles ordered known kludges without interpreting controls at ${width}px`, async ({
+        page
+    }) => {
+        const locale = width === 390 ? 'uk' : 'en';
+        await page.setViewportSize({ width, height: 1000 });
+        await openStory(
+            page,
+            'mail-netmailmessage--kludge-reading',
+            width === 390 ? 'dark' : 'light',
+            locale
+        );
+        const toggle = page.getByRole('checkbox', {
+            name:
+                locale === 'uk'
+                    ? ukrainian['Show known kludges inline']
+                    : 'Show known kludges inline'
+        });
+        const body = page.locator('.mail-body');
+        await expect(toggle).not.toBeChecked();
+        await expect(body.locator('.kludge')).toHaveCount(0);
+        const plain = await body.innerText();
+        await toggle.focus();
+        await page.keyboard.press('Space');
+        await expect(toggle).toBeChecked();
+        await expect(body.locator('.fido-line')).toHaveText([
+            '^AMSGID: 1:500/101.2 first',
+            'First paragraph',
+            '^ACHRS: UTF-8 4',
+            'AE> Quoted text',
+            '^ACHRS: CP866 2',
+            '^APID: <b>*literal*</b> @quote ' + 'long-value-'.repeat(16),
+            '-- ',
+            'Signature'
+        ]);
+        await expect(body.locator('.kludge a, .kludge b, .kludge .bold')).toHaveCount(0);
+        await expect(body).not.toContainText('X-UNKNOWN');
+        await page.locator('.mail-kludge-list > summary').click();
+        await expect(page.locator('.mail-kludge-list')).toContainText('X-UNKNOWN');
+        await expect(body.locator('.fido-line:not(.kludge)')).toHaveCount(4);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+            width
+        );
+        await toggle.uncheck();
+        await expect.poll(() => body.innerText()).toBe(plain);
+        await toggle.check();
+        await page.locator('[data-shortcut="mail.next"]').click();
+        await expect(toggle).not.toBeChecked();
+        await expect(body).toHaveText('Second body');
+        await toggle.check();
+        await expect(body.locator('.kludge')).toHaveText('^ACHRS: CP866 2');
+        await expect(body).not.toContainText('MSGID');
+    });
+}
+
 for (const state of ['truncated', 'omitted']) {
     test(`oversized ${state} kludge references allow saving and sending`, async ({ page }) => {
         await openStory(page, `mail-mailcomposer--${state}-reference`);
