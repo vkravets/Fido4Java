@@ -796,5 +796,7 @@ export const ukrainian = {
     Automatic: 'Автоматично',
     'System monospace': 'Системний моноширинний',
     'For continuous box drawing, use a monospace font and line height 1.0. Fonts must be installed on your device.':
-        'Для суцільних рамок виберіть моноширинний шрифт і висоту рядка 1,0. Шрифт має бути встановлений на вашому пристрої.'
+        'Для суцільних рамок виберіть моноширинний шрифт і висоту рядка 1,0. Шрифт має бути встановлений на вашому пристрої.',
+    Kludges: 'Клуджі',
+    'Original message kludges': 'Клуджі вихідного повідомлення'
 } as const;

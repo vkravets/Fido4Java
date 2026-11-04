@@ -171,3 +171,11 @@ item is committed separately under the execution agreement above.
   keyboard and disclosure semantics are retained.
 - Added Storybook examples for populated and empty lists. Reader/composer placement,
   localization and visible `^A` formatting remain later UI items.
+
+### U2 — reader and composer placement
+
+- Added the disclosure next to the shared message body, covering both netmail and
+  echomail readers. Added the original-message disclosure before the composer
+  editor; it remains outside the editable text field.
+- Added English and Ukrainian labels and a Storybook example showing both
+  placements. Reply and forward drafts receive their snapshots in U4.

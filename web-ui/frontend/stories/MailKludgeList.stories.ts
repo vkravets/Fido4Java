@@ -14,3 +14,29 @@ type Story = StoryObj<typeof meta>;
 
 export const WithLines: Story = {};
 export const Empty: Story = { args: { kludges: [] } };
+
+export const ReaderAndComposerPlacement: Story = {
+    render: () => ({
+        components: { MailKludgeList },
+        setup() {
+            return {
+                kludges: meta.args.kludges,
+                body: 'Hello from the message body.',
+                editor: 'Editable reply text'
+            };
+        },
+        template: `
+            <article class="card mail-message">
+                <MailKludgeList :kludges="kludges" label="Kludges" />
+                <p>{{ body }}</p>
+            </article>
+            <section class="card mail-composer">
+                <MailKludgeList
+                    :kludges="kludges"
+                    label="Original message kludges"
+                />
+                <textarea :value="editor" aria-label="Message editor" />
+            </section>
+        `
+    })
+};

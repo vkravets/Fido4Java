@@ -2,6 +2,7 @@
 import { t } from '../i18n.ts';
 import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
+import MailKludgeList from './MailKludgeList.vue';
 import type { MailItem } from '@rpc/bindings.mjs';
 withDefaults(
     defineProps<{
@@ -180,6 +181,10 @@ function closeMenu(event: Event) {
         <div class="reader-correspondents">
             {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
+        <MailKludgeList
+            :kludges="message.kludges || []"
+            :label="t('Kludges')"
+        />
         <FidoText :text="message.body || ''" />
         <footer
             class="reader-footer"

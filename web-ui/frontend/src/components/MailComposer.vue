@@ -5,6 +5,7 @@ import { templateLabel, templateError } from '../mail-template-labels.ts';
 import { computed, inject, nextTick, onMounted, ref, useId, watch } from 'vue';
 import { composerListKey } from '../workspace.ts';
 import FidoEditor from './FidoEditor.vue';
+import MailKludgeList from './MailKludgeList.vue';
 import NotificationBanner from './NotificationBanner.vue';
 import { expandTemplate, useMailTemplates } from '../mail-templates.ts';
 import type { ComposeKind, MailTemplate } from '../mail-templates.ts';
@@ -246,6 +247,10 @@ function chooseTemplate() {
             <NotificationBanner
                 kind="error"
                 :message="error"
+            />
+            <MailKludgeList
+                :kludges="draft.originalKludges || []"
+                :label="t('Original message kludges')"
             />
             <FidoEditor
                 :key="draft.id"
