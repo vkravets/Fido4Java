@@ -1,6 +1,10 @@
 # Mail Kludges — implementation plan
 
-Status: proposed; implementation has not started.
+Status: implementation in progress. S1 is implemented; S2–S5, U1–U5 and T1–T5
+remain pending.
+
+Execution agreement: commit the plan before implementation, then commit each plan
+item separately. Include focused checks with the item they verify.
 
 ## Summary
 
@@ -60,7 +64,8 @@ final review of serialization and submission boundaries.
 Suggested dependency order: S1, then S3/S2/S4/S5, then U1–U5, with relevant tests
 alongside each change and T5 last. Review the complete feature with Sol Medium,
 focusing on repeated controls, draft persistence, authorization and outgoing packets.
-These are work assignments, not a requirement to use separate agents or commits.
+These are work assignments, not a requirement to use separate agents. Each plan
+item is committed separately under the execution agreement above.
 
 ## Assumptions and limits
 
@@ -72,5 +77,22 @@ These are work assignments, not a requirement to use separate agents or commits.
   copy of the original PKT.
 - Verification uses isolated fixtures and temporary state, preserving installed
   node configuration, databases and mail.
-- Complexity was assessed statically. No implementation, model comparison, build,
-  browser test or visual verification was performed for this assessment.
+- Complexity was assessed statically; no model performance comparison was run.
+  Implementation verification is recorded below as work progresses.
+
+## Implementation record
+
+### S1 — optional RPC fields
+
+- Added optional field 14 `MailItem.kludges` and field 18
+  `MailDraft.originalKludges`, both `list<string>`, preserving existing field IDs.
+- Regenerated Java and browser bindings using the repository Gradle tasks.
+  Generated files remain build outputs and are not committed.
+- Added focused Thrift binary round-trip coverage for ordered repeated control
+  lines and draft payloads without the new optional field. Server population,
+  persistence validation and UI rendering remain subsequent plan items.
+- Verification passed on Windows with the pinned development profile: both
+  `MailKludgeContractTest` cases, `spotlessCheck`, `verifyJavaFormatting`,
+  `:rpc-node:compileJava`, `:web-ui:typecheckFrontend` and
+  `:web-ui:typecheckStorybook`. Java/browser contract generation also passed.
+  Browser functional tests and VRT were not run because S1 changes no UI behavior.

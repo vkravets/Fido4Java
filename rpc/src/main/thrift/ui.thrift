@@ -43,7 +43,8 @@ struct MailItem {
     10: optional string body,
     11: optional i32 attributes,
     12: optional string replyTo,
-    13: optional string excerpt
+    13: optional string excerpt,
+    14: optional list<string> kludges
 }
 
 struct MailPage {
@@ -90,7 +91,8 @@ struct MailDraft {
     14: optional bool templateInitialized,
     15: optional string originalName,
     16: optional string originalAddress,
-    17: optional string encoding
+    17: optional string encoding,
+    18: optional list<string> originalKludges
 }
 
 struct LinkInfo {
