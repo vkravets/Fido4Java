@@ -43,10 +43,12 @@ export const KludgeReading: Story = {
         components: { NetmailMessage },
         setup() {
             const workspace = createWorkspace();
+            void workspace.load('storybook');
             if (context.parameters.unknownKludges === 'toggle')
                 workspace.value.value.unknownKludges = 'toggle';
             provide(workspaceKey, workspace);
             const message = ref(args.message);
+            const visible = ref(true);
             const next = () => {
                 message.value = {
                     ...args.message,
@@ -59,9 +61,16 @@ export const KludgeReading: Story = {
                     ]
                 };
             };
-            return { args, message, next };
+            return {
+                args,
+                message,
+                next,
+                visible,
+                sessionNavigation: context.parameters.sessionNavigation
+            };
         },
-        template: '<NetmailMessage v-bind="args" :message="message" @next="next" />'
+        template:
+            '<button v-if="sessionNavigation" data-testid="remount-reader" @click="visible = !visible">Toggle reader</button><NetmailMessage v-if="visible" v-bind="args" :message="message" @next="next" />'
     })
 };
 export const InlineKludges: Story = {
@@ -69,6 +78,10 @@ export const InlineKludges: Story = {
     play: async ({ canvasElement }) => {
         canvasElement.querySelector<HTMLInputElement>('.reader-kludge-toggle input')!.click();
     }
+};
+export const SessionNavigation: Story = {
+    ...KludgeReading,
+    parameters: { sessionNavigation: true }
 };
 export const Deleting: Story = { args: { busy: true } };
 export const LongText: Story = {

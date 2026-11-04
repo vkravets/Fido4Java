@@ -159,8 +159,11 @@ test('validated sessions survive reload, clear on logout or expiry, and survive 
     };
     const { createState } = await server.ssrLoadModule('/src/state.ts');
     const signedIn = createState();
+    saved.set('jftn-reader-inline-kludges', 'true');
     await signedIn.login('point', 'password');
+    assert.equal(saved.has('jftn-reader-inline-kludges'), false);
     assert.equal(saved.get('jftn-session'), 'live-session');
+    saved.set('jftn-reader-inline-kludges', 'true');
     const reloaded = createState();
     assert.equal(reloaded.profile.value, null);
     await reloaded.start();
@@ -168,6 +171,7 @@ test('validated sessions survive reload, clear on logout or expiry, and survive 
     assert.equal(reloaded.session.value, 'live-session');
     assert.equal(reloaded.profile.value.login, 'point');
     assert.equal(reloaded.theme.value, 'dark');
+    assert.equal(saved.get('jftn-reader-inline-kludges'), 'true');
     let loggedOut = false;
     api.login.logout = async (token: string) => {
         assert.equal(token, 'live-session');
@@ -176,6 +180,7 @@ test('validated sessions survive reload, clear on logout or expiry, and survive 
     await reloaded.logout();
     assert.equal(loggedOut, true);
     assert.equal(saved.has('jftn-session'), false);
+    assert.equal(saved.has('jftn-reader-inline-kludges'), false);
     assert.equal(reloaded.profile.value, null);
 
     saved.set('jftn-session', 'live-session');
@@ -190,11 +195,13 @@ test('validated sessions survive reload, clear on logout or expiry, and survive 
     await retry.start();
     assert.equal(retry.ready.value, true);
     assert.equal(retry.profile.value.login, 'point');
+    saved.set('jftn-reader-inline-kludges', 'true');
     await retry.run(async () => {
         throw { code: 'SESSION_EXPIRED' };
     });
     assert.equal(saved.has('jftn-session'), false);
     assert.equal(retry.session.value, '');
+    assert.equal(saved.has('jftn-reader-inline-kludges'), false);
 
     saved.set('jftn-session', 'live-session');
     failure = { code: 'UNAUTHORIZED' };

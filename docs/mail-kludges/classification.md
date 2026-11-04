@@ -82,7 +82,11 @@ Personal Settings → Appearance → Unknown kludges in messages can select
 the account-owned `workspace` UI document as `unknownKludges: always | toggle`;
 missing or invalid values select `always`.
 
-The per-message switch reveals all controls and resets when navigating. The
+The reader switch reveals all controls. It is shared across readers and page
+navigation for the current login session, including tab reload via
+`sessionStorage` (`jftn-reader-inline-kludges`). It starts off for a new login;
+logout and authorization expiry clear it. Blocked storage falls back to memory.
+This session value is separate from the persistent account visibility policy. The
 complete disclosure remains independently available in both modes. All inline
 controls use literal, selectable text with distinct styling. This affects neither
 draft snapshots nor editing, quoting, templates, storage serialization or outgoing

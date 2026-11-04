@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
 import MailKludgeList from './MailKludgeList.vue';
@@ -21,8 +21,8 @@ const props = withDefaults(
     }>(),
     { removable: true }
 );
-const inlineKludges = ref(false);
 const workspace = useWorkspace();
+const inlineKludges = workspace.inlineKludges;
 const hasInlineKludges = computed(() =>
     props.message.bodyLines?.some(
         (line) => line.kludge && (line.known || workspace.value.value.unknownKludges === 'toggle')
@@ -35,12 +35,6 @@ const readerLines = computed(() =>
             inlineKludges.value ||
             (!line.known && workspace.value.value.unknownKludges === 'always')
     )
-);
-watch(
-    () => props.message,
-    () => {
-        inlineKludges.value = false;
-    }
 );
 defineEmits<{
     reply: [kind?: 'quoted' | 'reply'];

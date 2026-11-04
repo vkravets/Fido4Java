@@ -1,4 +1,4 @@
-import { inject, ref } from 'vue';
+import { inject, ref, watch } from 'vue';
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 
 export interface ComposerListControl {
@@ -68,12 +68,41 @@ type Client = {
     uiDocument(token: string, key: string): Promise<string>;
     saveUiDocument(token: string, key: string, document: string): Promise<void>;
 };
+const readerSessionKey = 'jftn-reader-inline-kludges';
+function storedInlineKludges(): boolean {
+    try {
+        return sessionStorage.getItem(readerSessionKey) === 'true';
+    } catch {
+        return false;
+    }
+}
+export function clearReaderSession() {
+    try {
+        sessionStorage.removeItem(readerSessionKey);
+    } catch {
+        // A blocked browser store does not prevent reading mail.
+    }
+}
 export function createWorkspace(client?: Client) {
     const value = ref(workspacePreferences({}));
+    const inlineKludges = ref(false);
+    watch(
+        inlineKludges,
+        (enabled) => {
+            try {
+                sessionStorage.setItem(readerSessionKey, String(enabled));
+            } catch {
+                // Keep the current in-memory setting when storage is unavailable.
+            }
+        },
+        { flush: 'sync' }
+    );
     let token = '';
     let generation = 0;
     let queue: Promise<void> = Promise.resolve();
     async function load(session: string) {
+        if (session !== token)
+            inlineKludges.value = session && !token ? storedInlineKludges() : false;
         token = session;
         const ticket = ++generation;
         value.value = workspacePreferences({});
@@ -100,7 +129,7 @@ export function createWorkspace(client?: Client) {
         change((current) => ({ ...current, ...patch }));
     const updateLayout = (kind: MailKind, patch: Partial<MailLayout>) =>
         change((current) => ({ ...current, [kind]: { ...current[kind], ...patch } }));
-    return { value, load, update, updateLayout };
+    return { value, inlineKludges, load, update, updateLayout };
 }
 export type Workspace = ReturnType<typeof createWorkspace>;
 export const workspaceKey: InjectionKey<Workspace> = Symbol('workspace');

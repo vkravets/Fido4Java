@@ -48,13 +48,30 @@ for (const width of [1280, 390]) {
         await expect.poll(() => body.innerText()).toBe(plain);
         await toggle.check();
         await page.locator('[data-shortcut="mail.next"]').click();
-        await expect(toggle).not.toBeChecked();
-        await expect(body).toHaveText('Second body');
-        await toggle.check();
+        await expect(toggle).toBeChecked();
+        await expect(body).toContainText('Second body');
         await expect(body.locator('.kludge')).toHaveText('^ACHRS: CP866 2');
         await expect(body).not.toContainText('MSGID');
     });
 }
+
+test('reader toggle survives remounts and tab reloads for the current session', async ({
+    page
+}) => {
+    await openStory(page, 'mail-netmailmessage--session-navigation');
+    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
+    await expect(toggle).not.toBeChecked();
+    await toggle.check();
+    await page.getByTestId('remount-reader').click();
+    await expect(toggle).toHaveCount(0);
+    await page.getByTestId('remount-reader').click();
+    await expect(toggle).toBeChecked();
+    await page.reload();
+    await expect(toggle).toBeChecked();
+    await toggle.uncheck();
+    await page.reload();
+    await expect(toggle).not.toBeChecked();
+});
 
 test('unknown controls follow the personal toggle policy and remain accessible in the full list', async ({
     page

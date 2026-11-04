@@ -10,6 +10,15 @@ button accessible.
 Desktop navigation starts collapsed when an account has no saved workspace
 preference. An explicitly saved expanded or collapsed choice is retained.
 
+## Browser and account storage
+
+| Storage | Values | Lifetime |
+| --- | --- | --- |
+| `localStorage` | `jftn-language`, `jftn-theme` | Browser-local language and theme selection across reloads and visits. The authenticated theme is also an account preference. |
+| `sessionStorage` | `jftn-session` | Tab-local authentication token, validated on restoration and removed on logout or authorization expiry. |
+| `sessionStorage` | `jftn-reader-inline-kludges` | Reader switch shared across navigation and tab reloads for the current login; cleared on logout, expiry or a new login. |
+| Server profile RPC | `workspace`, `mail-themes`, `mail-templates`, `keyboard` UI documents | Account-owned layout/startup page, unknown-kludge policy, mail appearance/encoding, templates and shortcuts. These do not rely on browser storage for persistence. |
+
 ## Settings workspace
 
 Station and personal settings share a compact workspace with a section menu and
@@ -151,8 +160,12 @@ Lines remain selectable plain text, with a visible `^A` prefix and printable
 representations of other control characters. Long lines wrap within the pane.
 
 **Show kludges inline** reveals controls in the reading pane in stored message
-order, preserving repeated lines. The switch starts off and resets when another
-message opens. Unknown controls are shown even with the switch off by default.
+order, preserving repeated lines. The switch starts off in a new login session;
+its state is shared across messages, folders, netmail/echomail and other pages.
+It survives tab reload through `sessionStorage` and clears on logout, expired
+authorization or a new login. If browser storage is blocked it remains available
+in memory for the current application lifetime. It is not saved to the account.
+Unknown controls are shown even with the switch off by default.
 Personal **Appearance** settings offer **Unknown kludges in messages** with
 **Always show** (default) or **Show with the kludge toggle**. This account-owned
 `workspace.unknownKludges` preference applies to both netmail and echomail.

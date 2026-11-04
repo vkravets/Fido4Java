@@ -1,6 +1,56 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createWorkspace, parseWorkspace } from '../src/workspace.ts';
+import { clearReaderSession, createWorkspace, parseWorkspace } from '../src/workspace.ts';
+
+test('reader visibility belongs to the tab session and stays out of account preferences', async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+    const data = new Map<string, string>();
+    Object.defineProperty(globalThis, 'sessionStorage', {
+        configurable: true,
+        value: {
+            getItem: (key: string) => data.get(key) ?? null,
+            setItem: (key: string, value: string) => data.set(key, value),
+            removeItem: (key: string) => data.delete(key)
+        }
+    });
+    try {
+        const workspace = createWorkspace();
+        await workspace.load('first');
+        assert.equal(workspace.inlineKludges.value, false);
+        workspace.inlineKludges.value = true;
+        await workspace.load('first');
+        assert.equal(workspace.inlineKludges.value, true);
+        assert.equal('inlineKludges' in workspace.value.value, false);
+        const reloaded = createWorkspace();
+        await reloaded.load('first');
+        assert.equal(reloaded.inlineKludges.value, true);
+        await reloaded.load('second');
+        assert.equal(reloaded.inlineKludges.value, false);
+        reloaded.inlineKludges.value = true;
+        await reloaded.load('');
+        assert.equal(reloaded.inlineKludges.value, false);
+        workspace.inlineKludges.value = false;
+        workspace.inlineKludges.value = true;
+        clearReaderSession();
+        const newLogin = createWorkspace();
+        await newLogin.load('third');
+        assert.equal(newLogin.inlineKludges.value, false);
+        Object.defineProperty(globalThis, 'sessionStorage', {
+            configurable: true,
+            get() {
+                throw new Error('blocked');
+            }
+        });
+        const blocked = createWorkspace();
+        await blocked.load('blocked');
+        blocked.inlineKludges.value = true;
+        assert.equal(blocked.inlineKludges.value, true);
+        clearReaderSession();
+    } finally {
+        if (original) Object.defineProperty(globalThis, 'sessionStorage', original);
+        else Reflect.deleteProperty(globalThis, 'sessionStorage');
+    }
+});
 
 test('layout documents normalize unsafe values and keep mailboxes independent', () => {
     const value = parseWorkspace(

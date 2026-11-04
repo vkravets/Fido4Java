@@ -2,6 +2,7 @@ import { initializeLocale, t } from './i18n.ts';
 import { reactive, ref } from 'vue';
 import { api, bindings, loginSession } from './api.ts';
 import { credentialJson, publicKeyOptions } from './webauthn.ts';
+import { clearReaderSession } from './workspace.ts';
 import type { LoginResponse, UserProfile } from '@rpc/bindings.mjs';
 
 export type Theme = 'light' | 'dark';
@@ -19,6 +20,7 @@ function storedSession(): string {
     }
 }
 function rememberSession(token: string) {
+    if (!token || token !== storedSession()) clearReaderSession();
     try {
         if (token) sessionStorage.setItem(sessionKey, token);
         else sessionStorage.removeItem(sessionKey);
@@ -92,6 +94,7 @@ export function createState() {
     }
 
     async function enter(response: LoginResponse) {
+        clearReaderSession();
         session.value = loginSession(response);
         try {
             await refreshProfile();

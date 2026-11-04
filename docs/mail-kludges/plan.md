@@ -278,8 +278,9 @@ item is committed separately under the execution agreement above.
   Unknown controls remain in the complete disclosure. Parsed AREA and Origin/
   SEEN-BY trailers stay outside the plain reader content; parsed PATH/Via trailers
   follow it.
-- Added an English/Ukrainian reader checkbox, off by default and reset on message
-  changes. Known controls remain literal, with visible control notation and a
+- Added an English/Ukrainian reader checkbox, initially off by default and reset
+  on message changes (superseded by the session-state follow-up below). Known
+  controls remain literal, with visible control notation and a
   theme-aware border/color. Ordinary quote/signature formatting is preserved.
   Editable drafts, templates and submission continue to use plain `body`.
 - Verification passed: 49 fido-tools tests, two RPC contract tests, 31 RPC
@@ -302,7 +303,8 @@ item is committed separately under the execution agreement above.
   response-only fields do not change persisted draft or installed mail formats.
 - Unknown controls appear inline by default. Personal Appearance settings persist
   `workspace.unknownKludges` as `always` or `toggle`. The message checkbox reveals
-  all controls, resets on navigation and never changes editor/template data.
+  all controls and never changes editor/template data. Its initial per-message
+  reset was superseded by the session-state follow-up below.
 - Verification passed: 51 fido-tools tests, two RPC contract tests, 31 RPC
   integration cases (with the eight echo cases rerun after adding explicit
   known/unknown assertions), 103 frontend unit tests, both TypeScript checks,
@@ -314,3 +316,21 @@ item is committed separately under the execution agreement above.
   inline controls and personal settings. Final comparison passed 56/56 without
   updates across both themes/languages and desktop/mobile, including unchanged
   ordinary reader and full-disclosure baselines.
+
+### U6 follow-up — session-scoped reader switch
+
+- Replaced the message-local checkbox state with one session ref in the shared
+  workspace. Moving between messages, folders, netmail/echomail, settings or
+  recreating the reader keeps the user's choice. The initial state is off.
+- `sessionStorage.jftn-reader-inline-kludges` restores the choice after tab
+  reload. New login, logout, account/session change and authorization expiry
+  reset it. Blocked storage keeps the in-memory choice usable. The switch is not
+  included in the persistent `workspace` account document; the unknown-control
+  visibility policy remains an independent account preference.
+- Updated behavior/source documentation and recorded browser versus server
+  storage ownership in the browser interface guide.
+- Verification passed: 104 frontend unit tests, both TypeScript checks,
+  Storybook build, changed-file Prettier checks and 15 browser cases, including
+  message changes, reader remounts, reload of both switch states and auth-session
+  cleanup. Linux VRT comparison passed 56/56 across both themes/languages and
+  desktop/mobile without changing any baseline. No Java code or contracts changed.
