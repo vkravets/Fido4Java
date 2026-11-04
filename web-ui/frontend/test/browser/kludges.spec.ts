@@ -195,7 +195,7 @@ for (const width of [1280, 390]) {
         await page.setViewportSize({ width, height: 1000 });
         await openStory(
             page,
-            'mail-netmailmessage--kludge-reading',
+            'mail-messageview--kludge-reading',
             width === 390 ? 'dark' : 'light',
             locale
         );
@@ -236,13 +236,38 @@ for (const width of [1280, 390]) {
         await expect(body).toContainText('Second body');
         await expect(body.locator('.kludge')).toHaveText('^ACHRS: CP866 2');
         await expect(body).not.toContainText('MSGID');
+        await page.locator('[data-shortcut="mail.next"]').click();
+        await expect(body).toContainText('Body without kludges');
+        await expect(toggle).not.toBeVisible();
     });
 }
+
+test('reader kludge toggle stays mounted while navigating to a message without kludges', async ({
+    page
+}) => {
+    await openStory(page, 'mail-messageview--kludge-reading');
+    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
+    const element = await toggle.elementHandle();
+    await expect(toggle).toBeVisible();
+    await toggle.check();
+
+    await page.locator('[data-shortcut="mail.next"]').click();
+    await expect(page.locator('.mail-body')).toContainText('Second body');
+    await expect(toggle).toBeChecked();
+    await page.locator('[data-shortcut="mail.next"]').click();
+    await expect(page.locator('.mail-body')).toContainText('Body without kludges');
+    await expect(toggle).not.toBeVisible();
+    expect(
+        await element!.evaluate((input) =>
+            input.isSameNode(document.querySelector('.reader-kludge-toggle input'))
+        )
+    ).toBe(true);
+});
 
 test('reader toggle survives remounts and tab reloads for the current session', async ({
     page
 }) => {
-    await openStory(page, 'mail-netmailmessage--session-navigation');
+    await openStory(page, 'mail-messageview--session-navigation');
     const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
     await expect(toggle).not.toBeChecked();
     await toggle.check();
@@ -260,7 +285,7 @@ test('reader toggle survives remounts and tab reloads for the current session', 
 test('unknown controls follow the personal toggle policy and remain accessible in the full list', async ({
     page
 }) => {
-    await openStory(page, 'mail-netmailmessage--unknown-kludges-on-toggle');
+    await openStory(page, 'mail-messageview--unknown-kludges-on-toggle');
     const body = page.locator('.mail-body');
     const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
     await expect(body.locator('.kludge')).toHaveCount(0);
@@ -271,9 +296,9 @@ test('unknown controls follow the personal toggle policy and remain accessible i
     await expect(body).toContainText('CUSTOM');
     await toggle.uncheck();
     await expect(body.locator('.kludge')).toHaveCount(0);
-    await openStory(page, 'mail-netmailmessage--unknown-kludges-only');
+    await openStory(page, 'mail-messageview--unknown-kludges-only');
     await expect(body.locator('.kludge')).toHaveText('^ACUSTOM: visible by default');
-    await expect(toggle).toHaveCount(0);
+    await expect(toggle).not.toBeVisible();
 });
 
 test('unknown control visibility is saved in personal appearance settings', async ({ page }) => {

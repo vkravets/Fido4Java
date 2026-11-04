@@ -13,7 +13,7 @@ import type { MailFolder } from '../netmail.ts';
 import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import NetmailList from './NetmailList.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
-import NetmailMessage from './NetmailMessage.vue';
+import MessageView from './MessageView.vue';
 import MailComposer from './MailComposer.vue';
 import MailWorkspace from './MailWorkspace.vue';
 const props = defineProps<{
@@ -216,7 +216,7 @@ const index = computed(() =>
             @send="state.run(reader.send)"
             @cancel="cancel"
         />
-        <NetmailMessage
+        <MessageView
             v-else-if="reader.selected.value"
             :message="reader.selected.value"
             :busy="state.busy.value"

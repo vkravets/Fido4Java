@@ -198,21 +198,23 @@ function closeMenu(event: Event) {
         <div class="reader-correspondents">
             {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
-        <MailKludgeList
-            :kludges="message.kludges || []"
-            :label="t('Kludges')"
-        />
-        <label
-            v-if="hasInlineKludges"
-            class="reader-kludge-toggle"
-        >
-            <input
-                type="checkbox"
-                v-model="inlineKludges"
-                :disabled="pending"
+        <div class="reader-kludge-controls">
+            <MailKludgeList
+                :kludges="message.kludges || []"
+                :label="t('Kludges')"
             />
-            {{ t('Show kludges inline') }}
-        </label>
+            <label
+                v-show="hasInlineKludges"
+                class="reader-kludge-toggle"
+            >
+                <input
+                    type="checkbox"
+                    v-model="inlineKludges"
+                    :disabled="pending"
+                />
+                {{ t('Show kludges inline') }}
+            </label>
+        </div>
         <FidoText
             :text="message.body || ''"
             :body-lines="readerLines"
@@ -244,6 +246,10 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
+.reader-kludge-controls {
+    display: grid;
+    justify-items: start;
+}
 .reader-kludge-toggle {
     display: flex;
     flex-direction: row;

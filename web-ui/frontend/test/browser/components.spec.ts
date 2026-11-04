@@ -301,7 +301,7 @@ test('point netmail workflow opens a letter, replies, saves a draft and sends', 
 });
 
 test('netmail displays received HTML as literal text and offers reply', async ({ page }) => {
-    await story(page, 'mail-netmailmessage--reading');
+    await story(page, 'mail-messageview--reading');
     await expect(page.locator('.mail-body')).toContainText('<script>alert("example")</script>');
     await expect(page.locator('.mail-body script')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Reply', exact: true })).toBeEnabled();

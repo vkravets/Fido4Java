@@ -12,7 +12,7 @@ import { mailId } from '../netmail.ts';
 import type { AppState } from '../state.ts';
 import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import EchoMessageList from './EchoMessageList.vue';
-import NetmailMessage from './NetmailMessage.vue';
+import MessageView from './MessageView.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
 import MailComposer from './MailComposer.vue';
 import MailWorkspace from './MailWorkspace.vue';
@@ -269,7 +269,7 @@ const nextUnread = computed(() =>
             v-else-if="reader.selected.value"
             class="echo-reading"
         >
-            <NetmailMessage
+            <MessageView
                 :message="reader.selected.value"
                 :busy="state.busy.value"
                 :pending="opening"

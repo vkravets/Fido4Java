@@ -4,22 +4,22 @@ import { existsSync } from 'node:fs';
 import { openStory } from './story.ts';
 
 const screens = [
-    { name: 'reader-unknown-toggle', story: 'mail-netmailmessage--unknown-kludges-on-toggle' },
-    { name: 'reader-unknown-only', story: 'mail-netmailmessage--unknown-kludges-only' },
-    { name: 'reader-kludges-hidden', story: 'mail-netmailmessage--kludge-reading' },
+    { name: 'reader-unknown-toggle', story: 'mail-messageview--unknown-kludges-on-toggle' },
+    { name: 'reader-unknown-only', story: 'mail-messageview--unknown-kludges-only' },
+    { name: 'reader-kludges-hidden', story: 'mail-messageview--kludge-reading' },
     {
         name: 'reader-kludges-expanded',
-        story: 'mail-netmailmessage--kludge-reading',
+        story: 'mail-messageview--kludge-reading',
         expandReaderKludges: true
     },
     {
         name: 'reader-kludges-inline',
-        story: 'mail-netmailmessage--inline-kludges',
+        story: 'mail-messageview--inline-kludges',
         inlineReader: true
     },
     {
         name: 'reader-kludges-inline-expanded',
-        story: 'mail-netmailmessage--inline-kludges',
+        story: 'mail-messageview--inline-kludges',
         inlineReader: true,
         expandReaderKludges: true
     },
@@ -173,10 +173,10 @@ const screens = [
     { name: 'collapsed-list-echo-compact', story: 'layout-maillistworkspace--echo-compact' },
     { name: 'collapsed-list-netmail', story: 'layout-maillistworkspace--netmail' },
     { name: 'echo-focused-desktop', story: 'mail-echomailview--focused-desktop' },
-    { name: 'mail-reader-actions', story: 'mail-netmailmessage--reader-actions' },
+    { name: 'mail-reader-actions', story: 'mail-messageview--reader-actions' },
     {
         name: 'mail-reader-more',
-        story: 'mail-netmailmessage--more-actions',
+        story: 'mail-messageview--more-actions',
         disclosure: '.reader-more-panel'
     },
     {
@@ -255,14 +255,14 @@ const screens = [
     { name: 'mail-outbox', story: 'mail-netmaillist--outbox' },
     { name: 'mail-empty', story: 'mail-netmaillist--empty' },
     { name: 'mail-loading', story: 'mail-netmaillist--loading' },
-    { name: 'mail-reading', story: 'mail-netmailmessage--reading' },
+    { name: 'mail-reading', story: 'mail-messageview--reading' },
     {
         name: 'mail-kludge-lines',
         story: 'mail-mailkludgelist--readable-lines',
         expandKludges: true
     },
-    { name: 'mail-delete-busy', story: 'mail-netmailmessage--deleting' },
-    { name: 'mail-long-text', story: 'mail-netmailmessage--long-text' },
+    { name: 'mail-delete-busy', story: 'mail-messageview--deleting' },
+    { name: 'mail-long-text', story: 'mail-messageview--long-text' },
     { name: 'mail-reply', story: 'mail-mailcomposer--reply' },
     { name: 'mail-compact-reply', story: 'mail-mailcomposer--compact-reply' },
     { name: 'mail-workspace-reply', story: 'mail-mailcomposer--workspace-reply' },

@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { nextTick, ref, provide } from 'vue';
 import { createWorkspace, workspaceKey } from '../src/workspace.ts';
-import NetmailMessage from '../src/components/NetmailMessage.vue';
+import MessageView from '../src/components/MessageView.vue';
 import { netmailMessage } from './netmail-fixture.ts';
 const meta = {
-    title: 'Mail/NetmailMessage',
-    component: NetmailMessage,
+    title: 'Mail/MessageView',
+    component: MessageView,
     args: { message: netmailMessage, reply: true, busy: false }
-} satisfies Meta<typeof NetmailMessage>;
+} satisfies Meta<typeof MessageView>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Reading: Story = {};
@@ -40,7 +40,7 @@ const inlineMessage = {
 export const KludgeReading: Story = {
     args: { message: inlineMessage, navigation: true },
     render: (args, context) => ({
-        components: { NetmailMessage },
+        components: { MessageView },
         setup() {
             const workspace = createWorkspace();
             void workspace.load('storybook');
@@ -49,17 +49,30 @@ export const KludgeReading: Story = {
             provide(workspaceKey, workspace);
             const message = ref(args.message);
             const visible = ref(true);
+            const navigation = ref(0);
             const next = () => {
-                message.value = {
-                    ...args.message,
-                    id: '9007199254740994',
-                    body: 'Second body',
-                    kludges: ['\u0001CHRS: CP866 2'],
-                    bodyLines: [
-                        { text: '\u0001CHRS: CP866 2', kludge: true, known: true },
-                        { text: 'Second body', kludge: false, known: false }
-                    ]
-                };
+                navigation.value++;
+                message.value =
+                    navigation.value === 1
+                        ? {
+                              ...args.message,
+                              id: '9007199254740994',
+                              body: 'Second body',
+                              kludges: ['\u0001CHRS: CP866 2'],
+                              bodyLines: [
+                                  { text: '\u0001CHRS: CP866 2', kludge: true, known: true },
+                                  { text: 'Second body', kludge: false, known: false }
+                              ]
+                          }
+                        : {
+                              ...args.message,
+                              id: '9007199254740995',
+                              body: 'Body without kludges',
+                              kludges: [],
+                              bodyLines: [
+                                  { text: 'Body without kludges', kludge: false, known: false }
+                              ]
+                          };
             };
             return {
                 args,
@@ -70,7 +83,7 @@ export const KludgeReading: Story = {
             };
         },
         template:
-            '<button v-if="sessionNavigation" data-testid="remount-reader" @click="visible = !visible">Toggle reader</button><NetmailMessage v-if="visible" v-bind="args" :message="message" @next="next" />'
+            '<button v-if="sessionNavigation" data-testid="remount-reader" @click="visible = !visible">Toggle reader</button><MessageView v-if="visible" v-bind="args" :message="message" @next="next" />'
     })
 };
 export const InlineKludges: Story = {

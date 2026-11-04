@@ -6,7 +6,7 @@ import type { MailEncoding, MailTheme } from '../mail-themes.ts';
 import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import { t } from '../i18n.ts';
 import MailComposer from './MailComposer.vue';
-import NetmailMessage from './NetmailMessage.vue';
+import MessageView from './MessageView.vue';
 
 export type AppearancePreviewMode = 'reader' | 'editor' | 'custom';
 const mode = defineModel<AppearancePreviewMode>({ required: true });
@@ -92,7 +92,7 @@ watch(
             </button>
         </nav>
         <div class="appearance-preview-window">
-            <NetmailMessage
+            <MessageView
                 v-if="mode === 'reader'"
                 :message="message"
                 :busy="false"

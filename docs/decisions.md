@@ -128,6 +128,9 @@ Pending reads expose busy/unavailable semantics without toggling native disabled
 styles on the reader actions. Guard both mouse and keyboard activation. Message
 navigation shortcuts focus the persistent reader without scrolling, so an old
 list row cannot retain a second focus highlight beside the selected message.
+Controls inside that persistent reader whose availability changes per message
+remain mounted and use visibility state, so message navigation does not recreate
+them or reset their session state.
 
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement

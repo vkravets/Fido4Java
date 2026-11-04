@@ -458,7 +458,7 @@ test('message header actions use icons and translated tooltips in the reader and
         for (const theme of ['light', 'dark'] as const) {
             for (const language of ['en', 'uk'] as const) {
                 for (const name of [
-                    'mail-netmailmessage--reader-actions',
+                    'mail-messageview--reader-actions',
                     'mail-mailappearancesettings--themes'
                 ]) {
                     await openStory(page, name, theme, language);
