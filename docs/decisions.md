@@ -668,6 +668,10 @@ and ACKs remain valid. Keep mail and UI-state databases together in backups.
 Local message IDs use an address plus eight hexadecimal digits, matching HPT's
 wire representation. Browser request IDs remain internal idempotency keys;
 the UI submission journal preserves the allocated MSGID across retries/restarts.
+Draft `originalKludges` is reference metadata: after size validation, submission
+removes it from a copy before fingerprinting and message creation. Changing this
+snapshot alone does not invalidate an otherwise identical retry or affect wire
+controls; editable message changes still conflict with a reused request ID.
 Existing IDs are immutable. Via identifies the actual JFtn build and outgoing
 link AKA in UTC; it does not introduce a second message ID. See
 [tosser tracking and MSGIDs](tosser.md) for the reference revisions and examples.

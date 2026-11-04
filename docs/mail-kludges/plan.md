@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S4 are implemented; S5, U1–U5 and T1–T5
+Status: implementation in progress. S1–S5 are implemented; U1–U5 and T1–T5
 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -143,3 +143,23 @@ item is committed separately under the execution agreement above.
 - Updated the RPC guide. Browser functional tests and VRT were not run because
   this change does not alter UI behavior.
 - Root `spotlessCheck` and `verifyJavaFormatting` passed.
+
+### S5 — submission isolation
+
+- Submission now clears `originalKludges` from a copy before fingerprinting and
+  message creation. Previously the snapshot was already excluded from message
+  text but still affected the idempotency fingerprint. Draft validation and the
+  existing body-control rejection remain in force.
+- RPC tests verify a retry with reference metadata removed or cleared reuses its
+  MSGID after restart; editable-body changes still conflict with the same request
+  ID. Ctrl+A, AREA injection with CR/LF and NUL remain rejected in editable text.
+- PKT tests cover both netmail and echomail with forged MSGID/REPLY/CHRS,
+  addressing, PATH/Via and unknown reference controls. They decode the generated
+  packet and verify authoritative controls, addresses and unchanged plain text.
+- Updated the RPC guide and decision record. All verification uses isolated test
+  state; UI behavior and the installed test station are unchanged.
+- Verification passed on the pinned Windows profile: 23 RPC integration cases,
+  all 8 `MailEncodingTest` cases, `spotlessCheck` and `verifyJavaFormatting`.
+  The first PKT run exposed an echo fixture using a point sender without Origin;
+  corrected that fixture to a node sender and reran all encoding/PKT cases.
+  Browser functional tests and VRT were not run for this server-only change.

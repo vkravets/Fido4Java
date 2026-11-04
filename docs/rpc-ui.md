@@ -697,3 +697,10 @@ retaining line order and repetitions across save/reopen. The sum of the UTF-8
 byte lengths of its strings must not exceed 60,000; Ctrl+A prefixes count toward
 that limit. Absent and empty snapshots are allowed. Oversized updates return
 `INVALID_ARGUMENT` before writing and leave the previously saved draft intact.
+Submission validates this snapshot's size, then discards it from the submission
+copy before computing the idempotency fingerprint or creating the message.
+Changing or omitting reference kludges alone does not change the request's
+identity; changes to editable message data still conflict with a reused request
+ID. MSGID, encoding and transport controls come from the normal server pipeline;
+REPLY comes from the validated `replyTo` field. Reference controls are never
+replayed into an outgoing packet.

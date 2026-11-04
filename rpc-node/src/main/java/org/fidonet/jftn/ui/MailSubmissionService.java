@@ -24,12 +24,14 @@ final class MailSubmissionService {
     }
 
     String sendValidated(String owner, MailDraft draft, String requestId) throws Exception {
+        MailDraft submission = draft.deepCopy();
+        submission.unsetOriginalKludges();
         return mail.operate(tosser -> {
             String key = ScriptState.digest(owner + ":" + requestId);
             String hash = ScriptState.digest(Base64.getEncoder()
-                                                   .encodeToString(new TSerializer().serialize(draft)));
-            Message message = createMessage(draft);
-            if (draft.getMailbox() != Mailbox.ECHO
+                                                   .encodeToString(new TSerializer().serialize(submission)));
+            Message message = createMessage(submission);
+            if (submission.getMailbox() != Mailbox.ECHO
                     && !tosser.previewNetmail(message, null).isPermitted()) {
                 throw new UiError("NO_ROUTE",
                                   "No route to recipient; contact the station administrator.");
@@ -37,13 +39,13 @@ final class MailSubmissionService {
             tosser.submissionTargets(message);
             String msgid = state.reserve(key, hash, () -> tosser.assignMessageId(message));
             message.setMsgId(msgid);
-            if (draft.getMailbox() == Mailbox.ECHO) {
+            if (submission.getMailbox() == Mailbox.ECHO) {
                 tosser.submitEchomail(message);
             } else {
                 message.setAttributes(1);
                 tosser.stageNetmail(message, "ui:" + key);
             }
-            state.delete(owner, draft.getId());
+            state.delete(owner, submission.getId());
             return msgid;
         });
     }

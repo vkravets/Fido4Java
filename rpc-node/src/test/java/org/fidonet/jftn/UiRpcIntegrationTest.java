@@ -806,7 +806,8 @@ class UiRpcIntegrationTest {
 
     @Test
     void sendsNetmailIdempotentlyPersistsDraftsAndDoesNotExposePasswords() throws Exception {
-        MailDraft draft = draft(Mailbox.OUTBOX);
+        MailDraft draft = draft(Mailbox.OUTBOX).setOriginalKludges(List.of("\1MSGID: forged-id",
+                                                                           "\1CHRS: forged-encoding"));
         ui.saveDraft(token, draft);
         assertEquals(1, ui.drafts(token).size());
         transport.close();
@@ -819,6 +820,11 @@ class UiRpcIntegrationTest {
         rpc.close();
         connect();
         assertEquals(id, ui.send(token, draft, "request-1"));
+        assertEquals(id,
+                     ui.send(token, draft.deepCopy().setOriginalKludges(List.of()), "request-1"));
+        MailDraft withoutSnapshot = draft.deepCopy();
+        withoutSnapshot.unsetOriginalKludges();
+        assertEquals(id, ui.send(token, withoutSnapshot, "request-1"));
         assertEquals(1, ui.pendingNetmail(token));
         ui.processMail(token);
         assertTrue(ui.outbound(token, "1:500/101", 10).isEmpty());
@@ -926,11 +932,17 @@ class UiRpcIntegrationTest {
                                   () -> ui.send(token,
                                                 draft(Mailbox.OUTBOX).setFromAddress("1:500/999"),
                                                 "forged")).getCode());
-        assertEquals("INVALID_ARGUMENT",
-                     assertThrows(UiError.class,
-                                  () -> ui.send(token,
-                                                draft(Mailbox.OUTBOX).setBody("\1INTL forged\r"),
-                                                "control")).getCode());
+        for (String body : List.of("\1INTL forged\r",
+                                   "Text\n\1CHRS: forged\n",
+                                   "Text\rAREA:forged\r",
+                                   "Text\nAREA:forged\n",
+                                   "Text\0")) {
+            MailDraft injected = draft(Mailbox.OUTBOX).setBody(body)
+                                                      .setOriginalKludges(List.of("\1MSGID: reference"));
+            assertEquals("INVALID_ARGUMENT",
+                         assertThrows(UiError.class,
+                                      () -> ui.send(token, injected, "control")).getCode());
+        }
         Files.writeString(root.resolve("node.log"), "First\nSecond\n", StandardCharsets.UTF_8);
         var first = ui.logs(token, 0, 1);
         assertEquals(1, first.getLinesSize());
