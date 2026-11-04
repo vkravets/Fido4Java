@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 and U1 are implemented; U2–U5 and T1–T5
-remain pending.
+Status: implementation in progress. S1–S5 and U1–U3 are implemented; U4–U6 and
+T1–T5 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -50,6 +50,34 @@ final review of serialization and submission boundaries.
 | U3 | Show monospace lines with a visible `^A` prefix, escaped text, selection and copying. Handle long lines and control characters. | Medium / Sol Low | Untrusted message text must render as text, without HTML or mail markup interpretation. |
 | U4 | Copy the source snapshot into plain replies, quoted replies and forwards; retain it after saving and reopening drafts. | High / Sol Medium | Separate entry points, absent source metadata and persistence must agree; new messages can legitimately have no snapshot. |
 | U5 | Keep kludges outside the editable document, quotations, template expansion and submitted body. Add English/Ukrainian labels, both themes and mobile layout. | High / Sol Medium | Isolation must hold across composition paths and editor modes. Labels and styling alone are Low after data flow is settled. |
+| U6 | Add an optional GoldED-like reader mode: show recognized kludges inline in original body order with distinct styling, controlled by a reader toggle. Keep the complete kludge disclosure for unknown controls and the default collapsed view. | High / Sol Medium | The current `kludges` list does not encode positions relative to body text. Define an ordered display-segment contract from the authoritative `Body` representation and a reliable known-control classification before changing the viewer. |
+
+## GoldED+ comparison and U6 approach
+
+GoldED+ hides kludges by default and offers reader keys to show kludges alone
+(`K` / `Alt-K`) or together with hidden lines (`V` / `Alt-V`). Its `VIEWKLUDGE`
+setting covers recognized kludges, including configured entries; the manual
+describes them as color-distinguished lines. See the [reader key help](https://github.com/golded-plus/golded-plus/blob/master/cfgs/config/goldhelp.cfg)
+and [VIEWKLUDGE behavior](https://koapp.narod.ru/tehlit/instruction/golded.htm).
+
+U6 will adapt that interaction to the web reader without replacing U1–U3's
+separate disclosure:
+
+1. Inspect the message body's authoritative representation and define ordered
+   display segments for ordinary text and recognized controls. Preserve repeated
+   controls and their positions; do not infer positions from the extracted list.
+2. Reuse an existing protocol-level control classifier where available. Document
+   its recognized set and keep unknown controls in the complete disclosure rather
+   than silently dropping them.
+3. Add an accessible reader toggle, off by default. When enabled, render recognized
+   controls inline at their original positions with distinct theme-aware styling;
+   leave the full disclosure available for all controls.
+4. Verify ordering, repeats, unknown-control visibility, escaped text, no duplicate
+   presentation, and behavior in both themes/languages on desktop and mobile.
+
+If the current `Body` abstraction cannot provide ordered segments without lossy
+re-parsing, U6 must first extend the server/RPC contract; keep the existing
+disclosure usable until that contract is established.
 
 ## Tests and documentation
 
@@ -61,7 +89,7 @@ final review of serialization and submission boundaries.
 | T4 | Add Storybook and pinned Linux VRT cases for expanded/collapsed blocks, long lines, both themes/languages and desktop/mobile. Review affected baselines, then compare without updates. | Medium / Sol Low | Existing scenarios reduce coding work, but visual review and Linux execution remain required. Report blocked verification explicitly. |
 | T5 | Run formatting checks, focused Java/browser tests and frontend/Storybook typechecks. Update behavior docs and the relevant `TODO` entry after implementation. | Low / Luna Medium | Established commands and documentation are mechanical; diagnose failures at the complexity of their cause. |
 
-Suggested dependency order: S1, then S3/S2/S4/S5, then U1–U5, with relevant tests
+Suggested dependency order: S1, then S3/S2/S4/S5, then U1–U6, with relevant tests
 alongside each change and T5 last. Review the complete feature with Sol Medium,
 focusing on repeated controls, draft persistence, authorization and outgoing packets.
 These are work assignments, not a requirement to use separate agents. Each plan
