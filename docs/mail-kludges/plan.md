@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 are implemented; U1–U5 and T1–T5
+Status: implementation in progress. S1–S5 and U1 are implemented; U2–U5 and T1–T5
 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -163,3 +163,11 @@ item is committed separately under the execution agreement above.
   The first PKT run exposed an echo fixture using a point sender without Origin;
   corrected that fixture to a node sender and reran all encoding/PKT cases.
   Browser functional tests and VRT were not run for this server-only change.
+
+### U1 — shared read-only disclosure
+
+- Added the reusable native `<details>` component with an external summary label;
+  it stays closed by default and does not render for an empty list. Native summary
+  keyboard and disclosure semantics are retained.
+- Added Storybook examples for populated and empty lists. Reader/composer placement,
+  localization and visible `^A` formatting remain later UI items.
