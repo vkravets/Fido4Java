@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5, U1–U6 and T1–T2 are complete;
-T3–T5 remain pending for the final feature audit.
+Status: implementation in progress. S1–S5, U1–U6 and T1–T3 are complete;
+T4–T5 remain pending for the final feature audit.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -88,7 +88,7 @@ text or controls are duplicated within the reading pane itself.
 | --- | --- | --- | --- |
 | T1 | Completed: server tests cover known/unknown/repeated controls, order, unchanged body, access control and draft round trips. No installed-state inspection was needed for this test-only change. | High / Sol Medium | Use representative stored/serialized fixtures; map-only tests would miss duplicate loss and representation differences. |
 | T2 | Completed: decoded actual outbound packets after RPC submission with malicious reference metadata; verified rejection of editable-body control injection without publication or request-ID consumption. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
-| T3 | Add browser tests for expansion, read-only presentation, reply/forward, draft reopening and absence of controls from quotes/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
+| T3 | Completed: browser scenarios cover expansion, read-only presentation, actual reply/forward entry points, saved-draft reopening and absence of controls from quoted/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
 | T4 | Add Storybook and pinned Linux VRT cases for expanded/collapsed blocks, long lines, both themes/languages and desktop/mobile. Review affected baselines, then compare without updates. | Medium / Sol Low | Existing scenarios reduce coding work, but visual review and Linux execution remain required. Report blocked verification explicitly. |
 | T5 | Run formatting checks, focused Java/browser tests and frontend/Storybook typechecks. Update behavior docs and the relevant `TODO` entry after implementation. | Low / Luna Medium | Established commands and documentation are mechanical; diagnose failures at the complexity of their cause. |
 
@@ -383,4 +383,36 @@ At T1 completion, T2–T5 remained pending, including the separate outgoing-pack
   encoding/packet cases and three PacketWriter cases, plus root `spotlessCheck`
   and `verifyJavaFormatting`. All 44 cases passed in one final invocation.
   No production code, contracts, installed node state or UI/VRT baselines changed.
-  T3–T5 remain pending.
+  At T2 completion, T3–T5 remained pending.
+
+### T3 — browser workflow audit completed
+
+- Added `KludgeWorkflow.stories.ts`, which mounts the actual NetmailView and
+  EchomailView components with a shared typed service fixture. Summary responses
+  omit body/control fields; full messages contain interleaved known and repeated
+  unknown controls. Save/list/reopen operations use detached JSON snapshots,
+  and the fixture captures the draft passed to the service's send method.
+  This is component/browser integration with a mocked service, not a live node;
+  T1/T2 separately verify backend persistence and actual outbound PKT behavior.
+- Added ten complete entry-point workflows: plain/quoted replies and forwarding
+  on desktop for netmail/echomail, plus quoted replies/forwarding through the
+  visible mobile controls. Desktop uses English/light and mobile Ukrainian/dark.
+  Echo forwarding switches into the real netmail view. The short-reply reader
+  action is desktop-menu-only in the existing UI; shared plain-reply composer
+  isolation remains tested at both sizes by the earlier U5 cases.
+- Each workflow opens the native disclosure by keyboard, checks literal and
+  read-only controls, enables inline viewing, starts composition through reader
+  actions, edits text, saves, navigates to the real draft list and reopens it.
+  Captured save/send data retains duplicate controls and original plain body,
+  contains no reference controls in the editable body, and does not expand the
+  reference's `@quote`. Original text occurs once for quoting/forwarding and is
+  absent from a plain reply. Reopening preserves typed text without reapplying
+  the template, and source message data remains unchanged.
+- Added absent/truncated/fully-omitted snapshot workflows through save/reopen/send,
+  verifying the persistent omission notice and absent disclosure where appropriate.
+  A new-message case verifies no source disclosure or omission notice appears.
+- Verification passed: 29 focused browser cases (14 new and 15 existing), both
+  application/Storybook TypeScript checks, Storybook build, changed-file Prettier
+  and `git diff --check`. Test corrections use the existing mobile direct buttons
+  and Thrift's null representation of absent fields. No production UI or server
+  behavior changed; VRT baseline review remains the separate T4 audit.

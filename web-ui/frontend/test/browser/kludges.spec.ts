@@ -1,7 +1,191 @@
 import { test, expect } from '@playwright/test';
 import { ukrainian } from '../../src/locales/uk.ts';
 import { openStory } from './story.ts';
-import type { MailDraft } from '../../../build/frontend-generated/bindings.mjs';
+import type { MailDraft, MailItem } from '../../../build/frontend-generated/bindings.mjs';
+import type { Page } from '@playwright/test';
+
+async function capture<T>(page: Page, id: string): Promise<T> {
+    return JSON.parse(await page.getByTestId(id).inputValue());
+}
+
+async function reopenSavedDraft(
+    page: Page,
+    echo: boolean,
+    label: (key: keyof typeof ukrainian) => string
+) {
+    await page.locator('[data-shortcut="compose.cancel"]').click();
+    const back = page.locator('.mail-back:visible');
+    if (await back.count()) await back.first().click();
+    if (echo) await page.getByRole('button', { name: label('Echo drafts'), exact: true }).click();
+    else
+        await page
+            .getByRole('navigation', { name: label('Mail folders') })
+            .getByRole('button', { name: label('Drafts'), exact: true })
+            .click();
+    await page.locator('.mail-draft-row [data-shortcut-row]').click();
+    await expect(page.locator('.mail-composer')).toBeVisible();
+}
+
+for (const mailKind of ['netmail', 'echomail']) {
+    for (const action of ['reply', 'quoted', 'forward']) {
+        for (const width of [1280, 390]) {
+            if (width === 390 && action === 'reply') continue;
+            test(`${mailKind} ${action} keeps source kludges through save/reopen at ${width}px`, async ({
+                page
+            }) => {
+                const label = (key: keyof typeof ukrainian) =>
+                    width === 390 ? ukrainian[key] : key;
+                await page.setViewportSize({ width, height: 1000 });
+                await openStory(
+                    page,
+                    `mail-kludgeworkflow--${mailKind}`,
+                    width === 390 ? 'dark' : 'light',
+                    width === 390 ? 'uk' : 'en'
+                );
+                const source = await capture<MailItem>(page, 'source-state');
+                const block = page.locator('.mail-kludge-list');
+                await expect(block).toBeVisible();
+                await expect(block).not.toHaveAttribute('open');
+                await block.locator('summary').focus();
+                await page.keyboard.press('Enter');
+                await expect(block.locator('code')).toHaveCount(4);
+                await expect(block.locator('code').last()).toHaveText(
+                    '^ACUSTOM: REFERENCE_ONLY @quote <b>literal</b>'
+                );
+                await expect(
+                    block.locator('input, textarea, [contenteditable="true"], b')
+                ).toHaveCount(0);
+                await page.getByRole('checkbox', { name: label('Show kludges inline') }).check();
+                await expect(page.locator('.mail-body .kludge')).toHaveCount(4);
+                const shortcut =
+                    action === 'reply'
+                        ? 'mail.shortReply'
+                        : action === 'quoted'
+                          ? 'mail.reply'
+                          : 'mail.forward';
+                if (width === 390) {
+                    await page
+                        .locator(`.reader-actions [data-shortcut="${shortcut}"]`)
+                        .filter({ visible: true })
+                        .first()
+                        .click();
+                } else {
+                    await page.locator('.reader-more > summary').click();
+                    await page.locator(`.reader-more [data-shortcut="${shortcut}"]`).click();
+                }
+                await expect(page.locator('.mail-composer')).toBeVisible();
+                if (action === 'forward') {
+                    await page
+                        .getByRole('combobox', { name: label('Recipient name'), exact: true })
+                        .fill('Forward Reader');
+                    await page
+                        .getByRole('combobox', { name: label('Recipient address'), exact: true })
+                        .fill('1:500/102');
+                }
+                await expect(block.locator('summary')).toHaveText(
+                    label('Original message kludges')
+                );
+                await expect(block).not.toHaveAttribute('open');
+                await block.locator('summary').click();
+                await expect(block.locator('code')).toHaveCount(4);
+                await page.getByRole('button', { name: label('Source text'), exact: true }).click();
+                const editor = page.locator('.cm-content');
+                await expect(editor).not.toContainText('REFERENCE_ONLY');
+                await editor.press('ControlOrMeta+End');
+                await editor.press('Enter');
+                await editor.pressSequentially('Typed response');
+                await page.locator('[data-shortcut="compose.save"]').click();
+                await expect(page.getByTestId('saved-draft')).not.toHaveValue('');
+                const saved = await capture<MailDraft>(page, 'saved-draft');
+                expect(saved.composeKind).toBe(action);
+                expect(saved.mailbox).toBe(mailKind === 'echomail' && action !== 'forward' ? 1 : 3);
+                expect(saved.originalKludges).toEqual(source.kludges);
+                expect(saved.originalBody).toBe(source.body);
+                expect(saved.body).not.toMatch(/\u0001|REFERENCE_ONLY|@quote/);
+                expect(saved.body.match(/ORIGINAL_BODY_ONLY/g) || []).toHaveLength(
+                    action === 'reply' ? 0 : 1
+                );
+                expect(saved.body).toContain('Typed response');
+                const reads = Number(await page.getByTestId('draft-reads').inputValue());
+                await reopenSavedDraft(
+                    page,
+                    mailKind === 'echomail' && action !== 'forward',
+                    label
+                );
+                expect(Number(await page.getByTestId('draft-reads').inputValue())).toBeGreaterThan(
+                    reads
+                );
+                await expect(block.locator('summary')).toHaveText(
+                    label('Original message kludges')
+                );
+                await block.locator('summary').click();
+                await expect(block.locator('code')).toHaveCount(4);
+                await expect(page.locator('.fido-editor .mail-kludge-list')).toHaveCount(0);
+                await page.getByRole('button', { name: label('Source text'), exact: true }).click();
+                await expect(editor).toContainText('Typed response');
+                await expect(editor).not.toContainText('REFERENCE_ONLY');
+                await page.locator('[data-shortcut="compose.send"]').click();
+                await expect(page.getByTestId('submitted-draft')).not.toHaveValue('');
+                const submitted = await capture<MailDraft>(page, 'submitted-draft');
+                expect(submitted.id).toBe(saved.id);
+                expect(submitted.body).toBe(saved.body);
+                expect(submitted.originalKludges).toEqual(saved.originalKludges);
+                expect(submitted.originalBody).toBe(source.body);
+                expect(submitted.body).not.toMatch(/\u0001|REFERENCE_ONLY|@quote/);
+                expect(await capture<MailItem>(page, 'source-state')).toEqual(source);
+            });
+        }
+    }
+}
+
+for (const snapshot of ['without-controls', 'truncated', 'omitted']) {
+    test(`${snapshot} reference state survives the full draft reopening workflow`, async ({
+        page
+    }) => {
+        await openStory(page, `mail-kludgeworkflow--${snapshot}`);
+        if (snapshot === 'without-controls') {
+            await expect(page.locator('.mail-kludge-list')).toHaveCount(0);
+            await expect(page.getByRole('checkbox', { name: 'Show kludges inline' })).toHaveCount(
+                0
+            );
+        }
+        await page.locator('.reader-more > summary').click();
+        await page.locator('.reader-more [data-shortcut="mail.shortReply"]').click();
+        await page.locator('[data-shortcut="compose.save"]').click();
+        await expect(page.getByTestId('saved-draft')).not.toHaveValue('');
+        const saved = await capture<MailDraft>(page, 'saved-draft');
+        if (snapshot === 'without-controls') {
+            expect(saved.originalKludges ?? undefined).toBeUndefined();
+            expect(saved.originalKludgesTruncated ?? undefined).toBeUndefined();
+        } else {
+            expect(saved.originalKludgesTruncated).toBe(true);
+            expect(saved.originalKludges).toEqual(
+                snapshot === 'truncated' ? ['\u0001MSGID: 1:500/101.2 source'] : []
+            );
+        }
+        await reopenSavedDraft(page, false, (key) => key);
+        await expect(page.locator('.composer-kludge-notice')).toHaveCount(
+            snapshot === 'without-controls' ? 0 : 1
+        );
+        await expect(page.locator('.mail-kludge-list')).toHaveCount(
+            snapshot === 'truncated' ? 1 : 0
+        );
+        await page.locator('[data-shortcut="compose.send"]').click();
+        await expect(page.getByTestId('submitted-draft')).not.toHaveValue('');
+        const submitted = await capture<MailDraft>(page, 'submitted-draft');
+        expect(submitted.id).toBe(saved.id);
+        expect(submitted.body).toBe(saved.body);
+        expect(submitted.body).not.toMatch(/\u0001|REFERENCE_ONLY/);
+        expect(submitted.originalKludges).toEqual(saved.originalKludges);
+        expect(submitted.originalKludgesTruncated).toBe(saved.originalKludgesTruncated);
+    });
+}
+
+test('new messages have no original kludge disclosure', async ({ page }) => {
+    await openStory(page, 'mail-mailcomposer--new-message');
+    await expect(page.locator('.mail-composer')).toBeVisible();
+    await expect(page.locator('.mail-kludge-list, .composer-kludge-notice')).toHaveCount(0);
+});
 
 for (const width of [1280, 390]) {
     test(`reader toggles ordered known kludges without interpreting controls at ${width}px`, async ({
