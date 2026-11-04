@@ -339,6 +339,7 @@ public final class NodeUiServiceHandler implements UiService.Iface, AutoCloseabl
             result.setReplyTo(reply.trim());
         if (body) {
             result.setBody(message.getBody().getBody());
+            result.setKludges(message.getBody().getKludgeLines());
         }
         return result;
     }

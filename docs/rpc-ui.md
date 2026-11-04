@@ -268,13 +268,20 @@ available to approved points through `profile` and `auth`.
 | `echoMessages` | Newest received echo messages first, using an exclusive decreasing row-ID cursor; separate from the existing ascending `messages` cursor |
 | `echoContext` | Area-scoped parent by exact REPLY/MSGID and a bounded, cursor-paged list of direct replies; missing parents remain explicit |
 | `messages` | Cursor page of summaries, without bodies |
-| `message` | Plain message body, attributes and separate MSGID/REPLY identifiers |
+| `message` | Plain message body, attributes, separate MSGID/REPLY identifiers and control-line metadata |
 | `markRead` | Persistent per-account reader position for an individual message |
 | `drafts`, `saveDraft`, `deleteDraft` | Persistent draft editing, including incomplete drafts |
 | `send` | Validated local submission through the running Tosser |
 
 Echo bodies returned to readers contain plain message text, not transport control
 lines. `MailItem.replyTo` carries the trimmed FTN REPLY identifier separately.
+Full `message` responses also include `MailItem.kludges`: ordered strings beginning
+with Ctrl+A, preserving repeated/unknown controls and PATH/Via from the stored
+message representation. AREA, SEEN-BY and ordinary text are excluded; an empty
+list means no control lines. The same mailbox/area authorization protects both
+body and metadata. Summaries from `messages`, `echoMessages`, `echoContext` and
+archive search omit this field. Clients must keep these reference lines separate
+from editable text and quotations.
 No subject-based heuristic merges discussions. The parent lookup uses the existing
 MSGID index; reply pages query serialized REPLY lines in the selected area without
 materializing the entire archive. Very large areas can still require a text scan

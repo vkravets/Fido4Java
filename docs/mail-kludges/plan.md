@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1 and S3 are implemented; S2, S4–S5, U1–U5 and T1–T5
+Status: implementation in progress. S1–S3 are implemented; S4–S5, U1–U5 and T1–T5
 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -115,3 +115,15 @@ item is committed separately under the execution agreement above.
 - All five `BodySerializationTest` cases passed on the pinned Windows profile;
   applied the repository formatter to the two affected Java files.
 - Completed before S2 so RPC can use the correct shared extraction immediately.
+
+### S2 — full-message RPC metadata
+
+- Full `message` responses now populate `kludges` through `Body.getKludgeLines()`
+  after the existing mailbox/area authorization. Body text remains separate.
+- Summary mappings for ordinary/recent lists, parent/reply context and archive
+  search omit kludges. Documented this boundary in the RPC guide.
+- All 30 tests in `EchoReaderRpcTest` and `UiRpcIntegrationTest` passed on the
+  pinned Windows profile, including full echo/netmail metadata, TCP/HTTP transport,
+  summary/search exclusion and denied or revoked read access.
+- Root `spotlessCheck` and `verifyJavaFormatting` passed after both changes.
+- UI behavior is unchanged; browser functional tests and VRT were not run.

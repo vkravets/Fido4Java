@@ -741,7 +741,10 @@ class UiRpcIntegrationTest {
         MailPage secondInbox = ui.messages(second, Mailbox.INBOX, "", 0, 10);
         assertEquals(1, firstInbox.getItemsSize());
         assertEquals(1, secondInbox.getItemsSize());
+        assertFalse(firstInbox.getItems().get(0).isSetKludges());
+        assertFalse(secondInbox.getItems().get(0).isSetKludges());
         var received = ui.message(first, Mailbox.INBOX, "", firstInbox.getItems().get(0).getId());
+        assertTrue(received.getKludges().stream().anyMatch(line -> line.startsWith("\1MSGID:")));
         assertFalse(received.getBody().contains("\1"));
         assertTrue(received.getBody().contains("Hello from UI"));
         long foreignId = secondInbox.getItems().get(0).getId();
@@ -792,6 +795,8 @@ class UiRpcIntegrationTest {
                 + "/rpc/ui")) {
             UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
             assertEquals(1, browser.messages(first, Mailbox.INBOX, "", 0, 10).getItemsSize());
+            assertEquals(received.getKludges(),
+                         browser.message(first, Mailbox.INBOX, "", received.getId()).getKludges());
             assertEquals("NOT_FOUND",
                          assertThrows(UiError.class,
                                       () -> browser.message(first, Mailbox.INBOX, "", foreignId))

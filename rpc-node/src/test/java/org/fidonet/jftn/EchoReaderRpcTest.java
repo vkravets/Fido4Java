@@ -184,6 +184,7 @@ class EchoReaderRpcTest {
                                      10);
         assertEquals(1, page.getItemsSize());
         var found = page.getItems().get(0);
+        assertFalse(found.isSetKludges());
         assertTrue(found.getExcerpt().contains("\u041f\u0420\u0418\u0412\u0406\u0422"));
         assertFalse(found.isSetBody());
         assertFalse(found.isRead());
@@ -393,6 +394,9 @@ class EchoReaderRpcTest {
         assertTrue(ui.drafts(point).isEmpty());
         assertEquals("FORBIDDEN",
                      assertThrows(UiError.class,
+                                  () -> ui.message(point, Mailbox.ECHO, "test", row)).getCode());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
                                   () -> ui.echoContext(point, "test", row, 0, 10)).getCode());
         assertEquals("FORBIDDEN",
                      assertThrows(UiError.class,
@@ -400,6 +404,9 @@ class EchoReaderRpcTest {
                                                                                            .getCode());
         ui.subscribe(admin, "1:500/100.1", "test", "WRITE");
         assertFalse(ui.areas(point).get(0).isReadable());
+        assertEquals("FORBIDDEN",
+                     assertThrows(UiError.class,
+                                  () -> ui.message(point, Mailbox.ECHO, "test", row)).getCode());
         assertEquals("FORBIDDEN",
                      assertThrows(UiError.class,
                                   () -> ui.messages(point, Mailbox.ECHO, "test", 0, 10)).getCode());
@@ -425,7 +432,7 @@ class EchoReaderRpcTest {
     }
 
     @Test
-    void navigatedExactAreaScopedReplyIdsAndPagedRepliesWithoutExposingKludges() throws Exception {
+    void navigatedExactAreaScopedRepliesWithKludgesOnlyInFullMessages() throws Exception {
         String rootId = "1:500/101 root_%!";
         store("test", rootId, null);
         store("test", "1:500/101 child-one", rootId);
@@ -433,9 +440,11 @@ class EchoReaderRpcTest {
         store("private", "1:500/101 foreign", rootId);
         store("test", "1:500/101 orphan", "1:500/101 missing");
         var rows = ui.messages(admin, Mailbox.ECHO, "test", 0, 10).getItems();
+        assertTrue(rows.stream().noneMatch(item -> item.isSetKludges()));
         var recent = ui.echoMessages(admin, "test", 0, 2);
         assertTrue(recent.isHasMore());
         assertFalse(recent.getItems().get(0).isSetBody());
+        assertTrue(recent.getItems().stream().noneMatch(item -> item.isSetKludges()));
         assertTrue(recent.getItems().get(0).isSetExcerpt());
         assertTrue(recent.getItems().get(0).getExcerpt().length() <= 240);
         assertFalse(recent.getItems().get(0).getExcerpt().contains("\1"));
@@ -446,6 +455,7 @@ class EchoReaderRpcTest {
         var rootContext = ui.echoContext(admin, "test", rows.get(0).getId(), 0, 1);
         assertEquals(1, rootContext.getReplies().getItemsSize());
         assertTrue(rootContext.getReplies().isHasMore());
+        assertFalse(rootContext.getReplies().getItems().get(0).isSetKludges());
         assertEquals(1,
                      ui.echoContext(admin,
                                     "test",
@@ -456,8 +466,12 @@ class EchoReaderRpcTest {
                        .getItemsSize());
         var child = ui.echoContext(admin, "test", rows.get(1).getId(), 0, 10);
         assertEquals(rows.get(0).getId(), child.getParent().getId());
+        assertFalse(child.getParent().isSetKludges());
         assertEquals(rootId, rows.get(1).getReplyTo());
-        String body = ui.message(admin, Mailbox.ECHO, "test", rows.get(1).getId()).getBody();
+        var full = ui.message(admin, Mailbox.ECHO, "test", rows.get(1).getId());
+        assertTrue(full.getKludges().contains("\1MSGID: 1:500/101 child-one"));
+        assertTrue(full.getKludges().contains("\1REPLY: " + rootId));
+        String body = full.getBody();
         assertTrue(body.contains("Plain body"));
         assertFalse(body.contains("\1"));
         assertFalse(body.contains("AREA:"));
