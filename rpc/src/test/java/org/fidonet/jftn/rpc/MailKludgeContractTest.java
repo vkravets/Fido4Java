@@ -13,8 +13,8 @@ class MailKludgeContractTest {
     @Test
     void preservedOrderedRepeatedKludgesInMessagesAndDrafts() throws Exception {
         List<String> kludges = List.of("\u0001MSGID: 1:500/100 abc",
-                                       "\u0001X-CUSTOM: first",
-                                       "\u0001X-CUSTOM: second");
+                                       "\u0001CUSTOM: first",
+                                       "\u0001CUSTOM: first");
         MailItem message = new MailItem(1,
                                         "Author",
                                         "Reader",
@@ -27,7 +27,9 @@ class MailKludgeContractTest {
         message.setBody("Message body");
         message.setKludges(kludges);
         message.setBodyLines(List.of(new MailBodyLine(kludges.get(0), true, true),
-                                     new MailBodyLine("Message body", false, false)));
+                                     new MailBodyLine("Message body", false, false),
+                                     new MailBodyLine(kludges.get(1), true, false),
+                                     new MailBodyLine(kludges.get(2), true, false)));
         MailItem restoredMessage = new MailItem();
         new TDeserializer().deserialize(restoredMessage, new TSerializer().serialize(message));
         assertEquals(kludges, restoredMessage.getKludges());
@@ -43,12 +45,24 @@ class MailKludgeContractTest {
     }
 
     @Test
+    void preservedEmptyTruncatedSnapshotSeparatelyFromAbsentMetadata() throws Exception {
+        MailDraft original = draft().setOriginalKludges(List.of())
+                                    .setOriginalKludgesTruncated(true);
+        MailDraft restored = new MailDraft();
+        new TDeserializer().deserialize(restored, new TSerializer().serialize(original));
+        assertEquals(original, restored);
+        assertEquals(List.of(), restored.getOriginalKludges());
+        assertEquals(true, restored.isOriginalKludgesTruncated());
+    }
+
+    @Test
     void preservedDraftWithoutSourceMetadata() throws Exception {
         MailDraft original = draft();
         MailDraft restored = new MailDraft();
         new TDeserializer().deserialize(restored, new TSerializer().serialize(original));
         assertEquals(original, restored);
         assertFalse(restored.isSetOriginalKludges());
+        assertFalse(restored.isSetOriginalKludgesTruncated());
     }
 
     private static MailDraft draft() {

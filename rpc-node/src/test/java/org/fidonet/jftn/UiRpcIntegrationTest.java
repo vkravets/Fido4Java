@@ -17,7 +17,9 @@ import org.fidonet.jftn.poll.PollService;
 import org.fidonet.jftn.rpc.AuthService;
 import org.fidonet.jftn.rpc.Credential;
 import org.fidonet.jftn.rpc.LoginService;
+import org.fidonet.jftn.rpc.MailBodyLine;
 import org.fidonet.jftn.rpc.MailDraft;
+import org.fidonet.jftn.rpc.MailItem;
 import org.fidonet.jftn.rpc.MailLinkConfiguration;
 import org.fidonet.jftn.rpc.MailPage;
 import org.fidonet.jftn.rpc.Mailbox;
@@ -52,6 +54,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -850,6 +853,160 @@ class UiRpcIntegrationTest {
         ui.processMail(token);
         assertEquals(1, ui.outbound(token, "1:500/101", 10).size());
         assertEquals(1, ui.messages(token, Mailbox.OUTBOX, "", 0, 10).getItemsSize());
+    }
+
+    @Test
+    void preservedStoredKludgeOrderAndPlainBodyAcrossTcpAndHttpReads() throws Exception {
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            for (Mailbox mailbox : List.of(Mailbox.INBOX, Mailbox.ECHO)) {
+                verifyStoredKludgeReads(browser, mailbox);
+            }
+        }
+    }
+
+    private void verifyStoredKludgeReads(UiService.Client browser, Mailbox mailbox)
+            throws Exception {
+        boolean echo = mailbox == Mailbox.ECHO;
+        String area = echo ? "test" : "";
+        String msgid = "1:500/101 t1-" + mailbox;
+        List<String> controls = new ArrayList<>(List.of("\1MSGID: " + msgid,
+                                                        "\1CHRS: UTF-8 4",
+                                                        "\1CUSTOM: first",
+                                                        "\1CUSTOM: second",
+                                                        "\1CHRS: UTF-8 4"));
+        List<String> tail = echo
+                ? List.of("\1PATH: 500/101")
+                : List.of("\1Via 1:500/102", "\1Via 1:500/103");
+        List<MailBodyLine> lines = new ArrayList<>(List.of(new MailBodyLine(controls.get(0),
+                                                                            true,
+                                                                            true),
+                                                           new MailBodyLine(controls.get(1),
+                                                                            true,
+                                                                            true),
+                                                           new MailBodyLine("First <b>literal</b>",
+                                                                            false,
+                                                                            false),
+                                                           new MailBodyLine(controls.get(2),
+                                                                            true,
+                                                                            false),
+                                                           new MailBodyLine("Second", false, false),
+                                                           new MailBodyLine(controls.get(3),
+                                                                            true,
+                                                                            false),
+                                                           new MailBodyLine(controls.get(4),
+                                                                            true,
+                                                                            true)));
+        String content = (echo ? "AREA:test\r" : "")
+                         + controls.get(0)
+                         + "\r"
+                         + controls.get(1)
+                         + "\rFirst <b>literal</b>\r"
+                         + controls.get(2)
+                         + "\rSecond\r"
+                         + controls.get(3)
+                         + "\r"
+                         + controls.get(4)
+                         + "\r"
+                         + (echo ? " * Origin: Source (1:500/101)\rSEEN-BY: 500/101\r" : "")
+                         + String.join("\r", tail)
+                         + "\r";
+        for (String route : tail) {
+            lines.add(new MailBodyLine(route, true, true));
+        }
+        controls.addAll(tail);
+        Message source = new Message("Remote",
+                                     "Reader",
+                                     new FTNAddr("1:500/101"),
+                                     echo ? null : new FTNAddr("1:500/100"),
+                                     "Stored controls",
+                                     content,
+                                     new Date());
+        String serialized = source.getBody().toString();
+        String plain = source.getBody().getBody();
+        if (echo) {
+            base.addMessage(source, area);
+        } else {
+            base.saveNetmail(source, "t1-incoming", null);
+        }
+        long id = ui.messages(token, mailbox, area, 0, 10).getItems().get(0).getId();
+        for (UiService.Client client : List.of(ui, browser)) {
+            MailItem summary = client.messages(token, mailbox, area, 0, 10).getItems().get(0);
+            assertFalse(summary.isSetBody());
+            assertFalse(summary.isSetKludges());
+            assertFalse(summary.isSetBodyLines());
+            for (int read = 0; read < 2; read++) {
+                MailItem full = client.message(token, mailbox, area, id);
+                assertEquals("First <b>literal</b>\rSecond\r", full.getBody());
+                assertEquals(plain, full.getBody());
+                assertEquals(controls, full.getKludges());
+                assertEquals(lines, full.getBodyLines());
+            }
+        }
+        Message stored = echo
+                ? base.readEchoPage(area, 0, 1).get(0).getMessage()
+                : base.readNetmailPage(List.of(new FTNAddr("1:500/100")), false, 0, 1)
+                      .get(0)
+                      .getMessage();
+        assertEquals(serialized, stored.getBody().toString());
+        assertEquals(serialized, source.getBody().toString());
+        assertEquals(plain, stored.getBody().getBody());
+    }
+
+    @Test
+    void isolatedKludgeDraftSnapshotsByOwnerAcrossTransportsAndRpcRestart() throws Exception {
+        ProfileService.Client profiles = new ProfileService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                            "profile"));
+        String first = approvedPoint(profiles, "snapshot-one", "1:500/100.1");
+        String second = approvedPoint(profiles, "snapshot-two", "1:500/100.2");
+        var links = settingsClient().links(token);
+        links.add(new MailLinkConfiguration("1:500/100.1",
+                                            List.of("1:500/100"),
+                                            "127.0.0.1",
+                                            24554,
+                                            "pointpwd",
+                                            "",
+                                            "INHERIT",
+                                            "NONE"));
+        settingsClient().saveLinks(token, links);
+        ui.subscribe(token, "1:500/100.1", "test", "BOTH");
+        MailDraft echo = draft(Mailbox.ECHO).setFromAddress("1:500/100.1")
+                                            .setOriginalKludges(List.of("\1MSGID: 1:500/101 source",
+                                                                        "\1CUSTOM: duplicate",
+                                                                        "\1CUSTOM: duplicate",
+                                                                        "\1CUSTOM: \u0416"));
+        MailDraft netmail = draft(Mailbox.OUTBOX).setFromAddress("1:500/100.2")
+                                                 .setOriginalKludges(List.of())
+                                                 .setOriginalKludgesTruncated(true);
+        ui.saveDraft(first, echo);
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            browser.saveDraft(second, netmail);
+            for (UiService.Client client : List.of(ui, browser)) {
+                assertEquals(List.of(echo), client.drafts(first));
+                assertEquals(List.of(netmail), client.drafts(second));
+                assertTrue(client.drafts(token).isEmpty());
+            }
+            browser.deleteDraft(second, echo.getId());
+            assertEquals(List.of(echo), browser.drafts(first));
+            assertTrue(browser.drafts(second).isEmpty());
+            browser.saveDraft(second, netmail);
+        }
+        transport.close();
+        rpc.close();
+        connect();
+        LoginService.Client login = new LoginService.Client(new TMultiplexedProtocol(new TBinaryProtocol(transport),
+                                                                                     "login"));
+        first = login.login(new Credential("snapshot-one", "point-password-123")).getSession_id();
+        second = login.login(new Credential("snapshot-two", "point-password-123")).getSession_id();
+        assertEquals(List.of(echo), ui.drafts(first));
+        assertEquals(List.of(netmail), ui.drafts(second));
+        ui.unsubscribe(token, "1:500/100.1", "test");
+        assertTrue(ui.drafts(first).isEmpty());
+        ui.subscribe(token, "1:500/100.1", "test", "BOTH");
+        assertEquals(List.of(echo), ui.drafts(first));
     }
 
     @Test

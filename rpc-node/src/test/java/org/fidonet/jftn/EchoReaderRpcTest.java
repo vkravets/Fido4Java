@@ -434,6 +434,42 @@ class EchoReaderRpcTest {
     }
 
     @Test
+    void enforcedLiveReadRightsForFullKludgeRecordsOnHttpAndTcp() throws Exception {
+        String point = point();
+        store("test", "1:500/101 protected-controls", null);
+        long id = ui.messages(admin, Mailbox.ECHO, "test", 0, 1).getItems().get(0).getId();
+        var expected = ui.message(admin, Mailbox.ECHO, "test", id);
+        try (TFramedTransport tcp = new TFramedTransport(new TSocket("127.0.0.1",
+                                                                     rpc.getPort(),
+                                                                     5000))) {
+            tcp.open();
+            UiService.Client socket = new UiService.Client(new TMultiplexedProtocol(new TBinaryProtocol(tcp),
+                                                                                    "ui"));
+            for (UiService.Client client : List.of(ui, socket)) {
+                assertEquals("FORBIDDEN",
+                             assertThrows(UiError.class,
+                                          () -> client.message(point, Mailbox.ECHO, "test", id))
+                                                                                                .getCode());
+            }
+            ui.subscribe(admin, "1:500/100.1", "test", "READ");
+            for (UiService.Client client : List.of(ui, socket)) {
+                var full = client.message(point, Mailbox.ECHO, "test", id);
+                assertEquals(expected.getKludges(), full.getKludges());
+                assertEquals(expected.getBodyLines(), full.getBodyLines());
+                assertEquals(expected.getBody(), full.getBody());
+            }
+            ui.subscribe(admin, "1:500/100.1", "test", "WRITE");
+            for (UiService.Client client : List.of(ui, socket)) {
+                assertEquals("FORBIDDEN",
+                             assertThrows(UiError.class,
+                                          () -> client.message(point, Mailbox.ECHO, "test", id))
+                                                                                                .getCode());
+            }
+        }
+        assertEquals(expected, ui.message(admin, Mailbox.ECHO, "test", id));
+    }
+
+    @Test
     void navigatedExactAreaScopedRepliesWithKludgesOnlyInFullMessages() throws Exception {
         String rootId = "1:500/101 root_%!";
         store("test", rootId, null);
@@ -443,10 +479,12 @@ class EchoReaderRpcTest {
         store("test", "1:500/101 orphan", "1:500/101 missing");
         var rows = ui.messages(admin, Mailbox.ECHO, "test", 0, 10).getItems();
         assertTrue(rows.stream().noneMatch(item -> item.isSetKludges()));
+        assertTrue(rows.stream().noneMatch(item -> item.isSetBodyLines()));
         var recent = ui.echoMessages(admin, "test", 0, 2);
         assertTrue(recent.isHasMore());
         assertFalse(recent.getItems().get(0).isSetBody());
         assertTrue(recent.getItems().stream().noneMatch(item -> item.isSetKludges()));
+        assertTrue(recent.getItems().stream().noneMatch(item -> item.isSetBodyLines()));
         assertTrue(recent.getItems().get(0).isSetExcerpt());
         assertTrue(recent.getItems().get(0).getExcerpt().length() <= 240);
         assertFalse(recent.getItems().get(0).getExcerpt().contains("\1"));
@@ -458,6 +496,7 @@ class EchoReaderRpcTest {
         assertEquals(1, rootContext.getReplies().getItemsSize());
         assertTrue(rootContext.getReplies().isHasMore());
         assertFalse(rootContext.getReplies().getItems().get(0).isSetKludges());
+        assertFalse(rootContext.getReplies().getItems().get(0).isSetBodyLines());
         assertEquals(1,
                      ui.echoContext(admin,
                                     "test",

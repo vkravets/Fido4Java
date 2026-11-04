@@ -7,8 +7,9 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
-- Complete the final kludge feature verification/documentation audit in
-  docs/mail-kludges/plan.md. Collapsible details, GoldED/FTSC-based classification,
+- Complete T2–T5 of the final kludge feature verification/documentation audit in
+  docs/mail-kludges/plan.md; T1 server coverage is complete.
+  Collapsible details, GoldED/FTSC-based classification,
   inline unknown controls by default with an account visibility setting,
   optional inline viewing of known controls, persisted reply/forward references
   and isolation from editable/quoted/submitted text are implemented for netmail

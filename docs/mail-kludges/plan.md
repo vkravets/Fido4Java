@@ -1,7 +1,7 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S5 and U1–U6 are implemented;
-T1–T5 remain pending for the final feature audit.
+Status: implementation in progress. S1–S5, U1–U6 and T1 are complete;
+T2–T5 remain pending for the final feature audit.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -86,7 +86,7 @@ text or controls are duplicated within the reading pane itself.
 
 | ID | Planned verification or documentation | Level / model | Why |
 | --- | --- | --- | --- |
-| T1 | Add server tests for known/unknown/repeated controls, order, unchanged body, access control and draft round trips; check affected persisted data from the current test installation when needed. | High / Sol Medium | Use representative stored/serialized fixtures; map-only tests would miss duplicate loss and representation differences. |
+| T1 | Completed: server tests cover known/unknown/repeated controls, order, unchanged body, access control and draft round trips. No installed-state inspection was needed for this test-only change. | High / Sol Medium | Use representative stored/serialized fixtures; map-only tests would miss duplicate loss and representation differences. |
 | T2 | Check actual outgoing packet behavior with malicious reference metadata; verify body control injection is still rejected. | High / Sol Medium | Read-only UI does not enforce the server trust boundary; packet assertions must establish isolation. |
 | T3 | Add browser tests for expansion, read-only presentation, reply/forward, draft reopening and absence of controls from quotes/submitted text. | Medium / Sol Low | Several workflows and captured RPC payloads need coverage using existing test patterns. |
 | T4 | Add Storybook and pinned Linux VRT cases for expanded/collapsed blocks, long lines, both themes/languages and desktop/mobile. Review affected baselines, then compare without updates. | Medium / Sol Low | Existing scenarios reduce coding work, but visual review and Linux execution remain required. Report blocked verification explicitly. |
@@ -334,3 +334,27 @@ item is committed separately under the execution agreement above.
   message changes, reader remounts, reload of both switch states and auth-session
   cleanup. Linux VRT comparison passed 56/56 across both themes/languages and
   desktop/mobile without changing any baseline. No Java code or contracts changed.
+
+### T1 — server coverage audit completed
+
+Audited existing tests and added missing cross-layer assertions. This item changes
+tests and documentation only; production code, RPC contracts and persisted formats
+are unchanged. Installed test-node state did not need inspection or migration;
+all verification used isolated temporary configuration, account storage and SQL mail.
+
+| Acceptance case | Evidence |
+| --- | --- |
+| Known/unknown/repeated controls and stored text order | `BodySerializationTest`, `MessageTailTest`, `FtscCompatibilityTest` and `ReaderKludgesTest` retain parser/serializer and classifier coverage. New `UiRpcIntegrationTest.preservedStoredKludgeOrderAndPlainBodyAcrossTcpAndHttpReads` checks exact control/display lists after SQL storage for both netmail and echomail, including repeated CHRS/CUSTOM and PATH or multiple Via trailers. |
+| Unchanged body and originals | The new stored-reader case checks exact plain text, literal markup, repeated full reads on TCP and HTTP, and unchanged source/stored serialization after reading. AREA and parsed Origin/SEEN-BY remain outside the display records. |
+| Lightweight response boundaries | Netmail/echo summaries, recent echo pages, reply context and archive search omit both `kludges` and `bodyLines`; existing assertions were completed where only one field was checked. |
+| Authorization | Existing foreign-netmail and exact-area tests remain in place. New `EchoReaderRpcTest.enforcedLiveReadRightsForFullKludgeRecordsOnHttpAndTcp` denies full records before READ permission and after changing it to WRITE, using the same live sessions on both transports. |
+| Draft fidelity and owner isolation | New `UiRpcIntegrationTest.isolatedKludgeDraftSnapshotsByOwnerAcrossTransportsAndRpcRestart` checks echo/netmail drafts with the same ID under different accounts, identical duplicate controls, Unicode, empty truncated snapshots, deletion isolation and RPC/account-store restart. Revoking/regranting echo rights hides/restores the unchanged snapshot. |
+| Contract presence and limits | `MailKludgeContractTest` now round-trips unknown display flags and identical repeated records, and distinguishes an empty truncated snapshot from absent metadata. Existing integration cases cover the exact 60000-byte boundary, UTF-8 and aggregate oversize rejection without replacing the saved draft. |
+
+Final verification succeeded: 51 fido-tools tests, three RPC contract tests and
+34 focused RPC integration cases (nine echo-reader and 25 UI cases), plus root
+`spotlessCheck verifyJavaFormatting`. Gradle reused unchanged fido-tools/contract
+results in the final matrix; the affected RPC integration suites passed together
+after correcting the new fixture's configured point link and valid PKT password.
+No browser or container checks were needed for this server-test-only item.
+T2–T5 remain pending, including the separate outgoing-packet audit.
