@@ -5,6 +5,20 @@ The implementation and tests are authoritative when this document becomes stale.
 Update the relevant entry when a decision changes; record the replacement and reason.
 For current unfinished work, read [TODO](../TODO) and inspect the current Git state.
 
+## RPC compatibility during development
+
+As agreed on 2026-11-04, RPC contracts may change without backward compatibility
+for older clients or protocol versions. Update contracts and current consumers
+together; do not add legacy adapters, version negotiation or fallback paths solely
+for old RPC versions. Optional fields express legitimately absent data rather
+than a general compatibility requirement.
+
+Preserve the usability of existing data in the current test installation under
+the test folder. Inspect affected persisted data before incompatible changes;
+provide a targeted migration when needed instead of deleting or resetting it.
+This exception protects stored test state, not old RPC clients. It does not
+authorize modifying the test installation as a side effect of development checks.
+
 ## Product and module boundaries
 
 Server-side archive/body search is an experimental capability, disabled
