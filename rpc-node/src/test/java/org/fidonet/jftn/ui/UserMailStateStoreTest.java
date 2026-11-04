@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class UserMailStateStoreTest {
@@ -68,6 +69,9 @@ class UserMailStateStoreTest {
     void originalReplyContextSurvivesReopenAndRemainsOwnerScoped() throws Exception {
         Path path = root.resolve("context");
         MailDraft draft = draft("reply").setOriginalBody("Original *plain text*")
+                                        .setOriginalKludges(List.of("\1MSGID: 1:500/101 1234abcd",
+                                                                    "\1X-UNKNOWN: first",
+                                                                    "\1X-UNKNOWN: second"))
                                         .setOriginalName("Peer")
                                         .setOriginalAddress("1:500/101")
                                         .setOriginalDate("20 Oct 26 10:00:00")
@@ -82,6 +86,24 @@ class UserMailStateStoreTest {
         UserMailStateStore reopened = open(path);
         assertEquals(draft, reopened.drafts("sysop").get(0));
         assertEquals(0, reopened.drafts("other").size());
+    }
+
+    @Test
+    void originalKludgesHaveAnAggregateUtf8ByteLimit() {
+        MailDraftValidator validator = new MailDraftValidator(null);
+        MailDraft draft = draft("kludges");
+        validator.fields(draft);
+        validator.fields(draft.setOriginalKludges(List.of()));
+        String first = "\1X: " + "\u0416".repeat(14998);
+        String second = "\1Y: " + "\u0416".repeat(14998);
+        validator.fields(draft.setOriginalKludges(List.of(first, second)));
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft.setOriginalKludges(List.of(first,
+                                                                             second + "x"))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft.setOriginalKludges(List.of("\u0416".repeat(30001)))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> validator.fields(draft.setOriginalKludges(Collections.singletonList(null))));
     }
 
     @Test

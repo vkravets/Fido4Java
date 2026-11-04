@@ -686,8 +686,14 @@ session owner, including when multiple users share a node or AKA.
 
 `MailItem.excerpt` is an optional bounded summary (240 characters); list calls
 still omit full bodies and routing kludges. `MailDraft` optionally stores original
-body/date/name/address, composition kind and template-initialized state. This
+body/date/name/address, `originalKludges`, composition kind and template-initialized state. This
 context survives draft persistence for client-side template expansion; it does
 not override server submission authorization, MSGID generation or REPLY handling.
 Original bodies are bounded to 60,000 UTF-8 bytes. See [Mail workspace](mail-workspace.md)
 for the supported template tokens and preference limits.
+
+`originalKludges` is a reference snapshot persisted in the existing draft payload,
+retaining line order and repetitions across save/reopen. The sum of the UTF-8
+byte lengths of its strings must not exceed 60,000; Ctrl+A prefixes count toward
+that limit. Absent and empty snapshots are allowed. Oversized updates return
+`INVALID_ARGUMENT` before writing and leave the previously saved draft intact.

@@ -48,6 +48,7 @@ final class MailDraftValidator {
         }
         id(draft.getId());
         MailEncoding.name(draft);
+        originalKludges(draft.getOriginalKludges());
         if (draft.isSetOriginalBody()
                 && draft.getOriginalBody().getBytes(StandardCharsets.UTF_8).length > 60000)
             throw new IllegalArgumentException("Original message exceeds 60000 bytes");
@@ -70,6 +71,19 @@ final class MailDraftValidator {
         }
         if (draft.getBody().getBytes(StandardCharsets.UTF_8).length > 60000) {
             throw new IllegalArgumentException("Draft body exceeds 60000 bytes");
+        }
+    }
+
+    private void originalKludges(List<String> lines) {
+        if (lines == null)
+            return;
+        long bytes = 0;
+        for (String line : lines) {
+            if (line == null)
+                throw new IllegalArgumentException("Original kludge must be a string");
+            bytes += line.getBytes(StandardCharsets.UTF_8).length;
+            if (bytes > 60000)
+                throw new IllegalArgumentException("Original kludges exceed 60000 bytes");
         }
     }
 

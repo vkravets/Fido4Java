@@ -838,6 +838,36 @@ class UiRpcIntegrationTest {
     }
 
     @Test
+    void savedOriginalKludgesAcrossRestartAndRejectedOversizedUpdatesWithoutLosingDraft()
+            throws Exception {
+        MailDraft draft = draft(Mailbox.OUTBOX).setOriginalKludges(List.of("\1MSGID: 1:500/101 original",
+                                                                           "\1X-UNKNOWN: first",
+                                                                           "\1X-UNKNOWN: second"));
+        ui.saveDraft(token, draft);
+        try (THttpClient connection = new THttpClient("http://127.0.0.1:" + rpc.getHttpPort()
+                + "/rpc/ui")) {
+            UiService.Client browser = new UiService.Client(new TJSONProtocol(connection));
+            assertEquals(draft, browser.drafts(token).get(0));
+            assertEquals("INVALID_ARGUMENT",
+                         assertThrows(UiError.class,
+                                      () -> browser.saveDraft(token,
+                                                              draft.deepCopy()
+                                                                   .setOriginalKludges(List.of("\u0416".repeat(30001))))).getCode());
+        }
+        assertEquals(draft, ui.drafts(token).get(0));
+        assertEquals("INVALID_ARGUMENT",
+                     assertThrows(UiError.class,
+                                  () -> ui.saveDraft(token,
+                                                     draft.deepCopy()
+                                                          .setOriginalKludges(List.of("x".repeat(30000),
+                                                                                      "y".repeat(30001))))).getCode());
+        transport.close();
+        rpc.close();
+        connect();
+        assertEquals(draft, ui.drafts(token).get(0));
+    }
+
+    @Test
     void savesIncompleteDraftsButRejectsSendingThem() throws Exception {
         MailDraft draft = draft(Mailbox.OUTBOX).setToName("").setToAddress("").setSubject("");
         ui.saveDraft(token, draft);

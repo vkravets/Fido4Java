@@ -1,6 +1,6 @@
 # Mail Kludges — implementation plan
 
-Status: implementation in progress. S1–S3 are implemented; S4–S5, U1–U5 and T1–T5
+Status: implementation in progress. S1–S4 are implemented; S5, U1–U5 and T1–T5
 remain pending.
 
 Execution agreement: commit the plan before implementation, then commit each plan
@@ -127,3 +127,19 @@ item is committed separately under the execution agreement above.
   summary/search exclusion and denied or revoked read access.
 - Root `spotlessCheck` and `verifyJavaFormatting` passed after both changes.
 - UI behavior is unchanged; browser functional tests and VRT were not run.
+
+### S4 — persisted reference snapshots and UTF-8 limit
+
+- Existing Thrift draft payloads retain `originalKludges` without a database
+  schema change. Added aggregate 60000-byte UTF-8 validation to the shared draft
+  validator; absent/empty lists are valid and null entries are rejected.
+- Verified the exact byte boundary, multibyte text, aggregate overflow across
+  multiple strings, ordered/repeated controls after storage reopen and owner
+  isolation. TCP/HTTP tests confirm oversized updates preserve the saved draft,
+  including after restarting RPC.
+- All 28 tests in `UserMailStateStoreTest` and `UiRpcIntegrationTest` passed on the
+  pinned Windows profile. Tests used temporary databases; the existing test
+  installation and its data were not changed.
+- Updated the RPC guide. Browser functional tests and VRT were not run because
+  this change does not alter UI behavior.
+- Root `spotlessCheck` and `verifyJavaFormatting` passed.
