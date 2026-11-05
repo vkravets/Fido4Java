@@ -17,6 +17,9 @@ const props = withDefaults(
         navigation?: boolean;
         previousDisabled?: boolean;
         nextDisabled?: boolean;
+        previousReplyDisabled?: boolean;
+        nextReplyDisabled?: boolean;
+        replyNavigation?: boolean;
         unreadDisabled?: boolean;
     }>(),
     { removable: true }
@@ -38,6 +41,8 @@ defineEmits<{
     forward: [];
     previous: [];
     next: [];
+    previousReply: [];
+    nextReply: [];
     unread: [];
     compose: [];
 }>();
@@ -101,6 +106,12 @@ function closeMenu(event: Event) {
                         v-shortcut="'mail.next'"
                         @click="!pending && $emit('next')"
                     >
+                        <AppIcon name="right" />
+                    </button>
+                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Previous reply')" :title="t('Previous reply')" :disabled="busy || previousReplyDisabled" @click="!pending && $emit('previousReply')">
+                        <AppIcon name="left" />
+                    </button>
+                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Next reply')" :title="t('Next reply')" :disabled="busy || nextReplyDisabled" @click="!pending && $emit('nextReply')">
                         <AppIcon name="right" />
                     </button>
                     <button

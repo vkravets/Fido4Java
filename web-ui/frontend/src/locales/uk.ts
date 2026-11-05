@@ -195,6 +195,8 @@ export const ukrainian = {
     'Message navigation': 'Навігація повідомленнями',
     'Previous message': 'Попередній лист',
     'Next message': 'Наступний лист',
+    'Previous reply': 'Попередня відповідь',
+    'Next reply': 'Наступна відповідь',
     Conversation: 'Обговорення',
     'Discussion view': 'Режим обговорення',
     'Could not load replies. Retry': 'Не вдалося завантажити відповіді. Повторити',

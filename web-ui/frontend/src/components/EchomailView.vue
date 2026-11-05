@@ -150,6 +150,9 @@ const discussion = createEchoDiscussion(
     (...args) => client.echoContext(...args)
 );
 const discussionRows = discussion.rows;
+const discussionIndex = computed(() =>
+    discussionRows.value.findIndex((row) => mailId(row.item.id) === mailId(reader.selected.value?.id))
+);
 function discussionKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (target !== event.currentTarget || props.state.busy.value || opening.value) return;
@@ -371,6 +374,11 @@ function openDiscussionRow(item: MailItem) {
                 :unread-disabled="!nextUnread"
                 @previous="openMessage(navigationItems[index - 1]!)"
                 @next="openMessage(navigationItems[index + 1]!)"
+                :reply-navigation="true"
+                :previous-reply-disabled="discussionIndex <= 0"
+                :next-reply-disabled="discussionIndex < 0 || discussionIndex >= discussionRows.length - 1"
+                @previous-reply="openDiscussionRow(discussionRows[discussionIndex - 1]!.item)"
+                @next-reply="openDiscussionRow(discussionRows[discussionIndex + 1]!.item)"
                 @unread="nextUnread && openMessage(nextUnread)"
             />
             <details
