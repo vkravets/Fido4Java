@@ -105,20 +105,13 @@ function closeMenu(event: Event) {
                     </button>
                     <button
                         class="secondary reader-kludge-button"
-                        :aria-expanded="workspace.value.value.showKludgeBlock && hasKludges"
-                        :aria-disabled="!hasKludges || pending || undefined"
-                        :title="t('Kludges')"
-                        @click="!pending && hasKludges && workspace.update({ showKludgeBlock: !workspace.value.value.showKludgeBlock })"
+                        :aria-label="t('Show kludges inline')"
+                        :title="t('Show kludges inline')"
+                        :aria-pressed="inlineKludges"
+                        @click="inlineKludges = !inlineKludges"
                     >
-                        {{ t('Kludges') }}
+                        <AppIcon name="source" />
                     </button>
-                    <label class="reader-kludge-toggle">
-                        <input
-                            type="checkbox"
-                            v-model="inlineKludges"
-                        />
-                        {{ t('Show kludges inline') }}
-                    </label>
                     <div class="reader-direct-actions">
                         <button
                             v-if="forwardable"
@@ -251,30 +244,6 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
-.reader-kludge-toggle {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    min-height: 28px;
-    margin: 0;
-    padding: 2px 6px;
-    font-size: 13px;
-    line-height: 20px;
-    font-weight: 400;
-    white-space: nowrap;
-}
-.reader-kludge-toggle input {
-    width: auto;
-    flex-shrink: 0;
-}
-.reader-actions > .reader-kludge-button {
-    width: auto;
-    min-width: 0;
-    padding: 4px 8px;
-    white-space: nowrap;
-}
 .reader-kludge-panel :deep(.mail-kludge-list-expanded ul) {
     margin: 0;
     padding: 8px 14px;

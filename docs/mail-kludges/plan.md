@@ -2,7 +2,7 @@
 
 Status: S1–S5, U1–U6 and T1–T5 are complete.
 
-Next work: K1–K3 below are planned and not implemented.
+K1–K2 are implemented; K3 verification remains.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
