@@ -196,6 +196,9 @@ export const ukrainian = {
     'Previous message': 'Попередній лист',
     'Next message': 'Наступний лист',
     Conversation: 'Обговорення',
+    'Discussion view': 'Режим обговорення',
+    'Current message': 'Поточний лист',
+    'Whole discussion': 'Усе обговорення',
     'In reply to': 'У відповідь на',
     'The parent message is not available in this conference.':
         'Початковий лист недоступний у цій конференції.',

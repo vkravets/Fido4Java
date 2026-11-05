@@ -177,6 +177,12 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(page.locator('.mail-body')).toContainText('<script>alert("hello")</script>');
     await expect(page.getByRole('button', { name: 'Delete message', exact: true })).toHaveCount(0);
     await page.locator('.echo-conversation > summary').click();
+    const discussion = page.getByRole('region', { name: 'Conversation' });
+    await expect(discussion.getByRole('treeitem')).toHaveCount(2);
+    await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
+    await discussion.getByRole('treeitem').first().focus();
+    await discussion.getByRole('treeitem').first().press('ArrowDown');
+    await expect(discussion.getByRole('treeitem').nth(1)).toBeFocused();
     await page
         .getByRole('region', { name: 'Conversation' })
         .getByRole('button', { name: /Bob Example/ })
@@ -184,7 +190,15 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: /^In reply to/ }).click();
+    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await expect(discussion.getByRole('treeitem')).toHaveCount(3);
+    await expect(discussion.getByRole('treeitem').nth(1)).toHaveAttribute('aria-selected', 'true');
+    await page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('treeitem')
+        .first()
+        .getByRole('button')
+        .click();
     await expect(
         page.getByRole('heading', { name: 'Welcome to the conference', exact: true })
     ).toBeVisible();

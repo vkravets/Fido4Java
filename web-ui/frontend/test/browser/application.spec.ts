@@ -249,7 +249,13 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to general', exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: /^In reply to/ }).click();
+    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await page
+        .getByRole('region', { name: 'Conversation' })
+        .getByRole('treeitem')
+        .first()
+        .getByRole('button')
+        .click();
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('Alice');
     await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(
@@ -268,9 +274,10 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await page.getByRole('button', { name: /^Browser echo reply/ }).click();
     await expect(page.locator('.mail-body')).toHaveText('A reply from the browser.');
     await page.locator('.echo-conversation > summary').click();
-    await expect(page.getByRole('button', { name: /^In reply to/ })).toContainText(
-        'Welcome to general'
-    );
+    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await expect(
+        page.getByRole('region', { name: 'Conversation' }).getByRole('treeitem').first()
+    ).toContainText('Welcome to general');
     await expect(page.getByRole('alert')).toHaveCount(0);
 });
 

@@ -121,6 +121,50 @@ const nextUnread = computed(() =>
         (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
     )
 );
+const discussionView = ref<'current' | 'whole'>('current');
+const discussionRows = computed(() => {
+    const selected = reader.selected.value;
+    const context = reader.context.value;
+    if (!selected || !context) return [];
+    const rows: { item: MailItem; depth: number }[] = [];
+    const hasParent = discussionView.value === 'whole' && !!context.parent;
+    if (hasParent && context.parent) {
+        rows.push({ item: context.parent, depth: 0 });
+    }
+    rows.push({ item: selected, depth: hasParent ? 1 : 0 });
+    const seen = new Set(rows.map((row) => mailId(row.item.id)));
+    for (const item of context.replies.items) {
+        if (!seen.has(mailId(item.id))) {
+            rows.push({ item, depth: hasParent ? 2 : 1 });
+            seen.add(mailId(item.id));
+        }
+    }
+    return rows;
+});
+function discussionKey(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (target !== event.currentTarget || props.state.busy.value || opening.value) return;
+    const rows = [...target.parentElement!.querySelectorAll<HTMLElement>('[data-discussion-row]')];
+    const index = rows.indexOf(target);
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const item = discussionRows.value[index]?.item;
+        if (item) openDiscussionRow(item);
+        return;
+    }
+    let next: HTMLElement | undefined;
+    if (event.key === 'ArrowDown') next = rows[index + 1];
+    else if (event.key === 'ArrowUp') next = rows[index - 1];
+    else if (event.key === 'Home') next = rows[0];
+    else if (event.key === 'End') next = rows.at(-1);
+    else return;
+    event.preventDefault();
+    next?.focus();
+}
+function openDiscussionRow(item: MailItem) {
+    discussionView.value = 'current';
+    void openMessage(item);
+}
 </script>
 <template>
     <MailWorkspace
@@ -314,50 +358,63 @@ const nextUnread = computed(() =>
                 <summary>
                     <AppIcon name="logs" />{{ t('Conversation') }}<AppIcon name="down" />
                 </summary>
-                <button
-                    v-if="reader.context.value.parent"
-                    class="secondary"
-                    :disabled="state.busy.value"
-                    :aria-disabled="opening || undefined"
-                    @click="!opening && openMessage(reader.context.value!.parent!)"
+                <div
+                    class="actions discussion-view-controls"
+                    role="group"
+                    :aria-label="t('Discussion view')"
                 >
-                    {{ t('In reply to') }}: {{ reader.context.value.parent.fromName }} —
-                    {{ reader.context.value.parent.subject }}
-                    <time class="conversation-date">{{ reader.context.value.parent.date }}</time>
-                </button>
+                    <button
+                        class="secondary"
+                        :aria-pressed="discussionView === 'current'"
+                        @click="discussionView = 'current'"
+                    >
+                        {{ t('Current message') }}
+                    </button>
+                    <button
+                        class="secondary"
+                        :aria-pressed="discussionView === 'whole'"
+                        @click="discussionView = 'whole'"
+                    >
+                        {{ t('Whole discussion') }}
+                    </button>
+                </div>
                 <p
-                    v-else-if="reader.context.value.missingParent"
+                    v-if="discussionView === 'whole' && reader.context.value.missingParent"
                     class="muted"
                 >
                     {{ t('The parent message is not available in this conference.') }}
                 </p>
-                <p
-                    v-else
-                    class="muted"
-                >
-                    {{ t('Start of conversation') }}
-                </p>
-                <h4>{{ t('Replies') }}</h4>
                 <p
                     v-if="!reader.context.value.replies.items.length"
                     class="muted"
                 >
                     {{ t('No replies yet.') }}
                 </p>
-                <ul>
+                <ul
+                    role="tree"
+                    :aria-label="t('Conversation')"
+                    class="discussion-rows"
+                >
                     <li
-                        v-for="reply in reader.context.value.replies.items"
-                        :key="mailId(reply.id)"
+                        v-for="row in discussionRows"
+                        :key="mailId(row.item.id)"
+                        role="treeitem"
+                        :aria-level="row.depth + 1"
+                        :aria-selected="mailId(row.item.id) === mailId(reader.selected.value.id)"
+                        :data-discussion-row="mailId(row.item.id)"
+                        :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
+                        tabindex="0"
+                        @keydown="discussionKey"
                     >
                         <button
                             class="text-button"
                             :disabled="state.busy.value"
                             :aria-disabled="opening || undefined"
-                            @click="!opening && openMessage(reply)"
+                            @click="!opening && openDiscussionRow(row.item)"
                         >
-                            {{ reply.fromName }} — {{ reply.subject }}
+                            {{ row.item.fromName }} — {{ row.item.subject }}
                         </button>
-                        <time class="conversation-date">{{ reply.date }}</time>
+                        <time class="conversation-date">{{ row.item.date }}</time>
                     </li>
                 </ul>
                 <button
@@ -380,8 +437,16 @@ const nextUnread = computed(() =>
     </MailWorkspace>
 </template>
 <style scoped>
-.echo-conversation li {
-    padding-block: 4px;
+.discussion-view-controls {
+    margin-block: 12px;
+}
+.discussion-rows li {
+    padding: 6px 8px 6px calc(8px + var(--thread-indent));
+    border-inline-start: 1px solid var(--line);
+}
+.discussion-rows li[aria-selected='true'] {
+    background: var(--accent-soft);
+    border-inline-start: 3px solid var(--accent);
 }
 .conversation-date {
     display: inline-block;
