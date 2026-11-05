@@ -125,12 +125,17 @@ disable/dim the list, navigation or header. Keep the previous reader mounted unt
 the new message is ready; folder/area changes, closing and composing invalidate
 pending opens. Late failures from an old session cannot clear a newer login.
 Pending reads expose busy/unavailable semantics without toggling native disabled
-styles on the reader actions. Guard both mouse and keyboard activation. Message
-navigation shortcuts focus the persistent reader without scrolling, so an old
+styles on reader controls. Guard mouse and keyboard activation of message actions;
+session preferences such as inline kludge visibility remain operable while loading.
+Message navigation shortcuts focus the persistent reader without scrolling, so an old
 list row cannot retain a second focus highlight beside the selected message.
-Controls inside that persistent reader whose availability changes per message
-remain mounted and use visibility state, so message navigation does not recreate
-them or reset their session state.
+Session-wide reader controls stay visible across messages, even when the current
+message has no matching content. Message navigation must not hide or reset them
+based on message-specific data.
+The reader toolbar keeps the inline visibility checkbox and full-kludge-list
+button beside the message actions. The button opens the complete list directly
+below the reader header, spanning its width; it stays in place when a message
+has no kludges so neighboring controls do not shift during navigation.
 
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement

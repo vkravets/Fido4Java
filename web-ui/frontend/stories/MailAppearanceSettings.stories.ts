@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { nextTick } from 'vue';
+import { nextTick, provide } from 'vue';
 import MailAppearanceSettings from '../src/components/MailAppearanceSettings.vue';
 import NotificationBanner from '../src/components/NotificationBanner.vue';
 import type { AppState } from '../src/state.ts';
+import { createWorkspace, workspaceKey } from '../src/workspace.ts';
 import { mailWorkspaceFixture } from './mail-workspace-fixture.ts';
 const meta = {
     title: 'Mail/MailAppearanceSettings',
@@ -13,6 +14,7 @@ const meta = {
         components: { MailAppearanceSettings, NotificationBanner },
         setup() {
             const { state, appearance } = mailWorkspaceFixture(context.globals.theme === 'dark');
+            provide(workspaceKey, createWorkspace());
             if (context.parameters.boxDrawing) {
                 appearance.typography.value = { font: 'dejavu', size: 16, lineHeight: 1 };
             }

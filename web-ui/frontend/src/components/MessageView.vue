@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
 import MailKludgeList from './MailKludgeList.vue';
@@ -23,11 +23,8 @@ const props = withDefaults(
 );
 const workspace = useWorkspace();
 const inlineKludges = workspace.inlineKludges;
-const hasInlineKludges = computed(() =>
-    props.message.bodyLines?.some(
-        (line) => line.kludge && (line.known || workspace.value.value.unknownKludges === 'toggle')
-    )
-);
+const showKludges = ref(false);
+const hasKludges = computed(() => (props.message.kludges?.length || 0) > 0);
 const readerLines = computed(() =>
     props.message.bodyLines?.filter(
         (line) =>
@@ -107,6 +104,22 @@ function closeMenu(event: Event) {
                     >
                         <AppIcon name="right" />
                     </button>
+                    <button
+                        class="secondary reader-kludge-button"
+                        :aria-expanded="showKludges && hasKludges"
+                        :aria-disabled="!hasKludges || pending || undefined"
+                        :title="t('Kludges')"
+                        @click="!pending && hasKludges && (showKludges = !showKludges)"
+                    >
+                        {{ t('Kludges') }}
+                    </button>
+                    <label class="reader-kludge-toggle">
+                        <input
+                            type="checkbox"
+                            v-model="inlineKludges"
+                        />
+                        {{ t('Show kludges inline') }}
+                    </label>
                     <div class="reader-direct-actions">
                         <button
                             v-if="forwardable"
@@ -198,22 +211,15 @@ function closeMenu(event: Event) {
         <div class="reader-correspondents">
             {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
-        <div class="reader-kludge-controls">
+        <div
+            v-show="showKludges && hasKludges"
+            class="reader-kludge-panel"
+        >
             <MailKludgeList
                 :kludges="message.kludges || []"
                 :label="t('Kludges')"
+                list-only
             />
-            <label
-                v-show="hasInlineKludges"
-                class="reader-kludge-toggle"
-            >
-                <input
-                    type="checkbox"
-                    v-model="inlineKludges"
-                    :disabled="pending"
-                />
-                {{ t('Show kludges inline') }}
-            </label>
         </div>
         <FidoText
             :text="message.body || ''"
@@ -246,23 +252,34 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
-.reader-kludge-controls {
-    display: grid;
-    justify-items: start;
-}
 .reader-kludge-toggle {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
-    padding: 8px 14px;
+    gap: 6px;
+    min-height: 28px;
+    margin: 0;
+    padding: 2px 6px;
     font-size: 13px;
+    line-height: 20px;
     font-weight: 400;
+    white-space: nowrap;
 }
 .reader-kludge-toggle input {
     width: auto;
     flex-shrink: 0;
+}
+.reader-actions > .reader-kludge-button {
+    width: auto;
+    min-width: 0;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+.reader-kludge-panel :deep(.mail-kludge-list-expanded ul) {
+    margin: 0;
+    padding: 8px 14px;
+    list-style: none;
 }
 .mail-message:focus {
     outline: none;

@@ -465,7 +465,7 @@ test('message header actions use icons and translated tooltips in the reader and
                     const toolbar = page.locator('.reader-actions');
                     await expect(toolbar).toBeVisible();
                     const controls = toolbar.locator(
-                        ':scope > button:visible, .reader-direct-actions > button:visible, .reader-more > summary:visible'
+                        ':scope > button:not(.reader-kludge-button):visible, .reader-direct-actions > button:visible, .reader-more > summary:visible'
                     );
                     expect(await controls.count()).toBeGreaterThanOrEqual(3);
                     for (const control of await controls.all()) {
@@ -474,6 +474,8 @@ test('message header actions use icons and translated tooltips in the reader and
                         await expect(control).toHaveAttribute('title', /.+/);
                         await expect(control.locator('svg')).toBeVisible();
                     }
+                    await expect(toolbar.locator('.reader-kludge-button')).toBeVisible();
+                    await expect(toolbar.locator('.reader-kludge-toggle input')).toBeVisible();
                 }
             }
         }
@@ -538,6 +540,9 @@ test('mail appearance previews unsaved themes beside controls without changing s
     await openStory(page, 'mail-mailappearancesettings--themes');
     const controls = page.locator('.appearance-layout > fieldset');
     const preview = page.getByRole('complementary', { name: 'Live mail preview' });
+    const inlineKludgeToggle = preview.getByRole('checkbox', { name: 'Show kludges inline' });
+    await expect(inlineKludgeToggle).toBeVisible();
+    await inlineKludgeToggle.check();
     const left = await controls.boundingBox();
     const right = await preview.boundingBox();
     expect(right!.x).toBeGreaterThan(left!.x + left!.width);
@@ -556,6 +561,8 @@ test('mail appearance previews unsaved themes beside controls without changing s
     await expect(preview.getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
     await preview.getByRole('button', { name: 'Reading theme', exact: true }).click();
     await expect(preview.locator('.mail-body')).toHaveCSS('background-color', 'rgb(16, 24, 16)');
+    await expect(inlineKludgeToggle).toBeVisible();
+    await expect(inlineKludgeToggle).toBeChecked();
     await openStory(page, 'mail-mailappearancesettings--themes');
     await expect(reading).toHaveValue('paper');
     await expect(page.getByRole('combobox', { name: 'Default outgoing encoding' })).toHaveValue(

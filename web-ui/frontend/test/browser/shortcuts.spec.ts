@@ -150,7 +150,7 @@ test('keyboard message changes keep the list enabled and previous preview mounte
         const list = page.locator('.split-list');
         const listNode = (await list.elementHandle())!;
         const reader = page.locator('.mail-message');
-        const controls = reader.locator('button');
+        const controls = reader.locator('button, input, select, textarea');
         const appearance = () =>
             controls.evaluateAll((buttons) =>
                 buttons.map((button) => {
@@ -189,6 +189,11 @@ test('keyboard message changes keep the list enabled and previous preview mounte
         await expect(list.locator('button:disabled')).toHaveCount(0);
         await expect(body).toHaveText(original!);
         expect(await listNode.evaluate((element) => element.isConnected)).toBe(true);
+        const inlineKludges = reader.getByRole('checkbox', { name: 'Show kludges inline' });
+        await inlineKludges.check();
+        await expect(inlineKludges).toBeChecked();
+        await inlineKludges.uncheck();
+        await reader.focus();
         await page.keyboard.press('r');
         await expect(page.locator('.mail-composer')).toHaveCount(0);
         await reader

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { visibleKludge } from '../mail-kludges.ts';
-defineProps<{ kludges: string[]; label: string }>();
+defineProps<{ kludges: string[]; label: string; listOnly?: boolean }>();
 </script>
 
 <template>
     <details
-        v-if="kludges.length"
+        v-if="kludges.length && !listOnly"
         class="mail-kludge-list"
     >
         <summary>{{ label }}</summary>
@@ -18,6 +18,20 @@ defineProps<{ kludges: string[]; label: string }>();
             </li>
         </ul>
     </details>
+    <section
+        v-else-if="kludges.length && listOnly"
+        class="mail-kludge-list mail-kludge-list-expanded"
+        :aria-label="label"
+    >
+        <ul>
+            <li
+                v-for="(kludge, index) in kludges"
+                :key="index"
+            >
+                <code>{{ visibleKludge(kludge) }}</code>
+            </li>
+        </ul>
+    </section>
 </template>
 
 <style scoped>

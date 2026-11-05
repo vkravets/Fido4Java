@@ -386,8 +386,11 @@ for (const theme of ['light', 'dark']) {
                     await expect(page.locator('.mail-body .kludge')).toHaveCount(5);
                 }
                 if (screen.expandReaderKludges) {
-                    await page.locator('.mail-kludge-list > summary').click();
-                    await expect(page.locator('.mail-kludge-list')).toHaveAttribute('open', '');
+                    await page.locator('.reader-kludge-button').click();
+                    await expect(page.locator('.reader-kludge-button')).toHaveAttribute(
+                        'aria-expanded',
+                        'true'
+                    );
                     await expect(page.locator('.mail-kludge-list code')).toHaveCount(5);
                     await expect(page.locator('.mail-kludge-list code').last()).toContainText(
                         '<b>*literal*</b> @quote long-value-'
