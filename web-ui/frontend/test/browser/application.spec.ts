@@ -254,7 +254,7 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
         .getByRole('region', { name: 'Conversation' })
         .getByRole('treeitem')
         .first()
-        .getByRole('button')
+        .locator('.discussion-open')
         .click();
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('Alice');

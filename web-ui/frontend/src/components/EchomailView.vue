@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import AppIcon from './AppIcon.vue';
+import { createEchoDiscussion } from '../echo-discussion.ts';
 import MailSearchStatus from './MailSearchStatus.vue';
 import { createArchiveSearch } from '../archive-search.ts';
 import { t } from '../i18n.ts';
@@ -122,25 +123,15 @@ const nextUnread = computed(() =>
     )
 );
 const discussionView = ref<'current' | 'whole'>('current');
-const discussionRows = computed(() => {
-    const selected = reader.selected.value;
-    const context = reader.context.value;
-    if (!selected || !context) return [];
-    const rows: { item: MailItem; depth: number }[] = [];
-    const hasParent = discussionView.value === 'whole' && !!context.parent;
-    if (hasParent && context.parent) {
-        rows.push({ item: context.parent, depth: 0 });
-    }
-    rows.push({ item: selected, depth: hasParent ? 1 : 0 });
-    const seen = new Set(rows.map((row) => mailId(row.item.id)));
-    for (const item of context.replies.items) {
-        if (!seen.has(mailId(item.id))) {
-            rows.push({ item, depth: hasParent ? 2 : 1 });
-            seen.add(mailId(item.id));
-        }
-    }
-    return rows;
-});
+const discussion = createEchoDiscussion(
+    props.state.session,
+    reader.area,
+    reader.selected,
+    reader.context,
+    discussionView,
+    (...args) => client.echoContext(...args)
+);
+const discussionRows = discussion.rows;
 function discussionKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (target !== event.currentTarget || props.state.busy.value || opening.value) return;
@@ -157,7 +148,15 @@ function discussionKey(event: KeyboardEvent) {
     else if (event.key === 'ArrowUp') next = rows[index - 1];
     else if (event.key === 'Home') next = rows[0];
     else if (event.key === 'End') next = rows.at(-1);
-    else return;
+    else if (event.key === 'ArrowRight') {
+        const row = discussionRows.value[index]!;
+        if (!discussion.expanded.value.has(mailId(row.item.id))) void discussion.toggle(row.item);
+        else next = rows[index + 1];
+    } else if (event.key === 'ArrowLeft') {
+        const row = discussionRows.value[index]!;
+        if (discussion.expanded.value.has(mailId(row.item.id))) void discussion.toggle(row.item);
+        else next = rows.find((entry) => entry.dataset.discussionRow === row.parent);
+    } else return;
     event.preventDefault();
     next?.focus();
 }
@@ -379,7 +378,12 @@ function openDiscussionRow(item: MailItem) {
                     </button>
                 </div>
                 <p
-                    v-if="discussionView === 'whole' && reader.context.value.missingParent"
+                    v-if="
+                        discussionView === 'whole' &&
+                        discussionRows.some(
+                            (row) => discussion.links.value.get(mailId(row.item.id))?.missingParent
+                        )
+                    "
                     class="muted"
                 >
                     {{ t('The parent message is not available in this conference.') }}
@@ -400,6 +404,7 @@ function openDiscussionRow(item: MailItem) {
                         :key="mailId(row.item.id)"
                         role="treeitem"
                         :aria-level="row.depth + 1"
+                        :aria-expanded="discussion.expanded.value.has(mailId(row.item.id))"
                         :aria-selected="mailId(row.item.id) === mailId(reader.selected.value.id)"
                         :data-discussion-row="mailId(row.item.id)"
                         :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
@@ -408,6 +413,27 @@ function openDiscussionRow(item: MailItem) {
                     >
                         <button
                             class="text-button"
+                            :disabled="
+                                state.busy.value ||
+                                discussion.pending.value.has(mailId(row.item.id))
+                            "
+                            :aria-label="
+                                discussion.expanded.value.has(mailId(row.item.id))
+                                    ? t('Collapse conversation')
+                                    : t('Expand conversation')
+                            "
+                            @click="discussion.toggle(row.item)"
+                        >
+                            <AppIcon
+                                :name="
+                                    discussion.expanded.value.has(mailId(row.item.id))
+                                        ? 'down'
+                                        : 'right'
+                                "
+                            />
+                        </button>
+                        <button
+                            class="text-button discussion-open"
                             :disabled="state.busy.value"
                             :aria-disabled="opening || undefined"
                             @click="!opening && openDiscussionRow(row.item)"
@@ -415,17 +441,31 @@ function openDiscussionRow(item: MailItem) {
                             {{ row.item.fromName }} — {{ row.item.subject }}
                         </button>
                         <time class="conversation-date">{{ row.item.date }}</time>
+                        <span
+                            v-if="discussion.pending.value.has(mailId(row.item.id))"
+                            role="status"
+                            >{{ t('Loading messages…') }}</span
+                        >
+                        <button
+                            v-if="discussion.failures.value.has(mailId(row.item.id))"
+                            class="secondary"
+                            @click="discussion.retry(row.item)"
+                        >
+                            {{ t('Could not load replies. Retry') }}
+                        </button>
+                        <button
+                            v-if="
+                                discussion.expanded.value.has(mailId(row.item.id)) &&
+                                discussion.links.value.get(mailId(row.item.id))?.replies.hasMore
+                            "
+                            class="secondary"
+                            :disabled="discussion.pending.value.has(mailId(row.item.id))"
+                            @click="discussion.load(row.item, true)"
+                        >
+                            {{ t('More replies') }}
+                        </button>
                     </li>
                 </ul>
-                <button
-                    v-if="reader.context.value.replies.hasMore"
-                    class="secondary"
-                    :disabled="state.busy.value"
-                    :aria-disabled="opening || undefined"
-                    @click="!opening && read(reader.moreReplies)"
-                >
-                    {{ t('More replies') }}
-                </button>
             </details>
         </div>
         <section

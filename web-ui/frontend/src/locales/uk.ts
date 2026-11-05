@@ -197,6 +197,7 @@ export const ukrainian = {
     'Next message': 'Наступний лист',
     Conversation: 'Обговорення',
     'Discussion view': 'Режим обговорення',
+    'Could not load replies. Retry': 'Не вдалося завантажити відповіді. Повторити',
     'Current message': 'Поточний лист',
     'Whole discussion': 'Усе обговорення',
     'In reply to': 'У відповідь на',

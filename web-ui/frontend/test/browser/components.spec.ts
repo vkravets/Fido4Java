@@ -197,7 +197,7 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
         .getByRole('region', { name: 'Conversation' })
         .getByRole('treeitem')
         .first()
-        .getByRole('button')
+        .locator('.discussion-open')
         .click();
     await expect(
         page.getByRole('heading', { name: 'Welcome to the conference', exact: true })
