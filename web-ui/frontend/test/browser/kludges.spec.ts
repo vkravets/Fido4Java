@@ -44,9 +44,6 @@ for (const mailKind of ['netmail', 'echomail']) {
                 );
                 const source = await capture<MailItem>(page, 'source-state');
                 const block = page.locator('.mail-kludge-list');
-                await page
-                    .getByRole('button', { name: label('Kludges'), exact: true })
-                    .click();
                 await expect(block).toBeVisible();
                 await expect(block.locator('code')).toHaveCount(4);
                 await expect(block.locator('code').last()).toHaveText(
@@ -55,7 +52,7 @@ for (const mailKind of ['netmail', 'echomail']) {
                 await expect(
                     block.locator('input, textarea, [contenteditable="true"], b')
                 ).toHaveCount(0);
-                await page.getByRole('checkbox', { name: label('Show kludges inline') }).check();
+                await page.getByRole('button', { name: label('Show kludges inline') }).click();
                 await expect(page.locator('.mail-body .kludge')).toHaveCount(4);
                 const shortcut =
                     action === 'reply'
@@ -145,7 +142,7 @@ for (const snapshot of ['without-controls', 'truncated', 'omitted']) {
         await openStory(page, `mail-kludgeworkflow--${snapshot}`);
         if (snapshot === 'without-controls') {
             await expect(page.locator('.mail-kludge-list')).toHaveCount(0);
-            await expect(page.getByRole('checkbox', { name: 'Show kludges inline' })).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Show kludges inline' })).toBeVisible();
         }
         await page.locator('.reader-more > summary').click();
         await page.locator('.reader-more [data-shortcut="mail.shortReply"]').click();
@@ -197,16 +194,16 @@ for (const width of [1280, 390]) {
             width === 390 ? 'dark' : 'light',
             locale
         );
-        const toggle = page.getByRole('checkbox', {
+        const toggle = page.getByRole('button', {
             name: locale === 'uk' ? ukrainian['Show kludges inline'] : 'Show kludges inline'
         });
         const body = page.locator('.mail-body');
-        await expect(toggle).not.toBeChecked();
+        await expect(toggle).toHaveAttribute('aria-pressed', 'false');
         await expect(body.locator('.kludge')).toHaveText('^ACUSTOM: visible by default');
         const plain = await body.innerText();
         await toggle.focus();
         await page.keyboard.press('Space');
-        await expect(toggle).toBeChecked();
+        await expect(toggle).toHaveAttribute('aria-pressed', 'true');
         await expect(body.locator('.fido-line')).toHaveText([
             '^AMSGID: 1:500/101.2 first',
             'First paragraph',
@@ -220,48 +217,46 @@ for (const width of [1280, 390]) {
         ]);
         await expect(body.locator('.kludge a, .kludge b, .kludge .bold')).toHaveCount(0);
         await expect(body).toContainText('CUSTOM');
-        await page.locator('.reader-kludge-button').click();
-        await expect(page.locator('.mail-kludge-list')).toContainText('CUSTOM');
+        await expect(page.locator('.mail-kludge-list')).toBeHidden();
         await expect(body.locator('.fido-line:not(.kludge)')).toHaveCount(4);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
             width
         );
-        await toggle.uncheck();
+        await toggle.click();
         await expect.poll(() => body.innerText()).toBe(plain);
-        await toggle.check();
+        await toggle.click();
         await page.locator('[data-shortcut="mail.next"]').click();
-        await expect(toggle).toBeChecked();
+        await expect(toggle).toHaveAttribute('aria-pressed', 'true');
         await expect(body).toContainText('Second body');
         await expect(body.locator('.kludge')).toHaveText('^ACHRS: CP866 2');
         await expect(body).not.toContainText('MSGID');
         await page.locator('[data-shortcut="mail.next"]').click();
         await expect(body).toContainText('Body without kludges');
         await expect(toggle).toBeVisible();
-        await expect(toggle).toBeChecked();
+        await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     });
 }
 
-test('reader kludge controls stay in the toolbar and open the full-width list directly', async ({
+test('reader inline button stays in the toolbar and the profile shows the full-width list', async ({
     page
 }) => {
     for (const width of [1280, 390]) {
         await page.setViewportSize({ width, height: 900 });
         for (const theme of ['light', 'dark'] as const) {
             for (const locale of ['en', 'uk'] as const) {
-                await openStory(page, 'mail-messageview--kludge-reading', theme, locale);
+                await openStory(page, 'mail-messageview--full-kludge-block', theme, locale);
                 const button = page.getByRole('button', {
-                    name: locale === 'uk' ? ukrainian.Kludges : 'Kludges',
+                    name:
+                        locale === 'uk' ? ukrainian['Show kludges inline'] : 'Show kludges inline',
                     exact: true
                 });
-                const toggle = page.locator('.reader-kludge-toggle');
                 await expect(button).toBeVisible();
-                await expect(toggle).toBeVisible();
                 await expect(button.locator('xpath=..')).toHaveClass(/reader-actions/);
-                await expect(toggle.locator('xpath=..')).toHaveClass(/reader-actions/);
-                await expect(page.locator('.mail-kludge-list')).toBeHidden();
-                await button.click();
-                await expect(button).toHaveAttribute('aria-expanded', 'true');
+                await expect(button.locator('svg')).toBeVisible();
                 await expect(page.locator('.mail-kludge-list')).toBeVisible();
+                if ((await button.getAttribute('aria-pressed')) === 'true') await button.click();
+                await button.click();
+                await expect(button).toHaveAttribute('aria-pressed', 'true');
                 await expect(page.locator('.mail-kludge-list > summary')).toHaveCount(0);
                 const list = (await page.locator('.mail-kludge-list ul').boundingBox())!;
                 expect(list.width).toBeGreaterThan(width === 390 ? 300 : 700);
@@ -274,21 +269,21 @@ test('reader kludge toggle stays mounted while navigating to a message without k
     page
 }) => {
     await openStory(page, 'mail-messageview--kludge-reading');
-    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
+    const toggle = page.getByRole('button', { name: 'Show kludges inline' });
     const element = await toggle.elementHandle();
     await expect(toggle).toBeVisible();
-    await toggle.check();
+    await toggle.click();
 
     await page.locator('[data-shortcut="mail.next"]').click();
     await expect(page.locator('.mail-body')).toContainText('Second body');
-    await expect(toggle).toBeChecked();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await page.locator('[data-shortcut="mail.next"]').click();
     await expect(page.locator('.mail-body')).toContainText('Body without kludges');
     await expect(toggle).toBeVisible();
-    await expect(toggle).toBeChecked();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     expect(
-        await element!.evaluate((input) =>
-            input.isSameNode(document.querySelector('.reader-kludge-toggle input'))
+        await element!.evaluate((button) =>
+            button.isSameNode(document.querySelector('.reader-kludge-button'))
         )
     ).toBe(true);
 });
@@ -297,18 +292,18 @@ test('reader toggle survives remounts and tab reloads for the current session', 
     page
 }) => {
     await openStory(page, 'mail-messageview--session-navigation');
-    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
-    await expect(toggle).not.toBeChecked();
-    await toggle.check();
+    const toggle = page.getByRole('button', { name: 'Show kludges inline' });
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await toggle.click();
     await page.getByTestId('remount-reader').click();
     await expect(toggle).toHaveCount(0);
     await page.getByTestId('remount-reader').click();
-    await expect(toggle).toBeChecked();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await page.reload();
-    await expect(toggle).toBeChecked();
-    await toggle.uncheck();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await toggle.click();
     await page.reload();
-    await expect(toggle).not.toBeChecked();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('unknown controls follow the personal toggle policy and remain accessible in the full list', async ({
@@ -316,14 +311,13 @@ test('unknown controls follow the personal toggle policy and remain accessible i
 }) => {
     await openStory(page, 'mail-messageview--unknown-kludges-on-toggle');
     const body = page.locator('.mail-body');
-    const toggle = page.getByRole('checkbox', { name: 'Show kludges inline' });
+    const toggle = page.getByRole('button', { name: 'Show kludges inline' });
     await expect(body.locator('.kludge')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Kludges', exact: true }).click();
-    await expect(page.locator('.mail-kludge-list')).toContainText('CUSTOM');
-    await toggle.check();
+    await expect(page.locator('.mail-kludge-list')).toBeHidden();
+    await toggle.click();
     await expect(body.locator('.kludge')).toHaveCount(5);
     await expect(body).toContainText('CUSTOM');
-    await toggle.uncheck();
+    await toggle.click();
     await expect(body.locator('.kludge')).toHaveCount(0);
     await openStory(page, 'mail-messageview--unknown-kludges-only');
     await expect(body.locator('.kludge')).toHaveText('^ACUSTOM: visible by default');
@@ -332,12 +326,17 @@ test('unknown controls follow the personal toggle policy and remain accessible i
 
 test('unknown control visibility is saved in personal appearance settings', async ({ page }) => {
     await openStory(page, 'settings-accountsettings--appearance');
+    const block = page.getByRole('checkbox', { name: 'Show kludge block' });
+    await expect(block).not.toBeChecked();
+    await block.check();
+    await expect(block).toBeChecked();
     const select = page.getByRole('combobox', { name: 'Unknown kludges in messages' });
     await expect(select).toHaveValue('always');
     await select.selectOption('toggle');
     await expect(select).toHaveValue('toggle');
     await page.getByRole('tab', { name: 'Profile', exact: true }).click();
     await page.getByRole('tab', { name: 'Appearance', exact: true }).click();
+    await expect(block).toBeChecked();
     await expect(select).toHaveValue('toggle');
     await select.selectOption('always');
     await expect(select).toHaveValue('always');

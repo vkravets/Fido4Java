@@ -21,7 +21,9 @@ const meta = {
         components: { NetmailView, EchomailView },
         setup() {
             const { state } = mailWorkspaceFixture(context.globals.theme === 'dark');
-            provide(workspaceKey, createWorkspace());
+            const workspace = createWorkspace();
+            workspace.value.value.showKludgeBlock = true;
+            provide(workspaceKey, workspace);
             provide(directorySearchKey, async () => ({ items: [], nextOffset: 0, hasMore: false }));
             const source: MailItem = {
                 ...netmailMessage,

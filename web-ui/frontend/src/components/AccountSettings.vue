@@ -279,7 +279,7 @@ function claimLabel(state: string): string {
                             t('Saved automatically. Applies to netmail and echomail.')
                         }}</small>
                     </label>
-                    <label class="startup-page">
+                    <label class="kludge-block-setting">
                         <input
                             type="checkbox"
                             :checked="workspace.value.value.showKludgeBlock"
@@ -328,5 +328,15 @@ function claimLabel(state: string): string {
     gap: 0.5rem;
     max-width: 26rem;
     margin-bottom: 1.25rem;
+}
+.kludge-block-setting {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.kludge-block-setting input {
+    width: auto;
 }
 </style>

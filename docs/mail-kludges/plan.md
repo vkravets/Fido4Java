@@ -2,7 +2,7 @@
 
 Status: S1–S5, U1–U6 and T1–T5 are complete.
 
-K1–K2 are implemented; K3 verification remains.
+K1–K3 are complete. See the verification record below.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -45,6 +45,19 @@ hidden. Changing the Appearance preference persists across reload and applies in
 both readers. The toolbar icon toggles only inline kludges and its session choice
 continues to survive message/folder navigation. The full block retains the
 “Kludges” label when enabled.
+
+### K1–K3 — reader controls completed
+
+- The account `workspace.showKludgeBlock` preference defaults to false and shows
+  the complete labelled block in both readers when enabled. The reader toolbar
+  icon button independently toggles the existing session-wide inline state.
+- Updated component stories, browser workflows and unit coverage for the two
+  independent settings and their persistence. Corrected the button's accessibility
+  while a message loads and aligned the profile checkbox on mobile.
+- Verification: 105 frontend unit tests, both TypeScript checks, Storybook build,
+  90/92 focused browser cases on the first run and the two corrected cases on
+  rerun. Reviewed desktop/mobile English/Ukrainian screenshots in both themes;
+  all 144 affected Linux VRT comparisons passed without snapshot updates.
 
 ## Server and RPC
 

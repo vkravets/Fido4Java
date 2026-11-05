@@ -9,7 +9,7 @@ const screens = [
     { name: 'reader-kludges-hidden', story: 'mail-messageview--kludge-reading' },
     {
         name: 'reader-kludges-expanded',
-        story: 'mail-messageview--kludge-reading',
+        story: 'mail-messageview--full-kludge-block',
         expandReaderKludges: true
     },
     {
@@ -19,7 +19,7 @@ const screens = [
     },
     {
         name: 'reader-kludges-inline-expanded',
-        story: 'mail-messageview--inline-kludges',
+        story: 'mail-messageview--inline-and-full-kludges',
         inlineReader: true,
         expandReaderKludges: true
     },
@@ -382,14 +382,16 @@ for (const theme of ['light', 'dark']) {
                 await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
                 await expect(page.locator('html')).toHaveAttribute('lang', locale);
                 if (screen.inlineReader) {
-                    await expect(page.locator('.reader-kludge-toggle input')).toBeChecked();
+                    await expect(page.locator('.reader-kludge-button')).toHaveAttribute(
+                        'aria-pressed',
+                        'true'
+                    );
                     await expect(page.locator('.mail-body .kludge')).toHaveCount(5);
                 }
                 if (screen.expandReaderKludges) {
-                    await page.locator('.reader-kludge-button').click();
                     await expect(page.locator('.reader-kludge-button')).toHaveAttribute(
-                        'aria-expanded',
-                        'true'
+                        'aria-label',
+                        /.+/
                     );
                     await expect(page.locator('.mail-kludge-list code')).toHaveCount(5);
                     await expect(page.locator('.mail-kludge-list code').last()).toContainText(

@@ -108,6 +108,7 @@ function closeMenu(event: Event) {
                         :aria-label="t('Show kludges inline')"
                         :title="t('Show kludges inline')"
                         :aria-pressed="inlineKludges"
+                        :aria-disabled="false"
                         @click="inlineKludges = !inlineKludges"
                     >
                         <AppIcon name="source" />
@@ -207,6 +208,7 @@ function closeMenu(event: Event) {
             v-show="workspace.value.value.showKludgeBlock && hasKludges"
             class="reader-kludge-panel"
         >
+            <h3>{{ t('Kludges') }}</h3>
             <MailKludgeList
                 :kludges="message.kludges || []"
                 :label="t('Kludges')"
@@ -244,6 +246,10 @@ function closeMenu(event: Event) {
     </article>
 </template>
 <style scoped>
+.reader-kludge-panel h3 {
+    margin: 8px 14px 0;
+    font-size: 14px;
+}
 .reader-kludge-panel :deep(.mail-kludge-list-expanded ul) {
     margin: 0;
     padding: 8px 14px;

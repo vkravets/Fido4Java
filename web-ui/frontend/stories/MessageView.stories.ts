@@ -46,6 +46,7 @@ export const KludgeReading: Story = {
             void workspace.load('storybook');
             if (context.parameters.unknownKludges === 'toggle')
                 workspace.value.value.unknownKludges = 'toggle';
+            if (context.parameters.showKludgeBlock) workspace.value.value.showKludgeBlock = true;
             provide(workspaceKey, workspace);
             const message = ref(args.message);
             const visible = ref(true);
@@ -89,12 +90,20 @@ export const KludgeReading: Story = {
 export const InlineKludges: Story = {
     ...KludgeReading,
     play: async ({ canvasElement }) => {
-        canvasElement.querySelector<HTMLInputElement>('.reader-kludge-toggle input')!.click();
+        canvasElement.querySelector<HTMLButtonElement>('.reader-kludge-button')!.click();
     }
 };
 export const SessionNavigation: Story = {
     ...KludgeReading,
     parameters: { sessionNavigation: true }
+};
+export const FullKludgeBlock: Story = {
+    ...KludgeReading,
+    parameters: { showKludgeBlock: true }
+};
+export const InlineAndFullKludges: Story = {
+    ...FullKludgeBlock,
+    play: InlineKludges.play
 };
 export const Deleting: Story = { args: { busy: true } };
 export const LongText: Story = {

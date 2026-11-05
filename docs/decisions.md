@@ -132,10 +132,11 @@ list row cannot retain a second focus highlight beside the selected message.
 Session-wide reader controls stay visible across messages, even when the current
 message has no matching content. Message navigation must not hide or reset them
 based on message-specific data.
-The reader toolbar keeps the inline visibility checkbox and full-kludge-list
-button beside the message actions. The button opens the complete list directly
-below the reader header, spanning its width; it stays in place when a message
-has no kludges so neighboring controls do not shift during navigation.
+The reader toolbar keeps an icon button for inline kludge visibility beside the
+message actions. Its pressed state uses the session preference. The complete
+labelled kludge block below the reader header is controlled independently by an
+account Appearance preference, hidden by default. The button stays in place when
+a message has no kludges so neighboring controls do not shift during navigation.
 
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement

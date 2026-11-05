@@ -154,12 +154,14 @@ eight batches; focused runs do not narrow the CI test matrix.
 
 ## Message kludges
 
-Netmail and echomail readers offer a **Kludges** disclosure when control lines
-are available. It starts closed; use its summary or the keyboard to expand it.
+Netmail and echomail readers can show a complete **Kludges** block when control
+lines are available. Personal **Appearance** settings control this block through
+**Show kludge block**; it is hidden by default and the choice persists in the
+account-owned `workspace` document.
 Lines remain selectable plain text, with a visible `^A` prefix and printable
 representations of other control characters. Long lines wrap within the pane.
 
-**Show kludges inline** reveals controls in the reading pane in stored message
+The icon button **Show kludges inline** reveals controls in the reading pane in stored message
 order, preserving repeated lines. The switch starts off in a new login session;
 its state is shared across messages, folders, netmail/echomail and other pages.
 It survives tab reload through `sessionStorage` and clears on logout, expired
@@ -171,7 +173,7 @@ Personal **Appearance** settings offer **Unknown kludges in messages** with
 `workspace.unknownKludges` preference applies to both netmail and echomail.
 Inline controls have distinct text styling and a left border; their values are
 literal text without link or mail-markup interpretation. The complete **Kludges**
-disclosure remains independent. See the [classification sources and rules](mail-kludges/classification.md).
+block remains independent. See the [classification sources and rules](mail-kludges/classification.md).
 The mode affects only reading; reply text, templates and outgoing messages still
 use the plain body.
 

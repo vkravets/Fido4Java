@@ -69,6 +69,29 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(parseWorkspace('{}').unknownKludges, 'always');
     assert.equal(parseWorkspace('{"unknownKludges":"bad"}').unknownKludges, 'always');
     assert.equal(parseWorkspace('{"unknownKludges":"toggle"}').unknownKludges, 'toggle');
+    assert.equal(parseWorkspace('{}').showKludgeBlock, false);
+    assert.equal(parseWorkspace('{"showKludgeBlock":true}').showKludgeBlock, true);
+    assert.equal(parseWorkspace('{"showKludgeBlock":"true"}').showKludgeBlock, false);
+});
+test('full kludge block preference persists separately from inline session state', async () => {
+    let document = '';
+    const client = {
+        async uiDocument() {
+            return document;
+        },
+        async saveUiDocument(_token: string, _key: string, value: string) {
+            document = value;
+        }
+    };
+    const workspace = createWorkspace(client);
+    await workspace.load('first');
+    assert.equal(workspace.value.value.showKludgeBlock, false);
+    workspace.inlineKludges.value = true;
+    await workspace.update({ showKludgeBlock: true });
+    const reloaded = createWorkspace(client);
+    await reloaded.load('first');
+    assert.equal(reloaded.value.value.showKludgeBlock, true);
+    assert.equal('inlineKludges' in JSON.parse(document), false);
 });
 test('late loads cannot replace another account and failed saves retain previous settings', async () => {
     let finish!: (value: string) => void;
