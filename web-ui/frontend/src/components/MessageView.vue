@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import AppIcon from './AppIcon.vue';
 import FidoText from './FidoText.vue';
 import MailKludgeList from './MailKludgeList.vue';
@@ -23,7 +23,6 @@ const props = withDefaults(
 );
 const workspace = useWorkspace();
 const inlineKludges = workspace.inlineKludges;
-const showKludges = ref(false);
 const hasKludges = computed(() => (props.message.kludges?.length || 0) > 0);
 const readerLines = computed(() =>
     props.message.bodyLines?.filter(
@@ -106,10 +105,10 @@ function closeMenu(event: Event) {
                     </button>
                     <button
                         class="secondary reader-kludge-button"
-                        :aria-expanded="showKludges && hasKludges"
+                        :aria-expanded="workspace.value.value.showKludgeBlock && hasKludges"
                         :aria-disabled="!hasKludges || pending || undefined"
                         :title="t('Kludges')"
-                        @click="!pending && hasKludges && (showKludges = !showKludges)"
+                        @click="!pending && hasKludges && workspace.update({ showKludgeBlock: !workspace.value.value.showKludgeBlock })"
                     >
                         {{ t('Kludges') }}
                     </button>
@@ -212,7 +211,7 @@ function closeMenu(event: Event) {
             {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
         <div
-            v-show="showKludges && hasKludges"
+            v-show="workspace.value.value.showKludgeBlock && hasKludges"
             class="reader-kludge-panel"
         >
             <MailKludgeList

@@ -800,6 +800,7 @@ export const ukrainian = {
     Kludges: 'Клуджі',
     'Show kludges inline': 'Показувати клуджі в тексті',
     'Unknown kludges in messages': 'Невідомі клуджі в листах',
+    'Show kludge block': 'Показувати блок клуджів',
     'Always show': 'Показувати завжди',
     'Show with the kludge toggle': 'Показувати перемикачем клуджів',
     'Saved automatically. Applies to netmail and echomail.':

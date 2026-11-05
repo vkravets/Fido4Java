@@ -51,6 +51,17 @@ function saveUnknownKludges(event: Event) {
         }
     });
 }
+function saveKludgeBlock(event: Event) {
+    const input = event.target as HTMLInputElement;
+    props.state.run(async () => {
+        try {
+            await workspace.update({ showKludgeBlock: input.checked });
+            props.state.notice.value = t('Settings saved.');
+        } finally {
+            input.checked = workspace.value.value.showKludgeBlock;
+        }
+    });
+}
 const tab = ref<PersonalTab>(props.initialTab || 'profile');
 const narrow = useMedia('(max-width: 700px)');
 const title = computed(() => t(tabs.find((item) => item.id === tab.value)!.label));
@@ -267,6 +278,15 @@ function claimLabel(state: string): string {
                         <small>{{
                             t('Saved automatically. Applies to netmail and echomail.')
                         }}</small>
+                    </label>
+                    <label class="startup-page">
+                        <input
+                            type="checkbox"
+                            :checked="workspace.value.value.showKludgeBlock"
+                            :disabled="state.busy.value"
+                            @change="saveKludgeBlock"
+                        />
+                        {{ t('Show kludge block') }}
                     </label>
                     <p>{{ t('Your selected theme is saved in your profile.') }}</p>
                     <div class="theme-options">

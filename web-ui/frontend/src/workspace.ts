@@ -29,6 +29,7 @@ export interface WorkspacePreferences {
     collapsed: boolean;
     startupPage: StartupPage;
     unknownKludges: 'always' | 'toggle';
+    showKludgeBlock: boolean;
     netmail: MailLayout;
     echo: MailLayout;
 }
@@ -50,6 +51,7 @@ export function workspacePreferences(value: unknown): WorkspacePreferences {
         version: 1,
         collapsed: row.collapsed !== false,
         unknownKludges: row.unknownKludges === 'toggle' ? 'toggle' : 'always',
+        showKludgeBlock: row.showKludgeBlock === true,
         startupPage: startupPages.some((page) => page.id === row.startupPage)
             ? row.startupPage!
             : 'netmail',
