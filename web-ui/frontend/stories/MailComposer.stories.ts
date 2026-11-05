@@ -112,6 +112,9 @@ const referenceRender: NonNullable<Story['render']> = (args, context) => ({
     setup() {
         provide(directorySearchKey, searchDirectory);
         mailWorkspaceFixture(context.globals.theme === 'dark');
+        const workspace = createWorkspace();
+        workspace.value.value.showKludgeBlock = true;
+        provide(workspaceKey, workspace);
         const draft = ref({ ...args.modelValue });
         return {
             args,
