@@ -51,6 +51,8 @@ export const shortcutActions = [
         keys: ['J', 'ArrowRight'],
         golded: ['ArrowRight']
     },
+    { id: 'mail.previousReply', label: 'Previous reply', scope: 'mail', keys: ['Shift+K', 'Shift+ArrowLeft'] },
+    { id: 'mail.nextReply', label: 'Next reply', scope: 'mail', keys: ['Shift+J', 'Shift+ArrowRight'] },
     {
         id: 'mail.unread',
         label: 'Next unread',

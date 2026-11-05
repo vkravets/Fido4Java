@@ -29,6 +29,8 @@ const paths = {
     forward: 'M15 5l7 6-7 6v-4C8 13 5 15 2 20 3 11 7 8 15 8z',
     left: 'M19 12H5 M10 7l-5 5 5 5',
     right: 'M5 12h14 M14 7l5 5-5 5',
+    replyLeft: 'M20 18H9V7 M14 7H5 M10 2L5 7l5 5',
+    replyRight: 'M4 18h11V7 M10 7h9 M14 2l5 5-5 5',
     down: 'M6 9l6 6 6-6',
     more: 'M5 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2 M12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2 M19 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2',
     collapse: 'M14 6l-6 6 6 6 M20 6l-6 6 6 6',

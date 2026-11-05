@@ -97,6 +97,12 @@ function closeMenu(event: Event) {
                     >
                         <AppIcon name="left" />
                     </button>
+                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Previous reply')" :title="t('Previous reply')" :disabled="busy || previousReplyDisabled" v-shortcut="'mail.previousReply'" @click="!pending && $emit('previousReply')">
+                        <AppIcon name="replyLeft" />
+                    </button>
+                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Next reply')" :title="t('Next reply')" :disabled="busy || nextReplyDisabled" v-shortcut="'mail.nextReply'" @click="!pending && $emit('nextReply')">
+                        <AppIcon name="replyRight" />
+                    </button>
                     <button
                         v-if="navigation"
                         class="secondary"
@@ -106,12 +112,6 @@ function closeMenu(event: Event) {
                         v-shortcut="'mail.next'"
                         @click="!pending && $emit('next')"
                     >
-                        <AppIcon name="right" />
-                    </button>
-                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Previous reply')" :title="t('Previous reply')" :disabled="busy || previousReplyDisabled" @click="!pending && $emit('previousReply')">
-                        <AppIcon name="left" />
-                    </button>
-                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Next reply')" :title="t('Next reply')" :disabled="busy || nextReplyDisabled" @click="!pending && $emit('nextReply')">
                         <AppIcon name="right" />
                     </button>
                     <button
