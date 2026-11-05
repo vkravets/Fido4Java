@@ -190,7 +190,7 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await page.getByRole('button', { name: 'Current message' }).click();
     await expect(discussion.getByRole('treeitem')).toHaveCount(3);
     await expect(discussion.getByRole('treeitem').nth(1)).toHaveAttribute('aria-selected', 'true');
     await page
@@ -212,15 +212,17 @@ test('discussion selection keeps or centers the root according to the saved choi
     const discussion = page.getByRole('region', { name: 'Conversation' });
     await expect(page.getByRole('button', { name: 'Whole discussion' })).toHaveAttribute(
         'aria-pressed',
-        'true'
+        'false'
     );
     await discussion.getByRole('treeitem').first().locator('.discussion-open').click();
     await expect(page.getByRole('button', { name: 'Whole discussion' })).toHaveAttribute(
         'aria-pressed',
-        'true'
+        'false'
     );
     await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
-    await page.getByLabel('When opening a discussion message').selectOption('center');
+    await page
+        .getByRole('combobox', { name: 'When opening a discussion message' })
+        .selectOption('center');
     await discussion.getByRole('treeitem').nth(1).locator('.discussion-open').click();
     await expect(page.getByRole('button', { name: 'Current message' })).toHaveAttribute(
         'aria-pressed',

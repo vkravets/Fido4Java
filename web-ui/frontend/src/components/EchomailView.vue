@@ -387,47 +387,50 @@ function openDiscussionRow(item: MailItem) {
                         kind="error"
                         :message="discussionError"
                     />
-                    <div
-                        class="actions discussion-view-controls"
-                        role="group"
-                        :aria-label="t('Discussion view')"
-                    >
+                    <div class="actions discussion-view-controls">
                         <button
-                            class="secondary icon-button"
+                            class="secondary icon-button discussion-mode-toggle"
                             :aria-pressed="discussionView === 'current'"
                             :disabled="discussionSaving"
-                            :aria-label="t('Current message')"
-                            :title="t('Current message')"
-                            @click="saveDiscussion({ discussionView: 'current' })"
+                            :aria-label="
+                                t(
+                                    discussionView === 'current'
+                                        ? 'Current message'
+                                        : 'Whole discussion'
+                                )
+                            "
+                            :title="
+                                t(
+                                    discussionView === 'current'
+                                        ? 'Current message'
+                                        : 'Whole discussion'
+                                )
+                            "
+                            @click="
+                                saveDiscussion({
+                                    discussionView:
+                                        discussionView === 'current' ? 'whole' : 'current'
+                                })
+                            "
                         >
                             <AppIcon name="mail" />
                         </button>
-                        <button
-                            class="secondary icon-button"
-                            :aria-pressed="discussionView === 'whole'"
+                        <select
+                            v-if="discussionView === 'whole'"
+                            class="discussion-selection"
+                            :aria-label="t('When opening a discussion message')"
+                            :value="workspace.value.value.discussionSelection"
                             :disabled="discussionSaving"
-                            :aria-label="t('Whole discussion')"
-                            :title="t('Whole discussion')"
-                            @click="saveDiscussion({ discussionView: 'whole' })"
+                            @change="
+                                saveDiscussion({
+                                    discussionSelection: ($event.target as HTMLSelectElement)
+                                        .value as 'center' | 'retain'
+                                })
+                            "
                         >
-                            <AppIcon name="logs" />
-                        </button>
-                        <label v-if="discussionView === 'whole'"
-                            >{{ t('When opening a discussion message') }}
-                            <select
-                                :value="workspace.value.value.discussionSelection"
-                                :disabled="discussionSaving"
-                                @change="
-                                    saveDiscussion({
-                                        discussionSelection: ($event.target as HTMLSelectElement)
-                                            .value as 'center' | 'retain'
-                                    })
-                                "
-                            >
-                                <option value="center">{{ t('Center on opened message') }}</option>
-                                <option value="retain">{{ t('Keep discussion root') }}</option>
-                            </select>
-                        </label>
+                            <option value="center">{{ t('Center on opened message') }}</option>
+                            <option value="retain">{{ t('Keep discussion root') }}</option>
+                        </select>
                     </div>
                     <p
                         v-if="
@@ -538,7 +541,32 @@ function openDiscussionRow(item: MailItem) {
 </template>
 <style scoped>
 .discussion-view-controls {
-    margin-block: 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-block: 8px;
+}
+.discussion-mode-toggle {
+    display: inline-flex;
+    width: 36px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    background: var(--surface-raised);
+    border-color: var(--line);
+}
+.discussion-mode-toggle[aria-pressed='true'] {
+    background: var(--accent-fill);
+    border-color: var(--accent-fill);
+    color: var(--on-accent);
+}
+.discussion-selection {
+    width: auto;
+    max-width: min(280px, calc(100vw - 100px));
+    min-height: 32px;
+    margin: 0;
+    padding: 5px 28px 5px 8px;
+    font-size: 12px;
 }
 .discussion-rows {
     list-style: none;
