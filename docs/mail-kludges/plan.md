@@ -2,6 +2,8 @@
 
 Status: S1–S5, U1–U6 and T1–T5 are complete.
 
+Next work: K1–K3 below are planned and not implemented.
+
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
 
@@ -29,6 +31,20 @@ Escalate one level if investigation reveals missing contracts, potential data lo
 authorization concerns or repeated failures. Unresolved High work needs further
 investigation; Sol Medium is not a guarantee of completion. Use Sol Medium for the
 final review of serialization and submission boundaries.
+
+## Follow-up — reader controls
+
+| ID | Planned change | Level / model | Why |
+| --- | --- | --- | --- |
+| K1 | Add an Appearance profile preference for showing or hiding the full kludge block; default it to hidden. Keep the block's existing label “Kludges” (“Клуджі”). Persist the preference in the existing account `workspace` UI document. | Medium / Sol Low | Reuse the existing preference storage and settings pattern; ensure the setting controls the full block in both netmail and echomail readers. |
+| K2 | Repurpose the existing reader toolbar button to toggle inline kludges. Add a kludge-specific icon and an accessible localized name/title; retain the session-wide inline visibility behavior across messages and navigation. | Medium / Sol Low | The session state and toolbar already exist; the icon and accessible control must remain clear in both themes and languages. |
+| K3 | Verify both independent settings together: full block hidden/shown by profile, inline kludges toggled by the toolbar. Cover persistence/reload, netmail/echomail, both themes/languages, desktop/mobile Storybook states and pinned Linux VRT comparisons. | Medium / Sol Low | Existing UI test and visual workflows can be extended; verify the default and both control states without changing message data. |
+
+Acceptance: with an unset profile preference, the complete kludge block is
+hidden. Changing the Appearance preference persists across reload and applies in
+both readers. The toolbar icon toggles only inline kludges and its session choice
+continues to survive message/folder navigation. The full block retains the
+“Kludges” label when enabled.
 
 ## Server and RPC
 

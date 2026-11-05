@@ -7,6 +7,11 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Kludge reader follow-up (planned in `docs/mail-kludges/plan.md`): add an
+  Appearance profile setting for showing the complete kludge block, hidden by
+  default; keep the existing reader toolbar button for inline kludges and give
+  it a kludge icon.
+
 - Implement author-initiated echomail crossposting to multiple selected areas.
   UI/RPC currently submit one area only; there is no selector or XC/XP processing.
   Add structured draft targets, whole-list authorization, durable per-area MSGIDs
