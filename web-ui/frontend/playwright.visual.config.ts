@@ -12,7 +12,7 @@ if (
 export default defineConfig({
     ...componentConfig,
     testMatch: 'visual.spec.ts',
-    workers: 2,
+    workers: process.env.CI ? undefined : 2,
     updateSnapshots: 'none',
     snapshotPathTemplate: '{testDir}/snapshots/{projectName}/{arg}{ext}',
     expect: {
