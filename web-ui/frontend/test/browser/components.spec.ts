@@ -204,6 +204,31 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     ).toBeVisible();
 });
 
+test('discussion selection keeps or centers the root according to the saved choice', async ({
+    page
+}) => {
+    await story(page, 'mail-echomailview--whole-discussion-retain');
+    await page.locator('.echo-conversation > summary').click();
+    const discussion = page.getByRole('region', { name: 'Conversation' });
+    await expect(page.getByRole('button', { name: 'Whole discussion' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await discussion.getByRole('treeitem').first().locator('.discussion-open').click();
+    await expect(page.getByRole('button', { name: 'Whole discussion' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
+    await page.getByLabel('When opening a discussion message').selectOption('center');
+    await discussion.getByRole('treeitem').nth(1).locator('.discussion-open').click();
+    await expect(page.getByRole('button', { name: 'Current message' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
+});
+
 test('echo composer posts to its conference and read-only areas cannot create or reply', async ({
     page
 }) => {

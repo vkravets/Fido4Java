@@ -91,6 +91,20 @@ export const Conversation: Story = {
     ...Reading,
     parameters: { workspace: { echo: { preview: 'separate' } } }
 };
+export const WholeDiscussion: Story = {
+    ...Conversation,
+    parameters: { workspace: { echo: { preview: 'separate' }, discussionView: 'whole' } }
+};
+export const WholeDiscussionRetain: Story = {
+    ...Conversation,
+    parameters: {
+        workspace: {
+            echo: { preview: 'separate' },
+            discussionView: 'whole',
+            discussionSelection: 'retain'
+        }
+    }
+};
 export const MissingParent: Story = { args: { initialMessage: '9007199254740996' } };
 export const Compose: Story = { args: { initialDraft: echoDraft } };
 export const Reply: Story = {

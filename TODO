@@ -35,8 +35,6 @@ Remaining implementation
   behavior matching the existing mail list search.
 - Add a keyboard shortcut to open the discussion for the currently selected
   echomail message.
-- Add a tree-mode discussion view below the open echomail message, with current
-  subtree and whole-discussion views. Plan: docs/echo-discussions/plan.md.
 - Add safe link removal/renaming, accounting for routes, subscriptions and queues.
   Netmail routing policy/rule administration and preview now exist in RPC/UI.
 - Decide whether to implement or remove the empty legacy JAMEchoBase.getMessage()

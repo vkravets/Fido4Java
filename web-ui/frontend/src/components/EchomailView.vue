@@ -527,6 +527,10 @@ function openDiscussionRow(item: MailItem) {
 .discussion-view-controls {
     margin-block: 12px;
 }
+.discussion-rows {
+    list-style: none;
+    padding-inline-start: 0;
+}
 .discussion-rows li {
     padding: 6px 8px 6px calc(8px + var(--thread-indent));
     border-inline-start: 1px solid var(--line);

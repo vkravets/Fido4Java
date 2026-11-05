@@ -227,6 +227,16 @@ const screens = [
     { name: 'echo-flat', story: 'mail-echomailview--flat' },
     { name: 'echo-reading', story: 'mail-echomailview--reading' },
     { name: 'echo-conversation', story: 'mail-echomailview--conversation', conversation: true },
+    {
+        name: 'echo-conversation-whole',
+        story: 'mail-echomailview--whole-discussion',
+        conversation: true
+    },
+    {
+        name: 'echo-conversation-retain',
+        story: 'mail-echomailview--whole-discussion-retain',
+        conversation: true
+    },
     { name: 'echo-missing-parent', story: 'mail-echomailview--missing-parent' },
     { name: 'echo-compose', story: 'mail-echomailview--compose' },
     { name: 'echo-reply', story: 'mail-echomailview--reply' },
@@ -465,7 +475,7 @@ for (const theme of ['light', 'dark']) {
                     ).toBeVisible();
                 if (screen.conversation) {
                     await page.locator('.echo-conversation > summary').click();
-                    await expect(page.locator('.echo-conversation li time')).toBeVisible();
+                    await expect(page.locator('.echo-conversation li time').first()).toBeVisible();
                 }
                 if (screen.expandKludges) {
                     await page.locator('.mail-kludge-list > summary').click();
