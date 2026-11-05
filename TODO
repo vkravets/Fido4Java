@@ -27,6 +27,10 @@ Remaining implementation
   separately. Usage and limits: docs/rpc-ui.md.
 - Refine the mobile mail layout after desktop review; retain separate list,
   reader and composer screens, readable controls and dirty-draft protection.
+- Replace the conference dropdown with a flat conference pane and support the
+  conferences -> messages -> reader/editor chain, All/Last-two panel modes and
+  existing preview positions. Plan: docs/echo-workspace/plan.md. Run VRT only
+  after all functional implementation is complete (E6).
 - Add a keyboard shortcut to show and hide the echomail message list, with search
   behavior matching the existing mail list search.
 - Add a keyboard shortcut to open the discussion for the currently selected
