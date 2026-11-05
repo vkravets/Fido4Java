@@ -255,7 +255,7 @@ function chooseTemplate() {
                 :label="t('Original message kludges')"
             />
             <p
-                v-if="draft.originalKludgesTruncated"
+                v-if="workspace.value.value.showKludgeBlock && draft.originalKludgesTruncated"
                 class="muted composer-kludge-notice"
                 role="status"
             >
