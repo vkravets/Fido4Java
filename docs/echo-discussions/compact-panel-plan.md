@@ -1,6 +1,6 @@
 # Compact echomail discussion panel — implementation plan
 
-Status: planned. Commit this plan separately, then commit each completed item
+Status: C1–C4 implemented and verified. Each implementation step was committed
 individually.
 
 ## Goal

@@ -177,9 +177,18 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(page.locator('.mail-body')).toContainText('<script>alert("hello")</script>');
     await expect(page.getByRole('button', { name: 'Delete message', exact: true })).toHaveCount(0);
     await page.locator('.echo-conversation > summary').click();
+    const conversationHeading = page.locator('.echo-conversation > summary');
+    const headingTop = await conversationHeading.evaluate(
+        (element) => element.getBoundingClientRect().top
+    );
     const discussion = page.getByRole('region', { name: 'Conversation' });
     await expect(discussion.getByRole('treeitem')).toHaveCount(2);
+    await expect(discussion.getByText('Welcome to the conference', { exact: true })).toBeVisible();
+    await expect(discussion.getByText('Alice Example', { exact: true })).toBeVisible();
     await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
+    expect(
+        await conversationHeading.evaluate((element) => element.getBoundingClientRect().top)
+    ).toBe(headingTop);
     await discussion.getByRole('treeitem').first().focus();
     await discussion.getByRole('treeitem').first().press('ArrowDown');
     await expect(discussion.getByRole('treeitem').nth(1)).toBeFocused();
@@ -190,6 +199,9 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
     ).toBeVisible();
+    expect(
+        await conversationHeading.evaluate((element) => element.getBoundingClientRect().top)
+    ).toBe(headingTop);
     await page.getByRole('button', { name: 'Current message' }).click();
     await expect(discussion.getByRole('treeitem')).toHaveCount(3);
     await expect(discussion.getByRole('treeitem').nth(1)).toHaveAttribute('aria-selected', 'true');
