@@ -22,7 +22,7 @@ const meta = {
         setup() {
             const { state } = mailWorkspaceFixture(context.globals.theme === 'dark');
             const workspace = createWorkspace();
-            workspace.value.value.showKludgeBlock = true;
+            workspace.value.value.showKludgeBlock = context.parameters.showKludgeBlock !== false;
             provide(workspaceKey, workspace);
             provide(directorySearchKey, async () => ({ items: [], nextOffset: 0, hasMore: false }));
             const source: MailItem = {
@@ -141,3 +141,4 @@ export const Echomail: Story = { parameters: { mailKind: 'echo' } };
 export const WithoutControls: Story = { parameters: { snapshot: 'absent' } };
 export const Truncated: Story = { parameters: { snapshot: 'truncated' } };
 export const Omitted: Story = { parameters: { snapshot: 'omitted' } };
+export const KludgeBlockHidden: Story = { parameters: { showKludgeBlock: false } };

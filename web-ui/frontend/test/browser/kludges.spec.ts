@@ -150,6 +150,18 @@ for (const mailKind of ['netmail', 'echomail']) {
     }
 }
 
+test('disabled profile setting hides original kludge block in composer but keeps quote content', async ({
+    page
+}) => {
+    await openStory(page, 'mail-kludgeworkflow--kludge-block-hidden');
+    await page.getByRole('button', { name: 'Show kludges inline' }).click();
+    await page.locator('.reader-more > summary').click();
+    await page.locator('.reader-more [data-shortcut="mail.reply"]').click();
+    await expect(page.locator('.mail-composer')).toBeVisible();
+    await expect(page.locator('.mail-composer .mail-kludge-list')).toHaveCount(0);
+    await expect(page.locator('.cm-content')).toContainText('^AMSGID: 1:500/101.2 source');
+});
+
 for (const snapshot of ['without-controls', 'truncated', 'omitted']) {
     test(`${snapshot} reference state survives the full draft reopening workflow`, async ({
         page

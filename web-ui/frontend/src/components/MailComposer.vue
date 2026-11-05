@@ -3,7 +3,7 @@ import AppIcon from './AppIcon.vue';
 import { t } from '../i18n.ts';
 import { templateLabel, templateError } from '../mail-template-labels.ts';
 import { computed, inject, nextTick, onMounted, ref, useId, watch } from 'vue';
-import { composerListKey } from '../workspace.ts';
+import { composerListKey, useWorkspace } from '../workspace.ts';
 import FidoEditor from './FidoEditor.vue';
 import MailKludgeList from './MailKludgeList.vue';
 import NotificationBanner from './NotificationBanner.vue';
@@ -20,6 +20,7 @@ const templates = useMailTemplates();
 const appearance = useMailAppearance();
 const error = ref('');
 const listControl = inject(composerListKey, undefined);
+const workspace = useWorkspace();
 const listToggleLabel = computed(() =>
     listControl?.hidden.value ? t('Show message list') : t('Hide message list')
 );
@@ -249,6 +250,7 @@ function chooseTemplate() {
                 :message="error"
             />
             <MailKludgeList
+                v-if="workspace.value.value.showKludgeBlock"
                 :kludges="draft.originalKludges || []"
                 :label="t('Original message kludges')"
             />
