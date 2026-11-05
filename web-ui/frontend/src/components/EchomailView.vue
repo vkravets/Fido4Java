@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import AppIcon from './AppIcon.vue';
+import NotificationBanner from './NotificationBanner.vue';
 import { createEchoDiscussion } from '../echo-discussion.ts';
 import MailSearchStatus from './MailSearchStatus.vue';
 import { createArchiveSearch } from '../archive-search.ts';
@@ -122,7 +123,24 @@ const nextUnread = computed(() =>
         (item) => !item.read && mailId(item.id) !== mailId(reader.selected.value?.id)
     )
 );
-const discussionView = ref<'current' | 'whole'>('current');
+const discussionView = computed(() => workspace.value.value.discussionView);
+const discussionSaving = ref(false);
+const discussionError = ref('');
+async function saveDiscussion(patch: {
+    discussionView?: 'current' | 'whole';
+    discussionSelection?: 'center' | 'retain';
+}) {
+    if (discussionSaving.value) return;
+    discussionSaving.value = true;
+    discussionError.value = '';
+    try {
+        await workspace.update(patch);
+    } catch {
+        discussionError.value = t('Could not save workspace preferences.');
+    } finally {
+        discussionSaving.value = false;
+    }
+}
 const discussion = createEchoDiscussion(
     props.state.session,
     reader.area,
@@ -161,8 +179,15 @@ function discussionKey(event: KeyboardEvent) {
     next?.focus();
 }
 function openDiscussionRow(item: MailItem) {
-    discussionView.value = 'current';
-    void openMessage(item);
+    void openMessage(item).then(() => {
+        if (
+            mailId(reader.selected.value?.id) === mailId(item.id) &&
+            discussionView.value === 'whole' &&
+            workspace.value.value.discussionSelection === 'center'
+        ) {
+            void saveDiscussion({ discussionView: 'current' });
+        }
+    });
 }
 </script>
 <template>
@@ -357,6 +382,10 @@ function openDiscussionRow(item: MailItem) {
                 <summary>
                     <AppIcon name="logs" />{{ t('Conversation') }}<AppIcon name="down" />
                 </summary>
+                <NotificationBanner
+                    kind="error"
+                    :message="discussionError"
+                />
                 <div
                     class="actions discussion-view-controls"
                     role="group"
@@ -365,17 +394,35 @@ function openDiscussionRow(item: MailItem) {
                     <button
                         class="secondary"
                         :aria-pressed="discussionView === 'current'"
-                        @click="discussionView = 'current'"
+                        :disabled="discussionSaving"
+                        @click="saveDiscussion({ discussionView: 'current' })"
                     >
                         {{ t('Current message') }}
                     </button>
                     <button
                         class="secondary"
                         :aria-pressed="discussionView === 'whole'"
-                        @click="discussionView = 'whole'"
+                        :disabled="discussionSaving"
+                        @click="saveDiscussion({ discussionView: 'whole' })"
                     >
                         {{ t('Whole discussion') }}
                     </button>
+                    <label v-if="discussionView === 'whole'"
+                        >{{ t('When opening a discussion message') }}
+                        <select
+                            :value="workspace.value.value.discussionSelection"
+                            :disabled="discussionSaving"
+                            @change="
+                                saveDiscussion({
+                                    discussionSelection: ($event.target as HTMLSelectElement)
+                                        .value as 'center' | 'retain'
+                                })
+                            "
+                        >
+                            <option value="center">{{ t('Center on opened message') }}</option>
+                            <option value="retain">{{ t('Keep discussion root') }}</option>
+                        </select>
+                    </label>
                 </div>
                 <p
                     v-if="

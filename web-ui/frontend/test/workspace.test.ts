@@ -72,6 +72,17 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(parseWorkspace('{}').showKludgeBlock, false);
     assert.equal(parseWorkspace('{"showKludgeBlock":true}').showKludgeBlock, true);
     assert.equal(parseWorkspace('{"showKludgeBlock":"true"}').showKludgeBlock, false);
+    assert.equal(parseWorkspace('{}').discussionView, 'current');
+    assert.equal(parseWorkspace('{}').discussionSelection, 'center');
+    assert.equal(
+        parseWorkspace('{"discussionView":"bad","discussionSelection":"bad"}').discussionView,
+        'current'
+    );
+    assert.equal(
+        parseWorkspace('{"discussionView":"whole","discussionSelection":"retain"}')
+            .discussionSelection,
+        'retain'
+    );
 });
 test('full kludge block preference persists separately from inline session state', async () => {
     let document = '';
@@ -142,4 +153,27 @@ test('concurrent field saves are serialized and preserve independent layout edit
     });
     await reloaded.load('account');
     assert.equal(reloaded.value.value.unknownKludges, 'toggle');
+});
+
+test('discussion choices persist per account and failed saves keep the prior choices', async () => {
+    const documents = new Map<string, string>();
+    let offline = false;
+    const client = {
+        uiDocument: async (token: string) => documents.get(token) || '{}',
+        saveUiDocument: async (token: string, _key: string, document: string) => {
+            if (offline) throw new Error('offline');
+            documents.set(token, document);
+        }
+    };
+    const workspace = createWorkspace(client);
+    await workspace.load('first');
+    await workspace.update({ discussionView: 'whole', discussionSelection: 'retain' });
+    await workspace.load('second');
+    assert.equal(workspace.value.value.discussionView, 'current');
+    await workspace.load('first');
+    assert.equal(workspace.value.value.discussionView, 'whole');
+    assert.equal(workspace.value.value.discussionSelection, 'retain');
+    offline = true;
+    await assert.rejects(workspace.update({ discussionView: 'current' }), /offline/);
+    assert.equal(workspace.value.value.discussionView, 'whole');
 });

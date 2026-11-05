@@ -1,6 +1,6 @@
 # Echomail discussions — implementation plan
 
-Status: D1–D2 implemented; D3–D4 remain planned.
+Status: D1–D3 implemented; D4 remains planned.
 
 Execution agreement: commit this plan before implementation and commit each
 completed item separately. Run focused checks with the item they verify.

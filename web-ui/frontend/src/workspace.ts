@@ -30,6 +30,8 @@ export interface WorkspacePreferences {
     startupPage: StartupPage;
     unknownKludges: 'always' | 'toggle';
     showKludgeBlock: boolean;
+    discussionView: 'current' | 'whole';
+    discussionSelection: 'center' | 'retain';
     netmail: MailLayout;
     echo: MailLayout;
 }
@@ -52,6 +54,8 @@ export function workspacePreferences(value: unknown): WorkspacePreferences {
         collapsed: row.collapsed !== false,
         unknownKludges: row.unknownKludges === 'toggle' ? 'toggle' : 'always',
         showKludgeBlock: row.showKludgeBlock === true,
+        discussionView: row.discussionView === 'whole' ? 'whole' : 'current',
+        discussionSelection: row.discussionSelection === 'retain' ? 'retain' : 'center',
         startupPage: startupPages.some((page) => page.id === row.startupPage)
             ? row.startupPage!
             : 'netmail',

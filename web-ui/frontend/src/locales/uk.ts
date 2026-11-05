@@ -200,6 +200,9 @@ export const ukrainian = {
     'Could not load replies. Retry': 'Не вдалося завантажити відповіді. Повторити',
     'Current message': 'Поточний лист',
     'Whole discussion': 'Усе обговорення',
+    'When opening a discussion message': 'Після відкриття листа обговорення',
+    'Center on opened message': 'Показати відкритий лист як початок',
+    'Keep discussion root': 'Зберегти початок обговорення',
     'In reply to': 'У відповідь на',
     'The parent message is not available in this conference.':
         'Початковий лист недоступний у цій конференції.',
