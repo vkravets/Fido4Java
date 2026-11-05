@@ -1,6 +1,17 @@
 import { fidoText } from './fido-text.ts';
 import type { TextLine, TextRun } from './fido-text.ts';
 import type { MailBodyLine } from '@rpc/bindings.mjs';
+import type { MailItem } from '@rpc/bindings.mjs';
+
+export function inlineKludgeBody(item: Pick<MailItem, 'body' | 'bodyLines'>): string {
+    return (
+        item.bodyLines
+            ?.map((line) => (line.kludge ? visibleKludge(line.text) : line.text))
+            .join('\n') ??
+        item.body ??
+        ''
+    );
+}
 
 export function visibleKludge(kludge: string): string {
     return kludge.replace(/[\u0000-\u001f\u007f-\u009f]/g, (character) => {

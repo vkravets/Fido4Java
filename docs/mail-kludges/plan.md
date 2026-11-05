@@ -2,7 +2,7 @@
 
 Status: S1–S5, U1–U6 and T1–T5 are complete.
 
-K1–K3 are complete. See the verification record below.
+K1–K3 and U7 are complete. See the verification record below.
 
 Execution agreement: commit the plan before implementation, then commit each plan
 item separately. Include focused checks with the item they verify.
@@ -45,6 +45,14 @@ hidden. Changing the Appearance preference persists across reload and applies in
 both readers. The toolbar icon toggles only inline kludges and its session choice
 continues to survive message/folder navigation. The full block retains the
 “Kludges” label when enabled.
+
+| ID | Planned change | Level / model | Status |
+| --- | --- | --- | --- |
+| U7 | When inline kludges are enabled, include the displayed ordered lines in quoted replies and the template `@quote`; render control characters as printable text. Keep short replies and forwards unchanged. | Medium / Sol Low | Complete |
+
+Verification: helper unit coverage, all 31 kludge browser scenarios, frontend and
+Storybook typechecks passed. The tests cover netmail/echomail, both desktop/mobile
+paths, saved/reopened drafts, literal control values and submission without Ctrl+A.
 
 ### K1–K3 — reader controls completed
 

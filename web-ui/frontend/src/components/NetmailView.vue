@@ -5,7 +5,9 @@ import MailSearchStatus from './MailSearchStatus.vue';
 import { createArchiveSearch } from '../archive-search.ts';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
+import { inlineKludgeBody } from '../mail-kludges.ts';
 import { useMailReading } from '../mail-reading.ts';
+import { useWorkspace } from '../workspace.ts';
 import { createNetmail, mailId, netmailClientKey } from '../netmail.ts';
 import { api, bindings } from '../api.ts';
 import type { AppState } from '../state.ts';
@@ -23,6 +25,7 @@ const props = defineProps<{
     initialDraft?: MailDraft;
 }>();
 const emit = defineEmits<{ queueChanged: []; openEchoDraft: [draft: MailDraft] }>();
+const workspace = useWorkspace();
 const client = inject(netmailClientKey, api.ui);
 const reader = createNetmail(
     props.state,
@@ -101,7 +104,13 @@ async function removeMessage() {
     if (mailSearch.remote.value) await mailSearch.refresh();
 }
 function reply(kind: 'quoted' | 'reply' = 'quoted') {
-    reader.edit(undefined, reader.selected.value!);
+    const selected = reader.selected.value!;
+    reader.edit(
+        undefined,
+        kind === 'quoted' && workspace.inlineKludges.value
+            ? { ...selected, body: inlineKludgeBody(selected) }
+            : selected
+    );
     if (reader.draft.value) reader.draft.value.composeKind = kind;
 }
 const nextUnread = computed(() =>

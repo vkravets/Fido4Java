@@ -27,10 +27,6 @@ Remaining implementation
   separately. Usage and limits: docs/rpc-ui.md.
 - Refine the mobile mail layout after desktop review; retain separate list,
   reader and composer screens, readable controls and dirty-draft protection.
-- Replace the reader's text Kludges button with an icon button, retaining its
-  translated accessible name and tooltip.
-- When inline kludges are shown, include those displayed kludge lines in the
-  quoted text created by the Reply action.
 - Add a keyboard shortcut to show and hide the echomail message list, with search
   behavior matching the existing mail list search.
 - Add a keyboard shortcut to open the discussion for the currently selected

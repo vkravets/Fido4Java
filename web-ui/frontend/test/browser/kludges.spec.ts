@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ukrainian } from '../../src/locales/uk.ts';
 import { openStory } from './story.ts';
+import { inlineKludgeBody } from '../../src/mail-kludges.ts';
 import type { MailDraft, MailItem } from '../../../build/frontend-generated/bindings.mjs';
 import type { Page } from '@playwright/test';
 
@@ -87,7 +88,9 @@ for (const mailKind of ['netmail', 'echomail']) {
                 await expect(block.locator('code')).toHaveCount(4);
                 await page.getByRole('button', { name: label('Source text'), exact: true }).click();
                 const editor = page.locator('.cm-content');
-                await expect(editor).not.toContainText('REFERENCE_ONLY');
+                if (action === 'quoted')
+                    await expect(editor).toContainText('^ACUSTOM: REFERENCE_ONLY');
+                else await expect(editor).not.toContainText('REFERENCE_ONLY');
                 await editor.press('ControlOrMeta+End');
                 await editor.press('Enter');
                 await editor.pressSequentially('Typed response');
@@ -97,8 +100,14 @@ for (const mailKind of ['netmail', 'echomail']) {
                 expect(saved.composeKind).toBe(action);
                 expect(saved.mailbox).toBe(mailKind === 'echomail' && action !== 'forward' ? 1 : 3);
                 expect(saved.originalKludges).toEqual(source.kludges);
-                expect(saved.originalBody).toBe(source.body);
-                expect(saved.body).not.toMatch(/\u0001|REFERENCE_ONLY|@quote/);
+                expect(saved.originalBody).toBe(
+                    action === 'quoted' ? inlineKludgeBody(source) : source.body
+                );
+                if (action === 'quoted')
+                    expect(saved.body).toContain('> ^AMSGID: 1:500/101.2 source');
+                expect(saved.body).not.toContain('\u0001');
+                if (action !== 'quoted') expect(saved.body).not.toContain('@quote');
+                if (action === 'forward') expect(saved.body).not.toContain('REFERENCE_ONLY');
                 expect(saved.body.match(/ORIGINAL_BODY_ONLY/g) || []).toHaveLength(
                     action === 'reply' ? 0 : 1
                 );
@@ -120,15 +129,21 @@ for (const mailKind of ['netmail', 'echomail']) {
                 await expect(page.locator('.fido-editor .mail-kludge-list')).toHaveCount(0);
                 await page.getByRole('button', { name: label('Source text'), exact: true }).click();
                 await expect(editor).toContainText('Typed response');
-                await expect(editor).not.toContainText('REFERENCE_ONLY');
+                if (action === 'quoted')
+                    await expect(editor).toContainText('^ACUSTOM: REFERENCE_ONLY');
+                else await expect(editor).not.toContainText('REFERENCE_ONLY');
                 await page.locator('[data-shortcut="compose.send"]').click();
                 await expect(page.getByTestId('submitted-draft')).not.toHaveValue('');
                 const submitted = await capture<MailDraft>(page, 'submitted-draft');
                 expect(submitted.id).toBe(saved.id);
                 expect(submitted.body).toBe(saved.body);
                 expect(submitted.originalKludges).toEqual(saved.originalKludges);
-                expect(submitted.originalBody).toBe(source.body);
-                expect(submitted.body).not.toMatch(/\u0001|REFERENCE_ONLY|@quote/);
+                expect(submitted.originalBody).toBe(
+                    action === 'quoted' ? inlineKludgeBody(source) : source.body
+                );
+                expect(submitted.body).not.toContain('\u0001');
+                if (action !== 'quoted') expect(submitted.body).not.toContain('@quote');
+                if (action === 'forward') expect(submitted.body).not.toContain('REFERENCE_ONLY');
                 expect(await capture<MailItem>(page, 'source-state')).toEqual(source);
             });
         }

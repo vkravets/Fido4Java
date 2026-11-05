@@ -174,8 +174,11 @@ Personal **Appearance** settings offer **Unknown kludges in messages** with
 Inline controls have distinct text styling and a left border; their values are
 literal text without link or mail-markup interpretation. The complete **Kludges**
 block remains independent. See the [classification sources and rules](mail-kludges/classification.md).
-The mode affects only reading; reply text, templates and outgoing messages still
-use the plain body.
+When inline controls are visible, quoted replies and template `@quote` values
+include the displayed control lines in their original order. Control characters
+are rendered as printable text so quotes remain editable plain text. With the
+inline switch off, quoting continues to use the stored plain body. The full
+control snapshot remains read-only reference data and is not submitted as controls.
 
 Replies and forwards show **Original message kludges** before the editor as a
 read-only reference. Saved drafts retain this snapshot. If the reference exceeds

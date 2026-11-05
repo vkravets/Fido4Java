@@ -5,7 +5,9 @@ import MailSearchStatus from './MailSearchStatus.vue';
 import { createArchiveSearch } from '../archive-search.ts';
 import { t } from '../i18n.ts';
 import { forwardDraft } from '../mail-drafts.ts';
+import { inlineKludgeBody } from '../mail-kludges.ts';
 import { useMailReading } from '../mail-reading.ts';
+import { useWorkspace } from '../workspace.ts';
 import { api, bindings } from '../api.ts';
 import { createEchomail, echoClientKey } from '../echomail.ts';
 import { mailId } from '../netmail.ts';
@@ -25,6 +27,7 @@ const props = defineProps<{
     initialMode?: 'flat' | 'tree';
 }>();
 const emit = defineEmits<{ forward: [draft: MailDraft] }>();
+const workspace = useWorkspace();
 const client = inject(echoClientKey, api.ui);
 const reader = createEchomail(props.state, client, (value) => new bindings.MailDraft(value));
 const query = ref('');
@@ -97,7 +100,13 @@ async function refresh() {
     if (mailSearch.active.value) await mailSearch.refresh();
 }
 function reply(kind: 'quoted' | 'reply' = 'quoted') {
-    reader.edit(undefined, reader.selected.value!);
+    const selected = reader.selected.value!;
+    reader.edit(
+        undefined,
+        kind === 'quoted' && workspace.inlineKludges.value
+            ? { ...selected, body: inlineKludgeBody(selected) }
+            : selected
+    );
     if (reader.draft.value) reader.draft.value.composeKind = kind;
 }
 const nextUnread = computed(() =>

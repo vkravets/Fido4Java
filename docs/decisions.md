@@ -137,6 +137,9 @@ message actions. Its pressed state uses the session preference. The complete
 labelled kludge block below the reader header is controlled independently by an
 account Appearance preference, hidden by default. The button stays in place when
 a message has no kludges so neighboring controls do not shift during navigation.
+With inline kludges enabled, quoted replies use the reader's ordered body lines
+and render control characters as printable text. With it disabled, quotes use
+the stored plain body.
 
 Legacy DOS graphic control positions are mapped only for browser display, using
 IBM PC glyphs while preserving TAB/LF/CR text layout. CodeMirror uses replacement
