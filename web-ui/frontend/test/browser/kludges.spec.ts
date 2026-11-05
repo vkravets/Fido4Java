@@ -168,7 +168,10 @@ test('quoted reply includes always-visible unknown kludges with inline toggle of
     await openStory(page, 'mail-kludgeworkflow--kludge-block-hidden');
     const inline = page.getByRole('button', { name: 'Show kludges inline' });
     await expect(inline).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.locator('.mail-body .kludge')).toContainText('CUSTOM: REFERENCE_ONLY');
+    await expect(page.locator('.mail-body .kludge')).toHaveCount(2);
+    await expect(page.locator('.mail-body .kludge').first()).toContainText(
+        'CUSTOM: REFERENCE_ONLY'
+    );
     await page.locator('.reader-more > summary').click();
     await page.locator('.reader-more [data-shortcut="mail.reply"]').click();
     await expect(page.locator('.mail-composer .mail-kludge-list')).toHaveCount(0);
