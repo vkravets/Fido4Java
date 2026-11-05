@@ -49,6 +49,8 @@ summary:has(> .app-icon) {
     gap: 8px;
     align-items: center;
     padding: 8px 0;
+    min-height: 36px;
+    box-sizing: border-box;
 }
 @media (max-width: 700px) {
     .mail-header-actions {
@@ -683,8 +685,13 @@ summary:has(> .app-icon) {
         padding: 8px 14px;
         border-top: 1px solid var(--line);
     }
-    :root .mail-layout .echo-conversation[open] {
-        padding: 12px;
+    .echo-conversation.card {
+        padding: 0;
+    }
+    .echo-conversation > summary {
+        min-height: 36px;
+        padding: 8px 14px;
+        border-top: 1px solid var(--line);
     }
     .mail-composer.card {
         padding: 0;
