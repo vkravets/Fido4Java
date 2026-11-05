@@ -455,6 +455,7 @@ function openDiscussionRow(item: MailItem) {
                         <li
                             v-for="row in discussionRows"
                             :key="mailId(row.item.id)"
+                            class="discussion-row"
                             role="treeitem"
                             :aria-level="row.depth + 1"
                             :aria-expanded="discussion.expanded.value.has(mailId(row.item.id))"
@@ -495,7 +496,8 @@ function openDiscussionRow(item: MailItem) {
                                 :aria-disabled="opening || undefined"
                                 @click="!opening && openDiscussionRow(row.item)"
                             >
-                                <AppIcon name="mail" />
+                                <strong>{{ row.item.subject }}</strong>
+                                <span>{{ row.item.fromName }}</span>
                             </button>
                             <time class="conversation-date">{{ row.item.date }}</time>
                             <span
@@ -543,8 +545,47 @@ function openDiscussionRow(item: MailItem) {
     padding-inline-start: 0;
 }
 .discussion-rows li {
-    padding: 6px 8px 6px calc(8px + var(--thread-indent));
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+    padding: 2px 6px 2px calc(6px + var(--thread-indent));
     border-inline-start: 1px solid var(--line);
+}
+.discussion-toggle {
+    width: 22px;
+    min-height: 24px;
+    padding: 2px;
+}
+.discussion-toggle .app-icon {
+    width: 14px;
+    height: 14px;
+}
+.discussion-open {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 2px 4px;
+    text-align: start;
+    text-decoration: none;
+}
+.discussion-open strong,
+.discussion-open span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.discussion-open strong {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+.discussion-open span {
+    color: var(--muted);
+    font-size: 11px;
 }
 .discussion-rows li[aria-selected='true'] {
     background: var(--accent-soft);
@@ -555,9 +596,10 @@ function openDiscussionRow(item: MailItem) {
 }
 .conversation-date {
     display: inline-block;
-    margin-inline-start: 12px;
+    margin-inline-start: 4px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 10px;
     font-weight: normal;
+    white-space: nowrap;
 }
 </style>
