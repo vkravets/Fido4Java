@@ -103,8 +103,15 @@ function reply(kind: 'quoted' | 'reply' = 'quoted') {
     const selected = reader.selected.value!;
     reader.edit(
         undefined,
-        kind === 'quoted' && workspace.inlineKludges.value
-            ? { ...selected, body: inlineKludgeBody(selected) }
+        kind === 'quoted'
+            ? {
+                  ...selected,
+                  body: inlineKludgeBody(
+                      selected,
+                      workspace.inlineKludges.value,
+                      workspace.value.value.unknownKludges === 'always'
+                  )
+              }
             : selected
     );
     if (reader.draft.value) reader.draft.value.composeKind = kind;

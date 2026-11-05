@@ -22,14 +22,36 @@ test('inline controls stay literal and ordered while ordinary text keeps its quo
 
 test('quoted inline body preserves control order as printable text', () => {
     assert.equal(
-        inlineKludgeBody({
-            body: 'Plain body',
-            bodyLines: [
-                { text: '\u0001MSGID: 1:500/1', kludge: true, known: true },
-                { text: 'First line', kludge: false, known: false },
-                { text: '\u0001CUSTOM: x', kludge: true, known: false }
-            ]
-        }),
+        inlineKludgeBody(
+            {
+                body: 'Plain body',
+                bodyLines: [
+                    { text: '\u0001MSGID: 1:500/1', kludge: true, known: true },
+                    { text: 'First line', kludge: false, known: false },
+                    { text: '\u0001CUSTOM: x', kludge: true, known: false }
+                ]
+            },
+            true,
+            false
+        ),
         '^AMSGID: 1:500/1\nFirst line\n^ACUSTOM: x'
+    );
+});
+
+test('quoted body includes always-visible unknown kludges when inline toggle is off', () => {
+    assert.equal(
+        inlineKludgeBody(
+            {
+                body: 'Plain body',
+                bodyLines: [
+                    { text: '\u0001MSGID: 1:500/1', kludge: true, known: true },
+                    { text: 'First line', kludge: false, known: false },
+                    { text: '\u0001CUSTOM: x', kludge: true, known: false }
+                ]
+            },
+            false,
+            true
+        ),
+        'First line\n^ACUSTOM: x'
     );
 });

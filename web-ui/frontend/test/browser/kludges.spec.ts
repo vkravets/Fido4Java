@@ -101,7 +101,7 @@ for (const mailKind of ['netmail', 'echomail']) {
                 expect(saved.mailbox).toBe(mailKind === 'echomail' && action !== 'forward' ? 1 : 3);
                 expect(saved.originalKludges).toEqual(source.kludges);
                 expect(saved.originalBody).toBe(
-                    action === 'quoted' ? inlineKludgeBody(source) : source.body
+                    action === 'quoted' ? inlineKludgeBody(source, true, true) : source.body
                 );
                 if (action === 'quoted')
                     expect(saved.body).toContain('> ^AMSGID: 1:500/101.2 source');
@@ -139,7 +139,7 @@ for (const mailKind of ['netmail', 'echomail']) {
                 expect(submitted.body).toBe(saved.body);
                 expect(submitted.originalKludges).toEqual(saved.originalKludges);
                 expect(submitted.originalBody).toBe(
-                    action === 'quoted' ? inlineKludgeBody(source) : source.body
+                    action === 'quoted' ? inlineKludgeBody(source, true, true) : source.body
                 );
                 expect(submitted.body).not.toContain('\u0001');
                 if (action !== 'quoted') expect(submitted.body).not.toContain('@quote');
@@ -160,6 +160,20 @@ test('disabled profile setting hides original kludge block in composer but keeps
     await expect(page.locator('.mail-composer')).toBeVisible();
     await expect(page.locator('.mail-composer .mail-kludge-list')).toHaveCount(0);
     await expect(page.locator('.cm-content')).toContainText('^AMSGID: 1:500/101.2 source');
+});
+
+test('quoted reply includes always-visible unknown kludges with inline toggle off', async ({
+    page
+}) => {
+    await openStory(page, 'mail-kludgeworkflow--kludge-block-hidden');
+    const inline = page.getByRole('button', { name: 'Show kludges inline' });
+    await expect(inline).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('.mail-body .kludge')).toContainText('CUSTOM: REFERENCE_ONLY');
+    await page.locator('.reader-more > summary').click();
+    await page.locator('.reader-more [data-shortcut="mail.reply"]').click();
+    await expect(page.locator('.mail-composer .mail-kludge-list')).toHaveCount(0);
+    await expect(page.locator('.cm-content')).toContainText('^ACUSTOM: REFERENCE_ONLY');
+    await expect(page.locator('.cm-content')).not.toContainText('^AMSGID:');
 });
 
 for (const snapshot of ['without-controls', 'truncated', 'omitted']) {

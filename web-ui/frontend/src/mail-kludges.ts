@@ -3,9 +3,14 @@ import type { TextLine, TextRun } from './fido-text.ts';
 import type { MailBodyLine } from '@rpc/bindings.mjs';
 import type { MailItem } from '@rpc/bindings.mjs';
 
-export function inlineKludgeBody(item: Pick<MailItem, 'body' | 'bodyLines'>): string {
+export function inlineKludgeBody(
+    item: Pick<MailItem, 'body' | 'bodyLines'>,
+    inline: boolean,
+    showUnknown: boolean
+): string {
     return (
         item.bodyLines
+            ?.filter((line) => !line.kludge || inline || (!line.known && showUnknown))
             ?.map((line) => (line.kludge ? visibleKludge(line.text) : line.text))
             .join('\n') ??
         item.body ??
