@@ -16,6 +16,7 @@ import { mailId } from '../netmail.ts';
 import type { AppState } from '../state.ts';
 import type { MailDraft, MailItem } from '@rpc/bindings.mjs';
 import EchoMessageList from './EchoMessageList.vue';
+import EchoConferenceList from './EchoConferenceList.vue';
 import MessageView from './MessageView.vue';
 import NetmailDrafts from './NetmailDrafts.vue';
 import MailComposer from './MailComposer.vue';
@@ -56,11 +57,6 @@ async function loadMore() {
 }
 const navigationItems = shallowRef<MailItem[]>([]);
 const search = ref('');
-const visibleAreas = computed(() =>
-    reader.areas.value.filter((area) =>
-        area.name.toLowerCase().includes(search.value.trim().toLowerCase())
-    )
-);
 const index = computed(() =>
     navigationItems.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
 );
@@ -255,59 +251,14 @@ function openDiscussionRow(item: MailItem) {
             </header>
         </template>
         <template #filters>
-            <div class="card conference-selector">
-                <label
-                    ><span class="control-label">{{ t('Select a conference') }}</span
-                    ><select
-                        :value="reader.area.value"
-                        :disabled="state.busy.value"
-                        @change="
-                            state.run(() =>
-                                reader.selectArea(($event.target as HTMLSelectElement).value)
-                            )
-                        "
-                    >
-                        <option
-                            v-for="area in visibleAreas"
-                            :key="area.name"
-                            :value="area.name"
-                        >
-                            {{ area.name }} / {{ mailId(area.messages)
-                            }}{{
-                                !area.readable
-                                    ? ' / ' + t('Post only')
-                                    : !area.writeAddresses?.length
-                                      ? ' / ' + t('Read only')
-                                      : ''
-                            }}
-                        </option>
-                    </select></label
-                >
-                <p
-                    v-if="!reader.areas.value.length"
-                    class="muted"
-                >
-                    {{
-                        t(
-                            'No accessible conferences. Ask the administrator to grant your AKA access.'
-                        )
-                    }}
-                </p>
-                <p
-                    v-else-if="!visibleAreas.length"
-                    class="muted"
-                >
-                    {{ t('No matching conferences.') }}
-                </p>
-            </div>
-        </template>
-        <template #options>
-            <label
-                >{{ t('Find a conference')
-                }}<input
-                    v-model="search"
-                    type="search"
-            /></label>
+            <EchoConferenceList
+                v-model:search="search"
+                :areas="reader.areas.value"
+                :selected="reader.area.value"
+                :busy="state.busy.value"
+                :error="state.error.value"
+                @select="(name) => state.run(() => reader.selectArea(name))"
+            />
         </template>
         <template #list>
             <EchoMessageList

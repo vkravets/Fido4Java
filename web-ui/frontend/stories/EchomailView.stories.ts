@@ -27,6 +27,7 @@ const meta = {
                 session: ref('storybook-session'),
                 profile: ref(profile('POINT')),
                 busy: ref(false),
+                error: ref(''),
                 notice: ref(''),
                 async run(operation: () => Promise<unknown>, options: RunOptions = {}) {
                     if (!options.background) this.busy.value = true;

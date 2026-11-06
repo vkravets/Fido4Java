@@ -174,6 +174,7 @@ export const ukrainian = {
     'Read and discuss in your subscribed conferences.':
         'Читайте й обговорюйте повідомлення у своїх конференціях.',
     'Find a conference': 'Знайти конференцію',
+    'Loading conferences…': 'Завантаження конференцій…',
     'No accessible conferences. Ask the administrator to grant your AKA access.':
         'Немає доступних конференцій. Попросіть адміністратора надати доступ для вашої АКА.',
     'No matching conferences.': 'Відповідних конференцій немає.',
