@@ -300,7 +300,7 @@ async function update(patch: Partial<MailLayout>) {
                     <AppIcon name="echo" />{{ t('Conferences') }}
                 </button>
                 <button
-                    v-if="stage === 'detail' && opened"
+                    v-if="stage === 'detail' && opened && !listVisible"
                     class="secondary"
                     :disabled="busy"
                     v-shortcut="'mail.back'"
