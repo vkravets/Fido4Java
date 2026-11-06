@@ -381,7 +381,13 @@ input:focus,
 select:focus,
 textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus);
+    box-shadow: 0 0 0 1px var(--focus);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline-width: 2px;
+    outline-offset: 1px;
 }
 textarea {
     resize: vertical;

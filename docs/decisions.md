@@ -877,6 +877,14 @@ mounted and preserve saved layout rules;
 leaving composition restores the list. Mobile and separate previews retain their
 existing list/detail navigation.
 
+## Compact echomail controls (2026-11-06)
+
+Conference, message and editor stage actions share one aligned navigation row.
+Echomail header actions use the compact mail control size. Focused text fields
+keep a visible accent outline and border with a narrow, close focus ring in both
+themes. The remaining search alignment work is tracked in
+[the compact UI plan](echo-workspace/compact-ui-plan.md).
+
 ## Changing these decisions
 
 Before replacing a behavior, check the implementation, relevant tests and the
