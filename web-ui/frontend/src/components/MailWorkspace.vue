@@ -147,7 +147,6 @@ watch(
         rememberPanes();
         await nextTick();
         restorePanes();
-        keepSelectedRowVisible();
     },
     { flush: 'pre' }
 );
