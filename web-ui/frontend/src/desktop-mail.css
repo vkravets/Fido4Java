@@ -247,6 +247,19 @@ summary:has(> .app-icon) {
     }
     .content.mail-content {
         padding: 0;
+        height: calc(100dvh - var(--app-header-height));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .content.mail-content > .mail-layout {
+        flex: 1;
+        min-height: 0;
+    }
+    .content.mail-content .mail-workspace-content,
+    .content.mail-content .conference-pane {
+        height: 100%;
+        min-height: 0;
     }
     .desktop-hidden {
         display: none;
@@ -255,6 +268,10 @@ summary:has(> .app-icon) {
         height: calc(100dvh - 44px);
         min-height: 420px;
         grid-template-columns: minmax(0, var(--pane-size)) 5px minmax(0, 1fr);
+    }
+    :root .mail-content .mail-layout .split-pane {
+        height: 100%;
+        min-height: 0;
     }
     :root .mail-layout .split-pane.below {
         grid-template-columns: minmax(0, 1fr);

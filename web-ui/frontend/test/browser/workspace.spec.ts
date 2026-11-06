@@ -912,6 +912,21 @@ test('GoldED quoted replies start typing above the quote and retain manually edi
     await expect.poll(() => editor.innerText()).toBe(text);
 });
 
+test('long mail scrolls inside the detail pane without a page or body scrollbar', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 540 });
+    await openStory(page, 'mail-netmailview--application-workspace');
+    const detail = page.locator('.split-detail');
+    await expect(page.locator('.mail-message')).toBeVisible();
+    await page.locator('.mail-body').evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(540);
+    expect(await detail.evaluate((el) => el.scrollHeight)).toBeGreaterThan(
+        await detail.evaluate((el) => el.clientHeight)
+    );
+    expect(await page.locator('.mail-body').evaluate((el) => getComputedStyle(el).overflowY)).toBe(
+        'visible'
+    );
+});
+
 for (const kind of ['netmail', 'echomail']) {
     test(`${kind} list toggle belongs only to the editor and preserves draft history and list position`, async ({
         page
