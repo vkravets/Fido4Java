@@ -1,6 +1,6 @@
 # Echomail conference list and workspace — implementation plan
 
-Status: E1–E5 implemented; E6 visual verification remains.
+Status: E1–E6 implemented and verified.
 
 E3 adds the optional conference column and actual-work-area width fallbacks.
 E4 retains mounted editor/list panes through stage and preview changes, restores
@@ -10,7 +10,11 @@ mobile return navigation and shared netmail layout behavior. E5 broadens coverag
 E5 checked preference normalization, conference search/rights, panel choice,
 reader/editor stage transitions, and netmail layout regressions. The 110 frontend
 unit tests passed; the 47 workspace browser cases had two failures that were
-corrected and passed on focused rerun. Visual inspection is reserved for E6.
+corrected and passed on focused rerun. E6 built the full Storybook catalogue,
+reviewed representative Linux screenshots for both themes and languages on
+desktop and mobile, including the main sidebar, width fallbacks, editor, long
+conference names and permission-limited lists. The pinned Playwright comparison
+passed all 304 affected cases without snapshot updates. No layout fix was needed.
 
 Commit this plan before implementation, then commit each completed item separately.
 Use focused functional checks for changed behavior. Create relevant Storybook
