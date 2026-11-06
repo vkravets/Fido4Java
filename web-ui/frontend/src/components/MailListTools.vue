@@ -6,6 +6,7 @@ import { useWorkspace } from '../workspace.ts';
 import type { MailLayout } from '../workspace.ts';
 import AppIcon from './AppIcon.vue';
 import NotificationBanner from './NotificationBanner.vue';
+import SearchField from './SearchField.vue';
 const query = defineModel<string>({ required: true });
 defineProps<{ preferences: MailLayout; kind: 'netmail' | 'echo'; busy?: boolean }>();
 defineEmits<{ update: [value: Partial<MailLayout>] }>();
@@ -43,17 +44,13 @@ const positions = [
         <slot name="toolbar" />
         <div class="mail-filter-row">
             <slot name="filters" />
-            <label class="mail-query">
-                <span class="control-label">{{ t('Search messages') }}</span>
-                <AppIcon name="search" />
-                <input
-                    v-shortcut="'mail.search'"
-                    v-model="query"
-                    type="search"
-                    maxlength="160"
-                    :placeholder="t('Search messages')"
-                />
-            </label>
+            <SearchField
+                v-model="query"
+                class="mail-query"
+                :label="t('Search messages')"
+                shortcut="mail.search"
+                :maxlength="160"
+            />
             <details
                 class="mail-view-options"
                 :open="!desktop"

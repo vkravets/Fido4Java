@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { t } from '../i18n.ts';
 import { mailId } from '../netmail.ts';
 import NotificationBanner from './NotificationBanner.vue';
+import SearchField from './SearchField.vue';
 import type { AreaInfo } from '@rpc/bindings.mjs';
 
 const props = defineProps<{
@@ -31,14 +32,7 @@ function select(name: string) {
             kind="error"
             :message="error || ''"
         />
-        <label class="echo-conference-search">
-            <span class="control-label">{{ t('Find a conference') }}</span>
-            <input
-                v-model="search"
-                type="search"
-                :placeholder="t('Find a conference')"
-            />
-        </label>
+        <SearchField v-model="search" class="echo-conference-search" :label="t('Find a conference')" />
         <p
             v-if="!areas.length && busy"
             class="muted"
@@ -90,20 +84,6 @@ function select(name: string) {
 }
 .echo-conference-search {
     display: block;
-}
-.echo-conference-search .control-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-}
-.echo-conference-search input {
-    width: 100%;
-    height: 32px;
-    padding: 5px 8px;
-    border-radius: 4px;
-    font-size: 12px;
 }
 .echo-conference-rows {
     list-style: none;

@@ -299,6 +299,9 @@ summary:has(> .app-icon) {
         gap: 8px;
         margin: 0 0 8px;
     }
+    .mail-workspace-toolbar .page-heading {
+        padding: 8px 12px 0;
+    }
     .mail-list-tools .page-heading h1,
     .mail-workspace-toolbar .page-heading h1 {
         font-size: 19px;
@@ -345,25 +348,12 @@ summary:has(> .app-icon) {
         position: relative;
         margin: 0;
     }
-    .mail-query .control-label,
     .conference-selector label > .control-label {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
-    }
-    .mail-query > .app-icon {
-        display: block;
-        position: absolute;
-        top: 7px;
-        left: 8px;
-        width: 16px;
-        height: 16px;
-        color: var(--muted);
-    }
-    .mail-query input {
-        padding-left: 30px;
     }
     .mail-filter-row .conference-selector {
         min-width: 0;
