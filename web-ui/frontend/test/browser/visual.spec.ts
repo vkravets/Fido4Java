@@ -186,6 +186,10 @@ const screens = [
     },
     { name: 'netmail-application', story: 'mail-netmailview--application-workspace' },
     { name: 'echo-application', story: 'mail-echomailview--application-workspace' },
+    {
+        name: 'echo-application-last-two',
+        story: 'mail-echomailview--application-workspace-last-two'
+    },
     { name: 'application-header', story: 'navigation-applicationheader--signed-in' },
     { name: 'mail-workspace-reading', story: 'mail-netmailview--reading' },
     { name: 'mail-workspace-below', story: 'mail-netmailview--below' },

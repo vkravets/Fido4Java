@@ -2,6 +2,20 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('discussion remains reachable in the two-panel application layout', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 540 });
+    await openStory(page, 'mail-echomailview--application-workspace-last-two');
+    const detail = page.locator('.split-detail');
+    const conversation = page.locator('.echo-conversation');
+    await expect(conversation).toBeVisible();
+    const bounds = await detail.boundingBox();
+    const content = await page.locator('.mail-content').boundingBox();
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(content!.y + content!.height + 1);
+    await detail.evaluate((element) => (element.scrollTop = element.scrollHeight));
+    const discussion = await conversation.boundingBox();
+    expect(discussion!.y + discussion!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height + 1);
+});
+
 test('echo panel preference switches between all and last two without changing preview', async ({ page }) => {
     await openStory(page, 'mail-echomailview--reading');
     await page.getByRole('button', { name: 'Display options', exact: true }).click();

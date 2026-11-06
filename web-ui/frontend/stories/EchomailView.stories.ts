@@ -177,6 +177,11 @@ export const ApplicationWorkspace: Story = {
     ]
 };
 
+export const ApplicationWorkspaceLastTwo: Story = {
+    ...ApplicationWorkspace,
+    parameters: { workspace: { conferencePanels: 'lastTwo' } }
+};
+
 export const FocusedDesktop: Story = {
     ...ApplicationWorkspace,
     parameters: { echo: { dense: true } }

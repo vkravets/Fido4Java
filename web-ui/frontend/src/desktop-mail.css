@@ -261,6 +261,10 @@ summary:has(> .app-icon) {
         height: 100%;
         min-height: 0;
     }
+    .content.mail-content .mail-workspace-content {
+        display: flex;
+        flex-direction: column;
+    }
     .desktop-hidden {
         display: none;
     }
@@ -270,7 +274,8 @@ summary:has(> .app-icon) {
         grid-template-columns: minmax(0, var(--pane-size)) 5px minmax(0, 1fr);
     }
     :root .mail-content .mail-layout .split-pane {
-        height: 100%;
+        flex: 1;
+        height: auto;
         min-height: 0;
     }
     :root .mail-layout .split-pane.below {
@@ -697,10 +702,13 @@ summary:has(> .app-icon) {
         flex-direction: column;
         min-height: 100%;
     }
-    .echo-reading > .mail-message {
-        flex: 1;
-        min-height: 420px;
+    .echo-reading > .mail-message.card {
+        flex: 0 0 auto;
+        min-height: 0;
         height: auto;
+    }
+    .echo-reading > .mail-message > .mail-body {
+        flex: 0 0 auto;
     }
     .echo-conversation.card {
         flex: 0 0 auto;
