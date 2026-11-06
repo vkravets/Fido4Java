@@ -249,7 +249,7 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to general', exact: true })
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await page.getByRole('button', { name: 'Current message' }).click();
     await page
         .getByRole('region', { name: 'Conversation' })
         .getByRole('treeitem')
@@ -274,7 +274,7 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await page.getByRole('button', { name: /^Browser echo reply/ }).click();
     await expect(page.locator('.mail-body')).toHaveText('A reply from the browser.');
     await page.locator('.echo-conversation > summary').click();
-    await page.getByRole('button', { name: 'Whole discussion' }).click();
+    await page.getByRole('button', { name: 'Current message' }).click();
     await expect(
         page.getByRole('region', { name: 'Conversation' }).getByRole('treeitem').first()
     ).toContainText('Welcome to general');
