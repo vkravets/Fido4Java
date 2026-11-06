@@ -58,162 +58,180 @@ function closeMenu(event: Event) {
         :aria-label="message.subject"
         :aria-busy="pending || undefined"
     >
-        <header class="reader-heading">
-            <h2>{{ message.subject }}</h2>
-            <div class="reader-meta-actions">
-                <dl class="mail-envelope">
-                    <dt>{{ t('From') }}</dt>
-                    <dd>{{ message.fromName }} &lt;{{ message.fromAddress }}&gt;</dd>
-                    <dt>{{ t('To') }}</dt>
-                    <dd>{{ message.toName }} &lt;{{ message.toAddress }}&gt;</dd>
-                    <dt>{{ t('Date') }}</dt>
-                    <dd>{{ message.date }}</dd>
-                </dl>
-                <div
-                    class="actions reader-actions"
-                    role="toolbar"
-                    :aria-label="t('Message actions')"
-                    :aria-disabled="pending || undefined"
-                >
-                    <button
-                        v-if="reply"
-                        class="secondary"
-                        :disabled="busy"
-                        :aria-label="t('Reply')"
-                        :title="t('Reply')"
-                        v-shortcut="'mail.reply'"
-                        @click="!pending && $emit('reply', 'quoted')"
+        <div class="reader-sticky-heading">
+            <header class="reader-heading">
+                <h2>{{ message.subject }}</h2>
+                <div class="reader-meta-actions">
+                    <dl class="mail-envelope">
+                        <dt>{{ t('From') }}</dt>
+                        <dd>{{ message.fromName }} &lt;{{ message.fromAddress }}&gt;</dd>
+                        <dt>{{ t('To') }}</dt>
+                        <dd>{{ message.toName }} &lt;{{ message.toAddress }}&gt;</dd>
+                        <dt>{{ t('Date') }}</dt>
+                        <dd>{{ message.date }}</dd>
+                    </dl>
+                    <div
+                        class="actions reader-actions"
+                        role="toolbar"
+                        :aria-label="t('Message actions')"
+                        :aria-disabled="pending || undefined"
                     >
-                        <AppIcon name="reply" />
-                    </button>
-                    <button
-                        v-if="navigation"
-                        class="secondary"
-                        :aria-label="t('Previous message')"
-                        :title="t('Previous message')"
-                        :disabled="busy || previousDisabled"
-                        v-shortcut="'mail.previous'"
-                        @click="!pending && $emit('previous')"
-                    >
-                        <AppIcon name="left" />
-                    </button>
-                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Previous reply')" :title="t('Previous reply')" :disabled="busy || previousReplyDisabled" v-shortcut="'mail.previousReply'" @click="!pending && $emit('previousReply')">
-                        <AppIcon name="replyLeft" />
-                    </button>
-                    <button v-if="replyNavigation" class="secondary" :aria-label="t('Next reply')" :title="t('Next reply')" :disabled="busy || nextReplyDisabled" v-shortcut="'mail.nextReply'" @click="!pending && $emit('nextReply')">
-                        <AppIcon name="replyRight" />
-                    </button>
-                    <button
-                        v-if="navigation"
-                        class="secondary"
-                        :aria-label="t('Next message')"
-                        :title="t('Next message')"
-                        :disabled="busy || nextDisabled"
-                        v-shortcut="'mail.next'"
-                        @click="!pending && $emit('next')"
-                    >
-                        <AppIcon name="right" />
-                    </button>
-                    <button
-                        class="secondary reader-kludge-button"
-                        :aria-label="t('Show kludges inline')"
-                        :title="t('Show kludges inline')"
-                        :aria-pressed="inlineKludges"
-                        :aria-disabled="false"
-                        @click="inlineKludges = !inlineKludges"
-                    >
-                        <AppIcon name="source" />
-                    </button>
-                    <div class="reader-direct-actions">
                         <button
-                            v-if="forwardable"
+                            v-if="reply"
                             class="secondary"
                             :disabled="busy"
-                            :aria-label="t('Forward')"
-                            :title="t('Forward')"
-                            v-shortcut="'mail.forward'"
-                            @click="!pending && $emit('forward')"
+                            :aria-label="t('Reply')"
+                            :title="t('Reply')"
+                            v-shortcut="'mail.reply'"
+                            @click="!pending && $emit('reply', 'quoted')"
                         >
-                            <AppIcon name="forward" />
+                            <AppIcon name="reply" />
                         </button>
                         <button
-                            v-if="removable"
-                            class="danger"
-                            :disabled="busy"
-                            :aria-label="t('Delete message')"
-                            :title="t('Delete message')"
-                            v-shortcut="'mail.delete'"
-                            @click="!pending && $emit('remove')"
+                            v-if="navigation"
+                            class="secondary"
+                            :aria-label="t('Previous message')"
+                            :title="t('Previous message')"
+                            :disabled="busy || previousDisabled"
+                            v-shortcut="'mail.previous'"
+                            @click="!pending && $emit('previous')"
                         >
-                            <AppIcon name="trash" />
+                            <AppIcon name="left" />
                         </button>
-                    </div>
-                    <details
-                        v-if="reply || forwardable || removable"
-                        class="reader-more"
-                        @click="closeMenu"
-                        @keydown.esc="($event.currentTarget as HTMLDetailsElement).open = false"
-                    >
-                        <summary
-                            role="button"
-                            :aria-label="t('More')"
-                            :title="t('More')"
-                            @click="pending && $event.preventDefault()"
+                        <button
+                            v-if="replyNavigation"
+                            class="secondary"
+                            :aria-label="t('Previous reply')"
+                            :title="t('Previous reply')"
+                            :disabled="busy || previousReplyDisabled"
+                            v-shortcut="'mail.previousReply'"
+                            @click="!pending && $emit('previousReply')"
                         >
-                            <AppIcon name="more" />
-                        </summary>
-                        <div
-                            class="reader-more-panel"
-                            data-shortcut-menu
+                            <AppIcon name="replyLeft" />
+                        </button>
+                        <button
+                            v-if="replyNavigation"
+                            class="secondary"
+                            :aria-label="t('Next reply')"
+                            :title="t('Next reply')"
+                            :disabled="busy || nextReplyDisabled"
+                            v-shortcut="'mail.nextReply'"
+                            @click="!pending && $emit('nextReply')"
                         >
-                            <button
-                                v-if="reply"
-                                :disabled="busy"
-                                v-shortcut="'mail.reply'"
-                                @click="!pending && $emit('reply', 'quoted')"
-                            >
-                                <AppIcon name="file" />{{ t('Quoted reply') }}
-                            </button>
-                            <button
-                                v-if="reply"
-                                :disabled="busy"
-                                v-shortcut="'mail.shortReply'"
-                                @click="!pending && $emit('reply', 'reply')"
-                            >
-                                <AppIcon name="file" />{{ t('Short reply') }}
-                            </button>
-                            <button
-                                v-if="reply"
-                                :disabled="busy"
-                                v-shortcut="'mail.new'"
-                                @click="!pending && $emit('compose')"
-                            >
-                                <AppIcon name="edit" />{{ t('New message') }}
-                            </button>
+                            <AppIcon name="replyRight" />
+                        </button>
+                        <button
+                            v-if="navigation"
+                            class="secondary"
+                            :aria-label="t('Next message')"
+                            :title="t('Next message')"
+                            :disabled="busy || nextDisabled"
+                            v-shortcut="'mail.next'"
+                            @click="!pending && $emit('next')"
+                        >
+                            <AppIcon name="right" />
+                        </button>
+                        <button
+                            class="secondary reader-kludge-button"
+                            :aria-label="t('Show kludges inline')"
+                            :title="t('Show kludges inline')"
+                            :aria-pressed="inlineKludges"
+                            :aria-disabled="false"
+                            @click="inlineKludges = !inlineKludges"
+                        >
+                            <AppIcon name="source" />
+                        </button>
+                        <div class="reader-direct-actions">
                             <button
                                 v-if="forwardable"
+                                class="secondary"
                                 :disabled="busy"
+                                :aria-label="t('Forward')"
+                                :title="t('Forward')"
                                 v-shortcut="'mail.forward'"
                                 @click="!pending && $emit('forward')"
                             >
-                                <AppIcon name="forward" />{{ t('Forward') }}
+                                <AppIcon name="forward" />
                             </button>
                             <button
                                 v-if="removable"
                                 class="danger"
                                 :disabled="busy"
+                                :aria-label="t('Delete message')"
+                                :title="t('Delete message')"
                                 v-shortcut="'mail.delete'"
                                 @click="!pending && $emit('remove')"
                             >
-                                <AppIcon name="trash" />{{ t('Delete message') }}
+                                <AppIcon name="trash" />
                             </button>
                         </div>
-                    </details>
+                        <details
+                            v-if="reply || forwardable || removable"
+                            class="reader-more"
+                            @click="closeMenu"
+                            @keydown.esc="($event.currentTarget as HTMLDetailsElement).open = false"
+                        >
+                            <summary
+                                role="button"
+                                :aria-label="t('More')"
+                                :title="t('More')"
+                                @click="pending && $event.preventDefault()"
+                            >
+                                <AppIcon name="more" />
+                            </summary>
+                            <div
+                                class="reader-more-panel"
+                                data-shortcut-menu
+                            >
+                                <button
+                                    v-if="reply"
+                                    :disabled="busy"
+                                    v-shortcut="'mail.reply'"
+                                    @click="!pending && $emit('reply', 'quoted')"
+                                >
+                                    <AppIcon name="file" />{{ t('Quoted reply') }}
+                                </button>
+                                <button
+                                    v-if="reply"
+                                    :disabled="busy"
+                                    v-shortcut="'mail.shortReply'"
+                                    @click="!pending && $emit('reply', 'reply')"
+                                >
+                                    <AppIcon name="file" />{{ t('Short reply') }}
+                                </button>
+                                <button
+                                    v-if="reply"
+                                    :disabled="busy"
+                                    v-shortcut="'mail.new'"
+                                    @click="!pending && $emit('compose')"
+                                >
+                                    <AppIcon name="edit" />{{ t('New message') }}
+                                </button>
+                                <button
+                                    v-if="forwardable"
+                                    :disabled="busy"
+                                    v-shortcut="'mail.forward'"
+                                    @click="!pending && $emit('forward')"
+                                >
+                                    <AppIcon name="forward" />{{ t('Forward') }}
+                                </button>
+                                <button
+                                    v-if="removable"
+                                    class="danger"
+                                    :disabled="busy"
+                                    v-shortcut="'mail.delete'"
+                                    @click="!pending && $emit('remove')"
+                                >
+                                    <AppIcon name="trash" />{{ t('Delete message') }}
+                                </button>
+                            </div>
+                        </details>
+                    </div>
                 </div>
+            </header>
+            <div class="reader-correspondents">
+                {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
             </div>
-        </header>
-        <div class="reader-correspondents">
-            {{ message.fromName }} <AppIcon name="right" /> {{ message.toName }}
         </div>
         <div
             v-show="workspace.value.value.showKludgeBlock && hasKludges"
@@ -254,6 +272,7 @@ function closeMenu(event: Event) {
                 {{ t('Next unread') }}<AppIcon name="right" />
             </button>
         </footer>
+        <slot name="discussion" />
     </article>
 </template>
 <style scoped>

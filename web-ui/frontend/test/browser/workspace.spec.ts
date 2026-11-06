@@ -2,6 +2,20 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('reader heading stays visible while scrolling through mail and discussion', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await openStory(page, 'mail-echomailview--application-workspace-last-two');
+    const detail = page.locator('.split-detail');
+    const heading = page.locator('.reader-sticky-heading');
+    await expect(heading).toBeVisible();
+    await page.locator('.mail-body').evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
+    await detail.evaluate((el) => (el.scrollTop = el.scrollHeight));
+    const pane = (await detail.boundingBox())!;
+    const header = (await heading.boundingBox())!;
+    expect(Math.abs(header.y - pane.y)).toBeLessThan(1);
+    await expect(page.locator('.echo-conversation > summary')).toBeInViewport();
+});
+
 test('discussion remains reachable in the two-panel application layout', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 540 });
     await openStory(page, 'mail-echomailview--application-workspace-last-two');

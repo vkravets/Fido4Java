@@ -342,164 +342,178 @@ function openDiscussionRow(item: MailItem) {
                 @previous-reply="openDiscussionRow(discussionRows[discussionIndex - 1]!.item)"
                 @next-reply="openDiscussionRow(discussionRows[discussionIndex + 1]!.item)"
                 @unread="nextUnread && openMessage(nextUnread)"
-            />
-            <details
-                role="region"
-                v-if="reader.context.value"
-                class="card echo-conversation"
-                :aria-label="t('Conversation')"
             >
-                <summary>
-                    <AppIcon name="logs" />{{ t('Conversation') }}<AppIcon name="down" />
-                </summary>
-                <div class="echo-conversation-content">
-                    <NotificationBanner
-                        kind="error"
-                        :message="discussionError"
-                    />
-                    <div class="actions discussion-view-controls">
-                        <button
-                            class="secondary icon-button discussion-mode-toggle"
-                            :aria-pressed="discussionView === 'current'"
-                            :disabled="discussionSaving"
-                            :aria-label="
-                                t(
-                                    discussionView === 'current'
-                                        ? 'Current message'
-                                        : 'Whole discussion'
-                                )
-                            "
-                            :title="
-                                t(
-                                    discussionView === 'current'
-                                        ? 'Current message'
-                                        : 'Whole discussion'
-                                )
-                            "
-                            @click="
-                                saveDiscussion({
-                                    discussionView:
-                                        discussionView === 'current' ? 'whole' : 'current'
-                                })
-                            "
-                        >
-                            <AppIcon name="mail" />
-                        </button>
-                        <select
-                            v-if="discussionView === 'whole'"
-                            class="discussion-selection"
-                            :aria-label="t('When opening a discussion message')"
-                            :value="workspace.value.value.discussionSelection"
-                            :disabled="discussionSaving"
-                            @change="
-                                saveDiscussion({
-                                    discussionSelection: ($event.target as HTMLSelectElement)
-                                        .value as 'center' | 'retain'
-                                })
-                            "
-                        >
-                            <option value="center">{{ t('Center on opened message') }}</option>
-                            <option value="retain">{{ t('Keep discussion root') }}</option>
-                        </select>
-                    </div>
-                    <p
-                        v-if="
-                            discussionView === 'whole' &&
-                            discussionRows.some(
-                                (row) =>
-                                    discussion.links.value.get(mailId(row.item.id))?.missingParent
-                            )
-                        "
-                        class="muted"
-                    >
-                        {{ t('The parent message is not available in this conference.') }}
-                    </p>
-                    <p
-                        v-if="!reader.context.value.replies.items.length"
-                        class="muted"
-                    >
-                        {{ t('No replies yet.') }}
-                    </p>
-                    <ul
-                        role="tree"
+                <template #discussion>
+                    <details
+                        role="region"
+                        v-if="reader.context.value"
+                        class="card echo-conversation"
                         :aria-label="t('Conversation')"
-                        class="discussion-rows"
                     >
-                        <li
-                            v-for="row in discussionRows"
-                            :key="mailId(row.item.id)"
-                            class="discussion-row"
-                            role="treeitem"
-                            :aria-level="row.depth + 1"
-                            :aria-expanded="discussion.expanded.value.has(mailId(row.item.id))"
-                            :aria-selected="
-                                mailId(row.item.id) === mailId(reader.selected.value.id)
-                            "
-                            :data-discussion-row="mailId(row.item.id)"
-                            :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
-                            tabindex="0"
-                            @keydown="discussionKey"
-                        >
-                            <button
-                                class="text-button icon-button discussion-toggle"
-                                :disabled="
-                                    state.busy.value ||
-                                    discussion.pending.value.has(mailId(row.item.id))
-                                "
-                                :aria-label="
-                                    discussion.expanded.value.has(mailId(row.item.id))
-                                        ? t('Collapse conversation')
-                                        : t('Expand conversation')
-                                "
-                                @click="discussion.toggle(row.item)"
-                            >
-                                <AppIcon
-                                    :name="
-                                        discussion.expanded.value.has(mailId(row.item.id))
-                                            ? 'down'
-                                            : 'right'
+                        <summary>
+                            <AppIcon name="logs" />{{ t('Conversation') }}<AppIcon name="down" />
+                        </summary>
+                        <div class="echo-conversation-content">
+                            <NotificationBanner
+                                kind="error"
+                                :message="discussionError"
+                            />
+                            <div class="actions discussion-view-controls">
+                                <button
+                                    class="secondary icon-button discussion-mode-toggle"
+                                    :aria-pressed="discussionView === 'current'"
+                                    :disabled="discussionSaving"
+                                    :aria-label="
+                                        t(
+                                            discussionView === 'current'
+                                                ? 'Current message'
+                                                : 'Whole discussion'
+                                        )
                                     "
-                                />
-                            </button>
-                            <button
-                                class="text-button discussion-open icon-button"
-                                :disabled="state.busy.value"
-                                :aria-label="`${row.item.fromName} — ${row.item.subject}`"
-                                :title="`${row.item.fromName} — ${row.item.subject}`"
-                                :aria-disabled="opening || undefined"
-                                @click="!opening && openDiscussionRow(row.item)"
-                            >
-                                <strong>{{ row.item.subject }}</strong>
-                                <span>{{ row.item.fromName }}</span>
-                            </button>
-                            <time class="conversation-date">{{ row.item.date }}</time>
-                            <span
-                                v-if="discussion.pending.value.has(mailId(row.item.id))"
-                                role="status"
-                                >{{ t('Loading messages…') }}</span
-                            >
-                            <button
-                                v-if="discussion.failures.value.has(mailId(row.item.id))"
-                                class="secondary"
-                                @click="discussion.retry(row.item)"
-                            >
-                                {{ t('Could not load replies. Retry') }}
-                            </button>
-                            <button
+                                    :title="
+                                        t(
+                                            discussionView === 'current'
+                                                ? 'Current message'
+                                                : 'Whole discussion'
+                                        )
+                                    "
+                                    @click="
+                                        saveDiscussion({
+                                            discussionView:
+                                                discussionView === 'current' ? 'whole' : 'current'
+                                        })
+                                    "
+                                >
+                                    <AppIcon name="mail" />
+                                </button>
+                                <select
+                                    v-if="discussionView === 'whole'"
+                                    class="discussion-selection"
+                                    :aria-label="t('When opening a discussion message')"
+                                    :value="workspace.value.value.discussionSelection"
+                                    :disabled="discussionSaving"
+                                    @change="
+                                        saveDiscussion({
+                                            discussionSelection: (
+                                                $event.target as HTMLSelectElement
+                                            ).value as 'center' | 'retain'
+                                        })
+                                    "
+                                >
+                                    <option value="center">
+                                        {{ t('Center on opened message') }}
+                                    </option>
+                                    <option value="retain">{{ t('Keep discussion root') }}</option>
+                                </select>
+                            </div>
+                            <p
                                 v-if="
-                                    discussion.expanded.value.has(mailId(row.item.id)) &&
-                                    discussion.links.value.get(mailId(row.item.id))?.replies.hasMore
+                                    discussionView === 'whole' &&
+                                    discussionRows.some(
+                                        (row) =>
+                                            discussion.links.value.get(mailId(row.item.id))
+                                                ?.missingParent
+                                    )
                                 "
-                                class="secondary"
-                                :disabled="discussion.pending.value.has(mailId(row.item.id))"
-                                @click="discussion.load(row.item, true)"
+                                class="muted"
                             >
-                                {{ t('More replies') }}
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </details>
+                                {{ t('The parent message is not available in this conference.') }}
+                            </p>
+                            <p
+                                v-if="!reader.context.value.replies.items.length"
+                                class="muted"
+                            >
+                                {{ t('No replies yet.') }}
+                            </p>
+                            <ul
+                                role="tree"
+                                :aria-label="t('Conversation')"
+                                class="discussion-rows"
+                            >
+                                <li
+                                    v-for="row in discussionRows"
+                                    :key="mailId(row.item.id)"
+                                    class="discussion-row"
+                                    role="treeitem"
+                                    :aria-level="row.depth + 1"
+                                    :aria-expanded="
+                                        discussion.expanded.value.has(mailId(row.item.id))
+                                    "
+                                    :aria-selected="
+                                        mailId(row.item.id) === mailId(reader.selected.value.id)
+                                    "
+                                    :data-discussion-row="mailId(row.item.id)"
+                                    :style="{
+                                        '--thread-indent': `${Math.min(row.depth, 8) * 12}px`
+                                    }"
+                                    tabindex="0"
+                                    @keydown="discussionKey"
+                                >
+                                    <button
+                                        class="text-button icon-button discussion-toggle"
+                                        :disabled="
+                                            state.busy.value ||
+                                            discussion.pending.value.has(mailId(row.item.id))
+                                        "
+                                        :aria-label="
+                                            discussion.expanded.value.has(mailId(row.item.id))
+                                                ? t('Collapse conversation')
+                                                : t('Expand conversation')
+                                        "
+                                        @click="discussion.toggle(row.item)"
+                                    >
+                                        <AppIcon
+                                            :name="
+                                                discussion.expanded.value.has(mailId(row.item.id))
+                                                    ? 'down'
+                                                    : 'right'
+                                            "
+                                        />
+                                    </button>
+                                    <button
+                                        class="text-button discussion-open icon-button"
+                                        :disabled="state.busy.value"
+                                        :aria-label="`${row.item.fromName} — ${row.item.subject}`"
+                                        :title="`${row.item.fromName} — ${row.item.subject}`"
+                                        :aria-disabled="opening || undefined"
+                                        @click="!opening && openDiscussionRow(row.item)"
+                                    >
+                                        <strong>{{ row.item.subject }}</strong>
+                                        <span>{{ row.item.fromName }}</span>
+                                    </button>
+                                    <time class="conversation-date">{{ row.item.date }}</time>
+                                    <span
+                                        v-if="discussion.pending.value.has(mailId(row.item.id))"
+                                        role="status"
+                                        >{{ t('Loading messages…') }}</span
+                                    >
+                                    <button
+                                        v-if="discussion.failures.value.has(mailId(row.item.id))"
+                                        class="secondary"
+                                        @click="discussion.retry(row.item)"
+                                    >
+                                        {{ t('Could not load replies. Retry') }}
+                                    </button>
+                                    <button
+                                        v-if="
+                                            discussion.expanded.value.has(mailId(row.item.id)) &&
+                                            discussion.links.value.get(mailId(row.item.id))?.replies
+                                                .hasMore
+                                        "
+                                        class="secondary"
+                                        :disabled="
+                                            discussion.pending.value.has(mailId(row.item.id))
+                                        "
+                                        @click="discussion.load(row.item, true)"
+                                    >
+                                        {{ t('More replies') }}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </details>
+                </template>
+            </MessageView>
         </div>
         <section
             v-else

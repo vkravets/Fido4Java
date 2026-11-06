@@ -607,6 +607,13 @@ summary:has(> .app-icon) {
         min-height: 100%;
         height: auto;
     }
+    .reader-sticky-heading {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        flex-shrink: 0;
+        background: var(--bg);
+    }
     .reader-heading {
         padding: 12px 14px 10px;
         border-bottom: 1px solid var(--line);

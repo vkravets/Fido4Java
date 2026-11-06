@@ -846,6 +846,11 @@ sender/subject/date columns and a reader action menu. Preview position and densi
 remain personal choices behind Display options. The compact desktop pass does
 not imply a new mobile design or change message/AKA authorization.
 
+Desktop message viewing keeps the subject, envelope, actions and correspondent
+line sticky within the detail pane while the body and echomail discussion scroll
+underneath. The discussion belongs to the viewer's scroll extent so the heading
+remains pinned through its replies. Composer layout and scrolling are independent.
+
 CodeMirror supplies the visual/source plain-text editor; a shared FTN parser
 styles the reader and editor without rendering incoming HTML. Mail palettes are
 independent of the application theme: built-ins, read-only validated operator
