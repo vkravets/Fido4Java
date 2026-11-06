@@ -300,7 +300,7 @@ async function update(patch: Partial<MailLayout>) {
                     <AppIcon name="echo" />{{ t('Conferences') }}
                 </button>
                 <button
-                    v-if="singleStage && stage === 'detail' && opened"
+                    v-if="stage === 'detail' && opened"
                     class="secondary"
                     :disabled="busy"
                     v-shortcut="'mail.back'"
@@ -346,7 +346,7 @@ async function update(patch: Partial<MailLayout>) {
                     <slot name="list" />
                 </template>
                 <button
-                    v-if="opened && !(hasConferences && singleStage)"
+                    v-if="opened && !hasConferences"
                     class="secondary mail-back"
                     :disabled="busy"
                     v-shortcut="'mail.back'"
@@ -382,7 +382,7 @@ async function update(patch: Partial<MailLayout>) {
     height: calc(100dvh - 270px);
     min-height: 400px;
 }
-.conference-navigation {
+.mail-layout .conference-navigation {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
