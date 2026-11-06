@@ -156,87 +156,89 @@ function keyboard(event: KeyboardEvent, row: EchoThreadRow) {
         >
             {{ t('The tree includes loaded messages. Load more to see earlier or later replies.') }}
         </p>
-        <div
-            class="mail-table-head"
-            aria-hidden="true"
-        >
-            <span>{{ t('From') }}</span
-            ><span>{{ t('Subject') }}</span
-            ><span>{{ t('Date') }}</span>
-        </div>
-        <ul
-            class="echo-message-rows"
-            :role="mode === 'tree' ? 'tree' : 'list'"
-            :aria-label="t('Conference messages')"
-        >
-            <li
-                v-for="row in rows"
-                :key="mailId(row.item.id)"
-                :role="mode === 'tree' ? 'treeitem' : 'listitem'"
-                :aria-level="mode === 'tree' ? row.depth + 1 : undefined"
-                :aria-expanded="
-                    mode === 'tree' && row.children
-                        ? !collapsed.has(mailId(row.item.id))
-                        : undefined
-                "
-                :aria-selected="mode === 'tree' ? selected === mailId(row.item.id) : undefined"
-                :data-mail-row="mailId(row.item.id)"
-                tabindex="0"
-                :class="{ selected: selected === mailId(row.item.id), unread: !row.item.read }"
-                :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
-                @keydown="keyboard($event, row)"
+        <div class="echo-message-scroll">
+            <div
+                class="mail-table-head"
+                aria-hidden="true"
             >
-                <button
-                    v-if="mode === 'tree' && row.children"
-                    class="text-button echo-branch"
-                    :aria-label="
-                        collapsed.has(mailId(row.item.id))
-                            ? t('Expand conversation')
-                            : t('Collapse conversation')
+                <span>{{ t('From') }}</span
+                ><span>{{ t('Subject') }}</span
+                ><span>{{ t('Date') }}</span>
+            </div>
+            <ul
+                class="echo-message-rows"
+                :role="mode === 'tree' ? 'tree' : 'list'"
+                :aria-label="t('Conference messages')"
+            >
+                <li
+                    v-for="row in rows"
+                    :key="mailId(row.item.id)"
+                    :role="mode === 'tree' ? 'treeitem' : 'listitem'"
+                    :aria-level="mode === 'tree' ? row.depth + 1 : undefined"
+                    :aria-expanded="
+                        mode === 'tree' && row.children
+                            ? !collapsed.has(mailId(row.item.id))
+                            : undefined
                     "
-                    :disabled="busy"
-                    @click.stop="toggle(mailId(row.item.id))"
+                    :aria-selected="mode === 'tree' ? selected === mailId(row.item.id) : undefined"
+                    :data-mail-row="mailId(row.item.id)"
+                    tabindex="0"
+                    :class="{ selected: selected === mailId(row.item.id), unread: !row.item.read }"
+                    :style="{ '--thread-indent': `${Math.min(row.depth, 8) * 12}px` }"
+                    @keydown="keyboard($event, row)"
                 >
-                    <AppIcon :name="collapsed.has(mailId(row.item.id)) ? 'right' : 'down'" />
-                </button>
-                <button
-                    class="echo-message-open"
-                    data-shortcut-row
-                    :data-shortcut-selected="selected === mailId(row.item.id) ? '' : undefined"
-                    :disabled="busy"
-                    @click="emit('open', row.item)"
-                >
-                    <strong class="mail-row-title">{{ row.item.subject }}</strong>
-                    <span class="mail-sender"
-                        ><i
-                            class="mail-unread-dot"
-                            aria-hidden="true"
-                        ></i
-                        >{{ row.item.fromName
-                        }}<span class="mail-recipient"> → {{ row.item.toName }}</span></span
+                    <button
+                        v-if="mode === 'tree' && row.children"
+                        class="text-button echo-branch"
+                        :aria-label="
+                            collapsed.has(mailId(row.item.id))
+                                ? t('Expand conversation')
+                                : t('Collapse conversation')
+                        "
+                        :disabled="busy"
+                        @click.stop="toggle(mailId(row.item.id))"
                     >
-                    <span
-                        class="mail-excerpt"
-                        v-if="row.item.excerpt || row.item.body"
-                        >{{ row.item.excerpt || row.item.body?.slice(0, 160) }}</span
+                        <AppIcon :name="collapsed.has(mailId(row.item.id)) ? 'right' : 'down'" />
+                    </button>
+                    <button
+                        class="echo-message-open"
+                        data-shortcut-row
+                        :data-shortcut-selected="selected === mailId(row.item.id) ? '' : undefined"
+                        :disabled="busy"
+                        @click="emit('open', row.item)"
                     >
-                    <time
-                        class="mail-date"
-                        :title="row.item.date"
-                        >{{ shortMailDate(row.item.date) }}</time
-                    >
-                    <small class="mobile-mail-date"
-                        >{{ row.item.date }}
-                        <span v-if="!row.item.read"> · {{ t('Unread') }}</span></small
-                    >
-                </button>
-            </li>
-        </ul>
-        <MailLoadMore
-            v-if="hasMore"
-            :disabled="busy || searching"
-            @more="emit('more')"
-        />
+                        <strong class="mail-row-title">{{ row.item.subject }}</strong>
+                        <span class="mail-sender"
+                            ><i
+                                class="mail-unread-dot"
+                                aria-hidden="true"
+                            ></i
+                            >{{ row.item.fromName
+                            }}<span class="mail-recipient"> → {{ row.item.toName }}</span></span
+                        >
+                        <span
+                            class="mail-excerpt"
+                            v-if="row.item.excerpt || row.item.body"
+                            >{{ row.item.excerpt || row.item.body?.slice(0, 160) }}</span
+                        >
+                        <time
+                            class="mail-date"
+                            :title="row.item.date"
+                            >{{ shortMailDate(row.item.date) }}</time
+                        >
+                        <small class="mobile-mail-date"
+                            >{{ row.item.date }}
+                            <span v-if="!row.item.read"> · {{ t('Unread') }}</span></small
+                        >
+                    </button>
+                </li>
+            </ul>
+            <MailLoadMore
+                v-if="hasMore"
+                :disabled="busy || searching"
+                @more="emit('more')"
+            />
+        </div>
     </section>
 </template>
 <style scoped>

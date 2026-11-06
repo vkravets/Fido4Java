@@ -312,6 +312,24 @@ summary:has(> .app-icon) {
         z-index: 5;
         background: var(--bg);
     }
+    :root .mail-layout .split-list:has(.echo-message-list) {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    :root .mail-layout .echo-message-list {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .echo-message-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
     .mail-list-tools .page-heading,
     .mail-workspace-toolbar .page-heading {
         display: flex;
@@ -447,6 +465,9 @@ summary:has(> .app-icon) {
         color: var(--muted);
         background: var(--surface);
         font-size: 11px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
     }
     .mail-table-head > :last-child {
         text-align: right;

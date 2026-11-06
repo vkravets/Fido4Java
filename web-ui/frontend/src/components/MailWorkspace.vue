@@ -183,16 +183,24 @@ let windowTop = 0;
 function keepSelectedRowVisible() {
     const list = layoutRoot.value?.querySelector<HTMLElement>('.split-list');
     const row = list?.querySelector<HTMLElement>('[data-shortcut-selected]');
-    if (!list || !row || !list.getClientRects().length || !list.clientHeight) return;
+    const scrollContainer = row?.closest<HTMLElement>('.echo-message-scroll') || list;
+    if (
+        !scrollContainer ||
+        !row ||
+        !scrollContainer.getClientRects().length ||
+        !scrollContainer.clientHeight
+    )
+        return;
 
-    // Scroll only the list. scrollIntoView would also move the page and reader.
-    const bounds = list.getBoundingClientRect();
-    const tools = list.querySelector<HTMLElement>('.mail-list-tools');
+    // Scroll only the message rows. scrollIntoView would also move the page and reader.
+    const bounds = scrollContainer.getBoundingClientRect();
+    const tools =
+        scrollContainer === list ? list.querySelector<HTMLElement>('.mail-list-tools') : null;
     const top = Math.max(bounds.top, tools?.getBoundingClientRect().bottom || bounds.top);
-    const bottom = bounds.top + list.clientTop + list.clientHeight;
+    const bottom = bounds.top + scrollContainer.clientTop + scrollContainer.clientHeight;
     const selected = row.getBoundingClientRect();
-    if (selected.top < top) list.scrollTop -= top - selected.top;
-    else if (selected.bottom > bottom) list.scrollTop += selected.bottom - bottom;
+    if (selected.top < top) scrollContainer.scrollTop -= top - selected.top;
+    else if (selected.bottom > bottom) scrollContainer.scrollTop += selected.bottom - bottom;
 }
 watch(() => props.selected, keepSelectedRowVisible, { flush: 'post' });
 watch(
