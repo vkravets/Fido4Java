@@ -7,6 +7,13 @@ Implemented behavior and limits are documented under docs/.
 Remaining implementation
 ------------------------
 
+- Reduce GitHub Actions browser-test setup time. Evaluate caching the Playwright
+  browser download directory with a key tied to the runner OS and locked Playwright
+  browser revision; keep Ubuntu system-library installation separate because apt
+  dependencies are not a useful Actions cache. A dedicated Playwright container is
+  an alternative only if caching is insufficient; a new Docker setup is not required
+  just to cache browser downloads. Not implemented.
+
 - Implement author-initiated echomail crossposting to multiple selected areas.
   UI/RPC currently submit one area only; there is no selector or XC/XP processing.
   Add structured draft targets, whole-list authorization, durable per-area MSGIDs
