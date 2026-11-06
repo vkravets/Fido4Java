@@ -32,6 +32,8 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Prepare verified Gradle Wrapper
+        run: java gradle/wrapper/DownloadWrapper.java "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
