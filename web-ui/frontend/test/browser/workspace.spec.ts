@@ -2,6 +2,37 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('echo panel preference switches between all and last two without changing preview', async ({ page }) => {
+    await openStory(page, 'mail-echomailview--reading');
+    await page.getByRole('button', { name: 'Display options', exact: true }).click();
+    const panels = page.getByRole('combobox', { name: 'Conference panels' });
+    const preview = page.getByRole('combobox', { name: 'Preview position' });
+    await expect(panels).toHaveValue('all');
+    await expect(page.locator('.conference-pane')).toBeVisible();
+    await panels.selectOption('lastTwo');
+    await expect(page.locator('.conference-pane')).toBeHidden();
+    await expect(preview).toHaveValue('right');
+    await page.getByRole('button', { name: 'Conferences', exact: true }).click();
+    await expect(page.locator('.conference-pane')).toBeVisible();
+    await expect(page.locator('.mail-message')).toBeHidden();
+    await page.getByRole('button', { name: 'Back to message', exact: true }).click();
+    await expect(page.locator('.mail-message')).toBeVisible();
+});
+
+test('echo conference search and rights retain their own state', async ({ page }) => {
+    await openStory(page, 'mail-echomailview--tree');
+    await page.locator('.echo-conference-search input').fill('ann');
+    await expect(page.locator('.echo-conference-row')).toHaveCount(1);
+    await expect(page.locator('.echo-conference-row')).toContainText('Read only');
+    await page.locator('.echo-conference-row').click();
+    await expect(page.locator('.echo-conference-row[aria-current="true"]')).toContainText('announcements');
+    await expect(page.getByRole('button', { name: 'New echomail' })).toBeDisabled();
+    await expect(page.locator('.echo-conference-search input')).toHaveValue('ann');
+    await page.locator('.echo-conference-search input').fill('missing');
+    await expect(page.getByText('No matching conferences.')).toBeVisible();
+    await expect(page.locator('.mail-query input')).toHaveValue('');
+});
+
 test('echo stages retain the editor through navigation, layout changes and canceled area changes', async ({
     page
 }) => {
@@ -693,14 +724,16 @@ test('mobile mail uses separate list and detail screens and protects a modified 
     await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unsaved changes');
 });
 
-test('conversation shows original dates for the parent and replies and opens a reply', async ({
+test('conversation shows message dates and opens a reply', async ({
     page
 }) => {
     await openStory(page, 'mail-echomailview--conversation');
     const conversation = page.locator('.echo-conversation');
     await conversation.locator('summary').click();
-    await expect(conversation.locator('button time')).toHaveText('20 Oct 26  10:00:00');
-    await expect(conversation.locator('li time')).toHaveText('20 Oct 26  12:00:00');
+    await expect(conversation.locator('li time')).toHaveText([
+        '20 Oct 26  11:00:00',
+        '20 Oct 26  12:00:00'
+    ]);
     await conversation.getByRole('button', { name: /Carol Example/ }).click();
     await expect(page.locator('.mail-envelope')).toContainText('Carol Example');
 });

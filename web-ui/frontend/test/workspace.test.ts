@@ -59,6 +59,9 @@ test('layout documents normalize unsafe values and keep mailboxes independent', 
     assert.equal(value.netmail.preview, 'below');
     assert.equal(value.netmail.ratio, 75);
     assert.equal(value.echo.preview, 'right');
+    assert.equal(parseWorkspace('{}').conferencePanels, 'all');
+    assert.equal(parseWorkspace('{"conferencePanels":"invalid"}').conferencePanels, 'all');
+    assert.equal(parseWorkspace('{"conferencePanels":"lastTwo"}').conferencePanels, 'lastTwo');
     assert.equal(value.echo.ratio, 20);
     assert.equal(parseWorkspace('broken').collapsed, true);
     assert.equal(parseWorkspace('{}').collapsed, true);

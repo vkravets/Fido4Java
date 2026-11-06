@@ -284,7 +284,8 @@ summary:has(> .app-icon) {
         z-index: 5;
         background: var(--bg);
     }
-    .mail-list-tools .page-heading {
+    .mail-list-tools .page-heading,
+    .mail-workspace-toolbar .page-heading {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -292,19 +293,24 @@ summary:has(> .app-icon) {
         gap: 8px;
         margin: 0 0 8px;
     }
-    .mail-list-tools .page-heading h1 {
+    .mail-list-tools .page-heading h1,
+    .mail-workspace-toolbar .page-heading h1 {
         font-size: 19px;
         letter-spacing: -0.25px;
         margin: 0;
     }
     .mail-list-tools .page-heading .eyebrow,
-    .mail-list-tools .page-heading p {
+    .mail-list-tools .page-heading p,
+    .mail-workspace-toolbar .page-heading .eyebrow,
+    .mail-workspace-toolbar .page-heading p {
         display: none;
     }
-    .mail-list-tools .actions {
+    .mail-list-tools .actions,
+    .mail-workspace-toolbar .actions {
         gap: 5px;
     }
     .mail-list-tools .actions button,
+    .mail-workspace-toolbar .actions button,
     .mail-list-tools .tabs button {
         min-height: 28px;
         padding: 4px 7px;
