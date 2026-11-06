@@ -2,13 +2,17 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
-test('reader heading stays visible while scrolling through mail and discussion', async ({ page }) => {
+test('reader heading stays visible while scrolling through mail and discussion', async ({
+    page
+}) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await openStory(page, 'mail-echomailview--application-workspace-last-two');
     const detail = page.locator('.split-detail');
     const heading = page.locator('.reader-sticky-heading');
     await expect(heading).toBeVisible();
-    await page.locator('.mail-body').evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
+    await page
+        .locator('.mail-body')
+        .evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
     await detail.evaluate((el) => (el.scrollTop = el.scrollHeight));
     const pane = (await detail.boundingBox())!;
     const header = (await heading.boundingBox())!;
@@ -30,7 +34,9 @@ test('discussion remains reachable in the two-panel application layout', async (
     expect(discussion!.y + discussion!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height + 1);
 });
 
-test('echo panel preference switches between all and last two without changing preview', async ({ page }) => {
+test('echo panel preference switches between all and last two without changing preview', async ({
+    page
+}) => {
     await openStory(page, 'mail-echomailview--reading');
     await page.getByRole('button', { name: 'Display options', exact: true }).click();
     const panels = page.getByRole('combobox', { name: 'Conference panels' });
@@ -53,7 +59,9 @@ test('echo conference search and rights retain their own state', async ({ page }
     await expect(page.locator('.echo-conference-row')).toHaveCount(1);
     await expect(page.locator('.echo-conference-row')).toContainText('Read only');
     await page.locator('.echo-conference-row').click();
-    await expect(page.locator('.echo-conference-row[aria-current="true"]')).toContainText('announcements');
+    await expect(page.locator('.echo-conference-row[aria-current="true"]')).toContainText(
+        'announcements'
+    );
     await expect(page.getByRole('button', { name: 'New echomail' })).toBeDisabled();
     await expect(page.locator('.echo-conference-search input')).toHaveValue('ann');
     await page.locator('.echo-conference-search input').fill('missing');
@@ -752,9 +760,7 @@ test('mobile mail uses separate list and detail screens and protects a modified 
     await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unsaved changes');
 });
 
-test('conversation shows message dates and opens a reply', async ({
-    page
-}) => {
+test('conversation shows message dates and opens a reply', async ({ page }) => {
     await openStory(page, 'mail-echomailview--conversation');
     const conversation = page.locator('.echo-conversation');
     await conversation.locator('summary').click();
@@ -940,13 +946,19 @@ test('GoldED quoted replies start typing above the quote and retain manually edi
     await expect.poll(() => editor.innerText()).toBe(text);
 });
 
-test('long mail scrolls inside the detail pane without a page or body scrollbar', async ({ page }) => {
+test('long mail scrolls inside the detail pane without a page or body scrollbar', async ({
+    page
+}) => {
     await page.setViewportSize({ width: 1280, height: 540 });
     await openStory(page, 'mail-netmailview--application-workspace');
     const detail = page.locator('.split-detail');
     await expect(page.locator('.mail-message')).toBeVisible();
-    await page.locator('.mail-body').evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
-    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(540);
+    await page
+        .locator('.mail-body')
+        .evaluate((el) => (el.textContent = 'Long message\n'.repeat(100)));
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(
+        540
+    );
     expect(await detail.evaluate((el) => el.scrollHeight)).toBeGreaterThan(
         await detail.evaluate((el) => el.clientHeight)
     );
@@ -967,12 +979,13 @@ for (const kind of ['netmail', 'echomail']) {
         await expect(page.locator('.composer-list-toggle')).toHaveCount(0);
         await page.getByRole('button', { name: 'Reply', exact: true }).click();
         const list = page.locator('.split-list');
+        const scrollArea = kind === 'echomail' ? list.locator('.echo-message-scroll') : list;
         const editor = page.locator('.cm-content');
         const original = await editor.elementHandle();
         await expect(list).toBeHidden();
         await page.getByRole('button', { name: 'Show message list', exact: true }).click();
         const ratio = await page.getByRole('separator').getAttribute('aria-valuenow');
-        const top = await list.evaluate((el) => {
+        const top = await scrollArea.evaluate((el) => {
             el.scrollTop = 50;
             return el.scrollTop;
         });
@@ -994,7 +1007,7 @@ for (const kind of ['netmail', 'echomail']) {
         await page.getByRole('button', { name: 'Show message list', exact: true }).click();
         await expect(list).toBeVisible();
         await expect(page.getByRole('separator')).toHaveAttribute('aria-valuenow', ratio!);
-        expect(await list.evaluate((el) => el.scrollTop)).toBe(top);
+        expect(await scrollArea.evaluate((el) => el.scrollTop)).toBe(top);
         await editor.focus();
         await editor.press('Control+z');
         await expect(editor).not.toContainText('MORE');

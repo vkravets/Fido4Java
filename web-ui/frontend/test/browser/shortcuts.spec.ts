@@ -98,20 +98,23 @@ for (const story of [
         const reader = page.locator('.mail-message');
         await expect(reader).not.toHaveAttribute('aria-busy', 'true');
         const list = page.locator('.split-list');
+        const scrollArea = story.includes('echomail') ? list.locator('.echo-message-scroll') : list;
         const detail = page.locator('.split-detail');
         await detail.evaluate((element) => (element.scrollTop = 20));
         const detailTop = await detail.evaluate((element) => element.scrollTop);
         const pageTop = await page.evaluate(() => window.scrollY);
         const count = Math.min(await rows.count(), 22);
         const selectionVisible = () =>
-            list.evaluate((element) => {
+            scrollArea.evaluate((element) => {
                 const row = element
                     .querySelector('[data-shortcut-selected]')!
                     .getBoundingClientRect();
                 const bounds = element.getBoundingClientRect();
-                const tools = element.querySelector('.mail-list-tools')!.getBoundingClientRect();
+                const tools = element.matches('.split-list')
+                    ? element.querySelector('.mail-list-tools')!.getBoundingClientRect()
+                    : null;
                 return (
-                    row.top >= Math.max(bounds.top, tools.bottom) - 1 &&
+                    row.top >= Math.max(bounds.top, tools?.bottom || bounds.top) - 1 &&
                     row.bottom <= bounds.top + element.clientTop + element.clientHeight + 1
                 );
             });
@@ -129,7 +132,9 @@ for (const story of [
                 expect(await page.evaluate(() => window.scrollY)).toBe(pageTop);
             }
             if (key === 'ArrowRight')
-                expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+                expect(await scrollArea.evaluate((element) => element.scrollTop)).toBeGreaterThan(
+                    0
+                );
         }
     });
 }
