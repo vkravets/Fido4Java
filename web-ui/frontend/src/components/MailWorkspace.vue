@@ -370,13 +370,17 @@ async function update(patch: Partial<MailLayout>) {
 .mail-layout.with-conferences {
     display: grid;
     grid-template-columns: 220px minmax(0, 1fr);
-    gap: 8px;
+    gap: 0;
+}
+.mail-layout.with-conferences .conference-pane {
+    border-right: 1px solid var(--line);
 }
 .mail-workspace-content {
     min-width: 0;
 }
 .conference-pane {
     min-width: 0;
+    padding-inline: 12px;
     overflow: auto;
     overscroll-behavior: contain;
     height: calc(100dvh - 270px);

@@ -39,7 +39,7 @@ const model = defineModel<string>({ required: true });
     color: var(--muted);
     pointer-events: none;
 }
-input {
+.search-field input {
     width: 100%;
     height: 32px;
     padding: 5px 8px 5px 30px;

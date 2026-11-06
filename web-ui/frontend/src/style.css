@@ -1062,6 +1062,10 @@ footer.actions {
     max-height: 70vh;
     overflow: auto;
 }
+.mail-message > .mail-body {
+    max-height: none;
+    overflow: visible;
+}
 .mail-envelope {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
