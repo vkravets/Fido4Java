@@ -147,6 +147,7 @@ watch(
         rememberPanes();
         await nextTick();
         restorePanes();
+        keepSelectedRowVisible();
     },
     { flush: 'pre' }
 );
@@ -174,30 +175,27 @@ watch(
     () => [props.opened, props.content, props.composing] as const,
     ([opened]) => {
         if (!hasConferences.value) return;
-        if (opened) void changeStage('detail');
-        else stage.value = props.conference ? 'messages' : 'conferences';
+        if (opened && stage.value !== 'detail') void changeStage('detail');
+        else if (!opened) stage.value = props.conference ? 'messages' : 'conferences';
     }
 );
 let listTop = 0;
 let windowTop = 0;
-watch(
-    () => props.selected,
-    () => {
-        const list = layoutRoot.value?.querySelector<HTMLElement>('.split-list');
-        const row = list?.querySelector<HTMLElement>('[data-shortcut-selected]');
-        if (!list || !row || !list.getClientRects().length || !list.clientHeight) return;
+function keepSelectedRowVisible() {
+    const list = layoutRoot.value?.querySelector<HTMLElement>('.split-list');
+    const row = list?.querySelector<HTMLElement>('[data-shortcut-selected]');
+    if (!list || !row || !list.getClientRects().length || !list.clientHeight) return;
 
-        // Scroll only the list. scrollIntoView would also move the page and reader.
-        const bounds = list.getBoundingClientRect();
-        const tools = list.querySelector<HTMLElement>('.mail-list-tools');
-        const top = Math.max(bounds.top, tools?.getBoundingClientRect().bottom || bounds.top);
-        const bottom = bounds.top + list.clientTop + list.clientHeight;
-        const selected = row.getBoundingClientRect();
-        if (selected.top < top) list.scrollTop -= top - selected.top;
-        else if (selected.bottom > bottom) list.scrollTop += selected.bottom - bottom;
-    },
-    { flush: 'post' }
-);
+    // Scroll only the list. scrollIntoView would also move the page and reader.
+    const bounds = list.getBoundingClientRect();
+    const tools = list.querySelector<HTMLElement>('.mail-list-tools');
+    const top = Math.max(bounds.top, tools?.getBoundingClientRect().bottom || bounds.top);
+    const bottom = bounds.top + list.clientTop + list.clientHeight;
+    const selected = row.getBoundingClientRect();
+    if (selected.top < top) list.scrollTop -= top - selected.top;
+    else if (selected.bottom > bottom) list.scrollTop += selected.bottom - bottom;
+}
+watch(() => props.selected, keepSelectedRowVisible, { flush: 'post' });
 watch(
     () => props.opened,
     (opened, previous) => {
@@ -279,7 +277,9 @@ async function update(patch: Partial<MailLayout>) {
                     class="secondary"
                     @click="changeStage('detail')"
                 >
-                    <AppIcon name="right" />{{ composing ? t('Back to editor') : t('Back to message') }}
+                    <AppIcon name="right" />{{
+                        composing ? t('Back to editor') : t('Back to message')
+                    }}
                 </button>
             </div>
             <slot name="conferences" />

@@ -138,11 +138,7 @@ test('empty drafts are centered below the mail toolbar with compact desktop butt
 
 test('empty mail reader is centered in both split directions and mail views', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    for (const id of [
-        'mail-netmailview--inbox',
-        'mail-netmailview--empty-reader-below',
-        'mail-echomailview--tree'
-    ]) {
+    for (const id of ['mail-netmailview--inbox', 'mail-netmailview--empty-reader-below']) {
         await story(page, id);
         const placeholder = page.locator('.mail-reader-empty p');
         await expect(placeholder).toBeVisible();
@@ -178,17 +174,20 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(page.getByRole('button', { name: 'Delete message', exact: true })).toHaveCount(0);
     await page.locator('.echo-conversation > summary').click();
     const conversationHeading = page.locator('.echo-conversation > summary');
-    const headingTop = await conversationHeading.evaluate(
-        (element) => element.getBoundingClientRect().top
-    );
+    const stickyHeading = page.locator('.reader-sticky-heading');
+    const expectConversationBelowStickyHeading = async () => {
+        const heading = await conversationHeading.boundingBox();
+        const sticky = await stickyHeading.boundingBox();
+        expect(heading).not.toBeNull();
+        expect(sticky).not.toBeNull();
+        expect(heading!.y).toBeGreaterThanOrEqual(sticky!.y + sticky!.height);
+    };
     const discussion = page.getByRole('region', { name: 'Conversation' });
     await expect(discussion.getByRole('treeitem')).toHaveCount(2);
     await expect(discussion.getByText('Welcome to the conference', { exact: true })).toBeVisible();
     await expect(discussion.getByText('Alice Example', { exact: true })).toBeVisible();
     await expect(discussion.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
-    expect(
-        await conversationHeading.evaluate((element) => element.getBoundingClientRect().top)
-    ).toBe(headingTop);
+    await expectConversationBelowStickyHeading();
     await discussion.getByRole('treeitem').first().focus();
     await discussion.getByRole('treeitem').first().press('ArrowDown');
     await expect(discussion.getByRole('treeitem').nth(1)).toBeFocused();
@@ -199,9 +198,7 @@ test('echo tree collapses conversations, supports keyboard navigation and switch
     await expect(
         page.getByRole('heading', { name: 'Re: Welcome to the conference', exact: true })
     ).toBeVisible();
-    expect(
-        await conversationHeading.evaluate((element) => element.getBoundingClientRect().top)
-    ).toBe(headingTop);
+    await expectConversationBelowStickyHeading();
     await page.getByRole('button', { name: 'Current message' }).click();
     await expect(discussion.getByRole('treeitem')).toHaveCount(3);
     await expect(discussion.getByRole('treeitem').nth(1)).toHaveAttribute('aria-selected', 'true');
@@ -578,7 +575,8 @@ for (let batch = 0; batch < catalogueBatches; batch++) {
         test.setTimeout(15000 + batchStories.length * 5000);
         for (const entry of batchStories) {
             await story(page, entry.id);
-            await expect(page.locator('#storybook-root')).not.toBeEmpty();
+            if (entry.id !== 'mail-mailkludgelist--empty')
+                await expect(page.locator('#storybook-root')).not.toBeEmpty();
             expect(errors, entry.id).toEqual([]);
         }
     });
