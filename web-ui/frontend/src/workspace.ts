@@ -32,6 +32,7 @@ export interface WorkspacePreferences {
     showKludgeBlock: boolean;
     discussionView: 'current' | 'whole';
     discussionSelection: 'center' | 'retain';
+    conferencePanels: 'all' | 'lastTwo';
     netmail: MailLayout;
     echo: MailLayout;
 }
@@ -56,6 +57,7 @@ export function workspacePreferences(value: unknown): WorkspacePreferences {
         showKludgeBlock: row.showKludgeBlock === true,
         discussionView: row.discussionView === 'whole' ? 'whole' : 'current',
         discussionSelection: row.discussionSelection === 'retain' ? 'retain' : 'center',
+        conferencePanels: row.conferencePanels === 'lastTwo' ? 'lastTwo' : 'all',
         startupPage: startupPages.some((page) => page.id === row.startupPage)
             ? row.startupPage!
             : 'netmail',

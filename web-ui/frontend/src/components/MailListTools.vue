@@ -1,12 +1,30 @@
 <script setup lang="ts">
 import { t } from '../i18n.ts';
 import { useMedia } from '../media.ts';
+import { ref } from 'vue';
+import { useWorkspace } from '../workspace.ts';
 import type { MailLayout } from '../workspace.ts';
 import AppIcon from './AppIcon.vue';
+import NotificationBanner from './NotificationBanner.vue';
 const query = defineModel<string>({ required: true });
-defineProps<{ preferences: MailLayout; busy?: boolean }>();
+defineProps<{ preferences: MailLayout; kind: 'netmail' | 'echo'; busy?: boolean }>();
 defineEmits<{ update: [value: Partial<MailLayout>] }>();
 const desktop = useMedia('(min-width: 701px)');
+const workspace = useWorkspace();
+const panelSaving = ref(false);
+const panelError = ref('');
+async function setPanels(value: 'all' | 'lastTwo') {
+    if (panelSaving.value) return;
+    panelSaving.value = true;
+    panelError.value = '';
+    try {
+        await workspace.update({ conferencePanels: value });
+    } catch {
+        panelError.value = t('Could not save workspace preferences.');
+    } finally {
+        panelSaving.value = false;
+    }
+}
 function closeOptions(event: KeyboardEvent) {
     if (!desktop.value) return;
     const details = event.currentTarget as HTMLDetailsElement;
@@ -21,6 +39,7 @@ const positions = [
 </script>
 <template>
     <div class="mail-list-tools">
+        <NotificationBanner kind="error" :message="panelError" />
         <slot name="toolbar" />
         <div class="mail-filter-row">
             <slot name="filters" />
@@ -69,6 +88,7 @@ const positions = [
                             </option>
                         </select></label
                     >
+                    <label v-if="kind === 'echo'">{{ t('Conference panels') }}<select :value="workspace.value.value.conferencePanels" :disabled="busy || panelSaving" @change="setPanels(($event.target as HTMLSelectElement).value as 'all' | 'lastTwo')"><option value="all">{{ t('All panels') }}</option><option value="lastTwo">{{ t('Last two panels') }}</option></select></label>
                     <label
                         >{{ t('List density')
                         }}<select

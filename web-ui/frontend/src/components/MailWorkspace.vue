@@ -125,6 +125,7 @@ async function update(patch: Partial<MailLayout>) {
                 ><MailListTools
                     v-model="query"
                     :preferences="preferences"
+                    :kind="kind"
                     :busy="busy || saving"
                     @update="update"
                 >
@@ -156,6 +157,7 @@ async function update(patch: Partial<MailLayout>) {
                 <MailListTools
                     v-model="query"
                     :preferences="preferences"
+                    :kind="kind"
                     :busy="busy || saving"
                     @update="update"
                 >

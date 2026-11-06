@@ -1,6 +1,6 @@
 # Echomail conference list and workspace — implementation plan
 
-Status: planned; E1–E6 are not implemented.
+Status: E1 implemented; E2–E6 remain.
 
 Commit this plan before implementation, then commit each completed item separately.
 Use focused functional checks for changed behavior. Create relevant Storybook
