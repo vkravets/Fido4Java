@@ -32,7 +32,7 @@ function select(name: string) {
             :message="error || ''"
         />
         <label class="echo-conference-search">
-            {{ t('Find a conference') }}
+            <span class="control-label">{{ t('Find a conference') }}</span>
             <input
                 v-model="search"
                 type="search"
@@ -91,8 +91,19 @@ function select(name: string) {
 .echo-conference-search {
     display: block;
 }
+.echo-conference-search .control-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
 .echo-conference-search input {
     width: 100%;
+    height: 32px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
 }
 .echo-conference-rows {
     list-style: none;
@@ -107,6 +118,10 @@ function select(name: string) {
     gap: 2px 8px;
     width: 100%;
     text-align: left;
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-weight: 500;
 }
 .echo-conference-row.selected {
     border-color: var(--accent);

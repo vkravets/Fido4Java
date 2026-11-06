@@ -1,6 +1,8 @@
 # Compact echomail controls — implementation plan
 
-Status: CUI1–CUI3 implemented; CUI4 remains.
+Status: CUI1–CUI4 implemented and visually verified. The pinned Linux Playwright
+comparison passed all 304 affected states without snapshot updates after the
+reviewed baselines were refreshed.
 
 ## Goal
 

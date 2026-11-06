@@ -882,7 +882,9 @@ existing list/detail navigation.
 Conference, message and editor stage actions share one aligned navigation row.
 Echomail header actions use the compact mail control size. Focused text fields
 keep a visible accent outline and border with a narrow, close focus ring in both
-themes. The remaining search alignment work is tracked in
+themes. Conference search shows its prompt inside the field, keeps an accessible
+label, and aligns with the compact message-search row. Conference rows use the
+same compact control density. See
 [the compact UI plan](echo-workspace/compact-ui-plan.md).
 
 ## Changing these decisions

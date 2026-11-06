@@ -300,6 +300,16 @@ async function update(patch: Partial<MailLayout>) {
                     <AppIcon name="echo" />{{ t('Conferences') }}
                 </button>
                 <button
+                    v-if="singleStage && stage === 'detail' && opened"
+                    class="secondary"
+                    :disabled="busy"
+                    v-shortcut="'mail.back'"
+                    data-shortcut-hidden="layout"
+                    @click="back"
+                >
+                    <AppIcon name="left" />{{ t('Back to messages') }}
+                </button>
+                <button
                     v-if="stage !== 'detail' && opened"
                     class="secondary"
                     @click="changeStage('detail')"
@@ -336,7 +346,7 @@ async function update(patch: Partial<MailLayout>) {
                     <slot name="list" />
                 </template>
                 <button
-                    v-if="opened"
+                    v-if="opened && !(hasConferences && singleStage)"
                     class="secondary mail-back"
                     :disabled="busy"
                     v-shortcut="'mail.back'"
@@ -374,15 +384,27 @@ async function update(patch: Partial<MailLayout>) {
 }
 .conference-navigation {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
     margin: 0 0 8px;
     padding-left: 16px;
 }
+.conference-navigation button {
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
 .conference-pane :deep(.echo-conference-list) {
     min-width: 0;
     margin: 0;
+}
+@media (min-width: 701px) {
+    .mail-layout .conference-pane :deep(.echo-conference-list) {
+        padding-top: 10px;
+    }
 }
 .conference-pane :deep(.echo-conference-rows) {
     max-height: none;
