@@ -1,8 +1,8 @@
 # Mail workspace
 
 Netmail and echomail share one workspace: the application menu, a contextual
-message list, and a reading or composition pane. Conference selection stays in
-the echo list pane. Collapse the menu to icons using **Collapse menu**; each icon
+message list, and a reading or composition pane. Echomail adds a flat conference
+pane beside the message list. Collapse the menu to icons using **Collapse menu**; each icon
 retains its accessible label and tooltip. Point accounts retain their existing
 subscription and AKA restrictions; layout preferences never grant access.
 
@@ -37,6 +37,16 @@ preview), Up/Down (below preview), Home or End. The list occupies 20-75% of the
 available space. Density is Compact or Comfortable; echo lists independently
 support **Threads** and **Flat** views. These choices, split ratios and menu collapse are
 saved per account. Netmail and echo layouts are independent.
+
+Echomail's **Conference panels** preference selects **All panels** or **Last two
+panels**. The work area adapts to its actual width without saving a different
+preference. **Conferences**, **Back to messages**, and **Back to message/editor**
+change the visible stage while retaining the open message or draft, searches,
+pane scroll positions and splitter ratio. The editor stays mounted across
+Right/Below/Separate changes and resizing, preserving its selection and undo
+history. Selecting another conference still asks before discarding a modified
+draft; cancellation retains both the draft and conference selection. Returning
+to the already selected conference changes the stage without discarding content.
 
 The reader offers **Reply**, **Previous**, **Next** and **Next unread** within the
 loaded list. **More** groups quoted/short replies, a new message, forwarding and

@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { t } from '../i18n.ts';
-const props = withDefaults(defineProps<{ direction?: 'right' | 'below'; ratio?: number }>(), {
-    direction: 'right',
-    ratio: 38
-});
+const props = withDefaults(
+    defineProps<{
+        direction?: 'right' | 'below' | 'separate';
+        ratio?: number;
+        listVisible?: boolean;
+        detailVisible?: boolean;
+    }>(),
+    {
+        direction: 'right',
+        ratio: 38,
+        listVisible: true,
+        detailVisible: true
+    }
+);
 const emit = defineEmits<{ resize: [ratio: number] }>();
 const root = ref<HTMLElement>();
 const size = ref(props.ratio);
@@ -70,11 +80,18 @@ onBeforeUnmount(cleanup);
     <div
         ref="root"
         class="split-pane"
-        :class="direction"
+        :class="[direction, { 'list-only': !detailVisible, 'detail-only': !listVisible }]"
         :style="style"
     >
-        <section class="split-list"><slot name="list" /></section>
+        <section
+            v-show="listVisible"
+            class="split-list"
+            :class="{ 'separate-list': direction === 'separate' }"
+        >
+            <slot name="list" />
+        </section>
         <div
+            v-show="listVisible && detailVisible && direction !== 'separate'"
             class="split-handle"
             role="separator"
             tabindex="0"
@@ -86,7 +103,13 @@ onBeforeUnmount(cleanup);
             @pointerdown="start"
             @keydown="keyboard"
         ></div>
-        <section class="split-detail"><slot /></section>
+        <section
+            v-show="detailVisible"
+            class="split-detail"
+            :class="{ 'separate-detail': direction === 'separate' }"
+        >
+            <slot />
+        </section>
     </div>
 </template>
 <style scoped>
@@ -100,6 +123,12 @@ onBeforeUnmount(cleanup);
 .split-pane.below {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, var(--pane-size)) 9px minmax(0, 1fr);
+}
+.split-pane.separate,
+.split-pane.list-only,
+.split-pane.detail-only {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
 }
 .split-list,
 .split-detail {

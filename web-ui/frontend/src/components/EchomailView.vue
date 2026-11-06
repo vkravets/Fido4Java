@@ -56,6 +56,16 @@ async function loadMore() {
     else await props.state.run(() => reader.load(true));
 }
 const navigationItems = shallowRef<MailItem[]>([]);
+const mailWorkspace = ref<InstanceType<typeof MailWorkspace>>();
+async function selectConference(name: string) {
+    if (props.state.busy.value) return;
+    if (name !== reader.area.value) await props.state.run(() => reader.selectArea(name));
+    if (reader.area.value === name) await mailWorkspace.value?.showMessages();
+}
+async function showDrafts() {
+    await props.state.run(reader.loadDrafts);
+    if (reader.showDrafts.value && !reader.draft.value) await mailWorkspace.value?.showDetail();
+}
 const search = ref('');
 const index = computed(() =>
     navigationItems.value.findIndex((item) => mailId(item.id) === mailId(reader.selected.value?.id))
@@ -80,14 +90,6 @@ function beforeUnload(event: BeforeUnloadEvent) {
 }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
-function back() {
-    if (!reader.discard()) return;
-    cancelRead();
-    reader.draft.value = null;
-    reader.selected.value = null;
-    reader.context.value = null;
-    reader.showDrafts.value = false;
-}
 function cancel() {
     if (reader.discard()) reader.draft.value = null;
 }
@@ -193,14 +195,18 @@ function openDiscussionRow(item: MailItem) {
 </script>
 <template>
     <MailWorkspace
+        ref="mailWorkspace"
         v-model:query="query"
         kind="echo"
         :conference="reader.area.value"
+        :content="
+            reader.draft.value || (reader.showDrafts.value ? 'drafts' : reader.selected.value)
+        "
         :selected="reader.selected.value ? mailId(reader.selected.value.id) : undefined"
         :opened="!!reader.selected.value || !!reader.draft.value || reader.showDrafts.value"
         :composing="!!reader.draft.value"
         :busy="state.busy.value"
-        @back="back"
+        @hide="cancelRead"
     >
         <template #search-status>
             <MailSearchStatus
@@ -236,7 +242,7 @@ function openDiscussionRow(item: MailItem) {
                         :disabled="state.busy.value"
                         :aria-label="t('Echo drafts')"
                         :title="t('Echo drafts')"
-                        @click="state.run(reader.loadDrafts)"
+                        @click="showDrafts"
                     >
                         <AppIcon name="file" />
                     </button>
@@ -260,7 +266,7 @@ function openDiscussionRow(item: MailItem) {
                 :selected="reader.area.value"
                 :busy="state.busy.value"
                 :error="state.error.value"
-                @select="(name) => state.run(() => reader.selectArea(name))"
+                @select="selectConference"
             />
         </template>
         <template #list>

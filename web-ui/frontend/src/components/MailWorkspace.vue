@@ -16,8 +16,9 @@ const props = defineProps<{
     busy?: boolean;
     selected?: string;
     conference?: string;
+    content?: unknown;
 }>();
-defineEmits<{ back: [] }>();
+const emit = defineEmits<{ back: []; hide: [] }>();
 const workspace = useWorkspace();
 const query = defineModel<string>('query', { default: '' });
 provide(mailSearchKey, query);
@@ -25,13 +26,20 @@ const preferences = computed(() => workspace.value.value[props.kind]);
 const desktop = useMedia('(min-width: 701px)');
 const listHidden = ref(true);
 const canToggleList = computed(
-    () => !!props.composing && desktop.value && preferences.value.preview !== 'separate'
+    () =>
+        !!props.composing &&
+        desktop.value &&
+        !singleStage.value &&
+        preferences.value.preview !== 'separate'
 );
 provide(composerListKey, {
     available: canToggleList,
     hidden: listHidden,
     toggle() {
-        if (canToggleList.value) listHidden.value = !listHidden.value;
+        if (canToggleList.value) {
+            listHidden.value = !listHidden.value;
+            if (hasConferences.value) changeStage('detail');
+        }
     }
 });
 watch(
@@ -46,14 +54,16 @@ const layoutRoot = ref<HTMLElement>();
 const slots = useSlots();
 const hasConferences = computed(() => props.kind === 'echo' && !!slots.conferences);
 const workWidth = ref(0);
-const conferenceStage = ref(false);
+type Stage = 'conferences' | 'messages' | 'detail';
+const stage = ref<Stage>(props.opened ? 'detail' : props.conference ? 'messages' : 'conferences');
+const conferenceStage = computed(() => stage.value === 'conferences');
 const singleStage = computed(
     () => hasConferences.value && (!desktop.value || (workWidth.value > 0 && workWidth.value < 640))
 );
 const showConferences = computed(() => {
     if (!hasConferences.value) return false;
-    if (conferenceStage.value) return true;
-    if (singleStage.value) return !props.conference && !props.opened;
+    if (singleStage.value) return conferenceStage.value;
+    if (stage.value !== 'detail') return true;
     if (props.composing) return false;
     if (!props.opened) return true;
     return (
@@ -62,6 +72,84 @@ const showConferences = computed(() => {
         (preferences.value.preview === 'below' || workWidth.value >= 840)
     );
 });
+const listVisible = computed(() => {
+    if (hasConferences.value) {
+        if (singleStage.value) return stage.value === 'messages';
+        if (stage.value !== 'detail') return true;
+    }
+    if (!desktop.value || preferences.value.preview === 'separate') return !props.opened;
+    return !(canToggleList.value && listHidden.value);
+});
+const detailVisible = computed(() =>
+    hasConferences.value
+        ? props.opened && stage.value === 'detail'
+        : !desktop.value || preferences.value.preview === 'separate'
+          ? props.opened
+          : true
+);
+const paneScroll = new Map<string, number>();
+const stageFocus = new Map<Stage, HTMLElement>();
+function rememberPanes() {
+    for (const selector of ['.conference-pane', '.split-list', '.split-detail']) {
+        const pane = layoutRoot.value?.querySelector<HTMLElement>(selector);
+        if (pane?.getClientRects().length) paneScroll.set(selector, pane.scrollTop);
+    }
+}
+function restorePanes() {
+    for (const [selector, top] of paneScroll) {
+        const pane = layoutRoot.value?.querySelector<HTMLElement>(selector);
+        if (pane?.getClientRects().length) pane.scrollTop = top;
+    }
+}
+async function changeStage(next: Stage) {
+    if (!hasConferences.value) return;
+    const active = document.activeElement;
+    const currentPane =
+        stage.value === 'conferences'
+            ? '.conference-pane'
+            : stage.value === 'messages'
+              ? '.split-list'
+              : '.split-detail';
+    if (active instanceof HTMLElement && active.closest(currentPane))
+        stageFocus.set(stage.value, active);
+    rememberPanes();
+    if (next !== 'detail') emit('hide');
+    stage.value = next;
+    await nextTick();
+    if (stage.value !== next) return;
+    restorePanes();
+    const previous = stageFocus.get(next);
+    const selector =
+        next === 'conferences'
+            ? '.conference-pane input'
+            : next === 'messages'
+              ? '.split-list [data-shortcut-selected], .split-list [data-shortcut-row], .split-list input'
+              : props.composing
+                ? '.split-detail .cm-content'
+                : '.split-detail .mail-message';
+    const target =
+        previous?.isConnected && previous.getClientRects().length
+            ? previous
+            : layoutRoot.value?.querySelector<HTMLElement>(selector);
+    target?.focus({ preventScroll: true });
+}
+function back() {
+    if (hasConferences.value) void changeStage('messages');
+    else emit('back');
+}
+defineExpose({
+    showMessages: () => changeStage('messages'),
+    showDetail: () => changeStage('detail')
+});
+watch(
+    [listVisible, detailVisible, showConferences, () => preferences.value.preview],
+    async () => {
+        rememberPanes();
+        await nextTick();
+        restorePanes();
+    },
+    { flush: 'pre' }
+);
 let observer: ResizeObserver | undefined;
 onMounted(() => {
     if (!layoutRoot.value) return;
@@ -75,13 +163,19 @@ onBeforeUnmount(() => observer?.disconnect());
 watch(
     () => props.conference,
     () => {
-        conferenceStage.value = false;
+        paneScroll.delete('.split-list');
+        paneScroll.delete('.split-detail');
+        stageFocus.delete('messages');
+        stageFocus.delete('detail');
+        stage.value = props.conference ? 'messages' : 'conferences';
     }
 );
 watch(
-    () => props.opened,
-    (opened) => {
-        if (opened) conferenceStage.value = false;
+    () => [props.opened, props.content, props.composing] as const,
+    ([opened]) => {
+        if (!hasConferences.value) return;
+        if (opened) void changeStage('detail');
+        else stage.value = props.conference ? 'messages' : 'conferences';
     }
 );
 let listTop = 0;
@@ -146,18 +240,22 @@ async function update(patch: Partial<MailLayout>) {
         :message="error"
     />
     <div
+        v-if="hasConferences"
+        class="mail-workspace-toolbar"
+    >
+        <slot name="toolbar" />
+    </div>
+    <div
         ref="layoutRoot"
         class="mail-layout"
         :class="[
             preferences.density,
             {
-                'detail-open': opened,
+                'detail-open': detailVisible,
                 'with-conferences': showConferences && !singleStage,
                 'single-stage': singleStage,
                 'conference-stage': conferenceStage,
-                'echo-no-detail': hasConferences && (!opened || conferenceStage),
-                separate: preferences.preview === 'separate',
-                'composer-list-hidden': canToggleList && listHidden && !conferenceStage
+                separate: preferences.preview === 'separate'
             }
         ]"
     >
@@ -167,11 +265,18 @@ async function update(patch: Partial<MailLayout>) {
             class="conference-pane"
         >
             <button
-                v-if="conferenceStage || singleStage"
+                v-if="singleStage"
                 class="secondary"
-                @click="conferenceStage = false"
+                @click="changeStage('messages')"
             >
                 <AppIcon name="right" />{{ t('Back to messages') }}
+            </button>
+            <button
+                v-if="singleStage && opened"
+                class="secondary"
+                @click="changeStage('detail')"
+            >
+                <AppIcon name="right" />{{ composing ? t('Back to editor') : t('Back to message') }}
             </button>
             <slot name="conferences" />
         </aside>
@@ -186,14 +291,14 @@ async function update(patch: Partial<MailLayout>) {
                 <button
                     v-if="!showConferences"
                     class="secondary"
-                    @click="conferenceStage = true"
+                    @click="changeStage('conferences')"
                 >
                     <AppIcon name="echo" />{{ t('Conferences') }}
                 </button>
                 <button
-                    v-if="conferenceStage && opened"
+                    v-if="stage !== 'detail' && opened"
                     class="secondary"
-                    @click="conferenceStage = false"
+                    @click="changeStage('detail')"
                 >
                     <AppIcon name="right" />{{
                         composing ? t('Back to editor') : t('Back to message')
@@ -201,44 +306,13 @@ async function update(patch: Partial<MailLayout>) {
                 </button>
             </div>
             <SplitPane
-                v-if="preferences.preview !== 'separate'"
                 :direction="preferences.preview"
                 :ratio="preferences.ratio"
+                :list-visible="listVisible"
+                :detail-visible="detailVisible"
                 @resize="(ratio) => update({ ratio })"
             >
-                <template #list
-                    ><MailListTools
-                        v-model="query"
-                        :preferences="preferences"
-                        :kind="kind"
-                        :busy="busy || saving"
-                        @update="update"
-                    >
-                        <template #toolbar><slot name="toolbar" /></template>
-                        <template #filters><slot name="filters" /></template>
-                        <template #options><slot name="options" /></template>
-                        <template #search-status
-                            ><slot name="search-status"
-                        /></template> </MailListTools
-                    ><slot name="list"
-                /></template>
-                <button
-                    v-if="opened"
-                    class="secondary mail-back"
-                    :disabled="busy"
-                    v-shortcut="'mail.back'"
-                    data-shortcut-hidden="layout"
-                    @click="$emit('back')"
-                >
-                    <AppIcon name="left" />{{ t('Back to messages') }}
-                </button>
-                <slot />
-            </SplitPane>
-            <template v-else>
-                <section
-                    v-show="!opened || conferenceStage"
-                    class="separate-list"
-                >
+                <template #list>
                     <MailListTools
                         v-model="query"
                         :preferences="preferences"
@@ -246,29 +320,29 @@ async function update(patch: Partial<MailLayout>) {
                         :busy="busy || saving"
                         @update="update"
                     >
-                        <template #toolbar><slot name="toolbar" /></template>
+                        <template #toolbar
+                            ><slot
+                                v-if="!hasConferences"
+                                name="toolbar"
+                        /></template>
                         <template #filters><slot name="filters" /></template>
                         <template #options><slot name="options" /></template>
                         <template #search-status><slot name="search-status" /></template>
                     </MailListTools>
                     <slot name="list" />
-                </section>
-                <section
+                </template>
+                <button
                     v-if="opened"
-                    v-show="!conferenceStage"
-                    class="separate-detail"
+                    class="secondary mail-back"
+                    :disabled="busy"
+                    v-shortcut="'mail.back'"
+                    data-shortcut-hidden="layout"
+                    @click="back"
                 >
-                    <button
-                        class="secondary mail-back"
-                        :disabled="busy"
-                        v-shortcut="'mail.back'"
-                        data-shortcut-hidden="layout"
-                        @click="$emit('back')"
-                    >
-                        <AppIcon name="left" />{{ t('Back to messages') }}</button
-                    ><slot />
-                </section>
-            </template>
+                    <AppIcon name="left" />{{ t('Back to messages') }}
+                </button>
+                <slot />
+            </SplitPane>
         </div>
     </div>
 </template>
@@ -305,32 +379,13 @@ async function update(patch: Partial<MailLayout>) {
 .conference-navigation:empty {
     display: none;
 }
-.mail-layout:has(.conference-pane) .separate-detail {
+.mail-layout:has(.conference-pane) :deep(.separate-detail) {
     max-width: none;
-}
-.mail-layout.echo-no-detail :deep(.split-pane) {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-}
-.mail-layout.echo-no-detail :deep(.split-detail),
-.mail-layout.echo-no-detail :deep(.split-handle) {
-    display: none;
 }
 .mail-layout.single-stage :deep(.split-pane) {
     display: block;
 }
-.mail-layout.single-stage :deep(.split-handle),
-.mail-layout.single-stage.detail-open:not(.conference-stage) :deep(.split-list),
-.mail-layout.single-stage:not(.detail-open) :deep(.split-detail) {
-    display: none;
-}
-.mail-layout.composer-list-hidden :deep(.split-pane.right),
-.mail-layout.composer-list-hidden :deep(.split-pane.below) {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-}
-.mail-layout.composer-list-hidden :deep(.split-list),
-.mail-layout.composer-list-hidden :deep(.split-handle) {
+.mail-layout.single-stage :deep(.split-handle) {
     display: none;
 }
 .mail-layout :deep(.split-list:has(> .mail-list-empty)) {
@@ -362,8 +417,10 @@ async function update(patch: Partial<MailLayout>) {
     margin: 0;
     padding: 16px;
 }
-.separate-detail {
+.mail-layout :deep(.separate-detail) {
     max-width: 1100px;
+    width: 100%;
+    box-sizing: border-box;
     margin: auto;
 }
 @media (max-width: 700px) {

@@ -19,7 +19,7 @@ const visibleAreas = computed(() =>
     )
 );
 function select(name: string) {
-    if (!props.busy && name !== props.selected) emit('select', name);
+    if (!props.busy) emit('select', name);
 }
 </script>
 <template>
@@ -33,15 +33,29 @@ function select(name: string) {
         />
         <label class="echo-conference-search">
             {{ t('Find a conference') }}
-            <input v-model="search" type="search" :placeholder="t('Find a conference')" />
+            <input
+                v-model="search"
+                type="search"
+                :placeholder="t('Find a conference')"
+            />
         </label>
-        <p v-if="!areas.length && busy" class="muted" role="status">
+        <p
+            v-if="!areas.length && busy"
+            class="muted"
+            role="status"
+        >
             {{ t('Loading conferences…') }}
         </p>
-        <p v-else-if="!areas.length && !error" class="muted">
+        <p
+            v-else-if="!areas.length && !error"
+            class="muted"
+        >
             {{ t('No accessible conferences. Ask the administrator to grant your AKA access.') }}
         </p>
-        <p v-else-if="areas.length && !visibleAreas.length" class="muted">
+        <p
+            v-else-if="areas.length && !visibleAreas.length"
+            class="muted"
+        >
             {{ t('No matching conferences.') }}
         </p>
         <ul

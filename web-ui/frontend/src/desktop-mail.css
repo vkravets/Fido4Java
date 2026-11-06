@@ -254,6 +254,12 @@ summary:has(> .app-icon) {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, var(--pane-size)) 5px minmax(0, 1fr);
     }
+    :root .mail-layout .split-pane.separate,
+    :root .mail-layout .split-pane.list-only,
+    :root .mail-layout .split-pane.detail-only {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+    }
     :root .mail-layout .split-list,
     :root .mail-layout .split-detail {
         padding: 0;

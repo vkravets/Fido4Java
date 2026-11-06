@@ -2,6 +2,68 @@ import { test, expect } from '@playwright/test';
 import { openStory } from './story.ts';
 import type { Page } from '@playwright/test';
 
+test('echo stages retain the editor through navigation, layout changes and canceled area changes', async ({
+    page
+}) => {
+    await openStory(page, 'mail-echomailview--compose');
+    const editor = page.locator('.cm-content');
+    await editor.click();
+    await page.keyboard.insertText('Retained E4 edit');
+    const mounted = await editor.elementHandle();
+    await page.getByRole('button', { name: 'Show message list', exact: true }).click();
+    await expect(page.locator('.split-list')).toBeVisible();
+    await page.getByRole('button', { name: 'Conferences', exact: true }).click();
+    await expect(page.locator('.mail-composer')).toBeHidden();
+    await page.getByRole('button', { name: 'Display options', exact: true }).click();
+    const position = page.getByRole('combobox', { name: 'Preview position', exact: true });
+    for (const value of ['below', 'separate', 'right']) {
+        await position.selectOption(value);
+        expect(await mounted!.evaluate((element) => element.isConnected)).toBe(true);
+    }
+    page.once('dialog', (dialog) => dialog.dismiss());
+    await page.locator('.echo-conference-row').filter({ hasText: 'announcements' }).click();
+    await expect(page.locator('.echo-conference-row[aria-current="true"]')).toContainText(
+        'general'
+    );
+    await page.getByRole('button', { name: 'Back to editor', exact: true }).click();
+    await expect(editor).toContainText('Retained E4 edit');
+    await expect(editor).toBeFocused();
+    for (const width of [600, 1200]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(editor).toBeVisible();
+        expect(await mounted!.evaluate((element) => element.isConnected)).toBe(true);
+    }
+    await page.getByRole('button', { name: 'Conferences', exact: true }).click();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('.echo-conference-row').filter({ hasText: 'announcements' }).click();
+    await expect(page.locator('.mail-composer')).toHaveCount(0);
+    await expect(page.locator('.echo-conference-row[aria-current="true"]')).toContainText(
+        'announcements'
+    );
+});
+
+test('echo mobile back navigation retains the open message and restores the selected conference', async ({
+    page
+}) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openStory(page, 'mail-echomailview--reading');
+    const message = await page.locator('.mail-message').elementHandle();
+    await page.getByRole('button', { name: 'Back to messages', exact: true }).click();
+    await expect(page.locator('.mail-message')).toBeHidden();
+    await page.getByRole('button', { name: 'Conferences', exact: true }).click();
+    await expect(page.locator('.conference-pane input')).toBeFocused();
+    await page.locator('.echo-conference-row[aria-current="true"]').click();
+    await expect(page.locator('.split-list')).toBeVisible();
+    await page.getByRole('button', { name: 'Back to message', exact: true }).click();
+    await expect(page.locator('.mail-message')).toBeVisible();
+    expect(await message!.evaluate((element) => element.isConnected)).toBe(true);
+    for (let attempt = 0; attempt < 2; attempt++) {
+        await page.getByRole('button', { name: 'Back to messages', exact: true }).click();
+        await page.getByRole('button', { name: 'Echo drafts', exact: true }).click();
+        await expect(page.locator('.mail-draft-row')).toBeVisible();
+    }
+});
+
 test('mobile netmail and echo toolbar buttons stay icon-only in one row on narrow screens', async ({
     page
 }) => {

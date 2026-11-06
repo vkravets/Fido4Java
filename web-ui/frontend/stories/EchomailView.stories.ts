@@ -108,6 +108,14 @@ export const WholeDiscussionRetain: Story = {
 };
 export const MissingParent: Story = { args: { initialMessage: '9007199254740996' } };
 export const Compose: Story = { args: { initialDraft: echoDraft } };
+export const ComposeLastTwo: Story = {
+    ...Compose,
+    parameters: { workspace: { conferencePanels: 'lastTwo' } }
+};
+export const ComposeSeparate: Story = {
+    ...Compose,
+    parameters: { workspace: { echo: { preview: 'separate' } } }
+};
 export const Reply: Story = {
     args: {
         initialDraft: {
