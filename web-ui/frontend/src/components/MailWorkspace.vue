@@ -264,20 +264,24 @@ async function update(patch: Partial<MailLayout>) {
             v-show="showConferences"
             class="conference-pane"
         >
-            <button
+            <div
                 v-if="singleStage"
-                class="secondary"
-                @click="changeStage('messages')"
+                class="actions conference-navigation"
             >
-                <AppIcon name="right" />{{ t('Back to messages') }}
-            </button>
-            <button
-                v-if="singleStage && opened"
-                class="secondary"
-                @click="changeStage('detail')"
-            >
-                <AppIcon name="right" />{{ composing ? t('Back to editor') : t('Back to message') }}
-            </button>
+                <button
+                    class="secondary"
+                    @click="changeStage('messages')"
+                >
+                    <AppIcon name="right" />{{ t('Back to messages') }}
+                </button>
+                <button
+                    v-if="opened"
+                    class="secondary"
+                    @click="changeStage('detail')"
+                >
+                    <AppIcon name="right" />{{ composing ? t('Back to editor') : t('Back to message') }}
+                </button>
+            </div>
             <slot name="conferences" />
         </aside>
         <div
@@ -367,6 +371,14 @@ async function update(patch: Partial<MailLayout>) {
     overscroll-behavior: contain;
     height: calc(100dvh - 270px);
     min-height: 400px;
+}
+.conference-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    padding-left: 16px;
 }
 .conference-pane :deep(.echo-conference-list) {
     min-width: 0;
