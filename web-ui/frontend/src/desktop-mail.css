@@ -19,6 +19,12 @@ summary:has(> .app-icon) {
     display: flex;
     gap: 8px;
 }
+.mail-workspace-toolbar .mail-header-actions button {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 13px;
+    font-weight: 500;
+}
 .mail-filter-row {
     display: flex;
     flex-wrap: wrap;
