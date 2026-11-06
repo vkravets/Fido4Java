@@ -1,6 +1,30 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+test('navigation loads the requested screen after an active mail request finishes', async ({
+    page
+}) => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await page.route('**/rpc/ui', async (route) => {
+        if ((route.request().postDataJSON() as unknown[])[1] === 'messages') await pending;
+        await route.continue();
+    });
+    await page.goto('/');
+    await signIn(page, 'admin', 'preview-admin-password');
+    await expect(page.locator('.progress')).toBeVisible();
+    try {
+        await page.getByRole('button', { name: 'Echomail', exact: true }).click();
+    } finally {
+        release();
+    }
+    await expect(page.getByRole('heading', { name: 'Echomail', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^Welcome to general/ }).click();
+    await expect(page.locator('.mail-body')).toContainText('Hello everyone!');
+});
+
 test('keyboard reading updates the preview without dimming the list or starting global progress', async ({
     page
 }) => {
@@ -252,10 +276,11 @@ test('echomail reads a thread, saves a reply draft and posts it through HTTP RPC
     await page.getByRole('button', { name: 'Current message' }).click();
     await page
         .getByRole('region', { name: 'Conversation' })
-        .getByRole('treeitem')
-        .first()
-        .locator('.discussion-open')
+        .getByRole('button', { name: 'Alice — Welcome to general', exact: true })
         .click();
+    await expect(
+        page.getByRole('heading', { name: 'Welcome to general', exact: true })
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Reply', exact: true }).click();
     await expect(page.getByLabel('Recipient name', { exact: true })).toHaveValue('Alice');
     await expect(page.getByRole('textbox', { name: 'Message text', exact: true })).toContainText(

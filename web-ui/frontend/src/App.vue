@@ -36,8 +36,10 @@ const settingsView = ref<InstanceType<typeof AccountSettings> | null>(null);
 const templates = createMailTemplates(api.profile);
 provide(mailTemplatesKey, templates);
 const preferencesReady = ref(false);
+const pendingNavigation = ref<string>();
 watch([state.session, () => state.profile.value?.login], async ([token, owner]) => {
     if (token && !owner) return;
+    pendingNavigation.value = undefined;
     page.value = 'netmail';
     echoDraft.value = undefined;
     netmailDraft.value = undefined;
@@ -70,7 +72,15 @@ function canLeave() {
         (!settingsView.value || settingsView.value.canLeave())
     );
 }
+watch(state.busy, (busy) => {
+    if (!busy && pendingNavigation.value) navigate(pendingNavigation.value);
+});
 function navigate(next: string) {
+    if (state.busy.value) {
+        pendingNavigation.value = next;
+        return;
+    }
+    pendingNavigation.value = undefined;
     if (!canLeave()) return;
     echoDraft.value = undefined;
     netmailDraft.value = undefined;

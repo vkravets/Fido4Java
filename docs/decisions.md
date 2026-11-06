@@ -124,6 +124,9 @@ reader controls. It must not toggle the application's progress indicator or
 disable/dim the list, navigation or header. Keep the previous reader mounted until
 the new message is ready; folder/area changes, closing and composing invalidate
 pending opens. Late failures from an old session cannot clear a newer login.
+Sidebar navigation requested during a foreground operation waits for completion;
+the latest requested destination wins. Session changes clear that pending destination.
+This prevents a newly mounted screen's initial load from being skipped by the busy guard.
 Pending reads expose busy/unavailable semantics without toggling native disabled
 styles on reader controls. Guard mouse and keyboard activation of message actions;
 session preferences such as inline kludge visibility remain operable while loading.
