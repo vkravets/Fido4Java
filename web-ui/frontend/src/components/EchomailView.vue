@@ -147,7 +147,9 @@ const discussion = createEchoDiscussion(
 );
 const discussionRows = discussion.rows;
 const discussionIndex = computed(() =>
-    discussionRows.value.findIndex((row) => mailId(row.item.id) === mailId(reader.selected.value?.id))
+    discussionRows.value.findIndex(
+        (row) => mailId(row.item.id) === mailId(reader.selected.value?.id)
+    )
 );
 function discussionKey(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
@@ -193,6 +195,7 @@ function openDiscussionRow(item: MailItem) {
     <MailWorkspace
         v-model:query="query"
         kind="echo"
+        :conference="reader.area.value"
         :selected="reader.selected.value ? mailId(reader.selected.value.id) : undefined"
         :opened="!!reader.selected.value || !!reader.draft.value || reader.showDrafts.value"
         :composing="!!reader.draft.value"
@@ -250,7 +253,7 @@ function openDiscussionRow(item: MailItem) {
                 </div>
             </header>
         </template>
-        <template #filters>
+        <template #conferences>
             <EchoConferenceList
                 v-model:search="search"
                 :areas="reader.areas.value"
@@ -327,7 +330,9 @@ function openDiscussionRow(item: MailItem) {
                 @next="openMessage(navigationItems[index + 1]!)"
                 :reply-navigation="true"
                 :previous-reply-disabled="discussionIndex <= 0"
-                :next-reply-disabled="discussionIndex < 0 || discussionIndex >= discussionRows.length - 1"
+                :next-reply-disabled="
+                    discussionIndex < 0 || discussionIndex >= discussionRows.length - 1
+                "
                 @previous-reply="openDiscussionRow(discussionRows[discussionIndex - 1]!.item)"
                 @next-reply="openDiscussionRow(discussionRows[discussionIndex + 1]!.item)"
                 @unread="nextUnread && openMessage(nextUnread)"

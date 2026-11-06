@@ -1,6 +1,10 @@
 # Echomail conference list and workspace — implementation plan
 
-Status: E1–E2 implemented; E3–E6 remain.
+Status: E1–E3 implemented; E4–E6 remain.
+
+E3 adds the optional conference column and actual-work-area width fallbacks.
+Basic conference-stage controls are present; editor lifecycle, focus and retained
+navigation behavior are completed and verified in E4/E5.
 
 Commit this plan before implementation, then commit each completed item separately.
 Use focused functional checks for changed behavior. Create relevant Storybook

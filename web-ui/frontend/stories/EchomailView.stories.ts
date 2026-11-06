@@ -136,6 +136,26 @@ export const Separate: Story = {
     args: { initialMessage: '9007199254740994' }
 };
 export const Compact: Story = { parameters: { workspace: { echo: { density: 'compact' } } } };
+export const AllConferencePanels: Story = {
+    ...Reading,
+    parameters: { workspace: { conferencePanels: 'all' } }
+};
+export const LastTwoConferencePanels: Story = {
+    ...Reading,
+    parameters: { workspace: { conferencePanels: 'lastTwo' } }
+};
+export const LastTwoBelow: Story = {
+    ...Reading,
+    parameters: { workspace: { conferencePanels: 'lastTwo', echo: { preview: 'below' } } }
+};
+export const NarrowWorkArea: Story = {
+    ...Reading,
+    decorators: [() => ({ template: '<div style="max-width:780px"><story /></div>' })]
+};
+export const SingleStageWorkArea: Story = {
+    ...Reading,
+    decorators: [() => ({ template: '<div style="max-width:600px"><story /></div>' })]
+};
 
 export const ApplicationWorkspace: Story = {
     args: { initialMessage: '9007199254740994' },

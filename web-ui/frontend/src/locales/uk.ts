@@ -163,6 +163,8 @@ export const ukrainian = {
     'Preview below': 'Перегляд знизу',
     'No preview': 'Без попереднього перегляду',
     'Back to messages': 'До списку листів',
+    'Back to editor': 'До редактора',
+    'Back to message': 'До листа',
     'Select a conference': 'Виберіть конференцію',
     'List density': 'Щільність списку',
     Compact: 'Компактний',
