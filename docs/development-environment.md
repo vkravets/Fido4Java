@@ -62,6 +62,13 @@ The manifest is authoritative; this table is a readable checkpoint.
 | Playwright | 1.65.0 | Package lock selects matching browser revisions |
 | Release JRE | See `gradle/runtime-lock.json` | Existing JRE 21 profile is independent of the build JDK |
 
+When upgrading any dependency or tool, search for every related version pin and
+compatibility constraint across package and tool lockfiles, build files, CI/setup
+scripts, container images, cache keys and tests. Update the related pins together
+and extend automated checks where possible. For example, Playwright's package,
+development lock, pinned VRT image and local VRT image tag must stay aligned;
+`tools/tests/test_bootstrap.py` checks those versions.
+
 Supported pinned profiles: Windows x64; Linux x64/arm64; macOS x64/arm64.
 The PowerShell entry point is Windows x64 only. There is no complete Windows
 ARM64 profile in this lock. Linux artifacts expect a compatible glibc distribution,

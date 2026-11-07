@@ -109,6 +109,10 @@ class BootstrapTest(unittest.TestCase):
         self.assertIn("libthrift:" + manifest["thrift"]["version"], thrift)
         package = json.loads((bootstrap.ROOT / "web-ui/frontend/package.json").read_text())
         self.assertEqual(manifest["playwright"], package["devDependencies"]["@playwright/test"])
+        dockerfile = (bootstrap.ROOT / "web-ui/frontend/test/browser/visual.Dockerfile").read_text()
+        self.assertIn(f"playwright:v{manifest['playwright']}-noble@", dockerfile)
+        runner = (bootstrap.ROOT / "web-ui/frontend/test/browser/run-visual.ts").read_text()
+        self.assertIn(f"jftn-vrt:playwright-{manifest['playwright']}", runner)
 
     def test_generated_profiles_include_gradle_overrides_and_project_local_caches(self):
         state = self.root / ".dev-tools"
