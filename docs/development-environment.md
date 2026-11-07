@@ -59,7 +59,7 @@ The manifest is authoritative; this table is a readable checkpoint.
 | Python on Windows | 3.13.9 embedded x64 | Standard-library-only bootstrap and CI helper tests; no pip required |
 | Python on Unix | Installed Python 3.12+ | Prefer the project's CI major 3.13; bootstrap does not compile/install Unix Python |
 | Thrift compiler/runtime | 0.25.0 | Browser runtime comes from the matching official source archive |
-| Playwright | 1.64.1 | Package lock selects matching browser revisions |
+| Playwright | 1.65.0 | Package lock selects matching browser revisions |
 | Release JRE | See `gradle/runtime-lock.json` | Existing JRE 21 profile is independent of the build JDK |
 
 Supported pinned profiles: Windows x64; Linux x64/arm64; macOS x64/arm64.

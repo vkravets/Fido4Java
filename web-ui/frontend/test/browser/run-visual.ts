@@ -9,7 +9,7 @@ const snapshots = resolve(frontend, 'test/browser/snapshots');
 const reports = resolve(frontend, '../build/reports/playwright');
 const engine =
     process.env.VRT_CONTAINER_ENGINE || (process.platform === 'win32' ? 'podman' : 'docker');
-const image = 'jftn-vrt:playwright-1.64.1';
+const image = 'jftn-vrt:playwright-1.65.0';
 const args = process.argv.slice(2);
 const update = args.some((arg) => arg.startsWith('--update-snapshots') || arg === '-u');
 
