@@ -8,7 +8,7 @@ export async function mailSearch(page: Page, screen: Screen, info: TestInfo) {
         await search.focus();
         await search.fill('Welcome');
         await expect(page.locator('.mail-search-status')).toBeVisible();
-        if (screen.name === 'mail-search-pending') await expect(search).toBeFocused();
+        await expect(search).toBeFocused();
         if (screen.name !== 'mail-search-pending') {
             await expect(page.locator('.mail-search-status')).not.toContainText(
                 /Searching messages|Пошук листів/
