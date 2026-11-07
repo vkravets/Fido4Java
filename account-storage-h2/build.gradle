@@ -6,6 +6,6 @@ dependencies {
     implementation project(':storage-jdbc')
     implementation 'com.yubico:webauthn-server-core:2.10.1'
     implementation platform('com.yubico:webauthn-server-parent:2.10.1')
-    implementation enforcedPlatform('com.fasterxml.jackson:jackson-bom:2.22.3')
+    implementation enforcedPlatform('com.fasterxml.jackson:jackson-bom:2.22.4')
     implementation 'com.fasterxml.jackson.core:jackson-core'
 }
