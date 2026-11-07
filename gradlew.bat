@@ -70,14 +70,14 @@ goto fail
 :execute
 @rem Setup the command line
 
-@rem Download and verify the official Wrapper JAR into the ignored local cache.
+@rem Download and verify the official Wrapper JAR at Gradle's standard path.
 "%JAVA_EXE%" "%APP_HOME%\gradle\wrapper\DownloadWrapper.java" "%APP_HOME%\."
 if errorlevel 1 goto fail
 
 
 
 @rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\.gradle\wrapper-bootstrap\gradle-wrapper.jar" %*
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
 
 :end
 @rem End local scope for the variables with windows NT shell

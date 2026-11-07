@@ -369,12 +369,12 @@ On an online prepared checkout:
    npm cache separately. Do not include daemon sockets/locks, workers or old probes
    as required inputs. A live cache copy can be inconsistent; regenerate it online
    rather than assuming it is a valid offline bundle.
-5. Also save `.gradle/wrapper-bootstrap/gradle-wrapper.jar` from a successful wrapper
-   invocation. A clean clone has no wrapper JAR: `--offline` reaches Gradle only
-   after the external wrapper bootstrap has run. Restore this JAR at the same
-   checkout-relative path; the Java launcher verifies `wrapperSha256Sum` again.
-   Its adjacent properties are regenerated from the committed wrapper properties;
-   do not restore `download.lock` or unrelated project `.gradle` state.
+5. Also save the ignored `gradle/wrapper/gradle-wrapper.jar` from a successful
+   wrapper preparation. A clean clone has no wrapper JAR: `--offline` reaches
+   Gradle only after the external wrapper bootstrap has run. Restore this JAR at
+   the same checkout-relative path; `DownloadWrapper.java` verifies
+   `wrapperSha256Sum` before reuse. Do not restore `download.lock` or unrelated
+   project `.gradle` state.
 6. Save the Playwright browser cache for the same OS/architecture and Playwright
    package version. `node_modules` is not a portable cross-platform cache; run
    `npm ci` again.
