@@ -566,6 +566,11 @@ for (const theme of ['light', 'dark']) {
                     await expect(page).toHaveScreenshot(filename);
                     return;
                 }
+                if (screen.name === 'mail-local-search') {
+                    const search = page.locator('.mail-query input');
+                    await search.focus();
+                    await expect(search).toBeFocused();
+                }
                 await expect(page.locator('.storybook-stage')).toHaveScreenshot(filename);
                 await expect(page.locator('.sb-errordisplay')).toBeHidden();
             });
