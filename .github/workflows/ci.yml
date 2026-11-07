@@ -2,9 +2,11 @@ name: CI
 
 on:
   pull_request:
+    branches:
+      - master
   push:
     branches:
-      - '**'
+      - master
     tags:
       - 'v[0-9]*.[0-9]*.[0-9]*'
 
@@ -94,6 +96,25 @@ jobs:
           if-no-files-found: error
           retention-days: 15
 
+  changes:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      ui: ${{ steps.filter.outputs.ui }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          base: ${{ github.ref_type == 'branch' && github.ref || '' }}
+          filters: |
+            ui:
+              - 'web-ui/**'
+
   package:
     if: github.event_name == 'push' && github.ref_type == 'tag'
     needs: [build, integration, vrt, ui]
@@ -168,7 +189,8 @@ jobs:
           retention-days: 15
 
   ui:
-    needs: [build, integration]
+    needs: [build, integration, changes]
+    if: github.ref_type == 'tag' || needs.changes.outputs.ui == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -220,7 +242,8 @@ jobs:
           retention-days: 15
 
   vrt:
-    needs: [build, integration, ui]
+    needs: [build, integration, changes, ui]
+    if: github.ref_type == 'tag' || needs.changes.outputs.ui == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
