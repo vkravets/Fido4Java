@@ -176,11 +176,13 @@ JDK 25, so a separate Gradle installation is not required. All modules compile
 with `--release 11`, targeting Java 11 bytecode and APIs. The scripting engine
 uses Groovy 5.1.3.
 
-The Wrapper JAR is not committed. On first launch, `gradlew` / `gradlew.bat`
-download it from the official Gradle repository at the pinned release tag and
-verify SHA-256 before execution. It is cached in `.gradle/wrapper-bootstrap`,
-so subsequent launches can work offline. Both launchers use the JDK to run
-`gradle/wrapper/DownloadWrapper.java`; no curl or PowerShell is required.
+The Wrapper JAR is not committed. Prepare it with
+`java gradle/wrapper/DownloadWrapper.java .` before using a standard Gradle
+launcher in a clean checkout. The preparer downloads from the pinned official
+Gradle release and verifies SHA-256 before storing the JAR at Gradle's standard,
+ignored `gradle/wrapper/gradle-wrapper.jar` path. CI runs this as a separate step.
+The current launchers also invoke the preparer automatically; no curl or PowerShell
+is required.
 When upgrading the Wrapper, update `wrapperUrl`, `wrapperSha256Sum`,
 `distributionUrl` and `distributionSha256Sum` in `gradle-wrapper.properties`.
 Binary test fixtures remain in version control.

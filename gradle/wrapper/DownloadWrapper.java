@@ -42,16 +42,16 @@ class DownloadWrapper {
         if (timeout <= 0) {
             throw new IllegalArgumentException("networkTimeout must be positive");
         }
-        Path cache = root.resolve(".gradle/wrapper-bootstrap");
-        Files.createDirectories(cache);
-        Path jar = cache.resolve("gradle-wrapper.jar");
-        try (FileChannel lockChannel = FileChannel.open(cache.resolve("download.lock"),
+        Path bootstrap = root.resolve(".gradle/wrapper-bootstrap");
+        Files.createDirectories(bootstrap);
+        Path jar = root.resolve("gradle/wrapper/gradle-wrapper.jar");
+        try (FileChannel lockChannel = FileChannel.open(bootstrap.resolve("download.lock"),
                                                         StandardOpenOption.CREATE,
                                                         StandardOpenOption.WRITE);
                 FileLock lock = lockChannel.lock()) {
             if (!Files.isRegularFile(jar) || !expected.equalsIgnoreCase(checksum(jar))) {
                 System.err.println("Downloading Gradle Wrapper from " + url);
-                Path temporary = Files.createTempFile(cache, "wrapper-", ".part");
+                Path temporary = Files.createTempFile(bootstrap, "wrapper-", ".part");
                 try {
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setConnectTimeout(timeout);
@@ -77,15 +77,6 @@ class DownloadWrapper {
                 } finally {
                     Files.deleteIfExists(temporary);
                 }
-            }
-            // WrapperMain expects this file next to its JAR; two cache directories preserve its
-            // project-root calculation.
-            Path temporary = Files.createTempFile(cache, "properties-", ".part");
-            try {
-                Files.copy(propertiesFile, temporary, StandardCopyOption.REPLACE_EXISTING);
-                replace(temporary, cache.resolve("gradle-wrapper.properties"));
-            } finally {
-                Files.deleteIfExists(temporary);
             }
         }
     }

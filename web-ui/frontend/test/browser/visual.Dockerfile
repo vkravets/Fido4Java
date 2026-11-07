@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.64.1-noble@sha256:bdfda2a8fdf48707c5e50a49bd3e06d8d0c759153dc8ee057d8a81c3450bb3e9
+FROM mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
 WORKDIR /work/frontend
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

@@ -6,7 +6,7 @@ export async function mailSearch(page: Page, screen: Screen, info: TestInfo) {
     if (screen.mailSearch) {
         const search = page.locator('.mail-query input');
         await search.focus();
-        await search.fill('Welcome');
+        await search.pressSequentially('Welcome');
         await expect(page.locator('.mail-search-status')).toBeVisible();
         await expect(search).toBeFocused();
         if (screen.name !== 'mail-search-pending') {

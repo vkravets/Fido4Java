@@ -62,6 +62,10 @@
 - Download versions/SHA-256 are in `tools/development-tools.lock.json`; Gradle's
   wrapper and packaged JREs have their own locks. `.dev-tools/`, build outputs and
   `.gradle-user-home/` stay ignored. Use `GRADLE_USER_HOME` before wrapper startup.
+- When upgrading any library, tool or runtime, search the repository for every
+  related version pin and compatibility constraint (including lockfiles, container
+  images, CI/setup scripts, caches and tests); update the related pins together and
+  extend checks that should prevent version drift.
 - Java source target is 11, but the development/runtime tooling requires JDK 17+.
   The pinned development profile uses Temurin 17; an explicit system-JDK profile
   is supported. Do not assume global Node/npm/Thrift are installed.

@@ -59,8 +59,15 @@ The manifest is authoritative; this table is a readable checkpoint.
 | Python on Windows | 3.13.9 embedded x64 | Standard-library-only bootstrap and CI helper tests; no pip required |
 | Python on Unix | Installed Python 3.12+ | Prefer the project's CI major 3.13; bootstrap does not compile/install Unix Python |
 | Thrift compiler/runtime | 0.25.0 | Browser runtime comes from the matching official source archive |
-| Playwright | 1.64.1 | Package lock selects matching browser revisions |
+| Playwright | 1.65.0 | Package lock selects matching browser revisions |
 | Release JRE | See `gradle/runtime-lock.json` | Existing JRE 21 profile is independent of the build JDK |
+
+When upgrading any dependency or tool, search for every related version pin and
+compatibility constraint across package and tool lockfiles, build files, CI/setup
+scripts, container images, cache keys and tests. Update the related pins together
+and extend automated checks where possible. For example, Playwright's package,
+development lock, pinned VRT image and local VRT image tag must stay aligned;
+`tools/tests/test_bootstrap.py` checks those versions.
 
 Supported pinned profiles: Windows x64; Linux x64/arm64; macOS x64/arm64.
 The PowerShell entry point is Windows x64 only. There is no complete Windows
@@ -369,12 +376,12 @@ On an online prepared checkout:
    npm cache separately. Do not include daemon sockets/locks, workers or old probes
    as required inputs. A live cache copy can be inconsistent; regenerate it online
    rather than assuming it is a valid offline bundle.
-5. Also save `.gradle/wrapper-bootstrap/gradle-wrapper.jar` from a successful wrapper
-   invocation. A clean clone has no wrapper JAR: `--offline` reaches Gradle only
-   after the external wrapper bootstrap has run. Restore this JAR at the same
-   checkout-relative path; the Java launcher verifies `wrapperSha256Sum` again.
-   Its adjacent properties are regenerated from the committed wrapper properties;
-   do not restore `download.lock` or unrelated project `.gradle` state.
+5. Also save the ignored `gradle/wrapper/gradle-wrapper.jar` from a successful
+   wrapper preparation. A clean clone has no wrapper JAR: `--offline` reaches
+   Gradle only after the external wrapper bootstrap has run. Restore this JAR at
+   the same checkout-relative path; `DownloadWrapper.java` verifies
+   `wrapperSha256Sum` before reuse. Do not restore `download.lock` or unrelated
+   project `.gradle` state.
 6. Save the Playwright browser cache for the same OS/architecture and Playwright
    package version. `node_modules` is not a portable cross-platform cache; run
    `npm ci` again.
