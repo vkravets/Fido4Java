@@ -521,7 +521,13 @@ File-only `BinkpSsh` mappings in `conf.d` select SSH per link, with TCP as the d
 OpenSSH owns accounts, keys and host trust. Noninteractive authentication and strict
 host-key checking are mandatory; arbitrary browser-supplied commands are not exposed.
 The poll service uses `ClientConnector` and waits for transport completion before
-recording success. See [SSH operation and integration checks](binkp/README.md#outgoing-ssh-connections).
+recording success. OpenSSH remains the SSH implementation while JFtn's Netty
+engine handles BinkP over its stdin/stdout stream. This keeps host-key, key and
+account handling with the standard SSH client and avoids adding a Java SSH library
+and duplicating its authentication/trust configuration. Replace OpenSSH with an
+in-process SSH implementation only if eliminating the client dependency or managing
+SSH entirely inside JFtn becomes a concrete requirement. See [SSH operation and
+integration checks](binkp/README.md#outgoing-ssh-connections).
 
 ## 23. File echo storage and script policy
 
