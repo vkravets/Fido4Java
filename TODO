@@ -34,6 +34,25 @@ Remaining implementation
   separately. Usage and limits: docs/rpc-ui.md.
 - Refine the mobile mail layout after desktop review; retain separate list,
   reader and composer screens, readable controls and dirty-draft protection.
+- Mail reader and message-list follow-up ideas (not implemented):
+  - In two-column mode, move the back/list button to the left of the heading and
+    render it as a compact `<` control.
+  - Reset the reader body scroll to the beginning when switching messages.
+  - Add an `F` full-screen reader mode without the left column, available in every
+    column layout.
+  - Add an `S` shortcut to pin/unpin the message information header; show an
+    anchor at the block's upper-left when pinned.
+  - When replying with a quote, use the text selected in the current reader if
+    there is a selection.
+  - Show the year in message-list dates when it differs from the current year.
+  - Keep the message list aligned with the message opened in the reader; verify
+    that advancing from the last loaded message loads the next page on the first
+    attempt.
+  - Let Escape return from the reader to the echomail list.
+  - Allow selecting all messages, including messages not yet loaded, and mark
+    that selection read or unread.
+  - Decide which mail session/workspace state should carry across browser tabs;
+    the current authentication session is intentionally tab-scoped.
 - Add a keyboard shortcut to show and hide the echomail message list, with search
   behavior matching the existing mail list search.
 - Add a keyboard shortcut to open the discussion for the currently selected
